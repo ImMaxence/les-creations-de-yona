@@ -5,6 +5,10 @@ import fr.lescreationsdeyona.common.Pageables;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.image.Image;
+import fr.lescreationsdeyona.image.ImageKind;
+import fr.lescreationsdeyona.image.ImageService;
+import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientService;
 import java.time.Instant;
@@ -38,6 +42,8 @@ public class RecipeService {
 	private final CategoryRepository categoryRepository;
 
 	private final IngredientService ingredientService;
+
+	private final ImageService imageService;
 
 	private final RecipeMapper recipeMapper;
 
@@ -108,7 +114,23 @@ public class RecipeService {
 
 	@Transactional
 	public void delete(long id) {
-		recipeRepository.delete(find(id));
+		Recipe recipe = find(id);
+		recipeRepository.delete(recipe);
+		if (recipe.getImage() != null) {
+			imageService.delete(recipe.getImage());
+		}
+	}
+
+	/** "Modifier la photo": the new image replaces the previous one, which is deleted. */
+	@Transactional
+	public RecipeDetail replaceImage(long id, ProcessedImage processed) {
+		Recipe recipe = find(id);
+		Image previous = recipe.getImage();
+		recipe.setImage(imageService.create(ImageKind.RECIPE, processed));
+		if (previous != null) {
+			imageService.delete(previous);
+		}
+		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 
 	private Recipe find(long id) {

@@ -39,7 +39,21 @@ public enum ErrorCode {
 	INGREDIENT_IN_USE(HttpStatus.CONFLICT, "Cet ingrédient est utilisé dans au moins une recette."),
 
 	// Social links
-	DUPLICATE_SOCIAL_PLATFORM(HttpStatus.BAD_REQUEST, "Chaque réseau social ne peut apparaître qu'une seule fois.");
+	DUPLICATE_SOCIAL_PLATFORM(HttpStatus.BAD_REQUEST, "Chaque réseau social ne peut apparaître qu'une seule fois."),
+
+	// Images
+	IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Image introuvable."),
+	IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "Aucune image n'a été envoyée."),
+	IMAGE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "L'image dépasse 10 Mo."),
+	IMAGE_FORMAT_UNSUPPORTED(HttpStatus.BAD_REQUEST, "Seules les images JPEG et PNG sont acceptées."),
+	IMAGE_UNREADABLE(HttpStatus.BAD_REQUEST, "L'image est illisible ou endommagée."),
+	IMAGE_TOO_MANY_PIXELS(HttpStatus.BAD_REQUEST, "L'image dépasse 100 mégapixels."),
+	IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image doit mesurer au moins 1200 × 800 pixels."),
+	IMAGE_NOT_LANDSCAPE(HttpStatus.BAD_REQUEST, "L'image doit être au format paysage (4:3 ou plus large)."),
+	STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Le stockage des images est indisponible, réessayez plus tard."),
+
+	// Backup
+	BACKUP_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La sauvegarde n'est pas disponible sur ce serveur.");
 
 	private final HttpStatus status;
 

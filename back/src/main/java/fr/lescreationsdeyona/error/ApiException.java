@@ -10,6 +10,11 @@ public class ApiException extends RuntimeException {
 		this.code = code;
 	}
 
+	public ApiException(ErrorCode code, Throwable cause) {
+		super(code.message(), cause);
+		this.code = code;
+	}
+
 	public ErrorCode getCode() {
 		return code;
 	}

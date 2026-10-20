@@ -85,11 +85,13 @@ docker compose up -d --wait
 | --- | --- | --- |
 | PostgreSQL | `postgres:18.6-alpine` | `localhost:5432` |
 | SeaweedFS (API S3) | `chrislusf/seaweedfs:4.48` (`weed mini`) | `http://localhost:8333` |
+| Backend (profil `app`, facultatif) | construit depuis `back/Dockerfile` | `http://localhost:8080` |
 
 - Ports exposés sur `127.0.0.1` uniquement, jamais sur le réseau local.
 - Base créée avec la collation ICU `fr-FR` (tri français des titres). Checksums de données activés (défaut de PostgreSQL 18).
 - Bucket `S3_BUCKET` créé au démarrage, privé : accès anonyme refusé, seuls les identifiants `S3_ACCESS_KEY` / `S3_SECRET_KEY` y accèdent. Pas de création automatique d'autres buckets, suppression d'un bucket non vide refusée. Télémétrie SeaweedFS désactivée.
 - Arrêt : `docker compose down`. Remise à zéro complète (supprime les données) : `docker compose down --volumes`.
+- Backend dans Docker, sans JDK sur la machine : `docker compose --profile app up -d --build --wait`. Arrêt : `docker compose --profile app down`.
 
 ### Backend
 
@@ -100,22 +102,28 @@ cd back
 ./mvnw spring-boot:run   # Windows : .\mvnw.cmd spring-boot:run
 ```
 
-- Lit les identifiants de `devops/.env` (lancement depuis `back/`). En production, mêmes clés en variables d'environnement, plus `POSTGRES_HOST`.
+- Lit les identifiants de `devops/.env` (lancement depuis `back/`). En production, mêmes clés en variables d'environnement, plus `POSTGRES_HOST` et `S3_ENDPOINT` (par défaut `http://localhost:8333`).
 - Flyway applique les migrations de `back/src/main/resources/db/migration` au démarrage. Hibernate vérifie seulement que les entités correspondent au schéma (`ddl-auto: validate`).
 - Santé : `http://localhost:8080/actuator/health`.
 - Documentation de l'API : `http://localhost:8080/api/docs` (OpenAPI, lu par le front pour générer ses services) et `http://localhost:8080/api/docs/ui` (Swagger UI). Désactivable en production avec `API_DOCS_ENABLED=false`.
-- Connexion admin : client OAuth Google à créer (type « Application Web »), avec les URL de retour listées dans `devops/.env.example`. Renseigner `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` et `APP_ADMIN_EMAILS` dans `devops/.env`.
+- Connexion admin : client OAuth Google à créer (type « Application Web »), avec les URL de retour listées dans `devops/.env.example`. Renseigner `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` et `APP_ADMIN_EMAILS` dans `devops/.env`. Application Google laissée en mode « Test », avec les adresses admin dans « Utilisateurs test ».
+- Sauvegarde : nécessite le client `pg_dump` 18. Il est inclus dans l'image Docker. En lancement local, l'installer et renseigner `PG_DUMP_PATH`, sinon la route répond 503 `BACKUP_UNAVAILABLE`.
+- Encodage WebP : libwebp est une bibliothèque native, autorisée par `--enable-native-access=ALL-UNNAMED` (déjà passé par `spring-boot:run` et par l'image Docker).
+
+Image Docker (`back/Dockerfile`) : build Maven multi-étapes, jar découpé en couches Spring Boot, JRE Temurin 25 sur Ubuntu 26.04 avec `postgresql-client-18`, utilisateur non root, health check sur `/actuator/health`.
 
 ### API
 
 | Accès | Routes |
 | --- | --- |
-| Public (GET) | `/api/recipes` (recherche, filtre `category`, pagination), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/social-links` |
-| Admin | `/api/admin/me`, `/api/admin/recipes`, `/api/admin/categories`, `/api/admin/ingredients`, `/api/admin/social-links` |
+| Public (GET) | `/api/recipes` (recherche, filtre `category`, pagination), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/social-links`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
+| Admin | `/api/admin/me`, `/api/admin/recipes`, `/api/admin/categories`, `/api/admin/ingredients`, `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (multipart, champ `file`), `/api/admin/images` (galerie, filtre `kind`), `/api/admin/backup` |
 | Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
 
 - Erreurs : ProblemDetail avec `code` stable (`ErrorCode`) et `detail` en français. Erreurs de validation listées dans `errors` (`field`, `message`).
 - Écritures admin : en-tête `X-XSRF-TOKEN` recopié du cookie `XSRF-TOKEN`, que `GET /api/admin/me` crée. Angular le fait automatiquement. Aucun cookie n'est posé pour un visiteur public.
+- Images : le front construit l'URL à partir du `imageId` des recettes et catégories. Réponse `Cache-Control: public, max-age=31536000, immutable` : une nouvelle photo a un nouvel identifiant, donc une nouvelle URL.
+- Sauvegarde : à ouvrir comme un lien classique (`<a href="/api/admin/backup">`), pas via `HttpClient`, qui chargerait toute l'archive en mémoire.
 - Toute route non listée est refusée.
 
 ## Modèle de données
@@ -179,7 +187,7 @@ cd back
 ### Sauvegarde
 
 - Bouton « Sauvegarder mes données » (`/api/admin/backup`) : télécharge dans le navigateur une archive ZIP contenant le dump PostgreSQL (`pg_dump`, format custom) et une copie de tout le bucket S3 (toutes les images, orphelines comprises).
-- Archive streamée : rien n'est stocké sur le serveur. Google Drive hors v1.
+- Archive streamée : rien n'est stocké sur le serveur. Google Drive hors v1. Contenu : `database.dump` et `images/{clé S3}`. Une erreur survenue pendant le téléchargement coupe la connexion (téléchargement marqué en échec par le navigateur) et est journalisée.
 - Le backend embarque le client `pg_dump` en version 18, identique au serveur.
 - Procédure de restauration (base et S3) rédigée à part, en documentation technique.
 
@@ -195,11 +203,13 @@ cd back
 ## Images
 
 - Upload passé par le backend. Une image principale par recette et une par catégorie, facultatives.
-- Bouton « Modifier la photo » sur la recette et sur la catégorie : remplace l'image directement, sans passer par la galerie. Suppression de l'ancienne image S3, puis envoi de la nouvelle.
+- Bouton « Modifier la photo » sur la recette et sur la catégorie : remplace l'image directement, sans passer par la galerie. Envoi de la nouvelle image, puis suppression de l'ancienne une fois le remplacement enregistré : en cas d'échec, l'ancienne photo reste en place.
+- Cohérence base / S3 : S3 n'a pas de transaction, ses fichiers suivent donc l'issue de la transaction PostgreSQL. Un upload est effacé si la transaction échoue, une image supprimée perd ses fichiers une fois la suppression validée. Au pire il reste des fichiers orphelins, jamais un enregistrement sans fichier. La sauvegarde inclut les orphelins.
+- Suppression d'une recette ou d'une catégorie : son image (enregistrement et fichiers S3) est supprimée avec elle.
 - Galerie back-office : toutes les images (recettes et catégories), avec suppression. Supprimer une image utilisée retire l'image de la recette ou de la catégorie (visuel par défaut), après confirmation.
 - Accès : bucket S3 privé, images servies par le backend avec cache HTTP. Seul le backend accède au bucket.
 - Formats : JPEG et PNG, vérifiés sur le contenu réel (magic bytes) et non sur l'extension. HEIC non accepté en v1.
-- Taille max à l'upload : 10 Mo, et limite de pixels décodés pour bloquer les images piégées.
+- Taille max à l'upload : 10 Mo, et 100 mégapixels au plus, lus dans l'en-tête avant tout décodage, pour bloquer les images piégées. Les grandes photos sont décodées en sous-échantillonnant (au moins deux fois la plus grande sortie), pour limiter la mémoire.
 - Paysage uniquement : largeur minimale 1200 px, hauteur minimale 800 px, ratio largeur/hauteur d'au moins 4:3.
 - Traitement : suppression des métadonnées EXIF (dont la localisation GPS), rotation appliquée selon l'EXIF, pas d'agrandissement.
 - Sorties WebP de 800 px et 1600 px de large, qualité 80. L'original JPEG ou PNG n'est pas conservé.
@@ -224,10 +234,11 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 ## Roadmap
 
 - [x] devops : Docker Compose (PostgreSQL 18, SeaweedFS), `.env.example`
-- [ ] devops : Dockerfile du backend (avec client `pg_dump` 18) et du frontend
+- [x] devops : Dockerfile du backend (avec client `pg_dump` 18), service `back` dans la Compose (profil `app`)
+- [ ] devops : Dockerfile du frontend
 - [ ] devops : déploiement sur Coolify (plus tard, une fois le local fonctionnel)
 - [x] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
-- [ ] back : service d'upload S3 (validation, resize, conversion)
+- [x] back : service d'upload S3 (validation, resize, conversion)
 - [x] back : auth Google avec allowlist `APP_ADMIN_EMAILS`, session
 - [x] back : endpoints publics recettes et catégories
 - [x] back : endpoint d'autocomplétion des titres
@@ -238,7 +249,7 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 - [ ] front : pages mentions légales et politique de confidentialité
 - [x] back : ProblemDetail et springdoc-openapi exposé
 - [x] back : API admin (recettes, catégories, ingrédients, réseaux sociaux)
-- [ ] back : API admin galerie images et sauvegarde ZIP
+- [x] back : API admin galerie images et sauvegarde ZIP
 - [ ] front : back-office (guard, intercepteur HTTP, formulaires)
 - [ ] front : génération des services depuis le openapi du backend
 - [ ] front : Angular SSR, meta tags, JSON-LD, sitemap

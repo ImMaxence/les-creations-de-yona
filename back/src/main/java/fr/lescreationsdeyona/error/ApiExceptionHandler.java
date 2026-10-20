@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import software.amazon.awssdk.core.exception.SdkException;
 
 /**
  * Turns every error into an RFC 9457 ProblemDetail carrying a stable {@code code} and a French
@@ -57,6 +59,12 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return respond(ex, ErrorCode.DATA_CONFLICT, request);
 	}
 
+	@ExceptionHandler(SdkException.class)
+	ResponseEntity<Object> handleStorageException(SdkException ex, WebRequest request) {
+		log.error("S3 storage error", ex);
+		return respond(ex, ErrorCode.STORAGE_UNAVAILABLE, request);
+	}
+
 	@ExceptionHandler(Exception.class)
 	ResponseEntity<Object> handleUnexpectedException(Exception ex, WebRequest request) {
 		log.error("Unexpected error", ex);
@@ -87,6 +95,13 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 				.map(message -> new FieldViolation(result.getMethodParameter().getParameterName(), message)))
 			.toList();
 		return handleExceptionInternal(ex, validationProblem(violations), headers, status, request);
+	}
+
+	/** Image uploads are the only multipart requests. */
+	@Override
+	protected @Nullable ResponseEntity<Object> handleMaxUploadSizeExceededException(
+			MaxUploadSizeExceededException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		return handleExceptionInternal(ex, problem(ErrorCode.IMAGE_TOO_LARGE), headers, status, request);
 	}
 
 	/** Every response goes through here: framework errors only get a generic code for their status. */

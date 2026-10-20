@@ -21,6 +21,15 @@ spring:
     web:
       pageable:
         max-page-size: 50
+  servlet:
+    multipart:
+      # Image uploads: 10 MB per file, plus room for the multipart envelope.
+      max-file-size: 10MB
+      max-request-size: 11MB
+  mvc:
+    async:
+      # The backup ZIP is streamed asynchronously: the server default (30 s) would cut it off.
+      request-timeout: 30m
   security:
     oauth2:
       client:
@@ -50,6 +59,16 @@ server:
 app:
   admin:
     emails: ${APP_ADMIN_EMAILS}
+  s3:
+    # Inside Docker Compose or Coolify: http://seaweedfs:8333.
+    endpoint: ${S3_ENDPOINT:http://localhost:${S3_PORT:8333}}
+    # Required by the S3 protocol, ignored by SeaweedFS.
+    region: us-east-1
+    bucket: ${S3_BUCKET}
+    access-key: ${S3_ACCESS_KEY}
+    secret-key: ${S3_SECRET_KEY}
+  backup:
+    pg-dump: ${PG_DUMP_PATH:pg_dump}
 
 springdoc:
   api-docs:

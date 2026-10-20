@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.common.PageResponse;
+import fr.lescreationsdeyona.image.ImageProcessor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,8 +23,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Admin - Recipes")
 @RestController
@@ -31,6 +35,8 @@ import org.springframework.web.bind.annotation.RestController;
 class AdminRecipeController {
 
 	private final RecipeService recipeService;
+
+	private final ImageProcessor imageProcessor;
 
 	@Operation(summary = "All recipes, drafts included", description = "Sort on title, createdAt or updatedAt.")
 	@GetMapping
@@ -66,11 +72,19 @@ class AdminRecipeController {
 		return recipeService.update(id, form);
 	}
 
-	@Operation(summary = "Delete a recipe with its ingredients and steps")
+	@Operation(summary = "Delete a recipe with its ingredients, steps and image")
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteRecipe(@PathVariable long id) {
 		recipeService.delete(id);
+	}
+
+	@Operation(summary = "Replace the photo of a recipe; the previous one is deleted",
+			description = "JPEG or PNG, 10 MB max, landscape: at least 1200 × 800 px and 4:3.")
+	@PutMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	RecipeDetail replaceRecipeImage(@PathVariable long id, @RequestPart MultipartFile file) {
+		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.
+		return recipeService.replaceImage(id, imageProcessor.process(file));
 	}
 
 }

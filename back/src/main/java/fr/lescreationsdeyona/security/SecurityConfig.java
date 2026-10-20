@@ -30,7 +30,7 @@ class SecurityConfig {
 		http.authorizeHttpRequests(requests -> requests
 				.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
 				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/recipe-suggestions",
-						"/api/categories/**", "/api/social-links/**")
+						"/api/categories/**", "/api/social-links/**", "/api/images/**")
 				.permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/docs/**", "/actuator/health/**").permitAll()
 				.requestMatchers("/error").permitAll()
