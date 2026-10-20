@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: back
+  config:
+    # Local runs (from back/) reuse the Docker Compose secrets; in production the file is absent
+    # and the same keys come from real environment variables.
+    import: optional:file:../devops/.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway owns the schema; Hibernate only checks that entities match it.
+      ddl-auto: validate

@@ -91,6 +91,19 @@ docker compose up -d --wait
 - Bucket `S3_BUCKET` créé au démarrage, privé : accès anonyme refusé, seuls les identifiants `S3_ACCESS_KEY` / `S3_SECRET_KEY` y accèdent. Pas de création automatique d'autres buckets, suppression d'un bucket non vide refusée. Télémétrie SeaweedFS désactivée.
 - Arrêt : `docker compose down`. Remise à zéro complète (supprime les données) : `docker compose down --volumes`.
 
+### Backend
+
+Prérequis : JDK 25. Les services Docker Compose doivent tourner.
+
+```bash
+cd back
+./mvnw spring-boot:run   # Windows : .\mvnw.cmd spring-boot:run
+```
+
+- Lit les identifiants de `devops/.env` (lancement depuis `back/`). En production, mêmes clés en variables d'environnement, plus `POSTGRES_HOST`.
+- Flyway applique les migrations de `back/src/main/resources/db/migration` au démarrage. Hibernate vérifie seulement que les entités correspondent au schéma (`ddl-auto: validate`).
+- Santé : `http://localhost:8080/actuator/health`.
+
 ## Modèle de données
 
 - `social_link` : platform (liste fixe : YouTube, TikTok, Instagram, extensible), url, position. Éditable depuis le back-office.
@@ -199,7 +212,7 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 - [x] devops : Docker Compose (PostgreSQL 18, SeaweedFS), `.env.example`
 - [ ] devops : Dockerfile du backend (avec client `pg_dump` 18) et du frontend
 - [ ] devops : déploiement sur Coolify (plus tard, une fois le local fonctionnel)
-- [ ] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
+- [x] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
 - [ ] back : service d'upload S3 (validation, resize, conversion)
 - [ ] back : auth Google avec allowlist `APP_ADMIN_EMAILS`, session
 - [ ] back : endpoints publics recettes et catégories

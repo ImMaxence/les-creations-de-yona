@@ -36,8 +36,8 @@ services:
       - -s3.port.iceberg=0
       - -s3.port.lance=0
       - -webdav=false
-      # Coupe l'interface web. Le serveur admin (23646) et son gRPC (33646) restent actifs
-      # dans le conteneur, sans authentification : ne jamais publier ces ports.
+      # Disables the web UI only: the admin server (23646) and its gRPC port (33646) keep
+      # running unauthenticated inside the container. Never publish these ports.
       - -admin.ui=false
       - -master.telemetry=false
     environment:
