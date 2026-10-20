@@ -5,8 +5,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.DefaultRedirectStrategy;
+import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.savedrequest.NullRequestCache;
@@ -36,7 +40,7 @@ class SecurityConfig {
 				.redirectionEndpoint(endpoint -> endpoint.baseUri("/api/login/oauth2/code/*"))
 				.userInfoEndpoint(endpoint -> endpoint.oidcUserService(adminOidcUserService))
 				.defaultSuccessUrl("/admin", true)
-				.failureUrl("/admin/acces-refuse"))
+				.failureHandler(endSessionAndRedirectTo("/admin/acces-refuse")))
 			.logout(logout -> logout
 				.logoutUrl("/api/auth/logout")
 				.deleteCookies("JSESSIONID")
@@ -52,6 +56,16 @@ class SecurityConfig {
 				.authenticationEntryPoint(problemDetailSecurityHandler)
 				.accessDeniedHandler(problemDetailSecurityHandler));
 		return http.build();
+	}
+
+	/** A refused login also ends the session of an earlier admin login in the same browser. */
+	private static AuthenticationFailureHandler endSessionAndRedirectTo(String url) {
+		SecurityContextLogoutHandler endSession = new SecurityContextLogoutHandler();
+		RedirectStrategy redirect = new DefaultRedirectStrategy();
+		return (request, response, exception) -> {
+			endSession.logout(request, response, null);
+			redirect.sendRedirect(request, response, url);
+		};
 	}
 
 	/** Readable by Angular (not HttpOnly), so it must not leave the site: Secure and SameSite=Strict. */
