@@ -149,6 +149,22 @@ Image Docker (`back/Dockerfile`) : build Maven multi-étapes, jar découpé en c
 - Flyway Community (gratuit) plutôt que Liquibase : migrations SQL simples, base PostgreSQL unique.
 - Erreurs API en ProblemDetail (RFC 9457) : format JSON standard (`type`, `title`, `status`, `detail`), identique pour toutes les erreurs. Ajout d'un code stable et d'un message en français, affichables en toast côté Angular.
 
+### Frontend
+
+- Angular 22 avec signals (`signal`, `computed`, `input()`, `output()`), composants standalone, sans NgModule.
+- Styles en SCSS uniquement, sans Tailwind ni framework CSS. Variables (couleurs, espacements, polices) dans `variables.scss`.
+- Composants d'interface faits maison (boutons, champs, barre de recherche, etc.), sans bibliothèque de composants.
+- Icônes : Lucide (licence ISC, libre).
+- Animations sobres et soignées, pensées comme une signature du site, sans effet gratuit :
+  - Entrées de page et de sections : fondu et léger glissement (reveal au scroll via `IntersectionObserver`, une seule fois par élément).
+  - Cartes de recettes : légère élévation et zoom de l'image au survol (et à l'appui sur mobile).
+  - Transitions entre pages : View Transitions API, avec repli sans effet si non supporté.
+  - Micro-interactions : états des boutons, champs et menu, avec des durées courtes (150 à 400 ms) et une courbe d'accélération douce.
+  - Animations en CSS/SCSS (`@keyframes`, `transition`), sans bibliothèque d'animation.
+  - `prefers-reduced-motion` respecté : sans mouvement, les éléments restent visibles immédiatement.
+  - Uniquement des propriétés peu coûteuses (`opacity`, `transform`), pour rester fluide sur téléphone.
+- Services HTTP générés depuis l'OpenAPI du backend.
+
 ### Dates
 
 - Stockage en UTC (`timestamptz` côté PostgreSQL, `Instant` côté Java). Affichage en heure de Paris (`Europe/Paris`) côté Angular, qui gère l'heure d'été et d'hiver.
