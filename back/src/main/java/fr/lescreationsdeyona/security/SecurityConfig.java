@@ -1,0 +1,64 @@
+package fr.lescreationsdeyona.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.savedrequest.NullRequestCache;
+
+/**
+ * Public read-only API, back-office API restricted to the admins, everything else denied.
+ * <p>
+ * Login flow: the Angular back-office sends the browser to {@code /api/oauth2/authorization/google};
+ * after Google, the admin lands on {@code /admin}, or on {@code /admin/acces-refuse} if refused.
+ */
+@Configuration(proxyBeanMethods = false)
+class SecurityConfig {
+
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity http, AdminOidcUserService adminOidcUserService,
+			ProblemDetailSecurityHandler problemDetailSecurityHandler) {
+		http.authorizeHttpRequests(requests -> requests
+				.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
+				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/recipe-suggestions",
+						"/api/categories/**", "/api/social-links/**")
+				.permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/docs/**", "/actuator/health/**").permitAll()
+				.requestMatchers("/error").permitAll()
+				.anyRequest().denyAll())
+			.oauth2Login(login -> login
+				.authorizationEndpoint(endpoint -> endpoint.baseUri("/api/oauth2/authorization"))
+				.redirectionEndpoint(endpoint -> endpoint.baseUri("/api/login/oauth2/code/*"))
+				.userInfoEndpoint(endpoint -> endpoint.oidcUserService(adminOidcUserService))
+				.defaultSuccessUrl("/admin", true)
+				.failureUrl("/admin/acces-refuse"))
+			.logout(logout -> logout
+				.logoutUrl("/api/auth/logout")
+				.deleteCookies("JSESSIONID")
+				.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
+			// XSRF-TOKEN cookie, sent back by Angular's HttpClient in the X-XSRF-TOKEN header. The token is
+			// deferred: only the back-office creates it (GET /api/admin/me), public visitors never get it.
+			.csrf(csrf -> csrf
+				.csrfTokenRepository(csrfTokenRepository())
+				.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+			// Login always lands on /admin: no need to remember the request, nor to open a session for it.
+			.requestCache(cache -> cache.requestCache(new NullRequestCache()))
+			.exceptionHandling(exceptions -> exceptions
+				.authenticationEntryPoint(problemDetailSecurityHandler)
+				.accessDeniedHandler(problemDetailSecurityHandler));
+		return http.build();
+	}
+
+	/** Readable by Angular (not HttpOnly), so it must not leave the site: Secure and SameSite=Strict. */
+	private static CookieCsrfTokenRepository csrfTokenRepository() {
+		CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+		repository.setCookieCustomizer(cookie -> cookie.secure(true).sameSite("Strict"));
+		return repository;
+	}
+
+}

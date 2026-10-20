@@ -80,8 +80,6 @@ public class Recipe {
 	@Column(updatable = false)
 	private Instant createdAt;
 
-	// Only bumped when the recipe row itself changes: the save use case must also touch it when
-	// only ingredients or steps change.
 	@LastModifiedDate
 	private Instant updatedAt;
 
