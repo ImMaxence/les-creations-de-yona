@@ -71,6 +71,26 @@ devops/    Docker Compose, configuration d'environnement
 ReadMe.md
 ```
 
+## Démarrage local
+
+Prérequis : Docker Desktop (Compose v2).
+
+```bash
+cd devops
+cp .env.example .env   # puis remplacer chaque valeur "change-me"
+docker compose up -d --wait
+```
+
+| Service | Image | Accès depuis la machine |
+| --- | --- | --- |
+| PostgreSQL | `postgres:18.6-alpine` | `localhost:5432` |
+| SeaweedFS (API S3) | `chrislusf/seaweedfs:4.48` (`weed mini`) | `http://localhost:8333` |
+
+- Ports exposés sur `127.0.0.1` uniquement, jamais sur le réseau local.
+- Base créée avec la collation ICU `fr-FR` (tri français des titres). Checksums de données activés (défaut de PostgreSQL 18).
+- Bucket `S3_BUCKET` créé au démarrage, privé : accès anonyme refusé, seuls les identifiants `S3_ACCESS_KEY` / `S3_SECRET_KEY` y accèdent. Pas de création automatique d'autres buckets, suppression d'un bucket non vide refusée. Télémétrie SeaweedFS désactivée.
+- Arrêt : `docker compose down`. Remise à zéro complète (supprime les données) : `docker compose down --volumes`.
+
 ## Modèle de données
 
 - `social_link` : platform (liste fixe : YouTube, TikTok, Instagram, extensible), url, position. Éditable depuis le back-office.
@@ -176,7 +196,7 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 
 ## Roadmap
 
-- [ ] devops : Docker Compose (PostgreSQL 18, SeaweedFS), `.env.example`
+- [x] devops : Docker Compose (PostgreSQL 18, SeaweedFS), `.env.example`
 - [ ] devops : Dockerfile du backend (avec client `pg_dump` 18) et du frontend
 - [ ] devops : déploiement sur Coolify (plus tard, une fois le local fonctionnel)
 - [ ] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
