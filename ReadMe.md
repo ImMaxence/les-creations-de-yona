@@ -103,6 +103,20 @@ cd back
 - Lit les identifiants de `devops/.env` (lancement depuis `back/`). En production, mêmes clés en variables d'environnement, plus `POSTGRES_HOST`.
 - Flyway applique les migrations de `back/src/main/resources/db/migration` au démarrage. Hibernate vérifie seulement que les entités correspondent au schéma (`ddl-auto: validate`).
 - Santé : `http://localhost:8080/actuator/health`.
+- Documentation de l'API : `http://localhost:8080/api/docs` (OpenAPI, lu par le front pour générer ses services) et `http://localhost:8080/api/docs/ui` (Swagger UI). Désactivable en production avec `API_DOCS_ENABLED=false`.
+- Connexion admin : client OAuth Google à créer (type « Application Web »), avec les URL de retour listées dans `devops/.env.example`. Renseigner `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` et `APP_ADMIN_EMAILS` dans `devops/.env`.
+
+### API
+
+| Accès | Routes |
+| --- | --- |
+| Public (GET) | `/api/recipes` (recherche, filtre `category`, pagination), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/social-links` |
+| Admin | `/api/admin/me`, `/api/admin/recipes`, `/api/admin/categories`, `/api/admin/ingredients`, `/api/admin/social-links` |
+| Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
+
+- Erreurs : ProblemDetail avec `code` stable (`ErrorCode`) et `detail` en français. Erreurs de validation listées dans `errors` (`field`, `message`).
+- Écritures admin : en-tête `X-XSRF-TOKEN` recopié du cookie `XSRF-TOKEN`, que `GET /api/admin/me` crée. Angular le fait automatiquement. Aucun cookie n'est posé pour un visiteur public.
+- Toute route non listée est refusée.
 
 ## Modèle de données
 
@@ -214,16 +228,17 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 - [ ] devops : déploiement sur Coolify (plus tard, une fois le local fonctionnel)
 - [x] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
 - [ ] back : service d'upload S3 (validation, resize, conversion)
-- [ ] back : auth Google avec allowlist `APP_ADMIN_EMAILS`, session
-- [ ] back : endpoints publics recettes et catégories
-- [ ] back : endpoint d'autocomplétion des titres
+- [x] back : auth Google avec allowlist `APP_ADMIN_EMAILS`, session
+- [x] back : endpoints publics recettes et catégories
+- [x] back : endpoint d'autocomplétion des titres
 - [ ] front : init Angular 22 (nettoyage des fichiers inutiles)
 - [ ] front : page d'accueil (recette à la une, à propos, 6 dernières recettes, catégories)
 - [ ] front : page recettes (filtre par catégorie, recherche)
 - [ ] front : page recette, navbar avec menu déroulant, footer, page 404
 - [ ] front : pages mentions légales et politique de confidentialité
-- [ ] back : ProblemDetail et springdoc-openapi exposé
-- [ ] back : API admin (recettes, catégories, ingrédients, réseaux sociaux, galerie images, sauvegarde ZIP)
+- [x] back : ProblemDetail et springdoc-openapi exposé
+- [x] back : API admin (recettes, catégories, ingrédients, réseaux sociaux)
+- [ ] back : API admin galerie images et sauvegarde ZIP
 - [ ] front : back-office (guard, intercepteur HTTP, formulaires)
 - [ ] front : génération des services depuis le openapi du backend
 - [ ] front : Angular SSR, meta tags, JSON-LD, sitemap
