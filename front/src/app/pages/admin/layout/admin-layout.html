@@ -1,0 +1,24 @@
+<div class="container admin">
+  <header class="admin__head">
+    <div>
+      <p class="eyebrow">Back-office</p>
+      <h1 class="admin__title">Bonjour {{ firstName() }}</h1>
+      <p class="admin__email">{{ email() }}</p>
+    </div>
+    <button yonaButton variant="secondary" type="button" (click)="signOut()">
+      <svg lucideLogOut></svg>
+      Se déconnecter
+    </button>
+  </header>
+
+  <nav class="admin__nav" aria-label="Sections du back-office">
+    <a routerLink="recettes" routerLinkActive="is-active"><svg lucideBookOpen [size]="18"></svg>Recettes</a>
+    <a routerLink="categories" routerLinkActive="is-active"><svg lucideTags [size]="18"></svg>Catégories</a>
+    <a routerLink="ingredients" routerLinkActive="is-active"><svg lucideCarrot [size]="18"></svg>Ingrédients</a>
+    <a routerLink="reseaux-sociaux" routerLinkActive="is-active"><svg lucideShare2 [size]="18"></svg>Réseaux sociaux</a>
+    <a routerLink="galerie" routerLinkActive="is-active"><svg lucideImages [size]="18"></svg>Galerie</a>
+    <a routerLink="sauvegarde" routerLinkActive="is-active"><svg lucideDatabaseBackup [size]="18"></svg>Sauvegarde</a>
+  </nav>
+
+  <router-outlet />
+</div>

@@ -21,10 +21,16 @@ Dernière mise à jour : 2026-10-21.
   - Header : image pleine largeur, titre et catégorie superposés sur un dégradé noir qui part du bas de l'image.
   - Ingrédients, étapes, date de dernière mise à jour.
 - Erreurs : 404 (URL inconnue, recette introuvable ou en brouillon) et erreur serveur.
+- Installer l'application (`/installer`) : bouton d'installation quand le navigateur le propose, guide pas à pas pour iPhone/iPad, Android et ordinateur.
+
+### Application installable (PWA)
+
+- Le site s'installe comme une application (écran d'accueil du téléphone, ordinateur), sans store : plein écran, icône dédiée.
+- Les pages et recettes déjà consultées restent lisibles hors connexion.
 
 ### Navigation
 
-- Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), administration (admins seulement).
+- Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), installer l'application, administration (admins seulement).
 - Menu mobile : bouton hamburger, panneau plein écran avec les mêmes entrées.
 - Footer sur toutes les pages : réseaux sociaux, mentions légales, politique de confidentialité.
 
@@ -38,8 +44,8 @@ Dernière mise à jour : 2026-10-21.
 
 ### Pages légales
 
-- Mentions légales et politique de confidentialité, obligatoires en v1, liées depuis le footer.
-- Contenu à rédiger avec l'auteur : éditeur, hébergement, sous-traitants (Cloudflare, Google pour la connexion admin), cookies utilisés.
+- Mentions légales (`/mentions-legales`) et politique de confidentialité (`/politique-de-confidentialite`), liées depuis le footer.
+- Éditeur et directeur de la publication : Maxence Bonnici, à titre non professionnel (adresse communiquée sur demande, art. 6, III, 2 LCEN). Hébergement : auto-hébergé à Aix-en-Provence, derrière Cloudflare. Contact et texte dans `front/src/app/pages/legal/`.
 
 ### SEO
 
@@ -131,7 +137,12 @@ npm run api:generate   # régénère le client API depuis http://localhost:8080/
   - `API_URL` : URL interne du backend (ex. `http://back:8080`). Le serveur SSR l'appelle directement, sans repasser par Cloudflare. Sans elle, il appelle l'origine publique du site.
   - `NG_ALLOWED_HOSTS` : hôtes acceptés en plus de `les-creations-de-yona.fr` (protection SSRF d'Angular), ex. `localhost` pour un test local.
   - `NG_TRUST_PROXY_HEADERS` : en-têtes du proxy à prendre en compte (`x-forwarded-host,x-forwarded-proto,x-forwarded-for`), seulement si le serveur n'est joignable qu'à travers ce proxy.
-- Cache HTTP : fichiers hashés (JS, CSS, polices) un an `immutable` ; fichiers de `public/` (favicon, photo de l'auteur) un jour, car leur nom ne change pas.
+- Cache HTTP : fichiers hashés (JS, CSS, polices) un an `immutable` ; fichiers de `public/` (favicon, photo de l'auteur) un jour, car leur nom ne change pas ; fichiers du service worker (`ngsw.json`, `ngsw-worker.js`, manifeste) jamais en cache, pour que les applications installées reçoivent les mises à jour.
+- Application installable (PWA) : service worker Angular (`ngsw-config.json`), actif seulement dans le build de production. Pour le tester en local : `npm run build`, puis `npm run serve:ssr` ou l'application complète dans Docker. Icônes dans `public/icons/`, manifeste dans `public/manifest.webmanifest`.
+  - Pages : toujours demandées au serveur (rendu SSR à jour), version hors ligne en secours.
+  - API publique (`/api/recipes`, catégories, réseaux sociaux) : réseau d'abord, cache de 30 jours si le réseau ne répond pas en 4 secondes.
+  - Images : servies depuis le cache (leur URL change à chaque nouvelle photo), 30 jours.
+  - `/api/admin/**` et la connexion Google ne passent jamais par le cache.
 
 Image Docker (`front/Dockerfile`) : build Node 24 multi-étapes, image finale sans `node_modules` (le serveur SSR embarque ses dépendances), utilisateur non root, health check sur `/healthz` (répond sans rendu Angular).
 
@@ -204,6 +215,8 @@ styles/        variables (couleurs, polices, breakpoints), reset, base typograph
 - Recherche : combobox ARIA (flèches, Entrée, Échap), suggestions dès 2 caractères, texte tapé mis en évidence sans tenir compte des accents. Filtres et pagination dans l'URL (`q`, `categorie`, `page`, `parPage`), donc partageables.
 - Page recette pensée pour cuisiner avec un téléphone : portions ajustables (quantités recalculées puis arrondies à des valeurs mesurables), ingrédients et étapes à cocher, écran maintenu allumé (Screen Wake Lock, proposé seulement si le navigateur le permet).
 - Étapes en Markdown rendues par `marked` (MIT), puis nettoyées par le sanitizer d'Angular.
+- Back-office (`/admin`) : rendu dans le navigateur uniquement (la session est un cookie), chargé à la demande, protégé par un guard qui renvoie vers la connexion Google sans session. Formulaires en Signal Forms (`@angular/forms/signals`) avec les mêmes règles que l'API, ingrédients et étapes réordonnables par glisser-déposer (`@angular/cdk/drag-drop`, MIT) ou par boutons pour le clavier. Erreurs de l'API affichées en toast avec leur message, confirmation avant suppression, alerte avant de quitter une recette non enregistrée.
+- Listes déroulantes : composant `yona-select` fait maison (pattern ARIA combobox), la liste native d'un `<select>` ne se stylant pas.
 
 ### Dates
 
@@ -217,7 +230,7 @@ styles/        variables (couleurs, polices, breakpoints), reset, base typograph
 - Session serveur (cookie HttpOnly, Secure, SameSite), expirée après 7 jours d'inactivité, plutôt que JWT. Sessions en mémoire, sans persistance : un redémarrage ou un redéploiement déconnecte l'admin, accepté. Bouton de déconnexion.
 - Autorisation par règles d'URL dans Spring Security : `/api/admin/**` réservé aux admins.
 - Pas de bouton de connexion sur le site public : l'admin se connecte uniquement via `/admin`.
-- Cookies : aucun cookie de suivi ni d'analyse. Cookies techniques seulement : session admin, CSRF, et éventuels cookies Cloudflare. Pas de bandeau si la configuration Spring est vérifiée. Mentions légales et politique de confidentialité à rédiger.
+- Cookies : aucun cookie de suivi ni d'analyse. Cookies techniques seulement, dispensés de consentement : session admin et CSRF (posés uniquement à la connexion d'un admin), et éventuellement `__cf_bm` de Cloudflare. Donc pas de bandeau cookies ; le détail est dans la politique de confidentialité.
 
 ### Recherche et pagination
 
@@ -303,11 +316,12 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 - [x] front : page recettes (filtre par catégorie, recherche)
 - [x] front : navbar avec menu déroulant, menu mobile, footer, pages 404 et erreur serveur
 - [x] front : page recette
-- [ ] front : pages mentions légales et politique de confidentialité
+- [x] front : pages mentions légales et politique de confidentialité
 - [x] back : ProblemDetail et springdoc-openapi exposé
 - [x] back : API admin (recettes, catégories, ingrédients, réseaux sociaux)
 - [x] back : API admin galerie images et sauvegarde ZIP
-- [ ] front : back-office (guard, intercepteur HTTP, formulaires)
+- [x] front : back-office (guard, intercepteur HTTP, formulaires)
+- [x] front : application installable (PWA), page « Installer l'application »
 - [x] front : génération des services depuis le openapi du backend
 - [x] front : Angular SSR, meta tags, JSON-LD
 - [ ] front : sitemap.xml
@@ -316,5 +330,5 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 ## Points ouverts
 
 - Déploiement Coolify : router `/api/*` vers le backend et le reste vers le front (comme `devops/Caddyfile`). Vérifier que le backend construit ses URL de retour Google en `https` derrière le proxy (en-têtes `X-Forwarded-*`).
-- Contenu des mentions légales et politique de confidentialité : à rédiger avec l'auteur, plus tard.
-- Cookies : vérifier la config Spring Security (cookie CSRF pour un visiteur anonyme) et les cookies Cloudflare éventuels, plus tard, avant rédaction.
+- Sécurité (voir `SECURITY-REVIEW.md`) : ajouter les en-têtes de sécurité au serveur SSR (CSP, `X-Frame-Options`, HSTS…) et désactiver la documentation de l'API en production, avant la mise en ligne.
+- Politique de confidentialité : elle annonce des journaux serveur conservés au plus 12 mois. Configurer la rotation des journaux (Docker, Coolify, Traefik) en conséquence.

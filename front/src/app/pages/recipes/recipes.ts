@@ -9,11 +9,12 @@ import { Button } from '../../shared/ui/button/button';
 import { Pagination } from '../../shared/ui/pagination/pagination';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
 import { SearchBox } from '../../shared/ui/search-box/search-box';
+import { Select, SelectOption } from '../../shared/ui/select/select';
 import { DEFAULT_PAGE_SIZE, PAGE_SIZES, RECIPES_QUERY, RecipesPageData } from './recipes.resolver';
 
 @Component({
   selector: 'yona-recipes',
-  imports: [RouterLink, LucideSearchX, Button, Pagination, RecipeCard, Reveal, SearchBox],
+  imports: [RouterLink, LucideSearchX, Button, Pagination, RecipeCard, Reveal, SearchBox, Select],
   templateUrl: './recipes.html',
   styleUrl: './recipes.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,7 +26,10 @@ export default class Recipes {
   private readonly router = inject(Router);
   protected readonly categories = inject(SiteData).categories;
   protected readonly recipesPath = RECIPES_PATH;
-  protected readonly pageSizes = PAGE_SIZES;
+  protected readonly pageSizeOptions: SelectOption<number>[] = PAGE_SIZES.map((size) => ({
+    value: size,
+    label: String(size),
+  }));
 
   protected readonly filters = computed(() => this.data().filters);
   protected readonly result = computed(() => this.data().result);
@@ -52,10 +56,9 @@ export default class Recipes {
     this.router.navigate(recipeLink({ slug: suggestion.slug, category: { slug: suggestion.categorySlug } }));
   }
 
-  protected changePageSize(event: Event): void {
-    const pageSize = Number((event.target as HTMLSelectElement).value);
+  protected changePageSize(pageSize: number | undefined): void {
     this.updateQuery({
-      [RECIPES_QUERY.pageSize]: pageSize === DEFAULT_PAGE_SIZE ? null : pageSize,
+      [RECIPES_QUERY.pageSize]: pageSize === DEFAULT_PAGE_SIZE ? null : (pageSize ?? null),
       [RECIPES_QUERY.page]: null,
     });
   }

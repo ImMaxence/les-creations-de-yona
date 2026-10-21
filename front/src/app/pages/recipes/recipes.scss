@@ -151,25 +151,9 @@
   gap: var(--space-3);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-}
 
-// Native select (accessible, and the phone's own picker), styled like the rest of the site
-.page-size__select {
-  min-height: 2.5rem;
-  padding: var(--space-2) var(--space-6) var(--space-2) var(--space-4);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-pill);
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%232e2420' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
-      no-repeat right var(--space-3) center,
-    var(--color-bg);
-  color: var(--color-text);
-  font-weight: 600;
-  cursor: pointer;
-  appearance: none;
-  transition: border-color var(--duration-base) var(--ease-out);
-
-  @include m.hover {
-    border-color: var(--color-text-muted);
+  yona-select {
+    color: var(--color-text);
+    font-size: var(--text-base);
   }
 }

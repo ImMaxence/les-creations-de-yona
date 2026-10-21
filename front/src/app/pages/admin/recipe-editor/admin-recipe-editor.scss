@@ -1,0 +1,158 @@
+@use 'mixins' as m;
+
+.editor {
+  display: grid;
+  gap: var(--space-5);
+  padding-bottom: var(--space-4);
+}
+
+.editor__title {
+  font-size: var(--text-xl);
+}
+
+.editor__grid {
+  display: grid;
+  gap: var(--space-4);
+
+  @include m.from(sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.editor__grid--three {
+  @include m.from(sm) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.editor__columns {
+  display: grid;
+  gap: var(--space-5);
+
+  @include m.from(lg) {
+    grid-template-columns: 1.4fr 1fr;
+    align-items: start;
+  }
+}
+
+yona-select {
+  display: block;
+}
+
+// Reorderable lines (ingredients, steps)
+.lines {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: 0 0 0 1px var(--color-line);
+
+  @include m.from(md) {
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+  }
+}
+
+.line__handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.line__fields {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.line__fields--ingredient {
+  grid-template-columns: 5rem 1fr;
+
+  @include m.from(md) {
+    grid-template-columns: 5.5rem 8rem 1fr;
+  }
+
+  .line__name {
+    grid-column: 1 / -1;
+
+    @include m.from(md) {
+      grid-column: auto;
+    }
+  }
+
+  .line__note,
+  yona-field-error {
+    grid-column: 1 / -1;
+  }
+}
+
+.line__number {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.line__duration {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+
+  .input {
+    width: 5.5rem;
+  }
+}
+
+.line__actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: var(--space-1);
+
+  @include m.from(md) {
+    grid-column: auto;
+    flex-direction: column;
+  }
+}
+
+// CDK drag and drop: the dragged copy and the gap it leaves
+.cdk-drag-preview {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drag-animating,
+.lines.cdk-drop-list-dragging .line:not(.cdk-drag-placeholder) {
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+// Save bar, always at hand at the bottom of the screen
+.editor__bar {
+  position: sticky;
+  bottom: var(--space-3);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-bg) 90%, transparent);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+  backdrop-filter: blur(10px);
+}

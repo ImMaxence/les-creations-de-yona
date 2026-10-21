@@ -1,0 +1,76 @@
+<article class="container legal">
+  <p class="eyebrow enter">Informations légales</p>
+  <h1 class="enter" style="--delay: 80ms">Mentions légales</h1>
+  <p class="legal__updated enter" style="--delay: 140ms">Dernière mise à jour : {{ updatedOn }}</p>
+
+  <div class="prose legal__body enter" style="--delay: 200ms">
+    <p>
+      Conformément à l'article 6 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans
+      l'économie numérique (LCEN), voici les informations relatives au site
+      <strong>les-creations-de-yona.fr</strong>.
+    </p>
+
+    <h2>Éditeur du site</h2>
+    <p>
+      Le site est édité à titre personnel et non professionnel par <strong>Maxence Bonnici</strong>,
+      particulier résidant en France.<br />
+      Contact : <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>
+    </p>
+    <p>
+      Comme le permet l'article 6, III, 2 de la LCEN pour un éditeur non professionnel, l'adresse
+      postale et le numéro de téléphone de l'éditeur ne sont pas publiés : ils sont communiqués sur
+      demande légitime, notamment aux autorités.
+    </p>
+
+    <h2>Directeur de la publication</h2>
+    <p>Maxence Bonnici.</p>
+
+    <h2>Contenus</h2>
+    <p>
+      Les recettes, textes et photographies publiés sur le site sont créés par Yona, autrice des
+      recettes.
+    </p>
+
+    <h2>Hébergement</h2>
+    <p>
+      Le site est auto-hébergé, sur un serveur personnel situé à Aix-en-Provence (France), par
+      Maxence Bonnici. Les coordonnées complètes de l'hébergeur sont communiquées sur demande à
+      l'adresse <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>.
+    </p>
+    <p>
+      Le trafic passe par le réseau de <strong>Cloudflare, Inc.</strong> (101 Townsend Street, San
+      Francisco, CA 94107, États-Unis), qui assure la protection du serveur et la mise en cache des
+      fichiers statiques.
+    </p>
+
+    <h2>Propriété intellectuelle</h2>
+    <p>
+      Les recettes, textes et photographies du site sont protégés par le droit d'auteur. Toute
+      reproduction, représentation ou diffusion, totale ou partielle, sans l'autorisation écrite de
+      leur autrice est interdite, sauf dans les limites prévues par la loi (courte citation avec
+      mention de la source, usage strictement privé).
+    </p>
+    <p>
+      Partager le lien d'une recette est bien sûr libre et bienvenu.
+    </p>
+
+    <h2>Crédits</h2>
+    <ul>
+      <li>Polices de caractères : Fraunces et Inter, sous licence SIL Open Font License.</li>
+      <li>Icônes : Lucide (licence ISC) et Simple Icons (licence CC0) pour les logos des réseaux sociaux.</li>
+    </ul>
+
+    <h2>Liens vers d'autres sites</h2>
+    <p>
+      Le site contient des liens vers des réseaux sociaux (Instagram, TikTok, YouTube). Ces sites
+      ont leurs propres conditions d'utilisation et politiques de confidentialité, sur lesquelles
+      l'éditeur n'a aucun contrôle.
+    </p>
+
+    <h2>Données personnelles</h2>
+    <p>
+      Le traitement des données personnelles et l'usage des cookies sont décrits dans la
+      <a [routerLink]="privacyPolicyPath">politique de confidentialité</a>.
+    </p>
+  </div>
+</article>

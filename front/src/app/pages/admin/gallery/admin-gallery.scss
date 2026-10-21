@@ -1,0 +1,45 @@
+@use 'mixins' as m;
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: 0 0 0 1px var(--color-line);
+}
+
+.tile__image {
+  aspect-ratio: 4 / 3;
+}
+
+.tile__info {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+}
+
+.tile__used {
+  overflow: hidden;
+  max-width: 100%;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile__delete {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background-color: color-mix(in srgb, var(--color-bg) 85%, transparent);
+  backdrop-filter: blur(4px);
+}

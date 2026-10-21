@@ -3,7 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideChefHat } from '@lucide/angular';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
-import { RECIPES_PATH } from '../../../shared/routing/links';
+import { INSTALL_PATH, RECIPES_PATH } from '../../../shared/routing/links';
 import { CategoryMenu } from '../category-menu/category-menu';
 import { MobileMenu } from '../mobile-menu/mobile-menu';
 
@@ -28,6 +28,7 @@ export class Header {
   protected readonly siteData = inject(SiteData);
   protected readonly adminSession = inject(AdminSession);
   protected readonly recipesPath = RECIPES_PATH;
+  protected readonly installPath = INSTALL_PATH;
 
   protected readonly scrolled = signal(false);
   /** Hidden while reading down the page, back as soon as the reader scrolls up. */

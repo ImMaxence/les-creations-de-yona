@@ -10,6 +10,15 @@ import { join } from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 /** Built files carry a content hash in their name (main-VZMLZXQS.js): a new version, a new name. */
 const HASHED_FILE = /-[\w-]{8}\.(?:js|css|woff2)$/;
+/** Service worker files: always checked again, so that installed apps get the new version. */
+const SERVICE_WORKER_FILE = /(?:ngsw\.json|ngsw-worker\.js|safety-worker\.js|manifest\.webmanifest)$/;
+
+function cacheControl(path: string): string {
+  if (SERVICE_WORKER_FILE.test(path)) {
+    return 'no-cache';
+  }
+  return HASHED_FILE.test(path) ? 'public, max-age=31536000, immutable' : 'public, max-age=86400';
+}
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
@@ -24,12 +33,7 @@ app.use(
   express.static(browserDistFolder, {
     index: false,
     redirect: false,
-    setHeaders: (res, path) => {
-      res.setHeader(
-        'Cache-Control',
-        HASHED_FILE.test(path) ? 'public, max-age=31536000, immutable' : 'public, max-age=86400',
-      );
-    },
+    setHeaders: (res, path) => res.setHeader('Cache-Control', cacheControl(path)),
   }),
 );
 

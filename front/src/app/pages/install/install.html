@@ -1,0 +1,121 @@
+<section class="container install">
+  <header class="install__head">
+    <img class="install__icon enter" src="icons/icon-maskable-192.png" width="96" height="96" alt="" />
+    <p class="eyebrow enter" style="--delay: 60ms">Application</p>
+    <h1 class="enter" style="--delay: 120ms">Installer l'application</h1>
+    <p class="install__lead enter" style="--delay: 180ms">
+      Ajoutez Les créations de Yona à votre écran d'accueil : elle s'ouvre en un geste, en plein
+      écran comme une vraie application, et garde les recettes déjà consultées pour les afficher
+      même sans connexion.
+    </p>
+
+    @if (installed()) {
+      <p class="install__status" animate.enter="install__status--enter">
+        <svg lucideCircleCheck [size]="20"></svg>
+        L'application est installée sur cet appareil.
+      </p>
+    } @else if (canPrompt()) {
+      <button yonaButton type="button" class="install__button" animate.enter="install__status--enter" (click)="install()">
+        <svg lucideDownload></svg>
+        Installer maintenant
+      </button>
+    }
+  </header>
+
+  <ul role="list" class="benefits enter" style="--delay: 240ms">
+    <li>
+      <svg lucideZap [size]="22" [strokeWidth]="1.75"></svg>
+      <strong>Rapide</strong>
+      <span>Un appui sur l'icône, et la recette s'affiche.</span>
+    </li>
+    <li>
+      <svg lucideWifiOff [size]="22" [strokeWidth]="1.75"></svg>
+      <strong>Hors connexion</strong>
+      <span>Les recettes déjà ouvertes restent lisibles en cuisine, même sans réseau.</span>
+    </li>
+    <li>
+      <svg lucideSmartphone [size]="22" [strokeWidth]="1.75"></svg>
+      <strong>Plein écran</strong>
+      <span>Sans barre d'adresse, toute la place pour la recette.</span>
+    </li>
+  </ul>
+
+  <section class="guide" aria-labelledby="guide-title">
+    <h2 id="guide-title">Comment faire ?</h2>
+    <p class="guide__intro">
+      Gratuit, sans passer par un store, et sans aucun compte à créer. Choisissez votre appareil :
+    </p>
+
+    <div class="tabs" role="tablist" aria-label="Votre appareil">
+      @for (tab of tabs; track tab.id; let i = $index) {
+        <button
+          #tabButton
+          type="button"
+          role="tab"
+          class="tab"
+          [id]="'tab-' + tab.id"
+          [attr.aria-selected]="activeTab() === tab.id"
+          [attr.aria-controls]="'panel-' + tab.id"
+          [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
+          (click)="activeTab.set(tab.id)"
+          (keydown)="onTabKeydown($event, i)"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+
+    <div class="panel" role="tabpanel" [id]="'panel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+      @switch (activeTab()) {
+        @case ('ios') {
+          <ol role="list" class="steps" animate.enter="steps--enter">
+            <li>Ouvrez ce site dans <strong>Safari</strong> (Chrome et Edge fonctionnent aussi depuis iOS 16.4).</li>
+            <li>
+              Touchez le bouton <strong>Partager</strong>
+              <span class="key"><svg lucideShare [size]="16"></svg></span>, en bas de l'écran sur iPhone,
+              en haut à droite sur iPad.
+            </li>
+            <li>
+              Faites défiler la liste et touchez <strong>Sur l'écran d'accueil</strong>
+              <span class="key"><svg lucideSquarePlus [size]="16"></svg></span>.
+            </li>
+            <li>Touchez <strong>Ajouter</strong> : l'icône apparaît sur votre écran d'accueil.</li>
+          </ol>
+        }
+        @case ('android') {
+          <ol role="list" class="steps" animate.enter="steps--enter">
+            <li>Ouvrez ce site dans <strong>Chrome</strong> (ou Samsung Internet, Edge).</li>
+            <li>
+              Touchez le menu <span class="key"><svg lucideEllipsisVertical [size]="16"></svg></span> en
+              haut à droite.
+            </li>
+            <li>Touchez <strong>Installer l'application</strong> (ou <strong>Ajouter à l'écran d'accueil</strong>).</li>
+            <li>Confirmez avec <strong>Installer</strong> : l'application rejoint vos autres applications.</li>
+          </ol>
+          <p class="panel__note">Si le bouton « Installer maintenant » apparaît en haut de cette page, il fait tout en un seul geste.</p>
+        }
+        @case ('desktop') {
+          <ol role="list" class="steps" animate.enter="steps--enter">
+            <li>
+              Avec <strong>Chrome</strong> ou <strong>Edge</strong>, cliquez sur l'icône d'installation
+              <span class="key"><svg lucideMonitorDown [size]="16"></svg></span> à droite de la barre
+              d'adresse.
+            </li>
+            <li>
+              Pas d'icône ? Ouvrez le menu <span class="key"><svg lucideEllipsisVertical [size]="16"></svg></span>
+              et cherchez <strong>Installer</strong>.
+            </li>
+            <li>Sur Mac avec <strong>Safari</strong> : menu <strong>Fichier</strong>, puis <strong>Ajouter au Dock</strong>.</li>
+            <li>L'application s'ouvre dans sa propre fenêtre, et se lance ensuite comme les autres.</li>
+          </ol>
+          <p class="panel__note">Firefox ne permet pas encore d'installer un site sur ordinateur.</p>
+        }
+      }
+    </div>
+
+    <p class="guide__uninstall">
+      Pour la retirer, faites comme pour n'importe quelle application : appui long sur l'icône puis
+      « Supprimer », ou désinstallation depuis le navigateur sur ordinateur.
+    </p>
+  </section>
+</section>

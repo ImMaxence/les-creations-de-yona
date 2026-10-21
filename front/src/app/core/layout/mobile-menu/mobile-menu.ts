@@ -6,20 +6,34 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationSkipped,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+} from '@angular/router';
 import { LucideMenu, LucideX } from '@lucide/angular';
+import { filter } from 'rxjs';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
-import { RECIPES_PATH, categoryQueryParams } from '../../../shared/routing/links';
+import { INSTALL_PATH, RECIPES_PATH, categoryQueryParams } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
+import { NavigationProgress } from '../navigation-progress/navigation-progress';
 
 /**
  * Phone menu: a full screen native <dialog>. showModal() brings focus trapping, Escape to close
  * and an inert page behind, without any extra code.
+ *
+ * After a tap on a link, the menu stays open while the next page loads, then fades out on top
+ * of it: the visitor never sees the previous page flash in between.
  */
 @Component({
   selector: 'yona-mobile-menu',
-  imports: [RouterLink, RouterLinkActive, LucideMenu, LucideX, BrandIcon],
+  imports: [RouterLink, RouterLinkActive, LucideMenu, LucideX, BrandIcon, NavigationProgress],
   templateUrl: './mobile-menu.html',
   styleUrl: './mobile-menu.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,11 +42,28 @@ export class MobileMenu {
   protected readonly siteData = inject(SiteData);
   protected readonly adminSession = inject(AdminSession);
   protected readonly recipesPath = RECIPES_PATH;
+  protected readonly installPath = INSTALL_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;
   protected readonly socialPlatformLabel = socialPlatformLabel;
 
   protected readonly isOpen = signal(false);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+
+  constructor() {
+    inject(Router)
+      .events.pipe(
+        filter(
+          (event) =>
+            event instanceof NavigationEnd ||
+            event instanceof NavigationCancel ||
+            event instanceof NavigationError ||
+            // A link to the current page: no navigation happens
+            event instanceof NavigationSkipped,
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.close());
+  }
 
   protected open(): void {
     this.dialog().nativeElement.showModal();
@@ -40,7 +71,9 @@ export class MobileMenu {
   }
 
   protected close(): void {
-    this.dialog().nativeElement.close();
+    if (this.isOpen()) {
+      this.dialog().nativeElement.close();
+    }
   }
 
   /** Called on every close, including Escape. */

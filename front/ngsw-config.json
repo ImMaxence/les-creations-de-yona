@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.csr.html",
+  "navigationRequestStrategy": "freshness",
+  "navigationUrls": ["/**", "!/**/*.*", "!/**/*__*", "!/**/*__*/**", "!/api/**"],
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": ["/favicon.svg", "/index.csr.html", "/manifest.webmanifest", "/*.css", "/*.js"]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/media/**", "/icons/**", "/images/**"]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "public-content",
+      "urls": [
+        "/api/recipes",
+        "/api/recipes/**",
+        "/api/featured-recipe",
+        "/api/categories",
+        "/api/social-links"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "timeout": "4s",
+        "maxAge": "30d",
+        "maxSize": 200
+      }
+    },
+    {
+      "name": "recipe-images",
+      "urls": ["/api/images/**"],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxAge": "30d",
+        "maxSize": 300
+      }
+    }
+  ]
+}

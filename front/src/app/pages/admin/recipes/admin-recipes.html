@@ -1,0 +1,71 @@
+<section class="admin-section" aria-labelledby="recipes-title">
+  <div class="admin-section__head">
+    <h2 id="recipes-title">Recettes</h2>
+    <a yonaButton routerLink="nouvelle"><svg lucidePlus></svg>Nouvelle recette</a>
+  </div>
+
+  <div class="admin-toolbar">
+    <input
+      type="search"
+      class="input"
+      placeholder="Rechercher un titre…"
+      aria-label="Rechercher un titre"
+      [value]="search()"
+      (input)="onSearch($event)"
+    />
+    <yona-select label="Statut" [options]="statusOptions" [(value)]="status" />
+  </div>
+
+  @if (recipes.value(); as result) {
+    @if (result.content.length) {
+      <ul role="list" class="admin-list">
+        @for (recipe of result.content; track recipe.id) {
+          <li class="admin-row">
+            <div class="admin-row__main">
+              <span class="admin-row__title">{{ recipe.title }}</span>
+              <span class="admin-row__meta">
+                <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'">
+                  {{ recipe.status === 'PUBLISHED' ? 'Publiée' : 'Brouillon' }}
+                </span>
+                @if (recipe.featured) {
+                  <span class="badge badge--featured"><svg lucideStar [size]="12"></svg>À la une</span>
+                }
+                <span>{{ recipe.category.name }}</span>
+                <span>· modifiée le {{ recipe.updatedAt | parisDate }}</span>
+              </span>
+            </div>
+            <div class="admin-row__actions">
+              @if (recipe.status === 'PUBLISHED') {
+                <a class="icon-button" target="_blank" [routerLink]="publicLink(recipe)" [attr.aria-label]="'Voir « ' + recipe.title + ' » sur le site'">
+                  <svg lucideExternalLink [size]="18"></svg>
+                </a>
+              }
+              <a class="icon-button" [routerLink]="[recipe.id]" [attr.aria-label]="'Modifier « ' + recipe.title + ' »'">
+                <svg lucidePencil [size]="18"></svg>
+              </a>
+              <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer « ' + recipe.title + ' »'" (click)="remove(recipe)">
+                <svg lucideTrash2 [size]="18"></svg>
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+
+      @if (totalPages() > 1) {
+        <div class="admin-toolbar admin-more">
+          <button type="button" class="icon-button" aria-label="Page précédente" [disabled]="page() === 0" (click)="page.set(page() - 1)">
+            <svg lucideChevronLeft [size]="18"></svg>
+          </button>
+          <span>Page {{ page() + 1 }} sur {{ totalPages() }}</span>
+          <button type="button" class="icon-button" aria-label="Page suivante" [disabled]="page() + 1 >= totalPages()" (click)="page.set(page() + 1)">
+            <svg lucideChevronRight [size]="18"></svg>
+          </button>
+        </div>
+      }
+    } @else {
+      <p class="admin-empty">Aucune recette ne correspond.</p>
+    }
+  } @else if (recipes.isLoading()) {
+    <p class="admin-empty">Chargement…</p>
+  }
+</section>

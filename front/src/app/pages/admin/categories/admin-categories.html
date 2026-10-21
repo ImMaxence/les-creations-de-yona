@@ -1,0 +1,58 @@
+<section class="admin-section" aria-labelledby="categories-title">
+  <div class="admin-section__head">
+    <h2 id="categories-title">Catégories</h2>
+  </div>
+
+  <form class="admin-toolbar" (submit)="create($event)">
+    <input
+      class="input"
+      placeholder="Nouvelle catégorie"
+      aria-label="Nom de la nouvelle catégorie"
+      [maxLength]="maxNameLength"
+      [value]="newName()"
+      (input)="readNewName($event)"
+    />
+    <button yonaButton type="submit"><svg lucidePlus></svg>Ajouter</button>
+  </form>
+
+  @if (categories().length) {
+    <ul role="list" class="cards">
+      @for (category of categories(); track category.id) {
+        <li class="admin-panel card">
+          <yona-image-upload
+            [imageId]="category.imageId"
+            [busy]="uploadingId() === category.id"
+            (fileChosen)="uploadImage(category, $event)"
+          />
+          @if (editingId() === category.id) {
+            <form class="card__rename" (submit)="$event.preventDefault(); rename(category)">
+              <input
+                class="input"
+                aria-label="Nouveau nom"
+                [maxLength]="maxNameLength"
+                [value]="editedName()"
+                (input)="readEditedName($event)"
+              />
+              <button type="submit" class="icon-button" aria-label="Valider le nom"><svg lucideCheck [size]="18"></svg></button>
+              <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg lucideX [size]="18"></svg></button>
+            </form>
+          } @else {
+            <div class="card__name">
+              <strong>{{ category.name }}</strong>
+              <div class="admin-row__actions">
+                <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + category.name" (click)="startRename(category)">
+                  <svg lucidePencil [size]="18"></svg>
+                </button>
+                <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + category.name" (click)="remove(category)">
+                  <svg lucideTrash2 [size]="18"></svg>
+                </button>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="admin-empty">Aucune catégorie pour le moment.</p>
+  }
+</section>

@@ -23,8 +23,8 @@
     }
 
     <nav class="footer__legal" aria-label="Informations légales">
-      <a routerLink="/mentions-legales">Mentions légales</a>
-      <a routerLink="/politique-de-confidentialite">Politique de confidentialité</a>
+      <a [routerLink]="legalNoticePath">Mentions légales</a>
+      <a [routerLink]="privacyPolicyPath">Politique de confidentialité</a>
     </nav>
 
     <p class="footer__copyright">© {{ year }} Les créations de Yona</p>

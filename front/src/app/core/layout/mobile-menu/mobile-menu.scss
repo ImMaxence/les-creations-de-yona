@@ -17,28 +17,35 @@
 
 // Open and close are animated in CSS only: @starting-style for the entry, and
 // allow-discrete so that display and the top layer wait for the exit to finish.
+// Geometry and layout set explicitly: while it fades out, the dialog is no longer :modal and the
+// browser's own dialog styles (absolute, fit-content) would otherwise shrink it into a narrow column.
 .menu {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: none;
   height: 100dvh;
   max-height: none;
+  margin: 0;
   padding: var(--space-4) var(--container-padding) var(--space-6);
   border: 0;
   background-color: var(--color-bg);
   color: var(--color-text);
   opacity: 0;
-  transform: translateY(-1.5rem);
   transition:
     opacity var(--duration-slow) var(--ease-out),
     transform var(--duration-slow) var(--ease-out),
     overlay var(--duration-slow) allow-discrete,
     display var(--duration-slow) allow-discrete;
 
+  &:not([open]) {
+    display: none;
+  }
+
   &[open] {
-    display: flex;
-    flex-direction: column;
     opacity: 1;
-    transform: none;
 
     @starting-style {
       opacity: 0;

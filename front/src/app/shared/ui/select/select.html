@@ -1,0 +1,48 @@
+<button
+  #trigger
+  type="button"
+  class="trigger"
+  role="combobox"
+  aria-haspopup="listbox"
+  [attr.aria-label]="label()"
+  [attr.aria-expanded]="open()"
+  [attr.aria-controls]="id + '-list'"
+  [attr.aria-activedescendant]="open() && activeIndex() >= 0 ? id + '-' + activeIndex() : null"
+  [class.is-open]="open()"
+  [disabled]="disabled()"
+  (click)="toggle()"
+  (keydown)="onKeydown($event)"
+>
+  <span class="trigger__label">{{ selectedLabel() }}</span>
+  <svg lucideChevronDown class="trigger__chevron" [size]="16"></svg>
+</button>
+
+@if (open()) {
+  <ul
+    role="listbox"
+    class="list"
+    [id]="id + '-list'"
+    [attr.aria-label]="label()"
+    animate.enter="list--enter"
+    animate.leave="list--leave"
+  >
+    @for (option of options(); track $index; let i = $index) {
+      <!-- mousedown is cancelled so that the button keeps the focus -->
+      <li
+        role="option"
+        class="option"
+        [id]="id + '-' + i"
+        [class.is-active]="i === activeIndex()"
+        [attr.aria-selected]="i === selectedIndex()"
+        (mousedown)="$event.preventDefault()"
+        (mouseenter)="activeIndex.set(i)"
+        (click)="choose(i)"
+      >
+        {{ option.label }}
+        @if (i === selectedIndex()) {
+          <svg lucideCheck class="option__check" [size]="16" [strokeWidth]="2.5"></svg>
+        }
+      </li>
+    }
+  </ul>
+}

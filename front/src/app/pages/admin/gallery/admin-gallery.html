@@ -1,0 +1,44 @@
+<section class="admin-section" aria-labelledby="gallery-title">
+  <div class="admin-section__head">
+    <h2 id="gallery-title">Galerie</h2>
+    <yona-select label="Type d'image" [options]="kindOptions" [(value)]="kind" />
+  </div>
+
+  @if (images.value(); as result) {
+    @if (result.content.length) {
+      <ul role="list" class="gallery">
+        @for (image of result.content; track image.id) {
+          <li class="tile">
+            <yona-cover-image class="tile__image" [imageId]="image.id" [alt]="image.usedBy ?? ''" sizes="16rem" />
+            <div class="tile__info">
+              <span class="badge" [class.badge--published]="image.usedBy">
+                {{ image.kind === 'RECIPE' ? 'Recette' : 'Catégorie' }}
+              </span>
+              <span class="tile__used">{{ image.usedBy ?? 'Non utilisée' }}</span>
+              <span class="admin-row__meta">Ajoutée le {{ image.createdAt | parisDate }}</span>
+            </div>
+            <button type="button" class="icon-button icon-button--danger tile__delete" aria-label="Supprimer l'image" (click)="remove(image)">
+              <svg lucideTrash2 [size]="18"></svg>
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (totalPages() > 1) {
+        <div class="admin-toolbar admin-more">
+          <button type="button" class="icon-button" aria-label="Page précédente" [disabled]="page() === 0" (click)="page.set(page() - 1)">
+            <svg lucideChevronLeft [size]="18"></svg>
+          </button>
+          <span>Page {{ page() + 1 }} sur {{ totalPages() }}</span>
+          <button type="button" class="icon-button" aria-label="Page suivante" [disabled]="page() + 1 >= totalPages()" (click)="page.set(page() + 1)">
+            <svg lucideChevronRight [size]="18"></svg>
+          </button>
+        </div>
+      }
+    } @else {
+      <p class="admin-empty">Aucune image.</p>
+    }
+  } @else if (images.isLoading()) {
+    <p class="admin-empty">Chargement…</p>
+  }
+</section>

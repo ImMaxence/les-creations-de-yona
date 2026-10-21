@@ -1,0 +1,67 @@
+@use 'mixins' as m;
+
+:host {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.preview {
+  position: relative;
+  width: 100%;
+  max-width: 20rem;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+
+  img,
+  yona-cover-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.preview__busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background-color: rgb(251 246 238 / 70%);
+  color: var(--color-accent);
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-bg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: border-color var(--duration-base) var(--ease-out);
+
+  @include m.hover {
+    border-color: var(--color-text-muted);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}

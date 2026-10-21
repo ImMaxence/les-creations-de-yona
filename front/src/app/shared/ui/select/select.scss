@@ -1,0 +1,119 @@
+@use 'mixins' as m;
+
+:host {
+  position: relative;
+  display: inline-block;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-bg);
+  font-weight: 600;
+  transition:
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+
+  @include m.hover {
+    border-color: var(--color-text-muted);
+  }
+
+  &.is-open,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 15%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.trigger__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trigger__chevron {
+  flex: none;
+  color: var(--color-text-muted);
+  transition: transform var(--duration-base) var(--ease-out);
+
+  .is-open & {
+    transform: rotate(180deg);
+  }
+}
+
+.list {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: 20;
+  display: grid;
+  min-width: 100%;
+  max-height: 18rem;
+  margin: 0;
+  padding: var(--space-1);
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+  list-style: none;
+  transform-origin: top center;
+
+  :host(.opens-up) & {
+    top: auto;
+    bottom: calc(100% + var(--space-2));
+    transform-origin: bottom center;
+  }
+}
+
+.list--enter {
+  animation: list-in var(--duration-base) var(--ease-out);
+}
+
+.list--leave {
+  animation: list-in var(--duration-fast) var(--ease-in-out) reverse both;
+}
+
+@keyframes list-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+
+  &.is-active {
+    background-color: var(--color-surface);
+  }
+
+  &[aria-selected='true'] {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+}
+
+.option__check {
+  flex: none;
+}

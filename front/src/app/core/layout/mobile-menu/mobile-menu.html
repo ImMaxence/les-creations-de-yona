@@ -10,6 +10,8 @@
 </button>
 
 <dialog #dialog class="menu" aria-label="Menu" (close)="onClosed()">
+  <!-- The page's own progress bar is hidden behind the menu while the next page loads -->
+  <yona-navigation-progress />
   <div class="menu__top">
     <span class="menu__title">Menu</span>
     <button type="button" class="toggle" aria-label="Fermer le menu" (click)="close()">
@@ -24,16 +26,18 @@
           routerLink="/"
           routerLinkActive="is-active"
           [routerLinkActiveOptions]="{ exact: true }"
-          (click)="close()"
           >Accueil</a
         >
       </li>
       <li class="stagger" style="--i: 1">
-        <a [routerLink]="recipesPath" routerLinkActive="is-active" (click)="close()">Recettes</a>
+        <a [routerLink]="recipesPath" routerLinkActive="is-active">Recettes</a>
+      </li>
+      <li class="stagger" style="--i: 2">
+        <a [routerLink]="installPath" routerLinkActive="is-active">Installer l'application</a>
       </li>
       @if (adminSession.isAdmin()) {
         <li class="stagger" style="--i: 2">
-          <a routerLink="/admin" routerLinkActive="is-active" (click)="close()">Administration</a>
+          <a routerLink="/admin" routerLinkActive="is-active">Administration</a>
         </li>
       }
     </ul>
@@ -47,7 +51,6 @@
               class="chip"
               [routerLink]="recipesPath"
               [queryParams]="categoryQueryParams(category)"
-              (click)="close()"
               >{{ category.name }}</a
             >
           </li>

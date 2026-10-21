@@ -156,14 +156,13 @@
     background-color: var(--color-surface);
   }
 
-  // Sage ring, slightly offset: a hand-made touch
+  // Sage ring around the photo
   &::before {
     content: '';
     position: absolute;
     inset: -0.5rem;
     border: 2px solid var(--color-decor);
     border-radius: 50%;
-    translate: 0.35rem 0.25rem;
     opacity: 0.6;
   }
 

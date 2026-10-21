@@ -86,14 +86,16 @@
       @if (result().totalPages > 1) {
         <yona-pagination [page]="filters().page" [totalPages]="result().totalPages" />
       }
-      <label class="page-size">
-        <span>Recettes par page</span>
-        <select class="page-size__select" (change)="changePageSize($event)">
-          @for (size of pageSizes; track size) {
-            <option [value]="size" [selected]="size === filters().pageSize">{{ size }}</option>
-          }
-        </select>
-      </label>
+      <div class="page-size">
+        <span aria-hidden="true">Recettes par page</span>
+        <yona-select
+          label="Recettes par page"
+          direction="up"
+          [options]="pageSizeOptions"
+          [value]="filters().pageSize"
+          (valueChange)="changePageSize($event)"
+        />
+      </div>
     </footer>
   }
 </section>

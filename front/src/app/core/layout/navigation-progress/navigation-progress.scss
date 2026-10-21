@@ -5,6 +5,8 @@
   height: 3px;
   background-color: var(--color-accent);
   transform-origin: left;
+  // Own transition layer: otherwise it would slide with the page during view transitions
+  view-transition-name: navigation-progress;
   // Slows down as it goes, never reaches the end on its own
   animation:
     fade-in var(--duration-fast) linear 150ms both,

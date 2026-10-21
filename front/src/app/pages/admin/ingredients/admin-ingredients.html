@@ -1,0 +1,52 @@
+<section class="admin-section" aria-labelledby="ingredients-title">
+  <div class="admin-section__head">
+    <h2 id="ingredients-title">Ingrédients</h2>
+  </div>
+  <p class="field__hint">
+    Les ingrédients sont créés depuis les recettes. Un renommage s'applique à toutes les recettes qui
+    l'utilisent.
+  </p>
+
+  <div class="admin-toolbar">
+    <input
+      type="search"
+      class="input"
+      placeholder="Rechercher un ingrédient…"
+      aria-label="Rechercher un ingrédient"
+      [value]="search()"
+      (input)="onSearch($event)"
+    />
+  </div>
+
+  @if (ingredients.value(); as list) {
+    @if (list.length) {
+      <ul role="list" class="admin-list">
+        @for (ingredient of list; track ingredient.id) {
+          <li class="admin-row">
+            @if (editingId() === ingredient.id) {
+              <form class="admin-row__main admin-toolbar" (submit)="$event.preventDefault(); rename(ingredient)">
+                <input class="input" aria-label="Nouveau nom" [maxLength]="maxNameLength" [value]="editedName()" (input)="readEditedName($event)" />
+                <button type="submit" class="icon-button" aria-label="Valider le nom"><svg lucideCheck [size]="18"></svg></button>
+                <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg lucideX [size]="18"></svg></button>
+              </form>
+            } @else {
+              <span class="admin-row__main admin-row__title">{{ ingredient.name }}</span>
+              <div class="admin-row__actions">
+                <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + ingredient.name" (click)="startRename(ingredient)">
+                  <svg lucidePencil [size]="18"></svg>
+                </button>
+                <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + ingredient.name" (click)="remove(ingredient)">
+                  <svg lucideTrash2 [size]="18"></svg>
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="admin-empty">Aucun ingrédient ne correspond.</p>
+    }
+  } @else if (ingredients.isLoading()) {
+    <p class="admin-empty">Chargement…</p>
+  }
+</section>

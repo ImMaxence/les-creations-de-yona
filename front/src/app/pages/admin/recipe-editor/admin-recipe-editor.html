@@ -1,0 +1,142 @@
+<form class="editor" novalidate (submit)="$event.preventDefault(); save()">
+  <div class="admin-section__head">
+    <h2>{{ isNew() ? 'Nouvelle recette' : draft().title || 'Recette sans titre' }}</h2>
+    @if (publicLink(); as link) {
+      <a yonaButton variant="ghost" target="_blank" [routerLink]="link"><svg lucideExternalLink></svg>Voir sur le site</a>
+    }
+  </div>
+
+  <section class="admin-panel" aria-labelledby="info-title">
+    <h3 id="info-title" class="editor__title">Informations</h3>
+    <div class="field">
+      <label class="field__label" for="title">Titre</label>
+      <input id="title" class="input" [formField]="recipeForm.title" [attr.aria-invalid]="isInvalid(recipeForm.title)" />
+      <yona-field-error [field]="recipeForm.title" />
+    </div>
+    <div class="editor__grid">
+      <div class="field">
+        <span class="field__label" id="category-label">Catégorie</span>
+        <yona-select label="Catégorie" placeholder="Choisir une catégorie…" [options]="categoryOptions()" [formField]="recipeForm.categoryId" />
+        <yona-field-error [field]="recipeForm.categoryId" />
+      </div>
+      <div class="field">
+        <span class="field__label">Statut</span>
+        <yona-select label="Statut" [options]="statusOptions" [formField]="recipeForm.status" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="checkbox-field">
+        <input type="checkbox" [formField]="recipeForm.featured" />
+        Mettre à la une sur l'accueil
+      </label>
+      <span class="field__hint">Une seule recette à la une : cocher celle-ci retire l'ancienne.</span>
+      <yona-field-error [field]="recipeForm.featured" />
+    </div>
+    <div class="field">
+      <label class="field__label" for="intro">Introduction</label>
+      <textarea id="intro" class="input" rows="3" [formField]="recipeForm.intro"></textarea>
+      <span class="field__hint">Quelques phrases d'accroche, reprises par Google sous le titre.</span>
+      <yona-field-error [field]="recipeForm.intro" />
+    </div>
+  </section>
+
+  <div class="editor__columns">
+    <section class="admin-panel" aria-labelledby="times-title">
+      <h3 id="times-title" class="editor__title">Portions et temps</h3>
+      <div class="editor__grid editor__grid--three">
+        <div class="field">
+          <label class="field__label" for="servings">Portions</label>
+          <input id="servings" type="number" inputmode="numeric" class="input" [formField]="recipeForm.servings" />
+          <yona-field-error [field]="recipeForm.servings" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="prep">Préparation (min)</label>
+          <input id="prep" type="number" inputmode="numeric" class="input" [formField]="recipeForm.prepMinutes" />
+          <yona-field-error [field]="recipeForm.prepMinutes" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="cook">Cuisson (min)</label>
+          <input id="cook" type="number" inputmode="numeric" class="input" [formField]="recipeForm.cookMinutes" />
+          <yona-field-error [field]="recipeForm.cookMinutes" />
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="photo-title">
+      <h3 id="photo-title" class="editor__title">Photo</h3>
+      <yona-image-upload [imageId]="imageId()" [previewUrl]="pendingPreview()" [busy]="uploading()" (fileChosen)="onImageChosen($event)" />
+    </section>
+  </div>
+
+  <section class="admin-panel" aria-labelledby="ingredients-title">
+    <h3 id="ingredients-title" class="editor__title">Ingrédients</h3>
+    <ol class="lines" cdkDropList (cdkDropListDropped)="drop('ingredients', $event)">
+      @for (line of draft().ingredients; track $index; let i = $index, last = $last) {
+        <li class="line" cdkDrag cdkDragLockAxis="y">
+          <button type="button" class="icon-button line__handle" cdkDragHandle aria-label="Glisser pour déplacer">
+            <svg lucideGripVertical [size]="18"></svg>
+          </button>
+          <div class="line__fields line__fields--ingredient">
+            <input type="number" inputmode="decimal" step="any" class="input" placeholder="Qté" aria-label="Quantité" [formField]="recipeForm.ingredients[i].quantity" />
+            <input class="input" placeholder="Unité (g, cl…)" aria-label="Unité" [formField]="recipeForm.ingredients[i].unit" />
+            <input class="input line__name" placeholder="Ingrédient" aria-label="Ingrédient" list="known-ingredients" [formField]="recipeForm.ingredients[i].name" [attr.aria-invalid]="isInvalid(recipeForm.ingredients[i].name)" />
+            <input class="input line__note" placeholder="Précision (facultatif)" aria-label="Précision" [formField]="recipeForm.ingredients[i].note" />
+            <yona-field-error [field]="recipeForm.ingredients[i].name" />
+            <yona-field-error [field]="recipeForm.ingredients[i].quantity" />
+          </div>
+          <div class="line__actions">
+            <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="move('ingredients', i, i - 1)"><svg lucideArrowUp [size]="16"></svg></button>
+            <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="move('ingredients', i, i + 1)"><svg lucideArrowDown [size]="16"></svg></button>
+            <button type="button" class="icon-button icon-button--danger" aria-label="Retirer l'ingrédient" (click)="remove('ingredients', i)"><svg lucideTrash2 [size]="16"></svg></button>
+          </div>
+        </li>
+      }
+    </ol>
+    <yona-field-error [field]="recipeForm.ingredients" />
+    <button yonaButton variant="secondary" type="button" (click)="add('ingredients')"><svg lucidePlus></svg>Ajouter un ingrédient</button>
+    <datalist id="known-ingredients">
+      @for (ingredient of knownIngredients.value() ?? []; track ingredient.id) {
+        <option [value]="ingredient.name"></option>
+      }
+    </datalist>
+  </section>
+
+  <section class="admin-panel" aria-labelledby="steps-title">
+    <h3 id="steps-title" class="editor__title">Étapes</h3>
+    <p class="field__hint">Markdown accepté : **gras**, *italique*, listes avec « - » en début de ligne.</p>
+    <ol class="lines" cdkDropList (cdkDropListDropped)="drop('steps', $event)">
+      @for (step of draft().steps; track $index; let i = $index, last = $last) {
+        <li class="line" cdkDrag cdkDragLockAxis="y">
+          <button type="button" class="icon-button line__handle" cdkDragHandle aria-label="Glisser pour déplacer">
+            <svg lucideGripVertical [size]="18"></svg>
+          </button>
+          <div class="line__fields">
+            <span class="line__number">Étape {{ i + 1 }}</span>
+            <textarea class="input" rows="3" [attr.aria-label]="'Étape ' + (i + 1)" [formField]="recipeForm.steps[i].description" [attr.aria-invalid]="isInvalid(recipeForm.steps[i].description)"></textarea>
+            <label class="line__duration">
+              Durée
+              <input type="number" inputmode="numeric" class="input" placeholder="—" [formField]="recipeForm.steps[i].durationMinutes" />
+              min <span class="field__hint">(facultatif)</span>
+            </label>
+            <yona-field-error [field]="recipeForm.steps[i].description" />
+            <yona-field-error [field]="recipeForm.steps[i].durationMinutes" />
+          </div>
+          <div class="line__actions">
+            <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="move('steps', i, i - 1)"><svg lucideArrowUp [size]="16"></svg></button>
+            <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="move('steps', i, i + 1)"><svg lucideArrowDown [size]="16"></svg></button>
+            <button type="button" class="icon-button icon-button--danger" aria-label="Retirer l'étape" (click)="remove('steps', i)"><svg lucideTrash2 [size]="16"></svg></button>
+          </div>
+        </li>
+      }
+    </ol>
+    <yona-field-error [field]="recipeForm.steps" />
+    <button yonaButton variant="secondary" type="button" (click)="add('steps')"><svg lucidePlus></svg>Ajouter une étape</button>
+  </section>
+
+  <div class="editor__bar">
+    <a yonaButton variant="ghost" routerLink="/admin/recettes">Retour à la liste</a>
+    <button yonaButton type="submit" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : isNew() ? 'Créer la recette' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>
