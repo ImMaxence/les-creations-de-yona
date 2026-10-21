@@ -143,6 +143,7 @@ npm run api:generate   # régénère le client API depuis http://localhost:8080/
   - API publique (`/api/recipes`, catégories, réseaux sociaux) : réseau d'abord, cache de 30 jours si le réseau ne répond pas en 4 secondes.
   - Images : servies depuis le cache (leur URL change à chaque nouvelle photo), 30 jours.
   - `/api/admin/**` et la connexion Google ne passent jamais par le cache.
+  - Une page rendue par le serveur reçoit ses données dans le HTML, sans appel à l'API : ces requêtes sont rejouées une fois en arrière-plan après le chargement (`core/pwa/offline-warmup.ts`), pour que la page soit aussi lisible hors connexion.
 
 Image Docker (`front/Dockerfile`) : build Node 24 multi-étapes, image finale sans `node_modules` (le serveur SSR embarque ses dépendances), utilisateur non root, health check sur `/healthz` (répond sans rendu Angular).
 

@@ -28,6 +28,7 @@ import { routes } from './app.routes';
 import { adminErrorsInterceptor } from './core/api/admin-errors.interceptor';
 import { provideApiConfiguration } from './core/api/generated/api-configuration';
 import { InstallPrompt } from './core/pwa/install-prompt';
+import { offlineWarmupInterceptor } from './core/pwa/offline-warmup';
 import { SeoStrategy } from './core/seo/seo-strategy';
 import { SiteData } from './core/site/site-data';
 
@@ -71,7 +72,7 @@ export const appConfig: ApplicationConfig = {
       ),
     ),
     { provide: TitleStrategy, useExisting: SeoStrategy },
-    provideHttpClient(withFetch(), withInterceptors([adminErrorsInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([adminErrorsInterceptor, offlineWarmupInterceptor])),
     provideClientHydration(
       withEventReplay(),
       // Spring Security marks every API response no-store. Here it only concerns public data,
