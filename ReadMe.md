@@ -2,7 +2,7 @@
 
 Blog de cuisine : recettes, catégories, recherche. Projet monorepo.
 
-Dernière mise à jour : 2026-10-20.
+Dernière mise à jour : 2026-10-21.
 
 ## Périmètre v1
 
@@ -112,6 +112,32 @@ cd back
 
 Image Docker (`back/Dockerfile`) : build Maven multi-étapes, jar découpé en couches Spring Boot, JRE Temurin 25 sur Ubuntu 26.04 avec `postgresql-client-18`, utilisateur non root, health check sur `/actuator/health`.
 
+### Frontend
+
+Prérequis : Node.js 24 LTS. Le backend doit tourner (`http://localhost:8080`, en local ou dans Docker).
+
+```bash
+cd front
+npm ci
+npm start              # http://localhost:4200, avec SSR, /api relayé vers le backend (proxy.conf.json)
+npm run build          # build de production (navigateur + serveur SSR) dans dist/
+npm run api:generate   # régénère le client API depuis http://localhost:8080/api/docs
+```
+
+- Client API généré par `ng-openapi-gen` dans `src/app/core/api/generated` (versionné, ne pas modifier à la main). À régénérer après chaque changement d'API du backend.
+- Serveur SSR de production : `npm run serve:ssr` (port `PORT`, 4000 par défaut). Variables :
+  - `API_URL` : URL interne du backend (ex. `http://back:8080`). Le serveur SSR l'appelle directement, sans repasser par Cloudflare. Sans elle, il appelle l'origine publique du site.
+  - `NG_ALLOWED_HOSTS` : hôtes acceptés en plus de `les-creations-de-yona.fr` (protection SSRF d'Angular), ex. `localhost` pour un test local.
+
+Organisation de `front/src` :
+
+```
+app/core/      services globaux, layout (header, menus, footer), client API généré
+app/shared/    composants d'interface (bouton, carte de recette, image), directive de reveal, utilitaires
+app/pages/     une page par route, chargée à la demande
+styles/        variables (couleurs, polices, breakpoints), reset, base typographique, animations
+```
+
 ### API
 
 | Accès | Routes |
@@ -163,7 +189,11 @@ Image Docker (`back/Dockerfile`) : build Maven multi-étapes, jar découpé en c
   - Animations en CSS/SCSS (`@keyframes`, `transition`), sans bibliothèque d'animation.
   - `prefers-reduced-motion` respecté : sans mouvement, les éléments restent visibles immédiatement.
   - Uniquement des propriétés peu coûteuses (`opacity`, `transform`), pour rester fluide sur téléphone.
-- Services HTTP générés depuis l'OpenAPI du backend.
+- Services HTTP générés depuis l'OpenAPI du backend. Les DTO marquent les champs facultatifs avec `@Nullable` (JSpecify) : tous les autres sont déclarés obligatoires dans l'OpenAPI, donc non optionnels en TypeScript.
+- Données d'une page chargées par un resolver de route, avant l'affichage. Données communes (catégories, réseaux sociaux) chargées une fois au démarrage. Le serveur et le navigateur affichent donc la même page, et l'hydratation réutilise les réponses du serveur (cache de transfert HTTP) sans rappeler l'API.
+- Styles : les composants lisent les propriétés CSS (`var(--color-accent)`) émises depuis `styles/_variables.scss`. Sass ne sert qu'aux breakpoints et mixins.
+- Icônes de marque (Instagram, TikTok, YouTube) : Simple Icons (CC0), Lucide n'en fournissant pas.
+- API indisponible : page d'erreur (HTTP 503) en conservant l'URL demandée. URL inconnue : page 404 avec un vrai statut 404.
 
 ### Dates
 
@@ -258,21 +288,23 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 - [x] back : auth Google avec allowlist `APP_ADMIN_EMAILS`, session
 - [x] back : endpoints publics recettes et catégories
 - [x] back : endpoint d'autocomplétion des titres
-- [ ] front : init Angular 22 (nettoyage des fichiers inutiles)
-- [ ] front : page d'accueil (recette à la une, à propos, 6 dernières recettes, catégories)
+- [x] front : init Angular 22 (nettoyage des fichiers inutiles)
+- [x] front : page d'accueil (recette à la une, à propos, 6 dernières recettes, catégories)
 - [ ] front : page recettes (filtre par catégorie, recherche)
-- [ ] front : page recette, navbar avec menu déroulant, footer, page 404
+- [x] front : navbar avec menu déroulant, menu mobile, footer, pages 404 et erreur serveur
+- [ ] front : page recette
 - [ ] front : pages mentions légales et politique de confidentialité
 - [x] back : ProblemDetail et springdoc-openapi exposé
 - [x] back : API admin (recettes, catégories, ingrédients, réseaux sociaux)
 - [x] back : API admin galerie images et sauvegarde ZIP
 - [ ] front : back-office (guard, intercepteur HTTP, formulaires)
-- [ ] front : génération des services depuis le openapi du backend
-- [ ] front : Angular SSR, meta tags, JSON-LD, sitemap
+- [x] front : génération des services depuis le openapi du backend
+- [ ] front : Angular SSR, meta tags, JSON-LD, sitemap (SSR en place, reste meta tags, JSON-LD, sitemap)
 - [ ] docs : procédure de restauration (dump PostgreSQL et S3)
 
 ## Points ouverts
 
-- Photo de l'auteur : à fournir, en dur dans le projet Angular.
+- Photo de l'auteur : à fournir, en dur dans le projet Angular (un monogramme « Y » la remplace en attendant).
+- Texte « À propos » de l'accueil : texte provisoire, à remplacer par celui de l'auteur.
 - Contenu des mentions légales et politique de confidentialité : à rédiger avec l'auteur, plus tard.
 - Cookies : vérifier la config Spring Security (cookie CSRF pour un visiteur anonyme) et les cookies Cloudflare éventuels, plus tard, avant rédaction.

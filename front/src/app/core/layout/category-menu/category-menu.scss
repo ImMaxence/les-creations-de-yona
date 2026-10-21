@@ -35,7 +35,7 @@
 .panel {
   position: absolute;
   top: calc(100% + var(--space-2));
-  left: 50%;
+  right: 0;
   width: max-content;
   min-width: 16rem;
   max-width: 32rem;
@@ -43,8 +43,7 @@
   border-radius: var(--radius-md);
   background-color: var(--color-bg);
   box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
-  translate: -50% 0;
-  transform-origin: top center;
+  transform-origin: top right;
 }
 
 .panel--enter {

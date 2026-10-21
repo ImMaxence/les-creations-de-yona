@@ -5,7 +5,11 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import {
+  provideClientHydration,
+  withEventReplay,
+  withHttpTransferCacheOptions,
+} from '@angular/platform-browser';
 import {
   RedirectCommand,
   Router,
@@ -37,7 +41,12 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: TitleStrategy, useExisting: PageTitleStrategy },
     provideHttpClient(withFetch()),
-    provideClientHydration(withEventReplay()),
+    provideClientHydration(
+      withEventReplay(),
+      // Spring Security marks every API response no-store. Here it only concerns public data,
+      // fetched by the server without cookies: the browser reuses it instead of fetching it again.
+      withHttpTransferCacheOptions({ includeNonCacheableRequests: true }),
+    ),
     // Same origin as the site: the API is served under /api
     provideApiConfiguration(''),
     provideAppInitializer(() => inject(SiteData).load()),
