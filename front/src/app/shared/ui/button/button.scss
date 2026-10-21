@@ -1,0 +1,76 @@
+@use 'mixins' as m;
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.75rem; // touch target
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  @include m.hover {
+    background-color: var(--color-accent-strong);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+
+    svg:last-child {
+      transform: translateX(3px);
+    }
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.button--secondary {
+  background-color: transparent;
+  border-color: var(--color-line);
+  color: var(--color-text);
+
+  @include m.hover {
+    background-color: var(--color-surface);
+    border-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.button--ghost {
+  background-color: transparent;
+  color: var(--color-accent);
+  padding-inline: var(--space-2);
+
+  @include m.hover {
+    background-color: transparent;
+    color: var(--color-accent-strong);
+    box-shadow: none;
+    transform: none;
+  }
+}

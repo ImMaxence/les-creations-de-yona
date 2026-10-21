@@ -1,0 +1,277 @@
+@use 'mixins' as m;
+
+:host {
+  display: grid;
+  gap: var(--space-8);
+  padding-top: var(--space-4);
+
+  @include m.from(md) {
+    gap: var(--space-9);
+    padding-top: var(--space-6);
+  }
+}
+
+// Featured recipe -------------------------------------------------------------
+
+.hero__card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  color: var(--color-on-accent);
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  // Clips the zoomed image to the rounded corners in Safari
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+
+  @include m.from(sm) {
+    aspect-ratio: 4 / 3;
+  }
+
+  @include m.from(lg) {
+    aspect-ratio: 21 / 10;
+  }
+
+  @include m.hover {
+    .hero__image {
+      --cover-scale: 1.03;
+    }
+
+    .hero__cta svg {
+      transform: translateX(4px);
+    }
+  }
+}
+
+.hero__image {
+  position: absolute;
+  inset: 0;
+  // The photo settles in slowly while the text rises
+  animation: settle 1.8s var(--ease-out) both;
+}
+
+// Black gradient from the bottom, so the text reads on any photo
+.hero__content {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-5) var(--space-5);
+  background: linear-gradient(to top, rgb(20 14 12 / 82%), rgb(20 14 12 / 45%) 55%, transparent);
+
+  @include m.from(md) {
+    padding: var(--space-9) var(--space-7) var(--space-6);
+  }
+}
+
+.hero__eyebrow {
+  color: var(--color-on-accent);
+  opacity: 0.9;
+}
+
+.hero__title {
+  max-width: 22ch;
+  font-size: var(--text-3xl);
+  text-shadow: 0 1px 12px rgb(0 0 0 / 25%);
+}
+
+.hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-2);
+}
+
+.hero__chip {
+  background-color: rgb(251 246 238 / 18%);
+  backdrop-filter: blur(6px);
+}
+
+.hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+
+  svg {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+}
+
+.hero__welcome {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  text-align: center;
+}
+
+.hero__welcome-title {
+  font-size: var(--text-3xl);
+}
+
+// About -----------------------------------------------------------------------
+
+.about {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  text-align: center;
+
+  @include m.from(md) {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--space-7);
+    max-width: 52rem;
+    text-align: start;
+    justify-items: start;
+  }
+
+  h2 {
+    margin-block: var(--space-1) var(--space-3);
+    font-size: var(--text-2xl);
+  }
+
+  p:last-child {
+    color: var(--color-text-muted);
+  }
+}
+
+// Placeholder until the author's photo is added to the project
+.about__portrait {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 9rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: var(--color-surface);
+
+  // Sage ring, slightly offset: a hand-made touch
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -0.5rem;
+    border: 2px solid var(--color-decor);
+    border-radius: 50%;
+    translate: 0.35rem 0.25rem;
+    opacity: 0.6;
+  }
+
+  @include m.from(md) {
+    width: 11rem;
+  }
+}
+
+.about__monogram {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+// Latest recipes --------------------------------------------------------------
+
+.recipe-grid {
+  display: grid;
+  gap: var(--space-5);
+
+  @include m.from(sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include m.from(lg) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-6);
+  }
+}
+
+.latest__more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}
+
+.empty {
+  color: var(--color-text-muted);
+}
+
+// Categories ------------------------------------------------------------------
+
+// Phones: a horizontal rail that peeks at the next category. Larger screens: a grid.
+.category-rail {
+  display: grid;
+  grid-auto-columns: 44%;
+  grid-auto-flow: column;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-inline: max(var(--container-padding), (100% - var(--container-width)) / 2);
+  padding-bottom: var(--space-2);
+  scroll-padding-inline: max(var(--container-padding), (100% - var(--container-width)) / 2);
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+
+  > li {
+    scroll-snap-align: start;
+  }
+
+  @include m.from(md) {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-5);
+    overflow: visible;
+  }
+}
+
+.category {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-md);
+  color: var(--color-on-accent);
+  text-decoration: none;
+  isolation: isolate;
+  transition: transform var(--duration-slow) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(20 14 12 / 70%), transparent 60%);
+  }
+
+  @include m.hover {
+    transform: translateY(-4px);
+
+    .category__image {
+      --cover-scale: 1.06;
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.category__image {
+  position: absolute;
+  inset: 0;
+}
+
+.category__name {
+  position: absolute;
+  inset: auto var(--space-4) var(--space-4);
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: 1.2;
+}

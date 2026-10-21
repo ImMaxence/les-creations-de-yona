@@ -1,0 +1,65 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: 0 0 0 1px var(--color-line);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform var(--duration-slow) var(--ease-out),
+    box-shadow var(--duration-slow) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+
+  @include m.hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+
+    .card__image {
+      --cover-scale: 1.05;
+    }
+
+    .card__title {
+      color: var(--color-accent);
+    }
+  }
+
+  // Touch feedback: a short press-in on phones
+  &:active {
+    transform: scale(0.985);
+  }
+}
+
+.card__image {
+  aspect-ratio: 4 / 3;
+}
+
+.card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.card__title {
+  font-size: var(--text-xl);
+  transition: color var(--duration-base) var(--ease-out);
+  @include m.line-clamp(2);
+}
+
+.card__date {
+  margin-top: auto;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

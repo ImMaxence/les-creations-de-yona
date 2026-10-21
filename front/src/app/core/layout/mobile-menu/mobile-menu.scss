@@ -1,0 +1,131 @@
+@use 'mixins' as m;
+
+.toggle {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-pill);
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    transform: scale(0.92);
+    background-color: var(--color-surface);
+  }
+}
+
+// Open and close are animated in CSS only: @starting-style for the entry, and
+// allow-discrete so that display and the top layer wait for the exit to finish.
+.menu {
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  padding: var(--space-4) var(--container-padding) var(--space-6);
+  border: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  opacity: 0;
+  transform: translateY(-1.5rem);
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out),
+    overlay var(--duration-slow) allow-discrete,
+    display var(--duration-slow) allow-discrete;
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+    opacity: 1;
+    transform: none;
+
+    @starting-style {
+      opacity: 0;
+      transform: translateY(-1.5rem);
+    }
+  }
+
+  &::backdrop {
+    background-color: transparent;
+  }
+}
+
+// Entries arrive one after the other, once the panel is in place
+.menu[open] .stagger {
+  animation: rise var(--duration-reveal) var(--ease-out) calc(120ms + var(--i) * 50ms) both;
+}
+
+.menu__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.menu__title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.menu__links {
+  display: grid;
+  gap: var(--space-2);
+
+  a {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: color var(--duration-base) var(--ease-out);
+
+    &.is-active {
+      color: var(--color-accent);
+    }
+  }
+}
+
+.menu__subtitle {
+  margin-top: var(--space-7);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.menu__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+
+  .chip {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+}
+
+.menu__socials {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-6);
+
+  a {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface);
+  }
+}

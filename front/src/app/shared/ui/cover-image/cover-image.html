@@ -1,0 +1,7 @@
+@if (imageId(); as id) {
+  <img [ngSrc]="id" ngSrcset="800w, 1600w" [sizes]="sizes()" [alt]="alt()" [priority]="priority()" fill />
+} @else {
+  <div class="placeholder" aria-hidden="true">
+    <svg lucideCookingPot [strokeWidth]="1.25"></svg>
+  </div>
+}

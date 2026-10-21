@@ -1,0 +1,61 @@
+// Shared by the 404 and server error pages
+.error-page {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  max-width: 36rem;
+  padding-block: var(--space-9) var(--space-7);
+  text-align: center;
+
+  h1 {
+    font-size: var(--text-3xl);
+  }
+}
+
+.error-page__icon {
+  display: grid;
+  place-items: center;
+  width: 7rem;
+  height: 7rem;
+  margin-bottom: var(--space-3);
+  border-radius: 50%;
+  background-color: var(--color-surface);
+  color: var(--color-accent);
+
+  svg {
+    animation: wobble 3.2s var(--ease-in-out) 900ms infinite;
+  }
+}
+
+// A gentle, rare tilt: the page feels alive without drawing attention
+@keyframes wobble {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0);
+  }
+
+  78% {
+    transform: rotate(-9deg);
+  }
+
+  86% {
+    transform: rotate(6deg);
+  }
+
+  93% {
+    transform: rotate(-3deg);
+  }
+}
+
+.error-page__text {
+  color: var(--color-text-muted);
+}
+
+.error-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

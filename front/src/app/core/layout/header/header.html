@@ -1,0 +1,35 @@
+<div class="container bar">
+  <a routerLink="/" class="brand" aria-label="Les créations de Yona, accueil">
+    <span class="brand__mark" aria-hidden="true">
+      <svg lucideChefHat [size]="20" [strokeWidth]="1.75"></svg>
+    </span>
+    <span class="brand__name" aria-hidden="true">Les créations <em>de Yona</em></span>
+  </a>
+
+  <nav class="nav" aria-label="Navigation principale">
+    <ul role="list" class="nav__list">
+      <li>
+        <a
+          class="nav__link"
+          routerLink="/"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          >Accueil</a
+        >
+      </li>
+      <li>
+        <a class="nav__link" [routerLink]="recipesPath" routerLinkActive="is-active">Recettes</a>
+      </li>
+      <li>
+        <yona-category-menu [categories]="siteData.categories()" />
+      </li>
+      @if (adminSession.isAdmin()) {
+        <li>
+          <a class="nav__link" routerLink="/admin" routerLinkActive="is-active">Administration</a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <yona-mobile-menu class="mobile-menu" />
+</div>

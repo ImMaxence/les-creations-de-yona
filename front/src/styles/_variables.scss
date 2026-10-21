@@ -1,0 +1,34 @@
+// Design tokens: the single place for colors, fonts, spacing and motion.
+// Only Sass variables here (no CSS output), so any component can @use this file.
+// At runtime, components read the CSS custom properties emitted by _root.scss.
+
+// Brand palette (ReadMe, "Charte graphique")
+$cream: #fbf6ee;
+$sand: #efe4d2;
+$espresso: #2e2420;
+$terracotta: #b5532e;
+$sage: #7d8f69;
+
+$terracotta-dark: #96421f; // hover and pressed states
+$espresso-muted: #6c635e; // secondary text, 5.5:1 on cream
+$line: rgb(46 36 32 / 12%);
+
+// Typography
+$font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+$font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+// Breakpoints, mobile first: styles target phones, then grow from these widths
+$breakpoints: (
+  sm: 40rem,
+  md: 48rem,
+  lg: 64rem,
+  xl: 80rem,
+);
+
+// Motion
+$ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+$ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+$duration-fast: 150ms;
+$duration-base: 250ms;
+$duration-slow: 400ms;
+$duration-reveal: 700ms;

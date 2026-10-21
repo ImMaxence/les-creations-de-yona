@@ -1,0 +1,45 @@
+@use 'sass:map';
+@use 'variables' as v;
+
+// Media query from a breakpoint upwards: @include from(md) { ... }
+@mixin from($breakpoint) {
+  @media (width >= map.get(v.$breakpoints, $breakpoint)) {
+    @content;
+  }
+}
+
+@mixin below($breakpoint) {
+  @media (width < map.get(v.$breakpoints, $breakpoint)) {
+    @content;
+  }
+}
+
+// Hover effects only on devices that really hover, so taps do not leave a stuck hover state
+@mixin hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @content;
+    }
+  }
+}
+
+@mixin focus-ring {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@mixin line-clamp($lines) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

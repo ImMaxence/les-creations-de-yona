@@ -71,6 +71,8 @@ app:
     pg-dump: ${PG_DUMP_PATH:pg_dump}
 
 springdoc:
+  # Without it, responses are documented as */* and the generated front client reads them as Blob.
+  default-produces-media-type: application/json
   api-docs:
     # Read by the front to generate its services; can be turned off in production.
     enabled: ${API_DOCS_ENABLED:true}

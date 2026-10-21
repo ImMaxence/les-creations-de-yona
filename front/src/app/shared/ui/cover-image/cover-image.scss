@@ -1,0 +1,32 @@
+:host {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background-color: var(--color-surface);
+}
+
+img {
+  object-fit: cover;
+  transform: scale(var(--cover-scale, 1));
+  transition: transform var(--duration-reveal) var(--ease-out);
+}
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-decor);
+  background:
+    radial-gradient(circle at 30% 20%, rgb(255 255 255 / 45%), transparent 55%),
+    radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--color-decor) 18%, transparent), transparent 50%),
+    var(--color-surface);
+  transform: scale(var(--cover-scale, 1));
+  transition: transform var(--duration-reveal) var(--ease-out);
+
+  svg {
+    width: clamp(2.5rem, 22%, 5rem);
+    height: auto;
+    opacity: 0.8;
+  }
+}

@@ -1,0 +1,75 @@
+<button
+  type="button"
+  class="toggle"
+  aria-label="Ouvrir le menu"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="isOpen()"
+  (click)="open()"
+>
+  <svg lucideMenu [size]="24"></svg>
+</button>
+
+<dialog #dialog class="menu" aria-label="Menu" (close)="onClosed()">
+  <div class="menu__top">
+    <span class="menu__title">Menu</span>
+    <button type="button" class="toggle" aria-label="Fermer le menu" (click)="close()">
+      <svg lucideX [size]="24"></svg>
+    </button>
+  </div>
+
+  <nav class="menu__nav" aria-label="Navigation principale">
+    <ul role="list" class="menu__links">
+      <li class="stagger" style="--i: 0">
+        <a
+          routerLink="/"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="close()"
+          >Accueil</a
+        >
+      </li>
+      <li class="stagger" style="--i: 1">
+        <a [routerLink]="recipesPath" routerLinkActive="is-active" (click)="close()">Recettes</a>
+      </li>
+      @if (adminSession.isAdmin()) {
+        <li class="stagger" style="--i: 2">
+          <a routerLink="/admin" routerLinkActive="is-active" (click)="close()">Administration</a>
+        </li>
+      }
+    </ul>
+
+    @if (siteData.categories().length) {
+      <p class="menu__subtitle stagger" style="--i: 3">Catégories</p>
+      <ul role="list" class="menu__categories stagger" style="--i: 4">
+        @for (category of siteData.categories(); track category.id) {
+          <li>
+            <a
+              class="chip"
+              [routerLink]="recipesPath"
+              [queryParams]="categoryQueryParams(category)"
+              (click)="close()"
+              >{{ category.name }}</a
+            >
+          </li>
+        }
+      </ul>
+    }
+  </nav>
+
+  @if (siteData.socialLinks().length) {
+    <ul role="list" class="menu__socials stagger" style="--i: 5">
+      @for (link of siteData.socialLinks(); track link.platform) {
+        <li>
+          <a
+            [href]="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="socialPlatformLabel(link.platform)"
+          >
+            <yona-brand-icon [platform]="link.platform" [size]="22" />
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</dialog>

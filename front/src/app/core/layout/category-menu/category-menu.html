@@ -1,0 +1,36 @@
+<button
+  type="button"
+  class="trigger"
+  aria-controls="category-menu"
+  [attr.aria-expanded]="open()"
+  [class.is-open]="open()"
+  (click)="toggle()"
+>
+  Catégories
+  <svg lucideChevronDown class="trigger__chevron" [size]="16"></svg>
+</button>
+
+@if (open()) {
+  <div id="category-menu" class="panel" animate.enter="panel--enter" animate.leave="panel--leave">
+    <ul role="list" class="panel__list">
+      @for (category of categories(); track category.id; let i = $index) {
+        <li [style.--i]="i">
+          <a
+            class="panel__link"
+            [routerLink]="recipesPath"
+            [queryParams]="categoryQueryParams(category)"
+            (click)="close()"
+          >
+            {{ category.name }}
+          </a>
+        </li>
+      } @empty {
+        <li class="panel__empty">Les catégories arrivent bientôt.</li>
+      }
+    </ul>
+    <a class="panel__all" [routerLink]="recipesPath" (click)="close()">
+      Toutes les recettes
+      <svg lucideArrowRight [size]="16"></svg>
+    </a>
+  </div>
+}

@@ -1,0 +1,32 @@
+<footer class="footer">
+  <div class="container footer__inner" yonaReveal>
+    <div class="footer__brand">
+      <p class="footer__name">Les créations <em>de Yona</em></p>
+      <p class="footer__tagline">Des recettes maison, à partager sans modération.</p>
+    </div>
+
+    @if (siteData.socialLinks().length) {
+      <ul role="list" class="footer__socials">
+        @for (link of siteData.socialLinks(); track link.platform) {
+          <li>
+            <a
+              [href]="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="socialPlatformLabel(link.platform)"
+            >
+              <yona-brand-icon [platform]="link.platform" />
+            </a>
+          </li>
+        }
+      </ul>
+    }
+
+    <nav class="footer__legal" aria-label="Informations légales">
+      <a routerLink="/mentions-legales">Mentions légales</a>
+      <a routerLink="/politique-de-confidentialite">Politique de confidentialité</a>
+    </nav>
+
+    <p class="footer__copyright">© {{ year }} Les créations de Yona</p>
+  </div>
+</footer>

@@ -1,0 +1,90 @@
+<h1 class="visually-hidden">Les créations de Yona, recettes maison</h1>
+
+<section class="container hero" aria-label="Recette à la une">
+  @if (data().featured; as featured) {
+    <a class="hero__card" [routerLink]="featuredLink()">
+      <yona-cover-image
+        class="hero__image"
+        [imageId]="featured.imageId"
+        [alt]="featured.title"
+        sizes="(width >= 72rem) 72rem, 100vw"
+        priority
+      />
+      <div class="hero__content">
+        <p class="eyebrow hero__eyebrow enter" style="--delay: 150ms">À la une</p>
+        <h2 class="hero__title enter" style="--delay: 230ms">{{ featured.title }}</h2>
+        <div class="hero__meta enter" style="--delay: 310ms">
+          <span class="chip hero__chip">{{ featured.category.name }}</span>
+          <span class="hero__cta">Voir la recette <svg lucideArrowRight [size]="18"></svg></span>
+        </div>
+      </div>
+    </a>
+  } @else {
+    <div class="hero__welcome">
+      <p class="eyebrow enter">Bienvenue</p>
+      <h2 class="hero__welcome-title enter" style="--delay: 80ms">Les créations de Yona</h2>
+      <p class="enter" style="--delay: 160ms">Les premières recettes sortent bientôt du four.</p>
+    </div>
+  }
+</section>
+
+<section class="container about" yonaReveal aria-labelledby="about-title">
+  <div class="about__portrait" aria-hidden="true">
+    <span class="about__monogram">Y</span>
+  </div>
+  <div class="about__text">
+    <p class="eyebrow">À propos</p>
+    <h2 id="about-title">Bienvenue dans ma cuisine</h2>
+    <p>
+      Ici, je partage les recettes que j'aime préparer et partager : des plats simples et de saison,
+      des douceurs pour toutes les occasions, et quelques classiques revisités. Toutes sont testées à
+      la maison, avec gourmandise.
+    </p>
+  </div>
+</section>
+
+<section class="container latest" aria-labelledby="latest-title">
+  <header class="section-head" yonaReveal>
+    <p class="eyebrow">Fraîchement publiées</p>
+    <h2 id="latest-title">Dernières recettes</h2>
+  </header>
+
+  @if (data().latest.length) {
+    <ul role="list" class="recipe-grid">
+      @for (recipe of data().latest; track recipe.slug; let i = $index) {
+        <li yonaReveal [revealDelay]="(i % 3) * 90">
+          <yona-recipe-card [recipe]="recipe" />
+        </li>
+      }
+    </ul>
+    <div class="latest__more" yonaReveal>
+      <a yonaButton [routerLink]="recipesPath">Voir plus de recettes <svg lucideArrowRight></svg></a>
+    </div>
+  } @else {
+    <p class="empty">Aucune recette publiée pour le moment.</p>
+  }
+</section>
+
+@if (categories().length) {
+  <section class="categories" aria-labelledby="categories-title">
+    <header class="container section-head" yonaReveal>
+      <p class="eyebrow">Envie de quoi ?</p>
+      <h2 id="categories-title">Catégories</h2>
+    </header>
+
+    <ul role="list" class="category-rail">
+      @for (category of categories(); track category.id; let i = $index) {
+        <li yonaReveal [revealDelay]="(i % 4) * 70">
+          <a class="category" [routerLink]="recipesPath" [queryParams]="categoryQueryParams(category)">
+            <yona-cover-image
+              class="category__image"
+              [imageId]="category.imageId"
+              sizes="(width >= 48rem) 17rem, 45vw"
+            />
+            <span class="category__name">{{ category.name }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+}

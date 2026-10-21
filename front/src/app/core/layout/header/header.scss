@@ -1,0 +1,126 @@
+@use 'mixins' as m;
+
+:host {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 10;
+  display: block;
+  height: var(--header-height);
+  border-bottom: 1px solid transparent;
+  // Stays still during page transitions (see _motion.scss)
+  view-transition-name: site-header;
+  transition:
+    transform var(--duration-slow) var(--ease-out),
+    background-color var(--duration-slow) var(--ease-out),
+    border-color var(--duration-slow) var(--ease-out);
+}
+
+:host(.is-scrolled) {
+  background-color: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  border-bottom-color: var(--color-line);
+  backdrop-filter: saturate(1.4) blur(14px);
+}
+
+// Keyboard users always see where the focus is
+:host(.is-hidden:not(:focus-within)) {
+  transform: translateY(-100%);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: 100%;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+
+  @include m.hover {
+    .brand__mark {
+      transform: rotate(-8deg) scale(1.06);
+    }
+  }
+}
+
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+
+  em {
+    font-weight: 500;
+    color: var(--color-accent);
+  }
+}
+
+.nav {
+  display: none;
+
+  @include m.from(md) {
+    display: block;
+  }
+}
+
+.nav__list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.nav__link {
+  position: relative;
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+
+  // Underline that grows from the left, kept on the current page
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto var(--space-3) 0.25rem;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+
+  @include m.hover {
+    &::after {
+      transform: scaleX(1);
+    }
+  }
+
+  &.is-active::after {
+    transform: scaleX(1);
+  }
+}
+
+.mobile-menu {
+  display: block;
+
+  @include m.from(md) {
+    display: none;
+  }
+}

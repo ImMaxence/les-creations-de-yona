@@ -1,0 +1,19 @@
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { RecipeCard as RecipeCardModel } from '../../../core/api/generated/models/recipe-card';
+import { ParisDatePipe } from '../../format/paris-date.pipe';
+import { recipeLink } from '../../routing/links';
+import { CoverImage } from '../cover-image/cover-image';
+
+@Component({
+  selector: 'yona-recipe-card',
+  imports: [RouterLink, CoverImage, ParisDatePipe],
+  templateUrl: './recipe-card.html',
+  styleUrl: './recipe-card.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class RecipeCard {
+  readonly recipe = input.required<RecipeCardModel>();
+
+  protected readonly link = computed(() => recipeLink(this.recipe()));
+}

@@ -1,0 +1,83 @@
+// Motion system. Only opacity and transform are animated, to stay smooth on phones.
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes settle {
+  from {
+    transform: scale(1.06);
+  }
+}
+
+// Entry on first paint, without JavaScript: for content at the top of a page.
+// Stagger with style="--delay: 120ms".
+.enter {
+  animation: rise var(--duration-reveal) var(--ease-out) var(--delay, 0ms) both;
+}
+
+// Reveal on scroll, driven by the yonaReveal directive. Content stays visible until the
+// directive knows it is below the fold, so the server-rendered page never hides anything.
+.reveal-pending {
+  opacity: 0;
+  transform: translateY(1.5rem);
+}
+
+.reveal-done {
+  transition:
+    opacity var(--duration-reveal) var(--ease-out),
+    transform var(--duration-reveal) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+// Page transitions (router withViewTransitions): the old page fades out, the new one rises.
+// The header has its own view-transition-name, so it stays still.
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+::view-transition-old(root) {
+  animation: page-out 180ms var(--ease-in-out) both;
+}
+
+::view-transition-new(root) {
+  animation: page-in var(--duration-slow) var(--ease-out) 120ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

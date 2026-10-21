@@ -1,0 +1,14 @@
+<section class="container error-page">
+  <div class="error-page__icon enter" aria-hidden="true">
+    <svg lucideUtensilsCrossed [size]="56" [strokeWidth]="1.25"></svg>
+  </div>
+  <p class="eyebrow enter" style="--delay: 80ms">Erreur</p>
+  <h1 class="enter" style="--delay: 140ms">Petit souci en cuisine</h1>
+  <p class="error-page__text enter" style="--delay: 200ms">
+    Le site ne répond pas pour le moment. Réessayez dans quelques instants.
+  </p>
+  <div class="error-page__actions enter" style="--delay: 260ms">
+    <button yonaButton type="button" (click)="reload()">Réessayer <svg lucideRotateCw></svg></button>
+    <a yonaButton variant="secondary" routerLink="/">Retour à l'accueil</a>
+  </div>
+</section>
