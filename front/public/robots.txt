@@ -1,0 +1,7 @@
+User-agent: *
+# The API is not meant for search results; recipe photos are.
+Disallow: /api/
+Allow: /api/images/
+# /admin is not listed: its pages answer "noindex", which crawlers must be allowed to read.
+
+Sitemap: https://les-creations-de-yona.fr/sitemap.xml

@@ -27,6 +27,10 @@
       <a [routerLink]="privacyPolicyPath">Politique de confidentialité</a>
     </nav>
 
-    <p class="footer__copyright">© {{ year }} Les créations de Yona</p>
+    <div class="footer__bottom">
+      <p class="footer__copyright">© {{ year }} Les créations de Yona</p>
+      <!-- Always shown: the installed app has no address bar to type /admin. The page itself is protected. -->
+      <a class="footer__admin" [routerLink]="adminPath" rel="nofollow">Espace admin</a>
+    </div>
   </div>
 </footer>

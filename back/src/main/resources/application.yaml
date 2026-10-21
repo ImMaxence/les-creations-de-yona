@@ -74,11 +74,11 @@ springdoc:
   # Without it, responses are documented as */* and the generated front client reads them as Blob.
   default-produces-media-type: application/json
   api-docs:
-    # Read by the front to generate its services; can be turned off in production.
-    enabled: ${API_DOCS_ENABLED:true}
+    # Off unless API_DOCS_ENABLED=true (local .env): in production they would map the admin API.
+    enabled: ${API_DOCS_ENABLED:false}
     path: /api/docs
   swagger-ui:
-    enabled: ${API_DOCS_ENABLED:true}
+    enabled: ${API_DOCS_ENABLED:false}
     path: /api/docs/ui
     csrf:
       enabled: true

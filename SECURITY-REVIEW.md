@@ -2,7 +2,7 @@
 
 Date : 2026-10-21. Portée : tout le dépôt (`back/`, `front/`, `devops/`), lecture du code et de la configuration, sans test sur un déploiement réel.
 
-Résultat : aucune faille critique, haute ou moyenne. Deux points de faible gravité, à corriger avant la mise en ligne.
+Résultat : aucune faille critique, haute ou moyenne. Deux points de faible gravité, corrigés le même jour (voir « Suivi »).
 
 | # | Gravité | Fichier | Lignes | Problème | Confiance |
 |---|---------|---------|--------|----------|-----------|
@@ -32,6 +32,13 @@ L'OpenAPI et Swagger UI sont activés par défaut (`API_DOCS_ENABLED:true`), sou
 Scénario : n'importe qui ouvre `https://les-creations-de-yona.fr/api/docs` et obtient la carte complète de l'API d'administration (routes, paramètres, schémas, sauvegarde, connexion). Les routes admin restent protégées : divulgation d'information seulement.
 
 Correction proposée : désactiver par défaut (`${API_DOCS_ENABLED:false}`), activer seulement en local (le client du front est généré depuis un backend local), et retirer `/api/docs/**` du `permitAll` en production.
+
+## Suivi
+
+| # | Statut | Correction |
+|---|--------|------------|
+| 1 | Corrigé | `front/src/server/security-headers.ts` : CSP sans `unsafe-inline` pour les scripts (hash des scripts du build, nonce par réponse pour celui du rendu), `frame-ancestors 'none'`, `X-Frame-Options: DENY`, HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `X-Powered-By` retiré. Vérifié dans le navigateur : aucune violation de CSP sur les pages publiques ni sur le back-office. |
+| 2 | Corrigé | `API_DOCS_ENABLED` vaut `false` par défaut, `/api/docs/**` n'est autorisé que si la documentation est active. En production, `/api/docs` répond 401 comme toute route inconnue. |
 
 ## Points vérifiés sans faille exploitable
 

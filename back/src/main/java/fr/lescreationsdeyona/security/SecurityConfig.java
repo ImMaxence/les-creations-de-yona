@@ -1,5 +1,6 @@
 package fr.lescreationsdeyona.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,15 +27,20 @@ class SecurityConfig {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http, AdminOidcUserService adminOidcUserService,
-			ProblemDetailSecurityHandler problemDetailSecurityHandler) {
-		http.authorizeHttpRequests(requests -> requests
-				.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
+			ProblemDetailSecurityHandler problemDetailSecurityHandler,
+			@Value("${springdoc.api-docs.enabled}") boolean apiDocsEnabled) {
+		http.authorizeHttpRequests(requests -> {
+			requests.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
 				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/recipe-suggestions",
 						"/api/categories/**", "/api/social-links/**", "/api/images/**")
 				.permitAll()
-				.requestMatchers(HttpMethod.GET, "/api/docs/**", "/actuator/health/**").permitAll()
-				.requestMatchers("/error").permitAll()
-				.anyRequest().denyAll())
+				.requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll();
+			// Local runs only: in production the documentation is off and its URLs are denied like any other.
+			if (apiDocsEnabled) {
+				requests.requestMatchers(HttpMethod.GET, "/api/docs/**").permitAll();
+			}
+			requests.requestMatchers("/error").permitAll().anyRequest().denyAll();
+		})
 			.oauth2Login(login -> login
 				.authorizationEndpoint(endpoint -> endpoint.baseUri("/api/oauth2/authorization"))
 				.redirectionEndpoint(endpoint -> endpoint.baseUri("/api/login/oauth2/code/*"))

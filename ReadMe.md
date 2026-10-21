@@ -32,11 +32,12 @@ Dernière mise à jour : 2026-10-21.
 
 - Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), installer l'application, administration (admins seulement).
 - Menu mobile : bouton hamburger, panneau plein écran avec les mêmes entrées.
-- Footer sur toutes les pages : réseaux sociaux, mentions légales, politique de confidentialité.
+- Footer sur toutes les pages : réseaux sociaux, mentions légales, politique de confidentialité, lien discret « Espace admin ».
 
 ### Back-office (`/admin`)
 
 - Accès réservé à 2 admins via Google, pas de création de compte.
+- Entrée : lien « Espace admin » du footer, visible de tous (l'application installée n'a pas de barre d'adresse pour taper `/admin`). Un visiteur qui le suit arrive sur la connexion Google, puis sur la page d'accès refusé. Pages jamais indexées.
 - Recettes : création, modification, publication ou brouillon, suppression.
 - Catégories, ingrédients (modifier, supprimer), réseaux sociaux.
 - Galerie : toutes les images, filtrables par type (recette ou catégorie), avec suppression.
@@ -49,7 +50,7 @@ Dernière mise à jour : 2026-10-21.
 
 ### SEO
 
-- Angular SSR, balises meta par page, données structurées Recipe (JSON-LD), sitemap.xml.
+- Angular SSR, balises meta par page, données structurées Recipe (JSON-LD), sitemap.xml, robots.txt.
 
 ## Stack
 
@@ -74,6 +75,7 @@ Dernière mise à jour : 2026-10-21.
 back/      API Spring Boot
 front/     application Angular
 devops/    Docker Compose, configuration d'environnement
+docs/      documentation technique (restauration d'une sauvegarde)
 ReadMe.md
 ```
 
@@ -99,6 +101,7 @@ docker compose up -d --wait
 - Base créée avec la collation ICU `fr-FR` (tri français des titres). Checksums de données activés (défaut de PostgreSQL 18).
 - Bucket `S3_BUCKET` créé au démarrage, privé : accès anonyme refusé, seuls les identifiants `S3_ACCESS_KEY` / `S3_SECRET_KEY` y accèdent. Pas de création automatique d'autres buckets, suppression d'un bucket non vide refusée. Télémétrie SeaweedFS désactivée.
 - Arrêt : `docker compose down`. Remise à zéro complète (supprime les données) : `docker compose down --volumes`.
+- Journaux : 3 fichiers de 10 Mo au plus par conteneur (`x-logging`), effacés aussi quand le conteneur est recréé (chaque déploiement). Cohérent avec la politique de confidentialité (12 mois au plus).
 - Application complète dans Docker, sans JDK ni Node sur la machine : `docker compose --profile app up -d --build --wait`, puis `http://localhost:8000`. La passerelle (`devops/Caddyfile`) envoie `/api/*` au backend et le reste au front, comme le proxy de Coolify en production. Arrêt : `docker compose --profile app down`.
 
 ### Backend
@@ -113,7 +116,7 @@ cd back
 - Lit les identifiants de `devops/.env` (lancement depuis `back/`). En production, mêmes clés en variables d'environnement, plus `POSTGRES_HOST` et `S3_ENDPOINT` (par défaut `http://localhost:8333`).
 - Flyway applique les migrations de `back/src/main/resources/db/migration` au démarrage. Hibernate vérifie seulement que les entités correspondent au schéma (`ddl-auto: validate`).
 - Santé : `http://localhost:8080/actuator/health`.
-- Documentation de l'API : `http://localhost:8080/api/docs` (OpenAPI, lu par le front pour générer ses services) et `http://localhost:8080/api/docs/ui` (Swagger UI). Désactivable en production avec `API_DOCS_ENABLED=false`.
+- Documentation de l'API : `http://localhost:8080/api/docs` (OpenAPI, lu par le front pour générer ses services) et `http://localhost:8080/api/docs/ui` (Swagger UI). Désactivée par défaut, activée en local par `API_DOCS_ENABLED=true` dans `devops/.env`. En production, la variable reste absente : les URL de documentation sont refusées comme toute route inconnue.
 - Connexion admin : client OAuth Google à créer (type « Application Web »), avec les URL de retour listées dans `devops/.env.example`. Renseigner `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` et `APP_ADMIN_EMAILS` dans `devops/.env`. Application Google laissée en mode « Test », avec les adresses admin dans « Utilisateurs test ».
 - Sauvegarde : nécessite le client `pg_dump` 18. Il est inclus dans l'image Docker. En lancement local, l'installer et renseigner `PG_DUMP_PATH`, sinon la route répond 503 `BACKUP_UNAVAILABLE`.
 - Encodage WebP : libwebp est une bibliothèque native, autorisée par `--enable-native-access=ALL-UNNAMED` (déjà passé par `spring-boot:run` et par l'image Docker).
@@ -137,7 +140,14 @@ npm run api:generate   # régénère le client API depuis http://localhost:8080/
   - `API_URL` : URL interne du backend (ex. `http://back:8080`). Le serveur SSR l'appelle directement, sans repasser par Cloudflare. Sans elle, il appelle l'origine publique du site.
   - `NG_ALLOWED_HOSTS` : hôtes acceptés en plus de `les-creations-de-yona.fr` (protection SSRF d'Angular), ex. `localhost` pour un test local.
   - `NG_TRUST_PROXY_HEADERS` : en-têtes du proxy à prendre en compte (`x-forwarded-host,x-forwarded-proto,x-forwarded-for`), seulement si le serveur n'est joignable qu'à travers ce proxy.
-- Cache HTTP : fichiers hashés (JS, CSS, polices) un an `immutable` ; fichiers de `public/` (favicon, photo de l'auteur) un jour, car leur nom ne change pas ; fichiers du service worker (`ngsw.json`, `ngsw-worker.js`, manifeste) jamais en cache, pour que les applications installées reçoivent les mises à jour.
+- Cache HTTP : fichiers hashés (JS, CSS, polices) un an `immutable` ; fichiers de `public/` (favicon, photo de l'auteur, `robots.txt`) un jour, car leur nom ne change pas ; fichiers du service worker (`ngsw.json`, `ngsw-worker.js`, manifeste) jamais en cache, pour que les applications installées reçoivent les mises à jour.
+- En-têtes de sécurité (`src/server/security-headers.ts`), posés par le serveur de production sur toutes ses réponses (pas par `npm start`, dont les scripts seraient bloqués) :
+  - CSP : scripts du site uniquement. Les scripts inline du build (contrat d'event replay) sont autorisés par leur hash, calculé au démarrage depuis les fichiers HTML construits ; celui qu'Angular écrit au rendu par un nonce aléatoire propre à chaque réponse (`REQUEST_CONTEXT`, puis `CSP_NONCE`). Styles inline autorisés (styles de composants Angular). Aucune intégration dans une iframe (`frame-ancestors 'none'`).
+  - Inlining du CSS critique désactivé (`angular.json`) : son script de chargement ne peut pas recevoir le nonce. Coût faible, la feuille de style globale fait moins de 10 Ko.
+  - HSTS (un an, sans sous-domaines), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (caméra, micro, géolocalisation, paiement coupés ; le maintien de l'écran allumé reste permis), `Cross-Origin-Opener-Policy`. `X-Powered-By` retiré.
+- Référencement :
+  - `/sitemap.xml` (`src/server/sitemap.ts`) : construit à chaque demande depuis l'API (accueil, recettes, catégories ayant au moins une recette, toutes les recettes publiées, installation, pages légales), en cache une heure. URL sur le domaine de production.
+  - `public/robots.txt` : API exclue sauf les photos, lien vers le sitemap. `/admin` n'y figure pas exprès : ses pages répondent `X-Robots-Tag: noindex, nofollow`, que les robots doivent pouvoir lire.
 - Application installable (PWA) : service worker Angular (`ngsw-config.json`), actif seulement dans le build de production. Pour le tester en local : `npm run build`, puis `npm run serve:ssr` ou l'application complète dans Docker. Icônes dans `public/icons/`, manifeste dans `public/manifest.webmanifest`.
   - Pages : toujours demandées au serveur (rendu SSR à jour), version hors ligne en secours.
   - API publique (`/api/recipes`, catégories, réseaux sociaux) : réseau d'abord, cache de 30 jours si le réseau ne répond pas en 4 secondes.
@@ -154,6 +164,7 @@ app/core/      services globaux, layout (header, menus, footer), client API gén
 app/shared/    composants d'interface (bouton, carte de recette, image), directive de reveal, utilitaires
 app/pages/     une page par route, chargée à la demande
 styles/        variables (couleurs, polices, breakpoints), reset, base typographique, animations
+server/        middlewares du serveur SSR Express (en-têtes de sécurité, sitemap) ; point d'entrée : server.ts
 ```
 
 ### API
@@ -230,7 +241,7 @@ styles/        variables (couleurs, polices, breakpoints), reset, base typograph
 - Google OAuth : deux URL de retour, une pour le local et une pour la production.
 - Session serveur (cookie HttpOnly, Secure, SameSite), expirée après 7 jours d'inactivité, plutôt que JWT. Sessions en mémoire, sans persistance : un redémarrage ou un redéploiement déconnecte l'admin, accepté. Bouton de déconnexion.
 - Autorisation par règles d'URL dans Spring Security : `/api/admin/**` réservé aux admins.
-- Pas de bouton de connexion sur le site public : l'admin se connecte uniquement via `/admin`.
+- Pas de bouton de connexion sur le site public : l'admin passe par `/admin`, via le lien discret « Espace admin » du footer. Ce lien ne donne aucun droit : la protection est côté serveur (Google, liste des admins, rôle exigé sur `/api/admin/**`).
 - Cookies : aucun cookie de suivi ni d'analyse. Cookies techniques seulement, dispensés de consentement : session admin et CSRF (posés uniquement à la connexion d'un admin), et éventuellement `__cf_bm` de Cloudflare. Donc pas de bandeau cookies ; le détail est dans la politique de confidentialité.
 
 ### Recherche et pagination
@@ -259,7 +270,7 @@ styles/        variables (couleurs, polices, breakpoints), reset, base typograph
 - Bouton « Sauvegarder mes données » (`/api/admin/backup`) : télécharge dans le navigateur une archive ZIP contenant le dump PostgreSQL (`pg_dump`, format custom) et une copie de tout le bucket S3 (toutes les images, orphelines comprises).
 - Archive streamée : rien n'est stocké sur le serveur. Google Drive hors v1. Contenu : `database.dump` et `images/{clé S3}`. Une erreur survenue pendant le téléchargement coupe la connexion (téléchargement marqué en échec par le navigateur) et est journalisée.
 - Le backend embarque le client `pg_dump` en version 18, identique au serveur.
-- Procédure de restauration (base et S3) rédigée à part, en documentation technique.
+- Procédure de restauration (base et S3) : [docs/restauration.md](docs/restauration.md), testée sur la stack locale.
 
 ### Affichage et SEO
 
@@ -325,11 +336,14 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 - [x] front : application installable (PWA), page « Installer l'application »
 - [x] front : génération des services depuis le openapi du backend
 - [x] front : Angular SSR, meta tags, JSON-LD
-- [ ] front : sitemap.xml
-- [ ] docs : procédure de restauration (dump PostgreSQL et S3)
+- [x] front : sitemap.xml
+- [x] docs : procédure de restauration (dump PostgreSQL et S3)
+- [x] sécurité : en-têtes du serveur SSR (CSP à nonce), documentation de l'API coupée en production, rotation des journaux
 
 ## Points ouverts
 
-- Déploiement Coolify : router `/api/*` vers le backend et le reste vers le front (comme `devops/Caddyfile`). Vérifier que le backend construit ses URL de retour Google en `https` derrière le proxy (en-têtes `X-Forwarded-*`).
-- Sécurité (voir `SECURITY-REVIEW.md`) : ajouter les en-têtes de sécurité au serveur SSR (CSP, `X-Frame-Options`, HSTS…) et désactiver la documentation de l'API en production, avant la mise en ligne.
-- Politique de confidentialité : elle annonce des journaux serveur conservés au plus 12 mois. Configurer la rotation des journaux (Docker, Coolify, Traefik) en conséquence.
+- Déploiement Coolify, avec déploiement automatique à chaque commit (webhook) : router `/api/*` vers le backend et le reste vers le front (comme `devops/Caddyfile`). Vérifier que le backend construit ses URL de retour Google en `https` derrière le proxy (en-têtes `X-Forwarded-*`). Ne pas définir `API_DOCS_ENABLED`.
+- Cloudflare :
+  - Désactiver Rocket Loader et l'obfuscation des emails : ils injectent des scripts que la CSP bloquerait.
+  - Photos (`/api/images/*`) : Cloudflare met les `.webp` en cache. Une photo supprimée reste servie par Cloudflare jusqu'à expiration. Choisir entre ne pas les mettre en cache côté Cloudflare et purger à la suppression.
+- Après la mise en ligne : déclarer `https://les-creations-de-yona.fr/sitemap.xml` dans Google Search Console.
