@@ -1,12 +1,16 @@
-# Local entry point of the whole application, as the Coolify proxy does in production:
+{
+	servers {
+		# In production, Coolify's proxy (Traefik) sits in front: keep the X-Forwarded-Proto/Host
+		# it sets (https, public domain) instead of replacing them with this hop's (http).
+		trusted_proxies static private_ranges
+	}
+}
+
 # /api/* goes to the backend, everything else to the Angular SSR server.
+# Both read the public URL from the X-Forwarded-* headers (Google return URL, SSR origin).
 :80 {
 	handle /api/* {
-		# The backend builds the Google return URL from the forwarded headers: without the port
-		# (8000 here) it would send Google http://localhost/api/login/..., an unknown URL.
-		reverse_proxy back:8080 {
-			header_up X-Forwarded-Port {http.request.port}
-		}
+		reverse_proxy back:8080
 	}
 	handle {
 		reverse_proxy front:4000

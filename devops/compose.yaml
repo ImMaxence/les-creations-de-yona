@@ -112,11 +112,9 @@ services:
   # Whole application on http://localhost:8000: /api/* to the backend, the rest to the front.
   gateway:
     profiles: [app]
-    image: caddy:2.11.7-alpine
+    build: ./gateway
     restart: unless-stopped
     logging: *logging
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
     ports:
       - 127.0.0.1:${APP_PORT:-8000}:80
     depends_on:

@@ -74,7 +74,7 @@ Dernière mise à jour : 2026-10-21.
 ```
 back/      API Spring Boot
 front/     application Angular
-devops/    Docker Compose, configuration d'environnement
+devops/    Docker Compose (local : compose.yaml, Coolify : compose.prod.yaml), passerelle Caddy, configuration d'environnement
 docs/      documentation technique (restauration d'une sauvegarde)
 ReadMe.md
 ```
@@ -95,14 +95,14 @@ docker compose up -d --wait
 | SeaweedFS (API S3) | `chrislusf/seaweedfs:4.48` (`weed mini`) | `http://localhost:8333` |
 | Backend (profil `app`, facultatif) | construit depuis `back/Dockerfile` | `http://localhost:8080` |
 | Front SSR (profil `app`) | construit depuis `front/Dockerfile` | via la passerelle uniquement |
-| Passerelle (profil `app`) | `caddy:2.11.7-alpine` | `http://localhost:8000` : application complète |
+| Passerelle (profil `app`) | construite depuis `devops/gateway/` (Caddy 2.11.7) | `http://localhost:8000` : application complète |
 
 - Ports exposés sur `127.0.0.1` uniquement, jamais sur le réseau local.
 - Base créée avec la collation ICU `fr-FR` (tri français des titres). Checksums de données activés (défaut de PostgreSQL 18).
 - Bucket `S3_BUCKET` créé au démarrage, privé : accès anonyme refusé, seuls les identifiants `S3_ACCESS_KEY` / `S3_SECRET_KEY` y accèdent. Pas de création automatique d'autres buckets, suppression d'un bucket non vide refusée. Télémétrie SeaweedFS désactivée.
 - Arrêt : `docker compose down`. Remise à zéro complète (supprime les données) : `docker compose down --volumes`.
 - Journaux : 3 fichiers de 10 Mo au plus par conteneur (`x-logging`), effacés aussi quand le conteneur est recréé (chaque déploiement). Cohérent avec la politique de confidentialité (12 mois au plus).
-- Application complète dans Docker, sans JDK ni Node sur la machine : `docker compose --profile app up -d --build --wait`, puis `http://localhost:8000`. La passerelle (`devops/Caddyfile`) envoie `/api/*` au backend et le reste au front, comme le proxy de Coolify en production. Arrêt : `docker compose --profile app down`.
+- Application complète dans Docker, sans JDK ni Node sur la machine : `docker compose --profile app up -d --build --wait`, puis `http://localhost:8000`. La passerelle (`devops/gateway/Caddyfile`, intégré à son image) envoie `/api/*` au backend et le reste au front, en local comme en production. Arrêt : `docker compose --profile app down`.
 
 ### Backend
 
@@ -180,6 +180,32 @@ server/        middlewares du serveur SSR Express (en-têtes de sécurité, site
 - Images : le front construit l'URL à partir du `imageId` des recettes et catégories. Réponse `Cache-Control: public, max-age=31536000, immutable` : une nouvelle photo a un nouvel identifiant, donc une nouvelle URL.
 - Sauvegarde : à ouvrir comme un lien classique (`<a href="/api/admin/backup">`), pas via `HttpClient`, qui chargerait toute l'archive en mémoire.
 - Toute route non listée est refusée.
+
+## Production (Coolify)
+
+Fichier : `devops/compose.prod.yaml`. Mêmes services qu'en local, sans port publié ni profil. Seule la passerelle reçoit le domaine. Chaîne d'une requête : Cloudflare → Traefik (proxy de Coolify, HTTPS) → passerelle Caddy → front ou backend.
+
+- URL publique : Traefik transmet `X-Forwarded-Proto: https` et le domaine. Caddy les conserve (`trusted_proxies`), le backend les lit (`forward-headers-strategy: framework`) pour construire l'URL de retour Google, et le serveur SSR (`NG_TRUST_PROXY_HEADERS`). Vérifié en simulant Traefik devant la stack de production : URL de retour `https://les-creations-de-yona.fr/api/login/oauth2/code/google`, domaine inconnu refusé (400).
+- Secrets : identifiants PostgreSQL et S3 générés par Coolify au premier déploiement (`SERVICE_USER_*`, `SERVICE_PASSWORD_64_*`), conservés ensuite. À saisir : `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_ADMIN_EMAILS`. Ne jamais définir `API_DOCS_ENABLED`.
+- Données : volumes `postgres-data` et `seaweedfs-data`, conservés d'un déploiement à l'autre. Supprimer la ressource Coolify les supprime : faire une sauvegarde avant.
+
+Mise en place :
+
+1. Projet Coolify → **+ New** → **Public Repository** : `https://github.com/ImMaxence/les-creations-de-yona`, branche `main`, build pack **Docker Compose**.
+2. **Base Directory** : `/devops`. **Docker Compose Location** : `/compose.prod.yaml`. Les contextes de build (`../back`, `../front`, `./gateway`) sont relatifs à ce dossier.
+3. **Domains** : sur le service `gateway` uniquement, `https://les-creations-de-yona.fr`. Les autres services restent sans domaine.
+4. **Environment Variables** : renseigner les trois variables Google, laisser les variables générées.
+5. **Deploy**. Premier build long (Maven et Angular sur le serveur).
+6. Déploiement à chaque commit : Coolify, onglet **Webhooks** → **GitHub** : définir un secret, copier l'URL. GitHub, **Settings → Webhooks → Add webhook** : cette URL, `Content type: application/json`, le même secret, événement **push**. Vérifier que **Auto Deploy** est actif dans les options avancées de Coolify.
+7. Google Cloud : URI de retour `https://les-creations-de-yona.fr/api/login/oauth2/code/google` et origine `https://les-creations-de-yona.fr` (déjà faits).
+
+Cloudflare (offre gratuite, proxy seulement) :
+
+- DNS : enregistrement `A` du domaine vers le serveur, proxifié (nuage orange), comme le site déjà hébergé sur ce Coolify.
+- SSL/TLS : mode **Full (strict)** (ou **Full**). Jamais **Flexible** : Cloudflare appellerait le serveur en HTTP, Traefik redirigerait vers HTTPS, et la page bouclerait.
+- **Email Address Obfuscation** (Scrape Shield, active par défaut) : à désactiver. Elle réécrit l'adresse de contact dans le HTML des pages légales, que le navigateur ne retrouve alors plus identique au rendu du serveur (erreur d'hydratation Angular).
+- **Rocket Loader** (désactivé par défaut) : le laisser désactivé, il réécrit les balises `<script>`.
+- Photos (`/api/images/*`) : Cloudflare les garde en cache (un an, réponse `immutable`). Une photo supprimée reste accessible à qui connaît son URL (UUID impossible à deviner) jusqu'à purge manuelle (**Caching → Purge Cache**). Accepté.
 
 ## Modèle de données
 
@@ -317,7 +343,8 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 - [x] devops : Docker Compose (PostgreSQL 18, SeaweedFS), `.env.example`
 - [x] devops : Dockerfile du backend (avec client `pg_dump` 18), service `back` dans la Compose (profil `app`)
 - [x] devops : Dockerfile du frontend, passerelle locale (Caddy) pour l'application complète
-- [ ] devops : déploiement sur Coolify (plus tard, une fois le local fonctionnel)
+- [x] devops : Compose de production pour Coolify (`devops/compose.prod.yaml`), passerelle en image autonome
+- [ ] devops : premier déploiement sur Coolify, déploiement automatique à chaque commit (webhook GitHub)
 - [x] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
 - [x] back : service d'upload S3 (validation, resize, conversion)
 - [x] back : auth Google avec allowlist `APP_ADMIN_EMAILS`, session
@@ -342,8 +369,5 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 
 ## Points ouverts
 
-- Déploiement Coolify, avec déploiement automatique à chaque commit (webhook) : router `/api/*` vers le backend et le reste vers le front (comme `devops/Caddyfile`). Vérifier que le backend construit ses URL de retour Google en `https` derrière le proxy (en-têtes `X-Forwarded-*`). Ne pas définir `API_DOCS_ENABLED`.
-- Cloudflare :
-  - Désactiver Rocket Loader et l'obfuscation des emails : ils injectent des scripts que la CSP bloquerait.
-  - Photos (`/api/images/*`) : Cloudflare met les `.webp` en cache. Une photo supprimée reste servie par Cloudflare jusqu'à expiration. Choisir entre ne pas les mettre en cache côté Cloudflare et purger à la suppression.
+- Premier déploiement Coolify (voir « Production (Coolify) ») et vérification en ligne : connexion Google, upload d'une photo, sauvegarde ZIP.
 - Après la mise en ligne : déclarer `https://les-creations-de-yona.fr/sitemap.xml` dans Google Search Console.

@@ -46,8 +46,10 @@ spring:
     locale-resolver: fixed
 
 server:
-  # Behind Cloudflare and Coolify: trust X-Forwarded-* to build https redirect URLs.
-  forward-headers-strategy: native
+  # Behind the gateway (and Cloudflare + Coolify in production): the public URL comes from the
+  # X-Forwarded-* headers, e.g. for the Google return URL. "framework" (Spring's filter) keeps the
+  # port of X-Forwarded-Host (localhost:8000), which Tomcat's native support drops.
+  forward-headers-strategy: framework
   servlet:
     session:
       timeout: 7d
