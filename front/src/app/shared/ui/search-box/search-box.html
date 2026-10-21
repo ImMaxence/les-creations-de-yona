@@ -1,0 +1,54 @@
+<form class="search" role="search" (submit)="submit($event)">
+  <svg lucideSearch class="search__icon" [size]="20"></svg>
+  <input
+    #input
+    type="search"
+    class="search__input"
+    role="combobox"
+    aria-label="Rechercher une recette"
+    aria-autocomplete="list"
+    autocomplete="off"
+    enterkeyhint="search"
+    maxlength="100"
+    placeholder="Rechercher une recette…"
+    [attr.aria-expanded]="expanded()"
+    [attr.aria-controls]="listboxId"
+    [attr.aria-activedescendant]="activeOptionId()"
+    [value]="query()"
+    (input)="onInput($event)"
+    (keydown)="onKeydown($event)"
+    (focus)="focused.set(true)"
+    (blur)="focused.set(false)"
+  />
+  @if (query()) {
+    <button type="button" class="search__clear" aria-label="Effacer la recherche" (click)="clear()">
+      <svg lucideX [size]="18"></svg>
+    </button>
+  }
+
+  @if (expanded()) {
+    <ul
+      role="listbox"
+      class="suggestions"
+      aria-label="Suggestions de recettes"
+      [id]="listboxId"
+      animate.enter="suggestions--enter"
+    >
+      @for (item of highlighted(); track item.suggestion.slug; let i = $index) {
+        <!-- mousedown is cancelled so that the input keeps the focus until the click -->
+        <li
+          role="option"
+          class="suggestion"
+          [id]="listboxId + '-' + i"
+          [class.is-active]="i === activeIndex()"
+          [attr.aria-selected]="i === activeIndex()"
+          (mousedown)="$event.preventDefault()"
+          (click)="choose(item.suggestion)"
+        >
+          <!-- On one line: any whitespace here would show up inside the title -->
+          @for (part of item.parts; track $index) {<span [class.match]="part.match">{{ part.text }}</span>}
+        </li>
+      }
+    </ul>
+  }
+</form>

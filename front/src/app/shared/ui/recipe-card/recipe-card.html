@@ -1,8 +1,10 @@
-<a class="card" [routerLink]="link()">
+<a class="card" [routerLink]="link()" (click)="onClick($event)">
   <yona-cover-image
     class="card__image"
+    [style.view-transition-name]="imageTransitionName()"
     [imageId]="recipe().imageId"
     [alt]="recipe().title"
+    [priority]="priority()"
     sizes="(width >= 64rem) 22rem, (width >= 40rem) 46vw, 92vw"
   />
   <div class="card__body">

@@ -1,0 +1,10 @@
+# Local entry point of the whole application, as the Coolify proxy does in production:
+# /api/* goes to the backend, everything else to the Angular SSR server.
+:80 {
+	handle /api/* {
+		reverse_proxy back:8080
+	}
+	handle {
+		reverse_proxy front:4000
+	}
+}

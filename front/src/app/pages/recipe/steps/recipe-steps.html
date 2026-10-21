@@ -1,0 +1,29 @@
+<h2 id="steps-title" yonaReveal>Préparation</h2>
+<ol role="list" class="list">
+  @for (step of steps(); track $index; let i = $index) {
+    <li class="step" [class.is-done]="done().has(i)" yonaReveal>
+      <button
+        type="button"
+        class="step__number"
+        [attr.aria-pressed]="done().has(i)"
+        [attr.aria-label]="'Étape ' + (i + 1) + ' faite'"
+        (click)="toggle(i)"
+      >
+        @if (done().has(i)) {
+          <svg lucideCheck [size]="20" [strokeWidth]="2.5"></svg>
+        } @else {
+          {{ i + 1 }}
+        }
+      </button>
+      <div class="step__body">
+        <div class="prose" [innerHTML]="step.description | markdown"></div>
+        @if (step.durationMinutes; as minutes) {
+          <span class="step__duration">
+            <svg lucideTimer [size]="14"></svg>
+            {{ formatMinutes(minutes) }}
+          </span>
+        }
+      </div>
+    </li>
+  }
+</ol>

@@ -1,0 +1,116 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search__icon {
+  position: absolute;
+  left: var(--space-4);
+  color: var(--color-text-muted);
+  pointer-events: none;
+  transition: color var(--duration-base) var(--ease-out);
+
+  .search:focus-within & {
+    color: var(--color-accent);
+  }
+}
+
+.search__input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: var(--space-3) var(--space-8) var(--space-3) calc(var(--space-4) + 1.75rem);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-bg);
+  font-size: var(--text-base); // 16px minimum: no zoom on focus in iOS Safari
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+  appearance: none;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &::-webkit-search-cancel-button {
+    appearance: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--color-accent) 15%, transparent),
+      var(--shadow-sm);
+  }
+}
+
+.search__clear {
+  position: absolute;
+  right: var(--space-2);
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  transition: background-color var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+}
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  inset-inline: 0;
+  z-index: 5;
+  display: grid;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+  list-style: none;
+  transform-origin: top center;
+}
+
+.suggestions--enter {
+  animation: suggestions-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes suggestions-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+.suggestion {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: var(--color-surface);
+  }
+
+  &.is-active {
+    background-color: var(--color-surface);
+  }
+
+  .match {
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+}

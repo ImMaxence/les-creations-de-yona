@@ -86,12 +86,14 @@ docker compose up -d --wait
 | PostgreSQL | `postgres:18.6-alpine` | `localhost:5432` |
 | SeaweedFS (API S3) | `chrislusf/seaweedfs:4.48` (`weed mini`) | `http://localhost:8333` |
 | Backend (profil `app`, facultatif) | construit depuis `back/Dockerfile` | `http://localhost:8080` |
+| Front SSR (profil `app`) | construit depuis `front/Dockerfile` | via la passerelle uniquement |
+| Passerelle (profil `app`) | `caddy:2.11.7-alpine` | `http://localhost:8000` : application complète |
 
 - Ports exposés sur `127.0.0.1` uniquement, jamais sur le réseau local.
 - Base créée avec la collation ICU `fr-FR` (tri français des titres). Checksums de données activés (défaut de PostgreSQL 18).
 - Bucket `S3_BUCKET` créé au démarrage, privé : accès anonyme refusé, seuls les identifiants `S3_ACCESS_KEY` / `S3_SECRET_KEY` y accèdent. Pas de création automatique d'autres buckets, suppression d'un bucket non vide refusée. Télémétrie SeaweedFS désactivée.
 - Arrêt : `docker compose down`. Remise à zéro complète (supprime les données) : `docker compose down --volumes`.
-- Backend dans Docker, sans JDK sur la machine : `docker compose --profile app up -d --build --wait`. Arrêt : `docker compose --profile app down`.
+- Application complète dans Docker, sans JDK ni Node sur la machine : `docker compose --profile app up -d --build --wait`, puis `http://localhost:8000`. La passerelle (`devops/Caddyfile`) envoie `/api/*` au backend et le reste au front, comme le proxy de Coolify en production. Arrêt : `docker compose --profile app down`.
 
 ### Backend
 
@@ -128,6 +130,10 @@ npm run api:generate   # régénère le client API depuis http://localhost:8080/
 - Serveur SSR de production : `npm run serve:ssr` (port `PORT`, 4000 par défaut). Variables :
   - `API_URL` : URL interne du backend (ex. `http://back:8080`). Le serveur SSR l'appelle directement, sans repasser par Cloudflare. Sans elle, il appelle l'origine publique du site.
   - `NG_ALLOWED_HOSTS` : hôtes acceptés en plus de `les-creations-de-yona.fr` (protection SSRF d'Angular), ex. `localhost` pour un test local.
+  - `NG_TRUST_PROXY_HEADERS` : en-têtes du proxy à prendre en compte (`x-forwarded-host,x-forwarded-proto,x-forwarded-for`), seulement si le serveur n'est joignable qu'à travers ce proxy.
+- Cache HTTP : fichiers hashés (JS, CSS, polices) un an `immutable` ; fichiers de `public/` (favicon, photo de l'auteur) un jour, car leur nom ne change pas.
+
+Image Docker (`front/Dockerfile`) : build Node 24 multi-étapes, image finale sans `node_modules` (le serveur SSR embarque ses dépendances), utilisateur non root, health check sur `/healthz` (répond sans rendu Angular).
 
 Organisation de `front/src` :
 
@@ -184,7 +190,7 @@ styles/        variables (couleurs, polices, breakpoints), reset, base typograph
 - Animations sobres et soignées, pensées comme une signature du site, sans effet gratuit :
   - Entrées de page et de sections : fondu et léger glissement (reveal au scroll via `IntersectionObserver`, une seule fois par élément).
   - Cartes de recettes : légère élévation et zoom de l'image au survol (et à l'appui sur mobile).
-  - Transitions entre pages : View Transitions API, avec repli sans effet si non supporté.
+  - Transitions entre pages : View Transitions API, avec repli sans effet si non supporté. Pas de transition quand seuls les paramètres changent (recherche, filtre, page). La photo de la carte cliquée devient l'image d'en-tête de la recette (`view-transition-name` partagé, posé uniquement sur la carte cliquée).
   - Micro-interactions : états des boutons, champs et menu, avec des durées courtes (150 à 400 ms) et une courbe d'accélération douce.
   - Animations en CSS/SCSS (`@keyframes`, `transition`), sans bibliothèque d'animation.
   - `prefers-reduced-motion` respecté : sans mouvement, les éléments restent visibles immédiatement.
@@ -193,7 +199,11 @@ styles/        variables (couleurs, polices, breakpoints), reset, base typograph
 - Données d'une page chargées par un resolver de route, avant l'affichage. Données communes (catégories, réseaux sociaux) chargées une fois au démarrage. Le serveur et le navigateur affichent donc la même page, et l'hydratation réutilise les réponses du serveur (cache de transfert HTTP) sans rappeler l'API.
 - Styles : les composants lisent les propriétés CSS (`var(--color-accent)`) émises depuis `styles/_variables.scss`. Sass ne sert qu'aux breakpoints et mixins.
 - Icônes de marque (Instagram, TikTok, YouTube) : Simple Icons (CC0), Lucide n'en fournissant pas.
-- API indisponible : page d'erreur (HTTP 503) en conservant l'URL demandée. URL inconnue : page 404 avec un vrai statut 404.
+- API indisponible : page d'erreur (HTTP 503) en conservant l'URL demandée. URL inconnue, recette introuvable ou en brouillon : page 404 avec un vrai statut 404. Segment catégorie erroné dans l'URL d'une recette : redirection 301 vers l'URL canonique.
+- SEO déclaré par route (`data.seo`, statique ou calculé après les resolvers), appliqué à chaque navigation par une `TitleStrategy` : titre, description, Open Graph, URL canonique, `robots`, JSON-LD (`Person` sur l'accueil, `Recipe` sur une recette). Résultats de recherche et pages vides en `noindex`.
+- Recherche : combobox ARIA (flèches, Entrée, Échap), suggestions dès 2 caractères, texte tapé mis en évidence sans tenir compte des accents. Filtres et pagination dans l'URL (`q`, `categorie`, `page`, `parPage`), donc partageables.
+- Page recette pensée pour cuisiner avec un téléphone : portions ajustables (quantités recalculées puis arrondies à des valeurs mesurables), ingrédients et étapes à cocher, écran maintenu allumé (Screen Wake Lock, proposé seulement si le navigateur le permet).
+- Étapes en Markdown rendues par `marked` (MIT), puis nettoyées par le sanitizer d'Angular.
 
 ### Dates
 
@@ -281,7 +291,7 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 
 - [x] devops : Docker Compose (PostgreSQL 18, SeaweedFS), `.env.example`
 - [x] devops : Dockerfile du backend (avec client `pg_dump` 18), service `back` dans la Compose (profil `app`)
-- [ ] devops : Dockerfile du frontend
+- [x] devops : Dockerfile du frontend, passerelle locale (Caddy) pour l'application complète
 - [ ] devops : déploiement sur Coolify (plus tard, une fois le local fonctionnel)
 - [x] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
 - [x] back : service d'upload S3 (validation, resize, conversion)
@@ -290,21 +300,21 @@ Ambiance cuisine chaleureuse, lisible sur téléphone.
 - [x] back : endpoint d'autocomplétion des titres
 - [x] front : init Angular 22 (nettoyage des fichiers inutiles)
 - [x] front : page d'accueil (recette à la une, à propos, 6 dernières recettes, catégories)
-- [ ] front : page recettes (filtre par catégorie, recherche)
+- [x] front : page recettes (filtre par catégorie, recherche)
 - [x] front : navbar avec menu déroulant, menu mobile, footer, pages 404 et erreur serveur
-- [ ] front : page recette
+- [x] front : page recette
 - [ ] front : pages mentions légales et politique de confidentialité
 - [x] back : ProblemDetail et springdoc-openapi exposé
 - [x] back : API admin (recettes, catégories, ingrédients, réseaux sociaux)
 - [x] back : API admin galerie images et sauvegarde ZIP
 - [ ] front : back-office (guard, intercepteur HTTP, formulaires)
 - [x] front : génération des services depuis le openapi du backend
-- [ ] front : Angular SSR, meta tags, JSON-LD, sitemap (SSR en place, reste meta tags, JSON-LD, sitemap)
+- [x] front : Angular SSR, meta tags, JSON-LD
+- [ ] front : sitemap.xml
 - [ ] docs : procédure de restauration (dump PostgreSQL et S3)
 
 ## Points ouverts
 
-- Photo de l'auteur : à fournir, en dur dans le projet Angular (un monogramme « Y » la remplace en attendant).
-- Texte « À propos » de l'accueil : texte provisoire, à remplacer par celui de l'auteur.
+- Déploiement Coolify : router `/api/*` vers le backend et le reste vers le front (comme `devops/Caddyfile`). Vérifier que le backend construit ses URL de retour Google en `https` derrière le proxy (en-têtes `X-Forwarded-*`).
 - Contenu des mentions légales et politique de confidentialité : à rédiger avec l'auteur, plus tard.
 - Cookies : vérifier la config Spring Security (cookie CSRF pour un visiteur anonyme) et les cookies Cloudflare éventuels, plus tard, avant rédaction.

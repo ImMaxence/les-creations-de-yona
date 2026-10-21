@@ -1,0 +1,46 @@
+<nav class="pagination" aria-label="Pagination">
+  @if (page() > 1) {
+    <a
+      class="pagination__step"
+      aria-label="Page précédente"
+      routerLink="."
+      queryParamsHandling="merge"
+      [queryParams]="queryParams(page() - 1)"
+    >
+      <svg lucideChevronLeft [size]="18"></svg>
+    </a>
+  }
+
+  <ol role="list" class="pagination__pages">
+    @for (item of items(); track item.kind === 'page' ? item.page : item.key) {
+      <li>
+        @if (item.kind === 'gap') {
+          <span class="pagination__gap" aria-hidden="true">…</span>
+        } @else if (item.page === page()) {
+          <span class="pagination__page is-current" aria-current="page">{{ item.page }}</span>
+        } @else {
+          <a
+            class="pagination__page"
+            routerLink="."
+            queryParamsHandling="merge"
+            [queryParams]="queryParams(item.page)"
+            [attr.aria-label]="'Page ' + item.page"
+            >{{ item.page }}</a
+          >
+        }
+      </li>
+    }
+  </ol>
+
+  @if (page() < totalPages()) {
+    <a
+      class="pagination__step"
+      aria-label="Page suivante"
+      routerLink="."
+      queryParamsHandling="merge"
+      [queryParams]="queryParams(page() + 1)"
+    >
+      <svg lucideChevronRight [size]="18"></svg>
+    </a>
+  }
+</nav>

@@ -1,0 +1,63 @@
+<div class="head">
+  <h2 id="ingredients-title">Ingrédients</h2>
+  @if (chosenServings(); as count) {
+    <div class="servings" role="group" aria-label="Nombre de portions">
+      <button
+        type="button"
+        class="servings__button"
+        aria-label="Une portion de moins"
+        [disabled]="count === 1"
+        (click)="changeServings(-1)"
+      >
+        <svg lucideMinus [size]="16"></svg>
+      </button>
+      <span class="servings__count" aria-live="polite">
+        <strong>{{ count }}</strong> {{ count === 1 ? 'portion' : 'portions' }}
+      </span>
+      <button
+        type="button"
+        class="servings__button"
+        aria-label="Une portion de plus"
+        [disabled]="count === maxServings"
+        (click)="changeServings(1)"
+      >
+        <svg lucidePlus [size]="16"></svg>
+      </button>
+    </div>
+  }
+</div>
+
+<ul role="list" class="list">
+  @for (line of lines(); track $index; let i = $index) {
+    <li>
+      <label class="ingredient" [class.is-checked]="checked().has(i)">
+        <input type="checkbox" class="visually-hidden" [checked]="checked().has(i)" (change)="toggle(i)" />
+        <span class="checkbox" aria-hidden="true">
+          <svg lucideCheck [size]="14" [strokeWidth]="3"></svg>
+        </span>
+        <span class="ingredient__text">
+          @if (line.quantity) {
+            <strong>{{ line.quantity }} {{ line.unit }}</strong>
+          }
+          {{ line.name }}
+          @if (line.note) {
+            <span class="ingredient__note">{{ line.note }}</span>
+          }
+        </span>
+      </label>
+    </li>
+  }
+</ul>
+
+@if (wakeLockSupported()) {
+  <button
+    type="button"
+    class="screen-toggle"
+    [class.is-on]="screenKeptOn()"
+    [attr.aria-pressed]="screenKeptOn()"
+    (click)="toggleScreenOn()"
+  >
+    <svg lucideSun [size]="18"></svg>
+    {{ screenKeptOn() ? "L'écran reste allumé" : "Garder l'écran allumé" }}
+  </button>
+}

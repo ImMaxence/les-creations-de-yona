@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideArrowRight } from '@lucide/angular';
 import { SiteData } from '../../core/site/site-data';
 import { Reveal } from '../../shared/motion/reveal';
+import { RECIPE_IMAGE_TRANSITION, isSameTabClick } from '../../shared/motion/view-transitions';
 import { RECIPES_PATH, categoryQueryParams, recipeLink } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
@@ -27,4 +28,11 @@ export default class Home {
   });
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;
+  protected readonly featuredTransition = signal<string | null>(null);
+
+  protected onFeaturedClick(event: MouseEvent): void {
+    if (isSameTabClick(event)) {
+      this.featuredTransition.set(RECIPE_IMAGE_TRANSITION);
+    }
+  }
 }

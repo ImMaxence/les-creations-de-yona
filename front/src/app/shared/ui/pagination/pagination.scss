@@ -1,0 +1,51 @@
+@use 'mixins' as m;
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pagination__pages {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  list-style: none;
+}
+
+.pagination__page,
+.pagination__step {
+  display: grid;
+  place-items: center;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: var(--color-surface);
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+
+.pagination__page.is-current {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.pagination__gap {
+  min-width: 1.5rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}

@@ -63,6 +63,20 @@
   animation: page-in var(--duration-slow) var(--ease-out) 120ms both;
 }
 
+// Recipe photo growing from its card into the recipe header (shared view-transition-name)
+::view-transition-group(recipe-image) {
+  z-index: 1;
+  animation-duration: 550ms;
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-old(recipe-image),
+::view-transition-new(recipe-image) {
+  height: 100%;
+  object-fit: cover;
+  overflow: clip;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

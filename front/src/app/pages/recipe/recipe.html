@@ -1,0 +1,79 @@
+<article class="recipe">
+  <header class="hero">
+    <yona-cover-image
+      class="hero__image"
+      [style.view-transition-name]="imageTransition"
+      [imageId]="recipe().imageId"
+      [alt]="recipe().title"
+      sizes="100vw"
+      priority
+    />
+    <div class="container hero__content">
+      <nav class="breadcrumb enter" aria-label="Fil d'Ariane">
+        <a [routerLink]="recipesPath">Recettes</a>
+        <span aria-hidden="true">/</span>
+        <a [routerLink]="recipesPath" [queryParams]="categoryQueryParams(recipe().category)">{{
+          recipe().category.name
+        }}</a>
+      </nav>
+      <h1 class="hero__title enter" style="--delay: 100ms">{{ recipe().title }}</h1>
+    </div>
+  </header>
+
+  <div class="container body">
+    @if (recipe().prepMinutes || recipe().cookMinutes) {
+      <dl class="facts enter" style="--delay: 200ms">
+        @if (recipe().prepMinutes; as prep) {
+          <div class="fact">
+            <svg lucideChefHat [size]="22" [strokeWidth]="1.75"></svg>
+            <dt>Préparation</dt>
+            <dd>{{ formatMinutes(prep) }}</dd>
+          </div>
+        }
+        @if (recipe().cookMinutes; as cook) {
+          <div class="fact">
+            <svg lucideCookingPot [size]="22" [strokeWidth]="1.75"></svg>
+            <dt>Cuisson</dt>
+            <dd>{{ formatMinutes(cook) }}</dd>
+          </div>
+        }
+        @if (recipe().prepMinutes && recipe().cookMinutes) {
+          <div class="fact">
+            <svg lucideClock [size]="22" [strokeWidth]="1.75"></svg>
+            <dt>Total</dt>
+            <dd>{{ formatMinutes(totalMinutes()) }}</dd>
+          </div>
+        }
+      </dl>
+    }
+
+    @if (recipe().intro) {
+      <p class="intro enter" style="--delay: 260ms">{{ recipe().intro }}</p>
+    }
+
+    <div class="layout">
+      <section class="layout__ingredients" yonaReveal aria-labelledby="ingredients-title">
+        <yona-recipe-ingredients [ingredients]="recipe().ingredients" [servings]="recipe().servings" />
+      </section>
+      <section aria-labelledby="steps-title">
+        <yona-recipe-steps [steps]="recipe().steps" />
+      </section>
+    </div>
+
+    <footer class="footer" yonaReveal>
+      <p>
+        Mise à jour le
+        <time [attr.datetime]="recipe().updatedAt">{{ recipe().updatedAt | parisDate }}</time>
+      </p>
+      <a
+        yonaButton
+        variant="secondary"
+        [routerLink]="recipesPath"
+        [queryParams]="categoryQueryParams(recipe().category)"
+      >
+        Plus de recettes : {{ recipe().category.name }}
+        <svg lucideArrowRight></svg>
+      </a>
+    </footer>
+  </div>
+</article>

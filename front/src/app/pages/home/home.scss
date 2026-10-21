@@ -138,19 +138,23 @@
   }
 
   p:last-child {
+    max-width: 38rem;
     color: var(--color-text-muted);
   }
 }
 
-// Placeholder until the author's photo is added to the project
 .about__portrait {
   position: relative;
-  display: grid;
-  place-items: center;
   width: 9rem;
   aspect-ratio: 1;
-  border-radius: 50%;
-  background-color: var(--color-surface);
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--color-surface);
+  }
 
   // Sage ring, slightly offset: a hand-made touch
   &::before {
@@ -168,29 +172,7 @@
   }
 }
 
-.about__monogram {
-  font-family: var(--font-display);
-  font-size: 4rem;
-  font-style: italic;
-  font-weight: 500;
-  color: var(--color-accent);
-}
-
 // Latest recipes --------------------------------------------------------------
-
-.recipe-grid {
-  display: grid;
-  gap: var(--space-5);
-
-  @include m.from(sm) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @include m.from(lg) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-6);
-  }
-}
 
 .latest__more {
   display: flex;

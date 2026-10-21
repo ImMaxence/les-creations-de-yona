@@ -14,6 +14,7 @@ import {
   RedirectCommand,
   Router,
   TitleStrategy,
+  ViewTransitionInfo,
   provideRouter,
   withComponentInputBinding,
   withInMemoryScrolling,
@@ -22,8 +23,26 @@ import {
 } from '@angular/router';
 import { routes } from './app.routes';
 import { provideApiConfiguration } from './core/api/generated/api-configuration';
-import { PageTitleStrategy } from './core/routing/page-title-strategy';
+import { SeoStrategy } from './core/seo/seo-strategy';
 import { SiteData } from './core/site/site-data';
+
+/** No page transition when only the query changes (search, filter, pagination): same page. */
+function skipTransitionWithinPage({ transition }: ViewTransitionInfo): void {
+  const router = inject(Router);
+  const target = router.currentNavigation()?.finalUrl;
+  const samePage =
+    target &&
+    router.isActive(target, {
+      paths: 'exact',
+      matrixParams: 'exact',
+      queryParams: 'ignored',
+      fragment: 'ignored',
+    });
+  if (samePage) {
+    // Angular logs the resulting AbortError in development builds only
+    transition.skipTransition();
+  }
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -32,14 +51,17 @@ export const appConfig: ApplicationConfig = {
       routes,
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled', anchorScrolling: 'enabled' }),
-      withViewTransitions({ skipInitialTransition: true }),
+      withViewTransitions({
+        skipInitialTransition: true,
+        onViewTransitionCreated: skipTransitionWithinPage,
+      }),
       // Data that cannot be loaded: error page, while keeping the URL the visitor asked for
       withNavigationErrorHandler(
         () =>
           new RedirectCommand(inject(Router).parseUrl('/erreur'), { skipLocationChange: true }),
       ),
     ),
-    { provide: TitleStrategy, useExisting: PageTitleStrategy },
+    { provide: TitleStrategy, useExisting: SeoStrategy },
     provideHttpClient(withFetch()),
     provideClientHydration(
       withEventReplay(),

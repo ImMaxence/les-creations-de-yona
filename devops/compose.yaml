@@ -81,6 +81,34 @@ services:
       seaweedfs:
         condition: service_healthy
 
+  # Angular SSR server. Not published: reached through the gateway, like in production.
+  front:
+    profiles: [app]
+    build: ../front
+    restart: unless-stopped
+    environment:
+      # The SSR server calls the backend directly, inside the Compose network
+      API_URL: http://back:8080
+      NG_ALLOWED_HOSTS: localhost
+      # Only reachable through the gateway: its forwarded headers can be trusted
+      NG_TRUST_PROXY_HEADERS: x-forwarded-host,x-forwarded-proto,x-forwarded-for
+    depends_on:
+      back:
+        condition: service_healthy
+
+  # Whole application on http://localhost:8000: /api/* to the backend, the rest to the front.
+  gateway:
+    profiles: [app]
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - 127.0.0.1:${APP_PORT:-8000}:80
+    depends_on:
+      front:
+        condition: service_healthy
+
 volumes:
   postgres-data:
   seaweedfs-data:

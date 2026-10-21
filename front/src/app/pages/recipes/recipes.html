@@ -1,0 +1,99 @@
+<section class="container recipes">
+  <header class="recipes__head">
+    <p class="eyebrow enter">{{ activeCategory() ? 'Catégorie' : 'Nos recettes' }}</p>
+    <h1 class="recipes__title enter" style="--delay: 80ms">
+      {{ activeCategory()?.name ?? 'Toutes les recettes' }}
+    </h1>
+    <p class="recipes__count enter" style="--delay: 140ms" aria-live="polite">
+      {{ countLabel() }}
+      @if (filters().search) {
+        pour « {{ filters().search }} »
+      }
+    </p>
+  </header>
+
+  <div class="recipes__tools enter" style="--delay: 200ms">
+    <yona-search-box
+      [value]="filters().search"
+      (searchSubmitted)="search($event)"
+      (suggestionPicked)="openRecipe($event)"
+    />
+
+    <nav class="filters" aria-label="Filtrer par catégorie">
+      <ul role="list" class="filters__list">
+        <li>
+          <a
+            class="filter"
+            [class.is-active]="!filters().category"
+            [attr.aria-current]="!filters().category ? 'page' : null"
+            [routerLink]="recipesPath"
+            [queryParams]="categoryParams(null)"
+            queryParamsHandling="merge"
+            >Toutes</a
+          >
+        </li>
+        @for (category of categories(); track category.id) {
+          <li>
+            <a
+              class="filter"
+              [class.is-active]="category.slug === filters().category"
+              [attr.aria-current]="category.slug === filters().category ? 'page' : null"
+              [routerLink]="recipesPath"
+              [queryParams]="categoryParams(category.slug)"
+              queryParamsHandling="merge"
+              >{{ category.name }}</a
+            >
+          </li>
+        }
+      </ul>
+    </nav>
+  </div>
+
+  <div class="results">
+    @if (result().content.length) {
+      <ul role="list" class="recipe-grid">
+        <!-- Cards appearing after a filter change fade in; cards already shown stay put -->
+        @for (recipe of result().content; track recipe.slug; let i = $index) {
+          <li yonaReveal [revealDelay]="(i % 3) * 90" animate.enter="card-enter" [style.--i]="i">
+            <yona-recipe-card [recipe]="recipe" [priority]="i === 0" />
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="empty" animate.enter="card-enter">
+        <div class="empty__icon" aria-hidden="true">
+          <svg lucideSearchX [size]="40" [strokeWidth]="1.5"></svg>
+        </div>
+        @if (result().totalElements > 0) {
+          <h2>Cette page est vide</h2>
+          <p>Il n'y a pas autant de pages de recettes.</p>
+          <a yonaButton variant="secondary" routerLink="." queryParamsHandling="merge" [queryParams]="{ page: null }"
+            >Revenir à la première page</a
+          >
+        } @else {
+          <h2>Aucune recette trouvée</h2>
+          <p>Essayez un autre mot, ou une autre catégorie.</p>
+          @if (hasFilters()) {
+            <a yonaButton variant="secondary" [routerLink]="recipesPath">Voir toutes les recettes</a>
+          }
+        }
+      </div>
+    }
+  </div>
+
+  @if (result().totalElements > 0) {
+    <footer class="recipes__footer">
+      @if (result().totalPages > 1) {
+        <yona-pagination [page]="filters().page" [totalPages]="result().totalPages" />
+      }
+      <label class="page-size">
+        <span>Recettes par page</span>
+        <select class="page-size__select" (change)="changePageSize($event)">
+          @for (size of pageSizes; track size) {
+            <option [value]="size" [selected]="size === filters().pageSize">{{ size }}</option>
+          }
+        </select>
+      </label>
+    </footer>
+  }
+</section>

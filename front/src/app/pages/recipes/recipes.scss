@@ -1,0 +1,175 @@
+@use 'mixins' as m;
+
+.recipes {
+  display: grid;
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+
+  @include m.from(md) {
+    padding-top: var(--space-8);
+  }
+}
+
+.recipes__head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.recipes__title {
+  font-size: var(--text-3xl);
+}
+
+.recipes__count {
+  color: var(--color-text-muted);
+}
+
+.recipes__tools {
+  position: relative;
+  z-index: 2; // suggestions above the cards
+  display: grid;
+  gap: var(--space-4);
+
+  @include m.from(md) {
+    grid-template-columns: minmax(18rem, 26rem) 1fr;
+    align-items: center;
+    gap: var(--space-6);
+  }
+}
+
+// Category chips: one scrolling row on phones, wrapped on larger screens
+.filters {
+  margin-inline: calc(-1 * var(--container-padding));
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, transparent, #000 var(--space-4), #000 calc(100% - var(--space-6)), transparent);
+
+  @include m.from(md) {
+    margin-inline: 0;
+    overflow: visible;
+    mask-image: none;
+  }
+}
+
+.filters__list {
+  display: flex;
+  gap: var(--space-2);
+  width: max-content;
+  padding: var(--space-1) var(--container-padding);
+
+  @include m.from(md) {
+    flex-wrap: wrap;
+    width: auto;
+    padding: 0;
+  }
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+
+  @include m.hover {
+    border-color: var(--color-text-muted);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.is-active {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+}
+
+.card-enter {
+  animation: rise var(--duration-slow) var(--ease-out) calc(min(var(--i, 0), 5) * 50ms) both;
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  text-align: center;
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+
+  p {
+    color: var(--color-text-muted);
+  }
+
+  [yonaButton] {
+    margin-top: var(--space-2);
+  }
+}
+
+.empty__icon {
+  display: grid;
+  place-items: center;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background-color: var(--color-bg);
+  color: var(--color-accent);
+}
+
+.recipes__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4) var(--space-6);
+  margin-top: var(--space-4);
+
+  @include m.from(md) {
+    justify-content: space-between;
+  }
+}
+
+.page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+// Native select (accessible, and the phone's own picker), styled like the rest of the site
+.page-size__select {
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-6) var(--space-2) var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%232e2420' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+      no-repeat right var(--space-3) center,
+    var(--color-bg);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color var(--duration-base) var(--ease-out);
+
+  @include m.hover {
+    border-color: var(--color-text-muted);
+  }
+}
