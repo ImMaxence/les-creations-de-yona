@@ -2,16 +2,16 @@
 // Only Sass variables here (no CSS output), so any component can @use this file.
 // At runtime, components read the CSS custom properties emitted by _root.scss.
 
-// Brand palette (ReadMe, "Charte graphique")
-$cream: #fbf6ee;
-$sand: #efe4d2;
-$espresso: #2e2420;
-$terracotta: #b5532e;
-$sage: #7d8f69;
+// Brand palette "Pâtisserie chic" (ReadMe, "Charte graphique")
+$almond-milk: #fcf9f5; // main background
+$blush-pale: #f4e7e6; // secondary background (surfaces, chips)
+$dark-cocoa: #36221c; // main color: text
+$dusty-rose: #d49a99; // secondary accent, decorative only (2.2:1 on almond milk: never text)
+$warm-mocha: #8c533e; // buttons and main actions, 5.8:1 on almond milk
 
-$terracotta-dark: #96421f; // hover and pressed states
-$espresso-muted: #6c635e; // secondary text, 5.5:1 on cream
-$line: rgb(46 36 32 / 12%);
+$warm-mocha-dark: #6e3f2e; // hover and pressed states
+$dark-cocoa-muted: #6e5a52; // secondary text, 6.2:1 on almond milk
+$line: rgb(54 34 28 / 12%);
 
 // Typography
 $font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;

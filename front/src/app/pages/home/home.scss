@@ -86,7 +86,7 @@
 }
 
 .hero__chip {
-  background-color: rgb(251 246 238 / 18%);
+  background-color: rgb(252 249 245 / 18%);
   backdrop-filter: blur(6px);
 }
 
@@ -156,7 +156,7 @@
     background-color: var(--color-surface);
   }
 
-  // Sage ring around the photo
+  // Dusty rose ring around the photo
   &::before {
     content: '';
     position: absolute;

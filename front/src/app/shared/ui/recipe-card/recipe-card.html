@@ -8,7 +8,7 @@
     sizes="(width >= 64rem) 22rem, (width >= 40rem) 46vw, 92vw"
   />
   <div class="card__body">
-    <span class="chip">{{ recipe().category.name }}</span>
+    <span class="card__category">{{ recipe().category.name }}</span>
     <h3 class="card__title">{{ recipe().title }}</h3>
     <time class="card__date" [attr.datetime]="recipe().createdAt">{{ recipe().createdAt | parisDate }}</time>
   </div>

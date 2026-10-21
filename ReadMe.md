@@ -148,7 +148,8 @@ npm run api:generate   # régénère le client API depuis http://localhost:8080/
 - Référencement :
   - `/sitemap.xml` (`src/server/sitemap.ts`) : construit à chaque demande depuis l'API (accueil, recettes, catégories ayant au moins une recette, toutes les recettes publiées, installation, pages légales), en cache une heure. URL sur le domaine de production.
   - `public/robots.txt` : API exclue sauf les photos, lien vers le sitemap. `/admin` n'y figure pas exprès : ses pages répondent `X-Robots-Tag: noindex, nofollow`, que les robots doivent pouvoir lire.
-- Application installable (PWA) : service worker Angular (`ngsw-config.json`), actif seulement dans le build de production. Pour le tester en local : `npm run build`, puis `npm run serve:ssr` ou l'application complète dans Docker. Icônes dans `public/icons/`, manifeste dans `public/manifest.webmanifest`.
+- Application installable (PWA) : service worker Angular (`ngsw-config.json`), actif seulement dans le build de production. Pour le tester en local : `npm run build`, puis `npm run serve:ssr` ou l'application complète dans Docker. Icônes dans `public/icons/`, manifeste dans `public/manifest.webmanifest`. Nom sous l'icône une fois installée : « Recette Yona » (`short_name` du manifeste, `apple-mobile-web-app-title` pour iOS).
+- Les écritures (POST, PUT, DELETE) contournent le service worker (en-tête `ngsw-bypass`) : relayé par lui, Safari sur iOS perd le fichier envoyé lors de l'upload d'une photo.
   - Pages : toujours demandées au serveur (rendu SSR à jour), version hors ligne en secours.
   - API publique (`/api/recipes`, catégories, réseaux sociaux) : réseau d'abord, cache de 30 jours si le réseau ne répond pas en 4 secondes.
   - Images : servies depuis le cache (leur URL change à chaque nouvelle photo), 30 jours.
@@ -324,17 +325,18 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 ## Charte graphique
 
-Ambiance cuisine chaleureuse, lisible sur téléphone.
+Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Palette « Pâtisserie chic ».
 
 | Rôle | Couleur | Hex |
 | --- | --- | --- |
-| Fond | Crème | `#FBF6EE` |
-| Surfaces (cards, footer) | Beige sable | `#EFE4D2` |
-| Texte | Brun espresso | `#2E2420` |
-| Accent (boutons, liens, à la une) | Terracotta | `#B5532E` |
-| Décor secondaire (catégories, badges) | Vert sauge | `#7D8F69` |
+| Fond principal | Almond milk | `#FCF9F5` |
+| Fond secondaire (surfaces, cards, footer) | Blush pale | `#F4E7E6` |
+| Couleur principale (texte) | Dark cocoa | `#36221C` |
+| Boutons et actions principales (liens, à la une) | Warm mocha | `#8C533E` |
+| Accent secondaire (décor : anneau photo, icônes) | Dusty rose | `#D49A99` |
 
-- Contrastes : texte sur fond ≈ 14:1, terracotta sur crème ≈ 4,6:1 (AA). Le vert sauge reste en décor, pas pour du texte.
+- Contrastes : texte sur fond ≈ 14:1, warm mocha sur almond milk ≈ 5,8:1 (AA). Le dusty rose (≈ 2,2:1) reste en décor, jamais pour du texte.
+- Favicon et icônes de l'application : toque almond milk sur fond warm mocha.
 - Titres : Fraunces (serif chaleureuse, Google Fonts, gratuite). Texte et interface : Inter (lisible sur mobile). Polices auto-hébergées dans le projet, sans appel à Google Fonts, pour ne pas transmettre l'IP des visiteurs à Google.
 - Header de recette : dégradé noir transparent, du bas vers le haut.
 

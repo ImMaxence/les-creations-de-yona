@@ -1,15 +1,15 @@
 @use 'variables' as v;
 
 :root {
-  --color-bg: #{v.$cream};
-  --color-surface: #{v.$sand};
-  --color-text: #{v.$espresso};
-  --color-text-muted: #{v.$espresso-muted};
-  --color-accent: #{v.$terracotta};
-  --color-accent-strong: #{v.$terracotta-dark};
-  --color-decor: #{v.$sage};
+  --color-bg: #{v.$almond-milk};
+  --color-surface: #{v.$blush-pale};
+  --color-text: #{v.$dark-cocoa};
+  --color-text-muted: #{v.$dark-cocoa-muted};
+  --color-accent: #{v.$warm-mocha};
+  --color-accent-strong: #{v.$warm-mocha-dark};
+  --color-decor: #{v.$dusty-rose};
   --color-line: #{v.$line};
-  --color-on-accent: #{v.$cream};
+  --color-on-accent: #{v.$almond-milk};
 
   --font-display: #{v.$font-display};
   --font-body: #{v.$font-body};
@@ -37,8 +37,8 @@
   --radius-lg: 1.5rem;
   --radius-pill: 999px;
 
-  --shadow-sm: 0 1px 2px rgb(46 36 32 / 6%), 0 2px 8px rgb(46 36 32 / 6%);
-  --shadow-md: 0 4px 12px rgb(46 36 32 / 8%), 0 12px 32px rgb(46 36 32 / 10%);
+  --shadow-sm: 0 1px 2px rgb(54 34 28 / 6%), 0 2px 8px rgb(54 34 28 / 6%);
+  --shadow-md: 0 4px 12px rgb(54 34 28 / 8%), 0 12px 32px rgb(54 34 28 / 10%);
 
   --ease-out: #{v.$ease-out};
   --ease-in-out: #{v.$ease-in-out};

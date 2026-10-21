@@ -9,11 +9,12 @@
   <svg lucideMenu [size]="24"></svg>
 </button>
 
-<dialog #dialog class="menu" aria-label="Menu" (close)="onClosed()">
+<!-- Focusable (tabindex -1) so that opening it focuses the dialog itself, not its first link or button -->
+<dialog #dialog class="menu" aria-label="Menu" tabindex="-1" (close)="onClosed()">
   <!-- The page's own progress bar is hidden behind the menu while the next page loads -->
   <yona-navigation-progress />
   <div class="menu__top">
-    <span class="menu__title">Menu</span>
+    <yona-brand-logo />
     <button type="button" class="toggle" aria-label="Fermer le menu" (click)="close()">
       <svg lucideX [size]="24"></svg>
     </button>
@@ -26,24 +27,30 @@
           routerLink="/"
           routerLinkActive="is-active"
           [routerLinkActiveOptions]="{ exact: true }"
-          >Accueil</a
-        >
+          >Accueil <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+        ></a>
       </li>
       <li class="stagger" style="--i: 1">
-        <a [routerLink]="recipesPath" routerLinkActive="is-active">Recettes</a>
+        <a [routerLink]="recipesPath" routerLinkActive="is-active"
+          >Recettes <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+        ></a>
       </li>
       <li class="stagger" style="--i: 2">
-        <a [routerLink]="installPath" routerLinkActive="is-active">Installer l'application</a>
+        <a [routerLink]="installPath" routerLinkActive="is-active"
+          >Installer l'application <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+        ></a>
       </li>
       @if (adminSession.isAdmin()) {
         <li class="stagger" style="--i: 2">
-          <a routerLink="/admin" routerLinkActive="is-active">Administration</a>
+          <a routerLink="/admin" routerLinkActive="is-active"
+            >Administration <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+          ></a>
         </li>
       }
     </ul>
 
     @if (siteData.categories().length) {
-      <p class="menu__subtitle stagger" style="--i: 3">Catégories</p>
+      <p class="menu__subtitle stagger" style="--i: 3">Naviguer par catégorie</p>
       <ul role="list" class="menu__categories stagger" style="--i: 4">
         @for (category of siteData.categories(); track category.id) {
           <li>

@@ -40,7 +40,8 @@
 }
 
 // Page transitions (router withViewTransitions): the old page fades out, the new one rises.
-// The header has its own view-transition-name, so it stays still.
+// The header has its own view-transition-name, so it stays still. So do the back-office greeting
+// and tabs (admin-head, admin-nav) when moving from one section to another.
 @keyframes page-out {
   to {
     opacity: 0;

@@ -110,7 +110,12 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpStatusCode statusCode, WebRequest request) {
 		boolean hasCode = body instanceof ProblemDetail problem && problem.getProperties() != null
 				&& problem.getProperties().containsKey(CODE);
-		Object problemBody = hasCode ? body : problem(ErrorCode.fromStatus(statusCode));
+		ErrorCode code = ErrorCode.fromStatus(statusCode);
+		if (!hasCode && code == ErrorCode.BAD_REQUEST) {
+			// The client only sees a generic message: the cause stays in the logs.
+			log.warn("Bad request: {}", ex.getMessage());
+		}
+		Object problemBody = hasCode ? body : problem(code);
 		return super.handleExceptionInternal(ex, problemBody, headers, statusCode, request);
 	}
 

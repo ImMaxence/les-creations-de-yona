@@ -16,12 +16,13 @@ import {
   RouterLink,
   RouterLinkActive,
 } from '@angular/router';
-import { LucideMenu, LucideX } from '@lucide/angular';
+import { LucideChevronRight, LucideMenu, LucideX } from '@lucide/angular';
 import { filter } from 'rxjs';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
 import { INSTALL_PATH, RECIPES_PATH, categoryQueryParams } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
+import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { NavigationProgress } from '../navigation-progress/navigation-progress';
 
 /**
@@ -33,7 +34,16 @@ import { NavigationProgress } from '../navigation-progress/navigation-progress';
  */
 @Component({
   selector: 'yona-mobile-menu',
-  imports: [RouterLink, RouterLinkActive, LucideMenu, LucideX, BrandIcon, NavigationProgress],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    LucideMenu,
+    LucideX,
+    LucideChevronRight,
+    BrandIcon,
+    BrandLogo,
+    NavigationProgress,
+  ],
   templateUrl: './mobile-menu.html',
   styleUrl: './mobile-menu.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,7 +76,10 @@ export class MobileMenu {
   }
 
   protected open(): void {
-    this.dialog().nativeElement.showModal();
+    const dialog = this.dialog().nativeElement;
+    dialog.showModal();
+    // showModal() focuses the first link or button, and Safari then shows its focus ring after a tap
+    dialog.focus();
     this.isOpen.set(true);
   }
 

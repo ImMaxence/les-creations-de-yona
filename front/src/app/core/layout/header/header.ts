@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideChefHat } from '@lucide/angular';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
 import { INSTALL_PATH, RECIPES_PATH } from '../../../shared/routing/links';
+import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { CategoryMenu } from '../category-menu/category-menu';
 import { MobileMenu } from '../mobile-menu/mobile-menu';
 
@@ -14,7 +14,7 @@ const SCROLL_DIRECTION_THRESHOLD_PX = 6;
 
 @Component({
   selector: 'yona-header',
-  imports: [RouterLink, RouterLinkActive, LucideChefHat, CategoryMenu, MobileMenu],
+  imports: [RouterLink, RouterLinkActive, BrandLogo, CategoryMenu, MobileMenu],
   templateUrl: './header.html',
   styleUrl: './header.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

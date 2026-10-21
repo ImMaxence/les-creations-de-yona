@@ -18,6 +18,8 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
+  // Out of the page transition (see _motion.scss): only the section below changes between tabs
+  view-transition-name: admin-head;
 }
 
 .admin__title {
@@ -37,6 +39,7 @@
   padding: var(--space-1) var(--container-padding);
   overflow-x: auto;
   scrollbar-width: none;
+  view-transition-name: admin-nav;
 
   @include m.from(md) {
     flex-wrap: wrap;

@@ -1,5 +1,11 @@
+// Centered by margin: auto, which the reset (* { margin: 0 }) removes. Geometry set explicitly so that
+// it also holds while fading out, once the dialog is no longer :modal and loses the browser's styles.
 .confirm {
+  position: fixed;
+  inset: 0;
   width: min(100% - 2rem, 26rem);
+  height: fit-content;
+  margin: auto;
   padding: var(--space-6);
   border: 0;
   border-radius: var(--radius-lg);
@@ -25,7 +31,7 @@
   }
 
   &::backdrop {
-    background-color: rgb(46 36 32 / 40%);
+    background-color: rgb(54 34 28 / 40%);
     backdrop-filter: blur(2px);
   }
 

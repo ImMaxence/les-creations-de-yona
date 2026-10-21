@@ -30,7 +30,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  background-color: rgb(251 246 238 / 70%);
+  background-color: color-mix(in srgb, var(--color-bg) 70%, transparent);
   color: var(--color-accent);
 }
 

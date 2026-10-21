@@ -1,0 +1,42 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+
+  @include m.hover {
+    .brand__mark {
+      transform: rotate(-8deg) scale(1.06);
+    }
+  }
+}
+
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+
+  em {
+    font-weight: 500;
+    color: var(--color-accent);
+  }
+}
