@@ -32,6 +32,7 @@ import { offlineWarmupInterceptor } from './core/pwa/offline-warmup';
 import { serviceWorkerBypassInterceptor } from './core/pwa/service-worker-bypass';
 import { SeoStrategy } from './core/seo/seo-strategy';
 import { SiteData } from './core/site/site-data';
+import { SiteTheme } from './core/theme/site-theme';
 
 /**
  * No page transition when only the query changes (search, filter, pagination): same page.
@@ -86,6 +87,7 @@ export const appConfig: ApplicationConfig = {
     // Same origin as the site: the API is served under /api
     provideApiConfiguration(''),
     provideAppInitializer(() => inject(SiteData).load()),
+    provideAppInitializer(() => inject(SiteTheme).load()),
     provideAppInitializer(() => inject(InstallPrompt).listen()),
     // Offline reading and installation as an app (PWA). Off in development, where it would cache stale code.
     provideServiceWorker('ngsw-worker.js', {

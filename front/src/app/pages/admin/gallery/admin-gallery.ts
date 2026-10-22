@@ -13,9 +13,14 @@ import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 
 type KindFilter = 'ALL' | GalleryImage['kind'];
+type UsageFilter = 'ALL' | 'USED' | 'UNUSED';
 
 const PAGE_SIZE = 24;
 
+/**
+ * Every uploaded photo is kept, even once replaced or removed from its recipe: here the admin
+ * sees which ones are unused and deletes them, or shows them again from a recipe or category.
+ */
 @Component({
   selector: 'yona-admin-gallery',
   imports: [CoverImage, Select, ParisDatePipe, LucideChevronLeft, LucideChevronRight, LucideTrash2],
@@ -30,15 +35,22 @@ export default class AdminGallery {
   private readonly siteData = inject(SiteData);
 
   protected readonly kindOptions: SelectOption<KindFilter>[] = [
+    { value: 'ALL', label: 'Recettes et catégories' },
+    { value: 'RECIPE', label: 'Envoyées pour une recette' },
+    { value: 'CATEGORY', label: 'Envoyées pour une catégorie' },
+  ];
+  protected readonly usageOptions: SelectOption<UsageFilter>[] = [
     { value: 'ALL', label: 'Toutes les images' },
-    { value: 'RECIPE', label: 'Recettes' },
-    { value: 'CATEGORY', label: 'Catégories' },
+    { value: 'USED', label: 'Utilisées' },
+    { value: 'UNUSED', label: 'Non utilisées' },
   ];
   protected readonly kind = signal<KindFilter>('ALL');
-  protected readonly page = linkedSignal({ source: this.kind, computation: () => 0 });
+  protected readonly usage = signal<UsageFilter>('ALL');
+  protected readonly page = linkedSignal({ source: () => [this.kind(), this.usage()], computation: () => 0 });
   protected readonly images = resource({
     params: () => ({
       kind: this.kind() === 'ALL' ? undefined : (this.kind() as GalleryImage['kind']),
+      used: this.usage() === 'ALL' ? undefined : this.usage() === 'USED',
       page: this.page(),
       size: PAGE_SIZE,
     }),
@@ -49,17 +61,16 @@ export default class AdminGallery {
   protected async remove(image: GalleryImage): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: "Supprimer l'image ?",
-      message: image.usedBy
-        ? `Elle disparaîtra de « ${image.usedBy} », qui affichera le visuel par défaut.`
-        : "Elle n'est utilisée nulle part.",
+      message: image.usedBy.length
+        ? `Elle disparaîtra de ${image.usedBy.map((name) => `« ${name} »`).join(', ')}, qui afficheront le visuel par défaut.`
+        : "Elle n'est utilisée nulle part. Elle sera supprimée définitivement.",
       confirmLabel: 'Supprimer',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteImage, { id: image.id }))).ok) {
       this.toaster.success('Image supprimée.');
       this.images.reload();
-      if (image.kind === 'CATEGORY') {
-        await this.siteData.load();
-      }
+      // A category may have shown it: the navbar and the home page follow
+      await this.siteData.load();
     }
   }
 }

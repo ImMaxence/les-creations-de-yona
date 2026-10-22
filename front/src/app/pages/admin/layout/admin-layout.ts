@@ -6,6 +6,7 @@ import {
   LucideDatabaseBackup,
   LucideImages,
   LucideLogOut,
+  LucidePalette,
   LucideShare2,
   LucideTags,
 } from '@lucide/angular';
@@ -30,6 +31,7 @@ import { Button } from '../../../shared/ui/button/button';
     LucideDatabaseBackup,
     LucideImages,
     LucideLogOut,
+    LucidePalette,
     LucideShare2,
     LucideTags,
   ],

@@ -23,6 +23,7 @@ import { SiteData } from '../../site/site-data';
 import { INSTALL_PATH, RECIPES_PATH, categoryQueryParams } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
+import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
 import { NavigationProgress } from '../navigation-progress/navigation-progress';
 
 /**
@@ -42,6 +43,7 @@ import { NavigationProgress } from '../navigation-progress/navigation-progress';
     LucideChevronRight,
     BrandIcon,
     BrandLogo,
+    ColorSchemeSwitch,
     NavigationProgress,
   ],
   templateUrl: './mobile-menu.html',

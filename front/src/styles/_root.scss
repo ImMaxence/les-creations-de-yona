@@ -1,18 +1,13 @@
 @use 'variables' as v;
 
+// Set on <html> by SiteTheme, from the theme chosen in the back-office (core/theme):
+// --color-bg, --color-surface, --color-text, --color-text-muted, --color-accent,
+// --color-accent-strong, --color-on-accent, --color-decor, --color-danger, --color-shadow
+// (each one light-dark(light value, dark value)), --font-display, --font-body and --radius-base.
 :root {
-  --color-bg: #{v.$almond-milk};
-  --color-surface: #{v.$blush-pale};
-  --color-text: #{v.$dark-cocoa};
-  --color-text-muted: #{v.$dark-cocoa-muted};
-  --color-accent: #{v.$warm-mocha};
-  --color-accent-strong: #{v.$warm-mocha-dark};
-  --color-decor: #{v.$dusty-rose};
-  --color-line: #{v.$line};
-  --color-on-accent: #{v.$almond-milk};
-
-  --font-display: #{v.$font-display};
-  --font-body: #{v.$font-body};
+  --color-line: color-mix(in srgb, var(--color-text) 12%, transparent);
+  // Text drawn on photos, over a dark gradient: light whatever the theme and the scheme
+  --color-on-image: #fdfaf6;
 
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
@@ -32,13 +27,19 @@
   --space-8: 4rem;
   --space-9: 6rem;
 
-  --radius-sm: 0.5rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;
-  --radius-pill: 999px;
+  // Every corner follows the admin's radius. Pills (buttons, chips) get twice as much: with the
+  // default 16px they stay fully round, and they square up with the rest when it goes down to 0.
+  --radius-sm: calc(var(--radius-base) * 0.5);
+  --radius-md: var(--radius-base);
+  --radius-lg: calc(var(--radius-base) * 1.5);
+  --radius-pill: calc(var(--radius-base) * 2);
 
-  --shadow-sm: 0 1px 2px rgb(54 34 28 / 6%), 0 2px 8px rgb(54 34 28 / 6%);
-  --shadow-md: 0 4px 12px rgb(54 34 28 / 8%), 0 12px 32px rgb(54 34 28 / 10%);
+  --shadow-sm:
+    0 1px 2px color-mix(in srgb, var(--color-shadow) 6%, transparent),
+    0 2px 8px color-mix(in srgb, var(--color-shadow) 6%, transparent);
+  --shadow-md:
+    0 4px 12px color-mix(in srgb, var(--color-shadow) 8%, transparent),
+    0 12px 32px color-mix(in srgb, var(--color-shadow) 10%, transparent);
 
   --ease-out: #{v.$ease-out};
   --ease-in-out: #{v.$ease-in-out};
@@ -51,5 +52,14 @@
   --container-padding: var(--space-4);
   --header-height: 4rem;
 
-  color-scheme: light;
+  // Light or dark: the system setting, unless the visitor chose one (ColorScheme)
+  color-scheme: light dark;
+
+  &[data-color-scheme='light'] {
+    color-scheme: light;
+  }
+
+  &[data-color-scheme='dark'] {
+    color-scheme: dark;
+  }
 }

@@ -23,6 +23,8 @@
             [imageId]="category.imageId"
             [busy]="uploadingId() === category.id"
             (fileChosen)="uploadImage(category, $event)"
+            (galleryImageChosen)="chooseImage(category, $event)"
+            (removed)="chooseImage(category, null)"
           />
           @if (editingId() === category.id) {
             <form class="card__rename" (submit)="$event.preventDefault(); rename(category)">

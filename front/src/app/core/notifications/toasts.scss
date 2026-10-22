@@ -30,7 +30,8 @@
 }
 
 .toast--error svg {
-  color: #f0a58a;
+  // The toast takes the text color as background: the danger red of the opposite scheme reads on it
+  color: light-dark(#f0a58a, #a3341c);
 }
 
 .toast__message {

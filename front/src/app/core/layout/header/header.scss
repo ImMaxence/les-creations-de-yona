@@ -36,6 +36,8 @@
 
 .nav {
   display: none;
+  // Pushes the links and the light/dark switch to the right
+  margin-left: auto;
 
   @include m.from(md) {
     display: block;
@@ -85,5 +87,14 @@
 
   @include m.from(md) {
     display: none;
+  }
+}
+
+// Phones: in the phone menu instead
+.scheme-switch {
+  display: none;
+
+  @include m.from(md) {
+    display: block;
   }
 }

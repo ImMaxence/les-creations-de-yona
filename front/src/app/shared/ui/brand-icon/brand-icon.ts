@@ -1,5 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { siInstagram, siTiktok, siYoutube } from 'simple-icons';
+import {
+  siFacebook,
+  siInstagram,
+  siReddit,
+  siThreads,
+  siTiktok,
+  siWhatsapp,
+  siX,
+  siYoutube,
+} from 'simple-icons';
 import { SocialLinkResponse } from '../../../core/api/generated/models/social-link-response';
 
 export type SocialPlatform = SocialLinkResponse['platform'];
@@ -9,7 +18,15 @@ const BRANDS: Record<SocialPlatform, { label: string; path: string }> = {
   INSTAGRAM: { label: 'Instagram', path: siInstagram.path },
   TIKTOK: { label: 'TikTok', path: siTiktok.path },
   YOUTUBE: { label: 'YouTube', path: siYoutube.path },
+  FACEBOOK: { label: 'Facebook', path: siFacebook.path },
+  X: { label: 'X', path: siX.path },
+  THREADS: { label: 'Threads', path: siThreads.path },
+  REDDIT: { label: 'Reddit', path: siReddit.path },
+  WHATSAPP: { label: 'WhatsApp', path: siWhatsapp.path },
 };
+
+/** Every platform, in the order the back-office offers them. */
+export const SOCIAL_PLATFORMS = Object.keys(BRANDS) as SocialPlatform[];
 
 export function socialPlatformLabel(platform: SocialPlatform): string {
   return BRANDS[platform].label;

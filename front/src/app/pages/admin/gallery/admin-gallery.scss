@@ -43,3 +43,19 @@
   background-color: color-mix(in srgb, var(--color-bg) 85%, transparent);
   backdrop-filter: blur(4px);
 }
+
+// Unused: dashed outline and a faded photo, easy to spot while sorting
+.tile.is-unused {
+  box-shadow: none;
+  outline: 1.5px dashed var(--color-line);
+  outline-offset: -1.5px;
+
+  .tile__image {
+    opacity: 0.75;
+  }
+}
+
+.badge--unused {
+  background-color: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  color: var(--color-danger);
+}

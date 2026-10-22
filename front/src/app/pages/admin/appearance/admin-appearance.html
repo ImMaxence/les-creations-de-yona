@@ -1,0 +1,94 @@
+<form class="admin-section" aria-labelledby="appearance-title" novalidate (submit)="$event.preventDefault(); save()">
+  <div class="admin-section__head">
+    <h2 id="appearance-title">Apparence</h2>
+  </div>
+  <p class="field__hint">
+    Chaque changement s'affiche tout de suite sur tout le site, pour vous seulement. Les visiteurs le voient une fois
+    enregistré. Chaque thème existe en version claire et sombre : le visiteur choisit Clair, Auto ou Sombre en haut
+    du site.
+  </p>
+
+  <fieldset class="admin-panel appearance__group">
+    <legend class="field__label">Couleurs</legend>
+    <div class="presets" role="radiogroup" aria-label="Thème de couleurs">
+      @for (preset of presets; track preset.id) {
+        <button
+          type="button"
+          role="radio"
+          class="preset"
+          [class.is-selected]="draft().preset === preset.id"
+          [attr.aria-checked]="draft().preset === preset.id"
+          (click)="update('preset', preset.id)"
+        >
+          <span class="preset__swatches" aria-hidden="true">
+            @for (palette of [preset.light, preset.dark]; track $index) {
+              <span class="preset__scheme" [style.background-color]="palette.bg">
+                <span [style.background-color]="palette.surface"></span>
+                <span [style.background-color]="palette.accent"></span>
+                <span [style.background-color]="palette.decor"></span>
+                <span [style.background-color]="palette.text"></span>
+              </span>
+            }
+          </span>
+          <span class="preset__name">
+            {{ preset.label }}
+            @if (draft().preset === preset.id) {
+              <svg lucideCheck [size]="16"></svg>
+            }
+          </span>
+        </button>
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="admin-panel appearance__group">
+    <legend class="field__label">Polices</legend>
+    <div class="appearance__fonts">
+      <div class="field">
+        <span class="field__label">Titres</span>
+        <yona-select label="Police des titres" [options]="displayFontOptions" [value]="draft().displayFont" (valueChange)="update('displayFont', $event)" />
+      </div>
+      <div class="field">
+        <span class="field__label">Texte</span>
+        <yona-select label="Police du texte" [options]="bodyFontOptions" [value]="draft().bodyFont" (valueChange)="update('bodyFont', $event)" />
+      </div>
+    </div>
+    <div class="sample" aria-hidden="true">
+      <p class="sample__title">Tarte fine aux pommes</p>
+      <p class="sample__text">Une pâte feuilletée bien croustillante, de fines lamelles de pommes et un caramel au beurre salé maison.</p>
+    </div>
+  </fieldset>
+
+  <fieldset class="admin-panel appearance__group">
+    <legend class="field__label">Arrondi des coins</legend>
+    <div class="appearance__radius">
+      <input
+        type="range"
+        class="radius__slider"
+        min="0"
+        [max]="sliderMax"
+        step="1"
+        aria-label="Arrondi des coins"
+        [value]="draft().radiusPx"
+        (input)="onRadiusInput($event)"
+      />
+      <label class="radius__value">
+        <input type="number" inputmode="numeric" class="input" min="0" [max]="maxRadius" step="1" [value]="draft().radiusPx" (change)="onRadiusInput($event)" />
+        <span>px</span>
+      </label>
+    </div>
+    <p class="field__hint">0 : coins carrés. 16 : arrondi d'origine. Jusqu'à {{ maxRadius }} : tout devient rond.</p>
+    <div class="radius__preview" aria-hidden="true">
+      <span class="radius__card"></span>
+      <span class="button">Bouton</span>
+      <span class="chip">Catégorie</span>
+    </div>
+  </fieldset>
+
+  <div class="admin-toolbar">
+    <button yonaButton type="submit" [disabled]="saving() || !unsaved()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
+    @if (unsaved()) {
+      <button yonaButton variant="secondary" type="button" (click)="reset()">Annuler les changements</button>
+    }
+  </div>
+</form>

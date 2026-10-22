@@ -5,7 +5,6 @@ import fr.lescreationsdeyona.common.Pageables;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
-import fr.lescreationsdeyona.image.Image;
 import fr.lescreationsdeyona.image.ImageKind;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
@@ -18,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -112,24 +112,25 @@ public class RecipeService {
 		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 
+	/** Its photo stays in the gallery. */
 	@Transactional
 	public void delete(long id) {
-		Recipe recipe = find(id);
-		recipeRepository.delete(recipe);
-		if (recipe.getImage() != null) {
-			imageService.delete(recipe.getImage());
-		}
+		recipeRepository.delete(find(id));
 	}
 
-	/** "Modifier la photo": the new image replaces the previous one, which is deleted. */
+	/** "Modifier la photo": the new image is shown, the previous one stays in the gallery. */
 	@Transactional
 	public RecipeDetail replaceImage(long id, ProcessedImage processed) {
 		Recipe recipe = find(id);
-		Image previous = recipe.getImage();
 		recipe.setImage(imageService.create(ImageKind.RECIPE, processed));
-		if (previous != null) {
-			imageService.delete(previous);
-		}
+		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
+	}
+
+	/** Shows an image of the gallery, or none (default visual). */
+	@Transactional
+	public RecipeDetail chooseImage(long id, @Nullable UUID imageId) {
+		Recipe recipe = find(id);
+		recipe.setImage(imageId == null ? null : imageService.get(imageId));
 		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 

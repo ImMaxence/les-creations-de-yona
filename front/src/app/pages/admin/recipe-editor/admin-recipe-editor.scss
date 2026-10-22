@@ -39,6 +39,29 @@ yona-select {
   display: block;
 }
 
+// Category created without leaving the recipe
+.new-category {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.new-category__open {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-1);
+  padding-block: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+
+  @include m.hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
 // Reorderable lines (ingredients, steps)
 .lines {
   display: grid;

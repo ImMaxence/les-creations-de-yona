@@ -1,6 +1,13 @@
 <section class="admin-section" aria-labelledby="gallery-title">
   <div class="admin-section__head">
     <h2 id="gallery-title">Galerie</h2>
+  </div>
+  <p class="field__hint">
+    Toutes les photos envoyées restent ici, même remplacées. Une photo « Non utilisée » peut être supprimée, ou remise
+    sur une recette ou une catégorie avec « Choisir dans la galerie ».
+  </p>
+  <div class="admin-toolbar">
+    <yona-select label="Utilisation" [options]="usageOptions" [(value)]="usage" />
     <yona-select label="Type d'image" [options]="kindOptions" [(value)]="kind" />
   </div>
 
@@ -8,14 +15,19 @@
     @if (result.content.length) {
       <ul role="list" class="gallery">
         @for (image of result.content; track image.id) {
-          <li class="tile">
-            <yona-cover-image class="tile__image" [imageId]="image.id" [alt]="image.usedBy ?? ''" sizes="16rem" />
+          <li class="tile" [class.is-unused]="!image.usedBy.length">
+            <yona-cover-image class="tile__image" [imageId]="image.id" [alt]="image.usedBy.join(', ')" sizes="16rem" />
             <div class="tile__info">
-              <span class="badge" [class.badge--published]="image.usedBy">
-                {{ image.kind === 'RECIPE' ? 'Recette' : 'Catégorie' }}
+              @if (image.usedBy.length) {
+                <span class="badge badge--published">Utilisée</span>
+                <span class="tile__used" [title]="image.usedBy.join(', ')">{{ image.usedBy.join(', ') }}</span>
+              } @else {
+                <span class="badge badge--unused">Non utilisée</span>
+              }
+              <span class="admin-row__meta">
+                {{ image.kind === 'RECIPE' ? 'Envoyée pour une recette' : 'Envoyée pour une catégorie' }}, le
+                {{ image.createdAt | parisDate }}
               </span>
-              <span class="tile__used">{{ image.usedBy ?? 'Non utilisée' }}</span>
-              <span class="admin-row__meta">Ajoutée le {{ image.createdAt | parisDate }}</span>
             </div>
             <button type="button" class="icon-button icon-button--danger tile__delete" aria-label="Supprimer l'image" (click)="remove(image)">
               <svg lucideTrash2 [size]="18"></svg>

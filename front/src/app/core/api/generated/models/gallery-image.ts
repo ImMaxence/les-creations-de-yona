@@ -7,7 +7,7 @@ export interface GalleryImage {
   kind: 'RECIPE' | 'CATEGORY';
 
   /**
-   * Title of the recipe or name of the category showing it; null when unused
+   * Titles of the recipes and names of the categories showing it; empty when unused
    */
-  usedBy?: string;
+  usedBy: Array<string>;
 }

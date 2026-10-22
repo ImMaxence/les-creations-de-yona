@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { LucideArrowRight, LucideChefHat, LucideClock, LucideCookingPot } from '@lucide/angular';
+import { Location } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { LucideArrowLeft, LucideArrowRight, LucideChefHat, LucideClock, LucideCookingPot } from '@lucide/angular';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { ParisDatePipe } from '../../shared/format/paris-date.pipe';
 import { formatMinutes } from '../../shared/format/units';
@@ -22,6 +23,7 @@ import { RecipeSteps } from './steps/recipe-steps';
     RecipeIngredients,
     RecipeSteps,
     Reveal,
+    LucideArrowLeft,
     LucideArrowRight,
     LucideChefHat,
     LucideClock,
@@ -43,4 +45,16 @@ export default class Recipe {
   protected readonly totalMinutes = computed(
     () => (this.recipe().prepMinutes ?? 0) + (this.recipe().cookMinutes ?? 0),
   );
+
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+
+  /** Back to the previous page of the site if there is one; otherwise the link leads to the category. */
+  protected goBack(event: MouseEvent): void {
+    const openedFromTheSite = this.router.lastSuccessfulNavigation()?.previousNavigation != null;
+    if (openedFromTheSite && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      event.preventDefault();
+      this.location.back();
+    }
+  }
 }

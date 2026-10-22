@@ -15,13 +15,18 @@ import { Router, RouterLink } from '@angular/router';
 import {
   LucideArrowDown,
   LucideArrowUp,
+  LucideCheck,
   LucideExternalLink,
   LucideGripVertical,
   LucidePlus,
   LucideTrash2,
+  LucideX,
 } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
+import { attempt } from '../../../core/api/attempt';
+import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
 import { createRecipe } from '../../../core/api/generated/fn/admin-recipes/create-recipe';
+import { chooseRecipeImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-image';
 import { replaceRecipeImage } from '../../../core/api/generated/fn/admin-recipes/replace-recipe-image';
 import { updateRecipe } from '../../../core/api/generated/fn/admin-recipes/update-recipe';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
@@ -33,10 +38,13 @@ import { Button } from '../../../shared/ui/button/button';
 import { FieldError } from '../../../shared/ui/field-error/field-error';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { SuggestInput, Suggestion } from '../../../shared/ui/suggest-input/suggest-input';
 import { emptyIngredient, emptyStep, recipeSchema, toDraft, toRecipeForm } from './recipe-draft';
 import { UnsavedChanges } from './unsaved-changes.guard';
 
 type ListName = 'ingredients' | 'steps';
+
+type PendingImage = { file: File } | { imageId: string };
 
 @Component({
   selector: 'yona-admin-recipe-editor',
@@ -50,12 +58,15 @@ type ListName = 'ingredients' | 'steps';
     FieldError,
     ImageUpload,
     Select,
+    SuggestInput,
     LucideArrowDown,
     LucideArrowUp,
+    LucideCheck,
     LucideExternalLink,
     LucideGripVertical,
     LucidePlus,
     LucideTrash2,
+    LucideX,
   ],
   templateUrl: './admin-recipe-editor.html',
   styleUrl: './admin-recipe-editor.scss',
@@ -84,21 +95,37 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly categoryOptions = computed<SelectOption<number | null>[]>(() =>
     this.siteData.categories().map((category) => ({ value: category.id, label: category.name })),
   );
-  /** Suggestions for ingredient names, so that the same ingredient is not created twice. */
-  protected readonly knownIngredients = resource({
+  /** Ingredients already known, the most used first, so that the same one is not created twice. */
+  private readonly knownIngredients = resource({
     loader: () => this.api.invoke(searchIngredients, {}),
   });
+  protected readonly ingredientSuggestions = computed<Suggestion[]>(() =>
+    [...(this.knownIngredients.value() ?? [])]
+      .sort((a, b) => b.recipeCount - a.recipeCount || a.name.localeCompare(b.name, 'fr'))
+      .map((ingredient) => ({
+        value: ingredient.name,
+        hint: ingredient.recipeCount
+          ? `${ingredient.recipeCount} recette${ingredient.recipeCount > 1 ? 's' : ''}`
+          : undefined,
+      })),
+  );
+  /** Already in this recipe: not suggested again (a recipe lists an ingredient once). */
+  protected readonly ingredientNames = computed(
+    () => new Set(this.draft().ingredients.map((ingredient) => ingredient.name.trim()).filter(Boolean)),
+  );
   protected readonly publicLink = computed(() => {
     const recipe = this.recipe();
     return recipe?.status === 'PUBLISHED' ? recipeLink(recipe) : null;
   });
 
   protected readonly imageId = linkedSignal(() => this.recipe()?.imageId ?? null);
-  /** New recipe: the photo is sent right after the recipe is created. */
-  private readonly pendingImage = signal<File | null>(null);
+  /** New recipe: the photo (a file, or an image of the gallery) is set right after the recipe is created. */
+  private readonly pendingImage = signal<PendingImage | null>(null);
   protected readonly pendingPreview = signal<string | null>(null);
   protected readonly uploading = signal(false);
   protected readonly saving = signal(false);
+  protected readonly creatingCategory = signal(false);
+  protected readonly newCategoryName = signal('');
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.revokePreview());
@@ -143,6 +170,24 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     this.move(list, event.previousIndex, event.currentIndex);
   }
 
+  /** Creates a category without leaving the recipe, and chooses it. */
+  protected async addCategory(): Promise<void> {
+    const name = this.newCategoryName().trim();
+    if (!name) {
+      this.toaster.error('Donnez un nom à la catégorie.');
+      return;
+    }
+    const created = await attempt(this.api.invoke(createCategory, { body: { name } }));
+    if (!created.ok) {
+      return;
+    }
+    await this.siteData.load();
+    this.draft.update((draft) => ({ ...draft, categoryId: created.value.id }));
+    this.creatingCategory.set(false);
+    this.newCategoryName.set('');
+    this.toaster.success(`Catégorie « ${created.value.name} » créée et choisie.`);
+  }
+
   protected async onImageChosen(file: File): Promise<void> {
     const recipe = this.recipe();
     if (recipe) {
@@ -150,8 +195,21 @@ export default class AdminRecipeEditor implements UnsavedChanges {
       return;
     }
     this.revokePreview();
-    this.pendingImage.set(file);
+    this.imageId.set(null);
+    this.pendingImage.set({ file });
     this.pendingPreview.set(URL.createObjectURL(file));
+  }
+
+  /** An image of the gallery, or none (null). The previous photo stays in the gallery. */
+  protected async onImageSelected(imageId: string | null): Promise<void> {
+    const recipe = this.recipe();
+    if (recipe) {
+      await this.chooseImage(recipe.id, imageId);
+      return;
+    }
+    this.revokePreview();
+    this.imageId.set(imageId);
+    this.pendingImage.set(imageId ? { imageId } : null);
   }
 
   protected async save(): Promise<void> {
@@ -169,8 +227,10 @@ export default class AdminRecipeEditor implements UnsavedChanges {
           const created = await this.api.invoke(createRecipe, { body });
           this.savedSnapshot.set(JSON.stringify(this.draft()));
           const image = this.pendingImage();
-          if (image) {
-            await this.uploadImage(created.id, image);
+          if (image && 'file' in image) {
+            await this.uploadImage(created.id, image.file);
+          } else if (image) {
+            await this.chooseImage(created.id, image.imageId);
           }
           this.toaster.success('Recette créée.');
           await this.router.navigate(['/admin/recettes', created.id], { replaceUrl: true });
@@ -185,11 +245,22 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   }
 
   private async uploadImage(recipeId: number, file: File): Promise<void> {
+    await this.changeImage(() => this.api.invoke(replaceRecipeImage, { id: recipeId, body: { file } }), 'Photo enregistrée.');
+  }
+
+  private async chooseImage(recipeId: number, imageId: string | null): Promise<void> {
+    await this.changeImage(
+      () => this.api.invoke(chooseRecipeImage, { id: recipeId, body: { imageId: imageId ?? undefined } }),
+      imageId ? 'Photo enregistrée.' : 'Photo retirée, elle reste dans la galerie.',
+    );
+  }
+
+  private async changeImage(call: () => Promise<RecipeDetail>, successMessage: string): Promise<void> {
     this.uploading.set(true);
     try {
-      const updated = await this.api.invoke(replaceRecipeImage, { id: recipeId, body: { file } });
+      const updated = await call();
       this.imageId.set(updated.imageId ?? null);
-      this.toaster.success('Photo enregistrée.');
+      this.toaster.success(successMessage);
     } catch {
       // The API error is already shown as a toast
     } finally {

@@ -3,8 +3,12 @@ package fr.lescreationsdeyona.image;
 import fr.lescreationsdeyona.common.Pageables;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -22,6 +26,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * follow the outcome of the database transaction: an upload is removed if the transaction rolls
  * back, and a deleted image loses its files only once the deletion is committed. A failure there
  * leaves orphan files at worst, never a record without files.
+ * <p>
+ * Uploaded images are kept until deleted from the gallery, even when no recipe or category shows
+ * them any more: the admin sorts them out there, and can show one again.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,13 +43,23 @@ public class ImageService {
 
 	private final ImageStorage imageStorage;
 
-	public Page<GalleryImage> gallery(@Nullable ImageKind kind, Pageable pageable) {
-		return imageRepository.findGallery(kind, Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES));
+	/** {@code used}: true for images shown somewhere, false for unused ones, null for all. */
+	public Page<GalleryImage> gallery(@Nullable ImageKind kind, @Nullable Boolean used, Pageable pageable) {
+		Page<Image> images = imageRepository.findGallery(kind, used,
+				Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES));
+		Map<UUID, List<String>> usages = usagesOf(images.map(Image::getId).getContent());
+		return images.map(image -> new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(),
+				usages.getOrDefault(image.getId(), List.of())));
 	}
 
 	/** Opens a variant for the public site. Ids are random UUIDs, so they cannot be guessed. */
 	public ImageStorage.StoredFile open(UUID id, int width) {
-		return imageStorage.open(find(id).key(width));
+		return imageStorage.open(get(id).key(width));
+	}
+
+	/** An image of the gallery, to show it on a recipe or a category. */
+	public Image get(UUID id) {
+		return imageRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.IMAGE_NOT_FOUND));
 	}
 
 	/** Called by the recipe and category services, inside their transaction. */
@@ -56,21 +73,23 @@ public class ImageService {
 		return imageRepository.save(image);
 	}
 
-	/** The recipe or category showing it falls back to the default visual ({@code ON DELETE SET NULL}). */
-	@Transactional(propagation = Propagation.MANDATORY)
-	public void delete(Image image) {
+	/** The recipes and categories showing it fall back to the default visual ({@code ON DELETE SET NULL}). */
+	@Transactional
+	public void delete(UUID id) {
+		Image image = get(id);
 		String folder = image.getS3Prefix();
 		imageRepository.delete(image);
 		onCompletion(TransactionSynchronization.STATUS_COMMITTED, () -> imageStorage.deleteFolder(folder));
 	}
 
-	@Transactional
-	public void delete(UUID id) {
-		delete(find(id));
-	}
-
-	private Image find(UUID id) {
-		return imageRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.IMAGE_NOT_FOUND));
+	private Map<UUID, List<String>> usagesOf(List<UUID> imageIds) {
+		if (imageIds.isEmpty()) {
+			return Map.of();
+		}
+		return Stream.concat(imageRepository.findRecipeUsages(imageIds).stream(),
+				imageRepository.findCategoryUsages(imageIds).stream())
+			.collect(Collectors.groupingBy(ImageUsage::imageId,
+					Collectors.mapping(ImageUsage::label, Collectors.toList())));
 	}
 
 	private static void onCompletion(int expectedStatus, Runnable cleanup) {

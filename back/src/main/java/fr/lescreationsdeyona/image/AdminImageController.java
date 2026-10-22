@@ -27,16 +27,17 @@ class AdminImageController {
 
 	private final ImageService imageService;
 
-	@Operation(summary = "Gallery: every image, with the recipe or category using it",
-			description = "Sort on createdAt only.")
+	@Operation(summary = "Gallery: every image, with the recipes and categories showing it",
+			description = "Sort on createdAt only. used=false lists the images shown nowhere.")
 	@GetMapping
 	PageResponse<GalleryImage> listImages(@RequestParam(required = false) @Nullable ImageKind kind,
+			@RequestParam(required = false) @Nullable Boolean used,
 			@ParameterObject @PageableDefault(size = 24, sort = "createdAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
-		return PageResponse.of(imageService.gallery(kind, pageable));
+		return PageResponse.of(imageService.gallery(kind, used, pageable));
 	}
 
-	@Operation(summary = "Delete an image; the recipe or category using it falls back to the default visual")
+	@Operation(summary = "Delete an image; the recipes and categories showing it fall back to the default visual")
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteImage(@PathVariable UUID id) {

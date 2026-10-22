@@ -19,7 +19,7 @@
   overflow: hidden;
   aspect-ratio: 4 / 5;
   border-radius: var(--radius-lg);
-  color: var(--color-on-accent);
+  color: var(--color-on-image);
   text-decoration: none;
   box-shadow: var(--shadow-md);
   // Clips the zoomed image to the rounded corners in Safari
@@ -67,7 +67,7 @@
 }
 
 .hero__eyebrow {
-  color: var(--color-on-accent);
+  color: var(--color-on-image);
   opacity: 0.9;
 }
 
@@ -216,7 +216,7 @@
   overflow: hidden;
   aspect-ratio: 4 / 5;
   border-radius: var(--radius-md);
-  color: var(--color-on-accent);
+  color: var(--color-on-image);
   text-decoration: none;
   isolation: isolate;
   transition: transform var(--duration-slow) var(--ease-out);

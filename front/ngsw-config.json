@@ -28,7 +28,8 @@
         "/api/recipes/**",
         "/api/featured-recipe",
         "/api/categories",
-        "/api/social-links"
+        "/api/social-links",
+        "/api/theme"
       ],
       "cacheConfig": {
         "strategy": "freshness",

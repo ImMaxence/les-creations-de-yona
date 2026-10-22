@@ -4,4 +4,9 @@
 export interface IngredientResponse {
   id: number;
   name: string;
+
+  /**
+   * Number of recipes using it, drafts included
+   */
+  recipeCount: number;
 }

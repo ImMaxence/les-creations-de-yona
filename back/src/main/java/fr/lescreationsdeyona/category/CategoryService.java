@@ -3,13 +3,14 @@ package fr.lescreationsdeyona.category;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
-import fr.lescreationsdeyona.image.Image;
 import fr.lescreationsdeyona.image.ImageKind;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.recipe.RecipeRepository;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +47,7 @@ public class CategoryService {
 		return categoryMapper.toResponse(category);
 	}
 
+	/** Refused while it still contains recipes. Its photo stays in the gallery. */
 	@Transactional
 	public void delete(long id) {
 		Category category = find(id);
@@ -53,20 +55,21 @@ public class CategoryService {
 			throw new ApiException(ErrorCode.CATEGORY_IN_USE);
 		}
 		categoryRepository.delete(category);
-		if (category.getImage() != null) {
-			imageService.delete(category.getImage());
-		}
 	}
 
-	/** "Modifier la photo": the new image replaces the previous one, which is deleted. */
+	/** "Modifier la photo": the new image is shown, the previous one stays in the gallery. */
 	@Transactional
 	public CategoryResponse replaceImage(long id, ProcessedImage processed) {
 		Category category = find(id);
-		Image previous = category.getImage();
 		category.setImage(imageService.create(ImageKind.CATEGORY, processed));
-		if (previous != null) {
-			imageService.delete(previous);
-		}
+		return categoryMapper.toResponse(categoryRepository.saveAndFlush(category));
+	}
+
+	/** Shows an image of the gallery, or none (default visual). */
+	@Transactional
+	public CategoryResponse chooseImage(long id, @Nullable UUID imageId) {
+		Category category = find(id);
+		category.setImage(imageId == null ? null : imageService.get(imageId));
 		return categoryMapper.toResponse(categoryRepository.saveAndFlush(category));
 	}
 

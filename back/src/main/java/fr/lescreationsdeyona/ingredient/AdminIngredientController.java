@@ -27,7 +27,7 @@ class AdminIngredientController {
 
 	private final IngredientService ingredientService;
 
-	@Operation(summary = "Ingredients sorted by name, optionally filtered (case and accents ignored)")
+	@Operation(summary = "Ingredients sorted by name, with the number of recipes using each, optionally filtered (case and accents ignored)")
 	@GetMapping
 	List<IngredientResponse> searchIngredients(@RequestParam(required = false) @Size(max = 100) @Nullable String q) {
 		return ingredientService.search(q);

@@ -66,20 +66,23 @@
     }
   </nav>
 
-  @if (siteData.socialLinks().length) {
-    <ul role="list" class="menu__socials stagger" style="--i: 5">
-      @for (link of siteData.socialLinks(); track link.platform) {
-        <li>
-          <a
-            [href]="link.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            [attr.aria-label]="socialPlatformLabel(link.platform)"
-          >
-            <yona-brand-icon [platform]="link.platform" [size]="22" />
-          </a>
-        </li>
-      }
-    </ul>
-  }
+  <div class="menu__bottom stagger" style="--i: 5">
+    <yona-color-scheme-switch layout="full" />
+    @if (siteData.socialLinks().length) {
+      <ul role="list" class="menu__socials">
+        @for (link of siteData.socialLinks(); track link.platform) {
+          <li>
+            <a
+              [href]="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="socialPlatformLabel(link.platform)"
+            >
+              <yona-brand-icon [platform]="link.platform" [size]="22" />
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </div>
 </dialog>

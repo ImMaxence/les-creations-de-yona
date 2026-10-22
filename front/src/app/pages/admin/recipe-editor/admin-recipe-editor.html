@@ -16,7 +16,24 @@
     <div class="editor__grid">
       <div class="field">
         <span class="field__label" id="category-label">Catégorie</span>
-        <yona-select label="Catégorie" placeholder="Choisir une catégorie…" [options]="categoryOptions()" [formField]="recipeForm.categoryId" />
+        @if (creatingCategory()) {
+          <div class="new-category">
+            <input
+              class="input"
+              placeholder="Nom de la nouvelle catégorie"
+              aria-label="Nom de la nouvelle catégorie"
+              maxlength="60"
+              [value]="newCategoryName()"
+              (input)="newCategoryName.set($any($event.target).value)"
+              (keydown.enter)="$event.preventDefault(); addCategory()"
+            />
+            <button type="button" class="icon-button" aria-label="Créer la catégorie" (click)="addCategory()"><svg lucideCheck [size]="18"></svg></button>
+            <button type="button" class="icon-button" aria-label="Annuler" (click)="creatingCategory.set(false)"><svg lucideX [size]="18"></svg></button>
+          </div>
+        } @else {
+          <yona-select label="Catégorie" placeholder="Choisir une catégorie…" [options]="categoryOptions()" [formField]="recipeForm.categoryId" />
+          <button type="button" class="new-category__open" (click)="creatingCategory.set(true)"><svg lucidePlus [size]="16"></svg>Nouvelle catégorie</button>
+        }
         <yona-field-error [field]="recipeForm.categoryId" />
       </div>
       <div class="field">
@@ -64,7 +81,14 @@
 
     <section class="admin-panel" aria-labelledby="photo-title">
       <h3 id="photo-title" class="editor__title">Photo</h3>
-      <yona-image-upload [imageId]="imageId()" [previewUrl]="pendingPreview()" [busy]="uploading()" (fileChosen)="onImageChosen($event)" />
+      <yona-image-upload
+        [imageId]="imageId()"
+        [previewUrl]="pendingPreview()"
+        [busy]="uploading()"
+        (fileChosen)="onImageChosen($event)"
+        (galleryImageChosen)="onImageSelected($event)"
+        (removed)="onImageSelected(null)"
+      />
     </section>
   </div>
 
@@ -79,7 +103,7 @@
           <div class="line__fields line__fields--ingredient">
             <input type="number" inputmode="decimal" step="any" class="input" placeholder="Qté" aria-label="Quantité" [formField]="recipeForm.ingredients[i].quantity" />
             <input class="input" placeholder="Unité (g, cl…)" aria-label="Unité" [formField]="recipeForm.ingredients[i].unit" />
-            <input class="input line__name" placeholder="Ingrédient" aria-label="Ingrédient" list="known-ingredients" [formField]="recipeForm.ingredients[i].name" [attr.aria-invalid]="isInvalid(recipeForm.ingredients[i].name)" />
+            <yona-suggest-input class="line__name" placeholder="Ingrédient" label="Ingrédient" [suggestions]="ingredientSuggestions()" [exclude]="ingredientNames()" [formField]="recipeForm.ingredients[i].name" />
             <input class="input line__note" placeholder="Précision (facultatif)" aria-label="Précision" [formField]="recipeForm.ingredients[i].note" />
             <yona-field-error [field]="recipeForm.ingredients[i].name" />
             <yona-field-error [field]="recipeForm.ingredients[i].quantity" />
@@ -94,11 +118,6 @@
     </ol>
     <yona-field-error [field]="recipeForm.ingredients" />
     <button yonaButton variant="secondary" type="button" (click)="add('ingredients')"><svg lucidePlus></svg>Ajouter un ingrédient</button>
-    <datalist id="known-ingredients">
-      @for (ingredient of knownIngredients.value() ?? []; track ingredient.id) {
-        <option [value]="ingredient.name"></option>
-      }
-    </datalist>
   </section>
 
   <section class="admin-panel" aria-labelledby="steps-title">

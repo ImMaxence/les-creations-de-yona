@@ -8,6 +8,14 @@
       sizes="100vw"
       priority
     />
+    <!-- A real link (works without JavaScript, and when the page was opened directly);
+         within the site, goes back in the history, to the exact list and scroll position left -->
+    <div class="container hero__top">
+      <a class="back enter" [routerLink]="recipesPath" [queryParams]="categoryQueryParams(recipe().category)" (click)="goBack($event)">
+        <svg lucideArrowLeft [size]="18"></svg>
+        Retour
+      </a>
+    </div>
     <div class="container hero__content">
       <nav class="breadcrumb enter" aria-label="Fil d'Ariane">
         <a [routerLink]="recipesPath">Recettes</a>

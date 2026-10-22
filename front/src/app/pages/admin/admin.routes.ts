@@ -60,6 +60,11 @@ export const adminRoutes: Routes = [
         title: 'Galerie · Back-office',
       },
       {
+        path: 'apparence',
+        loadComponent: () => import('./appearance/admin-appearance'),
+        title: 'Apparence · Back-office',
+      },
+      {
         path: 'sauvegarde',
         loadComponent: () => import('./backup/admin-backup'),
         title: 'Sauvegarde · Back-office',

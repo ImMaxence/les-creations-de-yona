@@ -1,0 +1,149 @@
+@use 'mixins' as m;
+
+.appearance__group {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+
+  legend {
+    float: left;
+    width: 100%;
+    margin-bottom: var(--space-1);
+  }
+}
+
+// Color themes ----------------------------------------------------------------
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-3);
+}
+
+.preset {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: 0 0 0 1px var(--color-line);
+  text-align: left;
+  transition:
+    box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    box-shadow: 0 0 0 1px var(--color-line), var(--shadow-sm);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.is-selected {
+    box-shadow: 0 0 0 2px var(--color-accent);
+  }
+}
+
+// Light and dark version side by side: background, then four dots
+.preset__swatches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 1px var(--color-line);
+}
+
+.preset__scheme {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: var(--space-3) var(--space-1);
+
+  span {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+  }
+}
+
+.preset__name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+
+  svg {
+    color: var(--color-accent);
+  }
+}
+
+// Fonts -----------------------------------------------------------------------
+
+.appearance__fonts {
+  display: grid;
+  gap: var(--space-4);
+
+  @include m.from(sm) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.sample {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+}
+
+.sample__title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sample__text {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+// Corner radius ---------------------------------------------------------------
+
+.appearance__radius {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.radius__slider {
+  flex: 1;
+  accent-color: var(--color-accent);
+}
+
+.radius__value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+
+  .input {
+    width: 6rem;
+  }
+}
+
+.radius__preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.radius__card {
+  width: 7rem;
+  height: 4.5rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: 0 0 0 1px var(--color-line);
+}

@@ -1,21 +1,6 @@
-// Design tokens: the single place for colors, fonts, spacing and motion.
-// Only Sass variables here (no CSS output), so any component can @use this file.
-// At runtime, components read the CSS custom properties emitted by _root.scss.
-
-// Brand palette "Pâtisserie chic" (ReadMe, "Charte graphique")
-$almond-milk: #fcf9f5; // main background
-$blush-pale: #f4e7e6; // secondary background (surfaces, chips)
-$dark-cocoa: #36221c; // main color: text
-$dusty-rose: #d49a99; // secondary accent, decorative only (2.2:1 on almond milk: never text)
-$warm-mocha: #8c533e; // buttons and main actions, 5.8:1 on almond milk
-
-$warm-mocha-dark: #6e3f2e; // hover and pressed states
-$dark-cocoa-muted: #6e5a52; // secondary text, 6.2:1 on almond milk
-$line: rgb(54 34 28 / 12%);
-
-// Typography
-$font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
-$font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+// Design tokens: spacing, breakpoints and motion. Only Sass variables here (no CSS output), so any
+// component can @use this file. At runtime, components read the CSS custom properties of _root.scss.
+// Colors, fonts and the corner radius are chosen by the admin: see core/theme (SiteTheme).
 
 // Breakpoints, mobile first: styles target phones, then grow from these widths
 $breakpoints: (

@@ -32,7 +32,7 @@ class SecurityConfig {
 		http.authorizeHttpRequests(requests -> {
 			requests.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
 				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/recipe-suggestions",
-						"/api/categories/**", "/api/social-links/**", "/api/images/**")
+						"/api/categories/**", "/api/social-links/**", "/api/images/**", "/api/theme")
 				.permitAll()
 				.requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll();
 			// Local runs only: in production the documentation is off and its URLs are denied like any other.

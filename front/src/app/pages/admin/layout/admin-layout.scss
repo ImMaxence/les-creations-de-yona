@@ -139,7 +139,7 @@
 .field__error {
   font-size: var(--text-xs);
   font-weight: 600;
-  color: #a3341c;
+  color: var(--color-danger);
 }
 
 .input {
@@ -161,7 +161,7 @@
   }
 
   &[aria-invalid='true'] {
-    border-color: #a3341c;
+    border-color: var(--color-danger);
   }
 }
 
@@ -290,7 +290,7 @@ textarea.input {
 
 .icon-button--danger {
   @include m.hover {
-    color: #a3341c;
+    color: var(--color-danger);
   }
 }
 

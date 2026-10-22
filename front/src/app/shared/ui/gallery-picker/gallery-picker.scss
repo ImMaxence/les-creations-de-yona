@@ -1,0 +1,136 @@
+@use 'mixins' as m;
+
+// Centered modal, same opening as the confirmation dialog. Geometry set explicitly: the reset
+// (* { margin: 0 }) removes the margin: auto that centers a native dialog.
+.picker {
+  position: fixed;
+  inset: 0;
+  width: min(100% - 2rem, 48rem);
+  height: fit-content;
+  max-height: min(85dvh, 48rem);
+  margin: auto;
+  padding: var(--space-5);
+  overflow-y: auto;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    overlay var(--duration-base) allow-discrete,
+    display var(--duration-base) allow-discrete;
+
+  &[open] {
+    opacity: 1;
+    transform: none;
+
+    @starting-style {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+
+  &::backdrop {
+    background-color: color-mix(in srgb, var(--color-shadow) 40%, transparent);
+    backdrop-filter: blur(2px);
+  }
+}
+
+.picker__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+}
+
+.picker__filter {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-block: var(--space-4);
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface);
+}
+
+.picker__tab {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+
+  &[aria-pressed='true'] {
+    background-color: var(--color-bg);
+    color: var(--color-accent);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+  gap: var(--space-3);
+}
+
+.picker__tile {
+  display: grid;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  text-align: left;
+  transition:
+    box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    box-shadow: 0 0 0 2px var(--color-accent);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.picker__image {
+  aspect-ratio: 4 / 3;
+}
+
+.picker__usage {
+  overflow: hidden;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.is-unused {
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+}
+
+.picker__pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.picker__empty {
+  padding: var(--space-6);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  text-align: center;
+}

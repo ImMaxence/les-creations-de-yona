@@ -7,12 +7,24 @@ import { replaceSocialLinks } from '../../../core/api/generated/fn/admin-social-
 import { Link } from '../../../core/api/generated/models/link';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
-import { BrandIcon, SocialPlatform, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
+import { BrandIcon, SOCIAL_PLATFORMS, SocialPlatform, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
 import { Button } from '../../../shared/ui/button/button';
 import { FieldError } from '../../../shared/ui/field-error/field-error';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 
-const PLATFORMS: SocialPlatform[] = ['INSTAGRAM', 'TIKTOK', 'YOUTUBE'];
+const PLATFORMS = SOCIAL_PLATFORMS;
+
+/** Shape of the address expected for each network, shown in the empty field. */
+const URL_EXAMPLES: Record<SocialPlatform, string> = {
+  INSTAGRAM: 'https://www.instagram.com/…',
+  TIKTOK: 'https://www.tiktok.com/@…',
+  YOUTUBE: 'https://www.youtube.com/@…',
+  FACEBOOK: 'https://www.facebook.com/…',
+  X: 'https://x.com/…',
+  THREADS: 'https://www.threads.com/@…',
+  REDDIT: 'https://www.reddit.com/user/…',
+  WHATSAPP: 'https://whatsapp.com/channel/… ou https://wa.me/33…',
+};
 
 interface SocialLinksDraft {
   links: Link[];
@@ -51,6 +63,7 @@ export default class AdminSocialLinks {
     value: platform,
     label: socialPlatformLabel(platform),
   }));
+  protected readonly urlExamples = URL_EXAMPLES;
   /** One link per network: no new line once they are all listed. */
   protected readonly canAdd = computed(() => this.draft().links.length < PLATFORMS.length);
   protected readonly saving = signal(false);

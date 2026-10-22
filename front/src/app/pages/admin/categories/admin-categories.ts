@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { LucideCheck, LucidePencil, LucidePlus, LucideTrash2, LucideX } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
+import { chooseCategoryImage } from '../../../core/api/generated/fn/admin-categories/choose-category-image';
 import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
 import { deleteCategory } from '../../../core/api/generated/fn/admin-categories/delete-category';
 import { renameCategory } from '../../../core/api/generated/fn/admin-categories/rename-category';
@@ -88,10 +89,23 @@ export default class AdminCategories {
     }
   }
 
+  /** A photo of the gallery, or none (null): the previous one stays in the gallery. */
+  protected async chooseImage(category: CategoryResponse, imageId: string | null): Promise<void> {
+    this.uploadingId.set(category.id);
+    const choice = await attempt(
+      this.api.invoke(chooseCategoryImage, { id: category.id, body: { imageId: imageId ?? undefined } }),
+    );
+    this.uploadingId.set(null);
+    if (choice.ok) {
+      this.toaster.success(imageId ? 'Photo enregistrée.' : 'Photo retirée, elle reste dans la galerie.');
+      await this.siteData.load();
+    }
+  }
+
   protected async remove(category: CategoryResponse): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Supprimer la catégorie ?',
-      message: `« ${category.name} » sera supprimée. Impossible tant qu'elle contient des recettes.`,
+      message: `« ${category.name} » sera supprimée, sa photo restera dans la galerie. Impossible tant qu'elle contient des recettes.`,
       confirmLabel: 'Supprimer',
     });
     if (!confirmed || !(await attempt(this.api.invoke(deleteCategory, { id: category.id }))).ok) {

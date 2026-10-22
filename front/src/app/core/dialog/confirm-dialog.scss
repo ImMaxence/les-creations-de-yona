@@ -31,7 +31,7 @@
   }
 
   &::backdrop {
-    background-color: rgb(54 34 28 / 40%);
+    background-color: color-mix(in srgb, var(--color-shadow) 40%, transparent);
     backdrop-filter: blur(2px);
   }
 
@@ -54,5 +54,5 @@
 }
 
 .confirm__danger {
-  background-color: #a3341c;
+  background-color: var(--color-danger);
 }

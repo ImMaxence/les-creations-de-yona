@@ -1,0 +1,40 @@
+<input
+  class="input"
+  role="combobox"
+  autocomplete="off"
+  aria-autocomplete="list"
+  [attr.aria-label]="label()"
+  [attr.aria-expanded]="expanded()"
+  [attr.aria-controls]="listId"
+  [attr.aria-activedescendant]="expanded() && activeIndex() >= 0 ? listId + '-' + activeIndex() : null"
+  [attr.aria-invalid]="touched() && invalid()"
+  [placeholder]="placeholder()"
+  [value]="value()"
+  (input)="onInput($event)"
+  (focus)="open.set(true)"
+  (click)="open.set(true)"
+  (keydown)="onKeydown($event)"
+  (blur)="onBlur()"
+/>
+
+@if (expanded()) {
+  <ul [id]="listId" role="listbox" class="list" [attr.aria-label]="label()" animate.enter="list--enter">
+    @for (suggestion of shown(); track suggestion.value; let i = $index) {
+      <!-- pointerdown, not click: picks before the field loses the focus and closes the list -->
+      <li
+        [id]="listId + '-' + i"
+        role="option"
+        class="option"
+        [class.is-active]="i === activeIndex()"
+        [attr.aria-selected]="i === activeIndex()"
+        (pointerdown)="$event.preventDefault(); choose(suggestion)"
+        (pointerenter)="activeIndex.set(i)"
+      >
+        <span class="option__value">{{ suggestion.value }}</span>
+        @if (suggestion.hint) {
+          <span class="option__hint">{{ suggestion.hint }}</span>
+        }
+      </li>
+    }
+  </ul>
+}

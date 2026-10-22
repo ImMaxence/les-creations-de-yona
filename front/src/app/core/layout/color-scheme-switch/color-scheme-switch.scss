@@ -1,0 +1,115 @@
+@use 'mixins' as m;
+
+:host {
+  position: relative;
+  display: block;
+}
+
+// Compact: icon button and its menu --------------------------------------------
+
+.trigger {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-pill);
+  transition: background-color var(--duration-base) var(--ease-out);
+
+  @include m.hover {
+    background-color: var(--color-surface);
+  }
+
+  &.is-open {
+    background-color: var(--color-surface);
+  }
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-1);
+  min-width: 10rem;
+  margin: 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+  transform-origin: top right;
+}
+
+.panel--enter {
+  animation: panel-in var(--duration-base) var(--ease-out);
+}
+
+.panel--leave {
+  animation: panel-in var(--duration-fast) var(--ease-in-out) reverse both;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+.panel__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  text-align: left;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: var(--color-surface);
+  }
+
+  &[aria-pressed='true'] {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+}
+
+.panel__check {
+  margin-left: auto;
+}
+
+// Full: three choices side by side ---------------------------------------------
+
+.segments {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface);
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+
+  &.is-active {
+    background-color: var(--color-bg);
+    color: var(--color-accent);
+    box-shadow: var(--shadow-sm);
+  }
+}

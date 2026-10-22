@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.common.PageResponse;
+import fr.lescreationsdeyona.image.ImageChoice;
 import fr.lescreationsdeyona.image.ImageProcessor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -72,19 +73,25 @@ class AdminRecipeController {
 		return recipeService.update(id, form);
 	}
 
-	@Operation(summary = "Delete a recipe with its ingredients, steps and image")
+	@Operation(summary = "Delete a recipe with its ingredients and steps; its photo stays in the gallery")
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteRecipe(@PathVariable long id) {
 		recipeService.delete(id);
 	}
 
-	@Operation(summary = "Replace the photo of a recipe; the previous one is deleted",
+	@Operation(summary = "Upload a new photo for a recipe; the previous one stays in the gallery",
 			description = "JPEG or PNG, 10 MB max, landscape: at least 1200 × 800 px and 4:3.")
 	@PutMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	RecipeDetail replaceRecipeImage(@PathVariable long id, @RequestPart MultipartFile file) {
 		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.
 		return recipeService.replaceImage(id, imageProcessor.process(file));
+	}
+
+	@Operation(summary = "Show an image of the gallery on a recipe, or none (default visual)")
+	@PutMapping("/{id}/image-choice")
+	RecipeDetail chooseRecipeImage(@PathVariable long id, @RequestBody ImageChoice choice) {
+		return recipeService.chooseImage(id, choice.imageId());
 	}
 
 }

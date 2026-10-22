@@ -1,0 +1,43 @@
+<dialog #dialog class="picker" aria-labelledby="picker-title" (close)="onClosed()">
+  <div class="picker__head">
+    <h2 id="picker-title">Choisir dans la galerie</h2>
+    <button type="button" class="icon-button" aria-label="Fermer" (click)="close()">
+      <svg lucideX [size]="20"></svg>
+    </button>
+  </div>
+
+  <div class="picker__filter" role="group" aria-label="Images affichées">
+    <button type="button" class="picker__tab" [attr.aria-pressed]="onlyUnused()" (click)="onlyUnused.set(true)">Non utilisées</button>
+    <button type="button" class="picker__tab" [attr.aria-pressed]="!onlyUnused()" (click)="onlyUnused.set(false)">Toutes</button>
+  </div>
+
+  @if (images.value(); as result) {
+    @if (result.content.length) {
+      <ul role="list" class="picker__grid">
+        @for (image of result.content; track image.id) {
+          <li>
+            <button type="button" class="picker__tile" (click)="choose(image)">
+              <yona-cover-image class="picker__image" [imageId]="image.id" sizes="12rem" />
+              <span class="picker__usage" [class.is-unused]="!image.usedBy.length">{{ usage(image) }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+      @if (totalPages() > 1) {
+        <div class="picker__pages">
+          <button type="button" class="icon-button" aria-label="Page précédente" [disabled]="page() === 0" (click)="page.set(page() - 1)">
+            <svg lucideChevronLeft [size]="18"></svg>
+          </button>
+          <span>Page {{ page() + 1 }} sur {{ totalPages() }}</span>
+          <button type="button" class="icon-button" aria-label="Page suivante" [disabled]="page() + 1 >= totalPages()" (click)="page.set(page() + 1)">
+            <svg lucideChevronRight [size]="18"></svg>
+          </button>
+        </div>
+      }
+    } @else {
+      <p class="picker__empty">{{ onlyUnused() ? 'Aucune image inutilisée.' : 'La galerie est vide.' }}</p>
+    }
+  } @else if (images.isLoading()) {
+    <p class="picker__empty">Chargement…</p>
+  }
+</dialog>

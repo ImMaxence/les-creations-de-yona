@@ -6,7 +6,7 @@
   position: relative;
   height: clamp(20rem, 58svh, 34rem);
   overflow: hidden;
-  color: var(--color-on-accent);
+  color: var(--color-on-image);
 
   @include m.from(md) {
     height: clamp(24rem, 64svh, 40rem);
@@ -34,6 +34,46 @@
   display: grid;
   gap: var(--space-3);
   padding-bottom: var(--space-8);
+}
+
+.hero__top {
+  position: absolute;
+  inset: var(--space-4) 0 auto;
+  z-index: 1;
+}
+
+// Frosted pill over the photo, readable whatever the picture
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  background-color: rgb(20 14 12 / 35%);
+  backdrop-filter: blur(8px);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+
+  svg {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  @include m.hover {
+    background-color: rgb(20 14 12 / 55%);
+
+    svg {
+      transform: translateX(-3px);
+    }
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
 .breadcrumb {

@@ -136,11 +136,17 @@
   }
 }
 
-.menu__socials {
-  display: flex;
-  gap: var(--space-3);
+.menu__bottom {
+  display: grid;
+  gap: var(--space-5);
   margin-top: auto;
   padding-top: var(--space-6);
+}
+
+.menu__socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 
   a {
     display: grid;

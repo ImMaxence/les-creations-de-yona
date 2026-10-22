@@ -15,7 +15,7 @@
               type="url"
               inputmode="url"
               class="input"
-              placeholder="https://www.instagram.com/…"
+              [placeholder]="urlExamples[link.platform]"
               [attr.aria-label]="'Adresse de la page ' + (i + 1)"
               [formField]="linksForm.links[i].url"
             />

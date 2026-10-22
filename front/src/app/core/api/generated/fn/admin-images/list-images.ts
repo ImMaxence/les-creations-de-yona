@@ -11,6 +11,7 @@ import { PageResponseGalleryImage } from '../../models/page-response-gallery-ima
 
 export interface ListImages$Params {
   kind?: 'RECIPE' | 'CATEGORY';
+  used?: boolean;
 
 /**
  * Zero-based page index (0..N)
@@ -32,6 +33,7 @@ export function listImages(http: HttpClient, rootUrl: string, params?: ListImage
   const rb = new RequestBuilder(rootUrl, listImages.PATH, 'get');
   if (params) {
     rb.query('kind', params.kind, {});
+    rb.query('used', params.used, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});
     rb.query('sort', params.sort, {});

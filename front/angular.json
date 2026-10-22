@@ -52,9 +52,6 @@
               }
             ],
             "styles": [
-              "node_modules/@fontsource-variable/inter/wght.css",
-              "node_modules/@fontsource-variable/fraunces/opsz.css",
-              "node_modules/@fontsource-variable/fraunces/opsz-italic.css",
               "src/styles.scss"
             ],
             "stylePreprocessorOptions": {
@@ -78,7 +75,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "600kB",
+                  "maximumWarning": "650kB",
                   "maximumError": "1MB"
                 },
                 {

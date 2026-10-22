@@ -4,5 +4,10 @@ package fr.lescreationsdeyona.social;
 public enum SocialPlatform {
 	YOUTUBE,
 	TIKTOK,
-	INSTAGRAM
+	INSTAGRAM,
+	FACEBOOK,
+	REDDIT,
+	X,
+	THREADS,
+	WHATSAPP
 }

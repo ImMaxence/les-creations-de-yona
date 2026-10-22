@@ -30,7 +30,12 @@
                 <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg lucideX [size]="18"></svg></button>
               </form>
             } @else {
-              <span class="admin-row__main admin-row__title">{{ ingredient.name }}</span>
+              <span class="admin-row__main">
+                <span class="admin-row__title">{{ ingredient.name }}</span>
+                <span class="admin-row__meta">
+                  {{ ingredient.recipeCount ? 'Dans ' + ingredient.recipeCount + (ingredient.recipeCount > 1 ? ' recettes' : ' recette') : 'Utilisé dans aucune recette' }}
+                </span>
+              </span>
               <div class="admin-row__actions">
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + ingredient.name" (click)="startRename(ingredient)">
                   <svg lucidePencil [size]="18"></svg>

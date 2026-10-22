@@ -17,7 +17,13 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 
 	List<Ingredient> findByNameContainingOrderByNameAsc(String fragment);
 
-	@Query("select count(line) > 0 from RecipeIngredient line where line.ingredient.id = :id")
-	boolean isUsedInRecipe(long id);
+	@Query("select count(line) from RecipeIngredient line where line.ingredient.id = :id")
+	long countRecipesUsing(long id);
+
+	/** Ingredients used by no recipe are absent. A recipe lists an ingredient once at most. */
+	@Query("""
+			select new fr.lescreationsdeyona.ingredient.RecipeCount(line.ingredient.id, count(line))
+			from RecipeIngredient line group by line.ingredient.id""")
+	List<RecipeCount> countRecipesPerIngredient();
 
 }

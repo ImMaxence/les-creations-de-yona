@@ -1,5 +1,6 @@
 package fr.lescreationsdeyona.category;
 
+import fr.lescreationsdeyona.image.ImageChoice;
 import fr.lescreationsdeyona.image.ImageProcessor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,19 +42,25 @@ class AdminCategoryController {
 		return categoryService.rename(id, form);
 	}
 
-	@Operation(summary = "Delete a category and its image; refused while it still contains recipes")
+	@Operation(summary = "Delete a category; refused while it still contains recipes. Its photo stays in the gallery")
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteCategory(@PathVariable long id) {
 		categoryService.delete(id);
 	}
 
-	@Operation(summary = "Replace the photo of a category; the previous one is deleted",
+	@Operation(summary = "Upload a new photo for a category; the previous one stays in the gallery",
 			description = "JPEG or PNG, 10 MB max, landscape: at least 1200 × 800 px and 4:3.")
 	@PutMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	CategoryResponse replaceCategoryImage(@PathVariable long id, @RequestPart MultipartFile file) {
 		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.
 		return categoryService.replaceImage(id, imageProcessor.process(file));
+	}
+
+	@Operation(summary = "Show an image of the gallery on a category, or none (default visual)")
+	@PutMapping("/{id}/image-choice")
+	CategoryResponse chooseCategoryImage(@PathVariable long id, @RequestBody ImageChoice choice) {
+		return categoryService.chooseImage(id, choice.imageId());
 	}
 
 }
