@@ -2,7 +2,7 @@
 
 Blog de cuisine : recettes, catégories, recherche. Projet monorepo.
 
-Dernière mise à jour : 2026-10-21.
+Dernière mise à jour : 2026-10-22.
 
 ## Périmètre v1
 
@@ -18,7 +18,7 @@ Dernière mise à jour : 2026-10-21.
   - Filtre par catégorie, barre de recherche avec autocomplétion sur le titre.
   - Pagination numérotée, nombre d'éléments par page au choix.
 - Recette (`/recettes/{slug-categorie}/{slug-recette}`) :
-  - Header : image pleine largeur, titre et catégorie superposés sur un dégradé noir qui part du bas de l'image.
+  - Header : image pleine largeur, titre et catégorie superposés sur un dégradé noir qui part du bas de l'image, bouton « Retour » en haut à gauche (page précédente du site, sinon la catégorie de la recette).
   - Ingrédients, étapes, date de dernière mise à jour.
 - Erreurs : 404 (URL inconnue, recette introuvable ou en brouillon) et erreur serveur.
 - Installer l'application (`/installer`) : bouton d'installation quand le navigateur le propose, guide pas à pas pour iPhone/iPad, Android et ordinateur.
@@ -33,14 +33,16 @@ Dernière mise à jour : 2026-10-21.
 - Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), installer l'application, administration (admins seulement).
 - Menu mobile : bouton hamburger, panneau plein écran avec les mêmes entrées.
 - Footer sur toutes les pages : réseaux sociaux, mentions légales, politique de confidentialité, lien discret « Espace admin ».
+- Affichage Clair / Auto / Sombre au choix du visiteur : icône dans la navbar, trois boutons dans le menu mobile. « Auto » (par défaut) suit le réglage du système. Choix gardé dans le navigateur (`localStorage`), appliqué avant le premier affichage.
 
 ### Back-office (`/admin`)
 
 - Accès réservé à 2 admins via Google, pas de création de compte.
 - Entrée : lien « Espace admin » du footer, visible de tous (l'application installée n'a pas de barre d'adresse pour taper `/admin`). Un visiteur qui le suit arrive sur la connexion Google, puis sur la page d'accès refusé. Pages jamais indexées.
-- Recettes : création, modification, publication ou brouillon, suppression.
+- Recettes : liste paginée (20 par page), les dernières modifiées en premier, recherche et statut dans l'URL ; création, modification, publication ou brouillon, suppression. Catégorie créable depuis le formulaire de la recette. Ingrédients proposés pendant la saisie, les plus utilisés en premier.
 - Catégories, ingrédients (modifier, supprimer), réseaux sociaux.
-- Galerie : toutes les images, filtrables par type (recette ou catégorie), avec suppression.
+- Galerie : toutes les photos envoyées, gardées même une fois remplacées. Filtres « Utilisées / Non utilisées » et type d'envoi, suppression. Une photo de la galerie peut être remise sur une recette ou une catégorie (« Choisir dans la galerie »).
+- Apparence : thème de couleurs (5 thèmes, chacun en version claire et sombre), police des titres et police du texte (5 chacune), arrondi des coins de 0 à 999 px. Aperçu immédiat sur tout le site, visible des visiteurs une fois enregistré.
 - Sauvegarde : bouton « Sauvegarder mes données », qui télécharge une archive ZIP (base PostgreSQL et tout le bucket S3).
 
 ### Pages légales
@@ -133,6 +135,7 @@ npm ci
 npm start              # http://localhost:4200, avec SSR, /api relayé vers le backend (proxy.conf.json)
 npm run build          # build de production (navigateur + serveur SSR) dans dist/
 npm run api:generate   # régénère le client API depuis http://localhost:8080/api/docs
+npm run fonts:generate # régénère src/styles/_fonts.scss après une mise à jour d'un paquet @fontsource-variable
 ```
 
 - Client API généré par `ng-openapi-gen` dans `src/app/core/api/generated` (versionné, ne pas modifier à la main). À régénérer après chaque changement d'API du backend.
@@ -143,7 +146,7 @@ npm run api:generate   # régénère le client API depuis http://localhost:8080/
 - Cache HTTP : fichiers hashés (JS, CSS, polices) un an `immutable` ; fichiers de `public/` (favicon, photo de l'auteur, `robots.txt`) un jour, car leur nom ne change pas ; fichiers du service worker (`ngsw.json`, `ngsw-worker.js`, manifeste) jamais en cache, pour que les applications installées reçoivent les mises à jour.
 - En-têtes de sécurité (`src/server/security-headers.ts`), posés par le serveur de production sur toutes ses réponses (pas par `npm start`, dont les scripts seraient bloqués) :
   - CSP : scripts du site uniquement. Les scripts inline du build (contrat d'event replay) sont autorisés par leur hash, calculé au démarrage depuis les fichiers HTML construits ; celui qu'Angular écrit au rendu par un nonce aléatoire propre à chaque réponse (`REQUEST_CONTEXT`, puis `CSP_NONCE`). Styles inline autorisés (styles de composants Angular). Aucune intégration dans une iframe (`frame-ancestors 'none'`).
-  - Inlining du CSS critique désactivé (`angular.json`) : son script de chargement ne peut pas recevoir le nonce. Coût faible, la feuille de style globale fait moins de 10 Ko.
+  - Inlining du CSS critique désactivé (`angular.json`) : son script de chargement ne peut pas recevoir le nonce. Coût faible, la feuille de style globale fait environ 15 Ko (2,5 Ko compressée).
   - HSTS (un an, sans sous-domaines), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (caméra, micro, géolocalisation, paiement coupés ; le maintien de l'écran allumé reste permis), `Cross-Origin-Opener-Policy`. `X-Powered-By` retiré.
 - Référencement :
   - `/sitemap.xml` (`src/server/sitemap.ts`) : construit à chaque demande depuis l'API (accueil, recettes, catégories ayant au moins une recette, toutes les recettes publiées, installation, pages légales), en cache une heure. URL sur le domaine de production.
@@ -161,19 +164,20 @@ Image Docker (`front/Dockerfile`) : build Node 24 multi-étapes, image finale sa
 Organisation de `front/src` :
 
 ```
-app/core/      services globaux, layout (header, menus, footer), client API généré
+app/core/      services globaux, layout (header, menus, footer), thème (couleurs, polices, clair/sombre), client API généré
 app/shared/    composants d'interface (bouton, carte de recette, image), directive de reveal, utilitaires
 app/pages/     une page par route, chargée à la demande
-styles/        variables (couleurs, polices, breakpoints), reset, base typographique, animations
+styles/        variables (espacements, breakpoints, animations), polices (généré), reset, base typographique, animations
 server/        middlewares du serveur SSR Express (en-têtes de sécurité, sitemap) ; point d'entrée : server.ts
+scripts/       génération de styles/_fonts.scss (npm run fonts:generate)
 ```
 
 ### API
 
 | Accès | Routes |
 | --- | --- |
-| Public (GET) | `/api/recipes` (recherche, filtre `category`, pagination), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/social-links`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
-| Admin | `/api/admin/me`, `/api/admin/recipes`, `/api/admin/categories`, `/api/admin/ingredients`, `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (multipart, champ `file`), `/api/admin/images` (galerie, filtre `kind`), `/api/admin/backup` |
+| Public (GET) | `/api/recipes` (recherche, filtre `category`, pagination), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/social-links`, `/api/theme`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
+| Admin | `/api/admin/me`, `/api/admin/recipes`, `/api/admin/categories`, `/api/admin/ingredients`, `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind` et `used`), `PUT /api/admin/theme`, `/api/admin/backup` |
 | Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
 
 - Erreurs : ProblemDetail avec `code` stable (`ErrorCode`) et `detail` en français. Erreurs de validation listées dans `errors` (`field`, `message`).
@@ -210,8 +214,9 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 ## Modèle de données
 
-- `social_link` : platform (liste fixe : YouTube, TikTok, Instagram, extensible), url, position. Éditable depuis le back-office.
-- `image` : kind (recipe ou category), s3_prefix (`recipes/{uuid}/` ou `categories/{uuid}/`), created_at. Filtrable par type dans la galerie.
+- `social_link` : platform (liste fixe : YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp), url, position. Éditable depuis le back-office.
+- `site_theme` : une seule ligne (id = 1) : preset (thème de couleurs), display_font, body_font, radius_px (0 à 999), updated_at, updated_by.
+- `image` : kind (envoyée pour une recette ou une catégorie), s3_prefix (`recipes/{uuid}/` ou `categories/{uuid}/`), created_at. Filtrable par type et par utilisation dans la galerie.
 - `category` : name, slug (unique), image_id (facultatif, vers `image`).
 - `recipe` : title, slug (unique), intro, status (publiée ou brouillon), category_id, servings, prep_minutes, cook_minutes, image_id (facultatif, vers `image`), featured (booléen), created_at, updated_at (timestamptz, UTC), created_by, updated_by (email de l'admin, texte).
 - `ingredient` : name (unique).
@@ -226,7 +231,7 @@ Cloudflare (offre gratuite, proxy seulement) :
 - Noms de tables, colonnes et code en anglais.
 - Pas de tests pour la v1, ni backend ni frontend. À l'init du back et du front, supprimer les fichiers générés inutiles (tests unitaires, configuration Prettier, etc.).
 - Pas de commentaires sur le site, ni en v1 ni prévus.
-- Logo et photo de l'auteur en dur dans le projet Angular. Couleurs dans `variables.scss`.
+- Logo et photo de l'auteur en dur dans le projet Angular. Couleurs, polices et arrondi choisis dans le back-office (`site_theme`).
 - Routage sur un domaine unique : site à la racine, API sous `/api`. Domaine `https://les-creations-de-yona.fr/`, déjà en place.
 - Flyway Community (gratuit) plutôt que Liquibase : migrations SQL simples, base PostgreSQL unique.
 - Erreurs API en ProblemDetail (RFC 9457) : format JSON standard (`type`, `title`, `status`, `detail`), identique pour toutes les erreurs. Ajout d'un code stable et d'un message en français, affichables en toast côté Angular.
@@ -234,7 +239,7 @@ Cloudflare (offre gratuite, proxy seulement) :
 ### Frontend
 
 - Angular 22 avec signals (`signal`, `computed`, `input()`, `output()`), composants standalone, sans NgModule.
-- Styles en SCSS uniquement, sans Tailwind ni framework CSS. Variables (couleurs, espacements, polices) dans `variables.scss`.
+- Styles en SCSS uniquement, sans Tailwind ni framework CSS. Espacements, breakpoints et animations dans `styles/_variables.scss` ; couleurs, polices et arrondi dans `core/theme/`.
 - Composants d'interface faits maison (boutons, champs, barre de recherche, etc.), sans bibliothèque de composants.
 - Icônes : Lucide (licence ISC, libre).
 - Animations sobres et soignées, pensées comme une signature du site, sans effet gratuit :
@@ -247,15 +252,17 @@ Cloudflare (offre gratuite, proxy seulement) :
   - Uniquement des propriétés peu coûteuses (`opacity`, `transform`), pour rester fluide sur téléphone.
 - Services HTTP générés depuis l'OpenAPI du backend. Les DTO marquent les champs facultatifs avec `@Nullable` (JSpecify) : tous les autres sont déclarés obligatoires dans l'OpenAPI, donc non optionnels en TypeScript.
 - Données d'une page chargées par un resolver de route, avant l'affichage. Données communes (catégories, réseaux sociaux) chargées une fois au démarrage. Le serveur et le navigateur affichent donc la même page, et l'hydratation réutilise les réponses du serveur (cache de transfert HTTP) sans rappeler l'API.
-- Styles : les composants lisent les propriétés CSS (`var(--color-accent)`) émises depuis `styles/_variables.scss`. Sass ne sert qu'aux breakpoints et mixins.
-- Icônes de marque (Instagram, TikTok, YouTube) : Simple Icons (CC0), Lucide n'en fournissant pas.
+- Styles : les composants lisent des propriétés CSS (`var(--color-accent)`, `var(--radius-md)`). Thème : `core/theme/` (`SiteTheme`) écrit sur `<html>` les couleurs (`light-dark(clair, sombre)`), les polices et l'arrondi chargés depuis `/api/theme` avant le premier rendu : la page rendue par le serveur a déjà le bon thème, sans flash. Clair ou sombre : `ColorScheme` pose `data-color-scheme` sur `<html>`, que `_root.scss` traduit en `color-scheme` ; un script inline de `index.html` (autorisé par son hash dans la CSP) l'applique avant le premier affichage.
+- Thèmes de couleurs : `core/theme/theme-presets.ts`, chacun en version claire et sombre, contrastes vérifiés (texte ≥ 7:1, texte secondaire et accent ≥ 4,5:1). Texte posé sur une photo : `--color-on-image`, toujours clair.
+- Polices : Fontsource (SIL Open Font License), auto-hébergées. `src/styles/_fonts.scss` est généré par `npm run fonts:generate` (sous-ensembles latin et latin étendu seulement) ; le navigateur ne télécharge que les polices utilisées par la page.
+- Icônes de marque (Instagram, TikTok, YouTube, Facebook, X, Threads, Reddit, WhatsApp) : Simple Icons (CC0), Lucide n'en fournissant pas.
 - API indisponible : page d'erreur (HTTP 503) en conservant l'URL demandée. URL inconnue, recette introuvable ou en brouillon : page 404 avec un vrai statut 404. Segment catégorie erroné dans l'URL d'une recette : redirection 301 vers l'URL canonique.
 - SEO déclaré par route (`data.seo`, statique ou calculé après les resolvers), appliqué à chaque navigation par une `TitleStrategy` : titre, description, Open Graph, URL canonique, `robots`, JSON-LD (`Person` sur l'accueil, `Recipe` sur une recette). Résultats de recherche et pages vides en `noindex`.
 - Recherche : combobox ARIA (flèches, Entrée, Échap), suggestions dès 2 caractères, texte tapé mis en évidence sans tenir compte des accents. Filtres et pagination dans l'URL (`q`, `categorie`, `page`, `parPage`), donc partageables.
 - Page recette pensée pour cuisiner avec un téléphone : portions ajustables (quantités recalculées puis arrondies à des valeurs mesurables), ingrédients et étapes à cocher, écran maintenu allumé (Screen Wake Lock, proposé seulement si le navigateur le permet).
 - Étapes en Markdown rendues par `marked` (MIT), puis nettoyées par le sanitizer d'Angular.
 - Back-office (`/admin`) : rendu dans le navigateur uniquement (la session est un cookie), chargé à la demande, protégé par un guard qui renvoie vers la connexion Google sans session. Formulaires en Signal Forms (`@angular/forms/signals`) avec les mêmes règles que l'API, ingrédients et étapes réordonnables par glisser-déposer (`@angular/cdk/drag-drop`, MIT) ou par boutons pour le clavier. Erreurs de l'API affichées en toast avec leur message, confirmation avant suppression, alerte avant de quitter une recette non enregistrée.
-- Listes déroulantes : composant `yona-select` fait maison (pattern ARIA combobox), la liste native d'un `<select>` ne se stylant pas.
+- Listes déroulantes : composant `yona-select` fait maison (pattern ARIA combobox), la liste native d'un `<select>` ne se stylant pas. Champ avec suggestions (ingrédients) : `yona-suggest-input`, pour la même raison avec `<datalist>`.
 
 ### Dates
 
@@ -288,9 +295,9 @@ Cloudflare (offre gratuite, proxy seulement) :
 - Étapes en texte ou Markdown rendu côté Angular, jamais de HTML brut en base.
 - Ordre des ingrédients et des étapes : glisser-déposer dans le back-office.
 - Slug : généré depuis le titre, suffixe numérique en cas de doublon. Pas de timestamp.
-- Suppression d'une recette : suppression de son préfixe S3.
+- Suppression d'une recette : sa photo reste dans la galerie.
 - Suppression d'une catégorie encore utilisée : bloquée tant qu'elle contient des recettes.
-- Réseaux sociaux : plateforme en liste fixe (YouTube, TikTok, Instagram), extensible si besoin.
+- Réseaux sociaux : plateforme en liste fixe (YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp), une fois chacune au plus. Ajouter une plateforme : enum `SocialPlatform`, contrainte CHECK (migration Flyway) et icône côté Angular.
 
 ### Sauvegarde
 
@@ -310,22 +317,22 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 ## Images
 
-- Upload passé par le backend. Une image principale par recette et une par catégorie, facultatives.
-- Bouton « Modifier la photo » sur la recette et sur la catégorie : remplace l'image directement, sans passer par la galerie. Envoi de la nouvelle image, puis suppression de l'ancienne une fois le remplacement enregistré : en cas d'échec, l'ancienne photo reste en place.
+- Upload passé par le backend. Une image principale par recette et une par catégorie, facultatives. Une même image peut servir à plusieurs recettes et catégories.
+- Sur la recette et sur la catégorie : « Nouvelle photo » (envoi), « Choisir dans la galerie » ou « Retirer » (visuel par défaut). L'ancienne photo n'est jamais supprimée : elle reste dans la galerie, marquée « Non utilisée » si plus rien ne l'affiche.
 - Cohérence base / S3 : S3 n'a pas de transaction, ses fichiers suivent donc l'issue de la transaction PostgreSQL. Un upload est effacé si la transaction échoue, une image supprimée perd ses fichiers une fois la suppression validée. Au pire il reste des fichiers orphelins, jamais un enregistrement sans fichier. La sauvegarde inclut les orphelins.
-- Suppression d'une recette ou d'une catégorie : son image (enregistrement et fichiers S3) est supprimée avec elle.
-- Galerie back-office : toutes les images (recettes et catégories), avec suppression. Supprimer une image utilisée retire l'image de la recette ou de la catégorie (visuel par défaut), après confirmation.
+- Suppression d'une recette ou d'une catégorie : sa photo reste dans la galerie.
+- Galerie back-office : toutes les images, avec les recettes et catégories qui les affichent, filtrables (utilisées ou non, type d'envoi). Seule la galerie supprime une image (enregistrement et fichiers S3) : les recettes et catégories qui l'affichaient passent au visuel par défaut, après confirmation.
 - Accès : bucket S3 privé, images servies par le backend avec cache HTTP. Seul le backend accède au bucket.
 - Formats : JPEG et PNG, vérifiés sur le contenu réel (magic bytes) et non sur l'extension. HEIC non accepté en v1.
 - Taille max à l'upload : 10 Mo, et 100 mégapixels au plus, lus dans l'en-tête avant tout décodage, pour bloquer les images piégées. Les grandes photos sont décodées en sous-échantillonnant (au moins deux fois la plus grande sortie), pour limiter la mémoire.
 - Paysage uniquement : largeur minimale 1200 px, hauteur minimale 800 px, ratio largeur/hauteur d'au moins 4:3.
 - Traitement : suppression des métadonnées EXIF (dont la localisation GPS), rotation appliquée selon l'EXIF, pas d'agrandissement.
 - Sorties WebP de 800 px et 1600 px de large, qualité 80. L'original JPEG ou PNG n'est pas conservé.
-- En base : table `image` (type et préfixe S3). Chaque préfixe contient `800.webp` et `1600.webp`. `recipe.image_id` et `category.image_id` pointent vers elle. Une image est liée à une recette ou à une catégorie, jamais aux deux. Les identifiants S3 sont dans les variables d'environnement.
+- En base : table `image` (type et préfixe S3). Chaque préfixe contient `800.webp` et `1600.webp`. `recipe.image_id` et `category.image_id` pointent vers elle (`ON DELETE SET NULL`), sans contrainte d'unicité. Les identifiants S3 sont dans les variables d'environnement.
 
 ## Charte graphique
 
-Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Palette « Pâtisserie chic ».
+Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Thème par défaut : « Pâtisserie chic » (version claire ci-dessous). Autres thèmes au choix dans le back-office : Terracotta, Pistache, Myrtille, Caramel, chacun avec sa version sombre.
 
 | Rôle | Couleur | Hex |
 | --- | --- | --- |
@@ -337,7 +344,8 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Palette « Pât
 
 - Contrastes : texte sur fond ≈ 14:1, warm mocha sur almond milk ≈ 5,8:1 (AA). Le dusty rose (≈ 2,2:1) reste en décor, jamais pour du texte.
 - Favicon et icônes de l'application : toque almond milk sur fond warm mocha.
-- Titres : Fraunces (serif chaleureuse, Google Fonts, gratuite). Texte et interface : Inter (lisible sur mobile). Polices auto-hébergées dans le projet, sans appel à Google Fonts, pour ne pas transmettre l'IP des visiteurs à Google.
+- Polices par défaut : Fraunces pour les titres, Inter pour le texte. Au choix dans le back-office : titres en Fraunces, Playfair Display, Cormorant Garamond, Dancing Script ou Quicksand ; texte en Inter, Nunito, DM Sans, Source Sans 3 ou Lora. Toutes auto-hébergées, sans appel à Google Fonts, pour ne pas transmettre l'IP des visiteurs à Google.
+- Arrondi des coins : 16 px par défaut, de 0 (coins carrés) à 999 px. Les petits éléments (boutons, puces) prennent le double, pour rester ronds par défaut.
 - Header de recette : dégradé noir transparent, du bas vers le haut.
 
 ## Roadmap
@@ -346,7 +354,7 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Palette « Pât
 - [x] devops : Dockerfile du backend (avec client `pg_dump` 18), service `back` dans la Compose (profil `app`)
 - [x] devops : Dockerfile du frontend, passerelle locale (Caddy) pour l'application complète
 - [x] devops : Compose de production pour Coolify (`devops/compose.prod.yaml`), passerelle en image autonome
-- [ ] devops : premier déploiement sur Coolify, déploiement automatique à chaque commit (webhook GitHub)
+- [x] devops : premier déploiement sur Coolify, déploiement automatique à chaque commit (webhook GitHub)
 - [x] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
 - [x] back : service d'upload S3 (validation, resize, conversion)
 - [x] back : auth Google avec allowlist `APP_ADMIN_EMAILS`, session
@@ -368,8 +376,12 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Palette « Pât
 - [x] front : sitemap.xml
 - [x] docs : procédure de restauration (dump PostgreSQL et S3)
 - [x] sécurité : en-têtes du serveur SSR (CSP à nonce), documentation de l'API coupée en production, rotation des journaux
+- [x] thèmes : 5 thèmes de couleurs clair et sombre, polices et arrondi choisis dans le back-office, choix Clair / Auto / Sombre du visiteur
+- [x] réseaux sociaux : Facebook, X, Threads, Reddit, WhatsApp
+- [x] back-office : galerie qui garde toutes les photos (filtre « Non utilisées », réutilisation), catégorie créée depuis la recette, ingrédients suggérés par usage, liste des recettes paginée
+- [x] front : bouton « Retour » sur la page recette
 
 ## Points ouverts
 
-- Premier déploiement Coolify (voir « Production (Coolify) ») et vérification en ligne : connexion Google, upload d'une photo, sauvegarde ZIP.
+- Vérification en ligne : connexion Google, upload d'une photo depuis l'iPhone, sauvegarde ZIP.
 - Après la mise en ligne : déclarer `https://les-creations-de-yona.fr/sitemap.xml` dans Google Search Console.
