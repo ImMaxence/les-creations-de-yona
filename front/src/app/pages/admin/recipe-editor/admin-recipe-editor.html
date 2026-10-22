@@ -55,11 +55,17 @@
       <span class="field__hint">Quelques phrases d'accroche, reprises par Google sous le titre.</span>
       <yona-field-error [field]="recipeForm.intro" />
     </div>
+    <div class="field">
+      <label class="field__label" for="video">Vidéo YouTube (facultatif)</label>
+      <input id="video" type="url" inputmode="url" class="input" placeholder="https://www.youtube.com/watch?v=…" [formField]="recipeForm.videoUrl" [attr.aria-invalid]="isInvalid(recipeForm.videoUrl)" />
+      <span class="field__hint">Collez le lien de la vidéo : elle s'affiche tout en bas de la recette.</span>
+      <yona-field-error [field]="recipeForm.videoUrl" />
+    </div>
   </section>
 
   <div class="editor__columns">
     <section class="admin-panel" aria-labelledby="times-title">
-      <h3 id="times-title" class="editor__title">Portions et temps</h3>
+      <h3 id="times-title" class="editor__title">Portions, temps et difficulté</h3>
       <div class="editor__grid editor__grid--three">
         <div class="field">
           <label class="field__label" for="servings">Portions</label>
@@ -76,6 +82,10 @@
           <input id="cook" type="number" inputmode="numeric" class="input" [formField]="recipeForm.cookMinutes" />
           <yona-field-error [field]="recipeForm.cookMinutes" />
         </div>
+      </div>
+      <div class="field">
+        <span class="field__label">Difficulté</span>
+        <yona-select label="Difficulté" [options]="difficultyOptions" [formField]="recipeForm.difficulty" />
       </div>
     </section>
 

@@ -46,6 +46,24 @@ type ListName = 'ingredients' | 'steps';
 
 type PendingImage = { file: File } | { imageId: string };
 
+const DIFFICULTY_WORDS: Record<number, string> = {
+  1: 'très facile',
+  2: 'facile',
+  3: 'moyenne',
+  4: 'difficile',
+  5: 'expert',
+};
+
+/** 1 to 5 by half points, shown as stars on the recipe page. */
+const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
+  { value: null, label: 'Non précisée' },
+  ...Array.from({ length: 9 }, (_option, index) => {
+    const value = 1 + index / 2;
+    const words = DIFFICULTY_WORDS[value];
+    return { value, label: `${value.toLocaleString('fr-FR')} / 5${words ? ` (${words})` : ''}` };
+  }),
+];
+
 @Component({
   selector: 'yona-admin-recipe-editor',
   imports: [
@@ -92,6 +110,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     { value: 'DRAFT', label: 'Brouillon (invisible sur le site)' },
     { value: 'PUBLISHED', label: 'Publiée' },
   ];
+  protected readonly difficultyOptions = DIFFICULTY_OPTIONS;
   protected readonly categoryOptions = computed<SelectOption<number | null>[]>(() =>
     this.siteData.categories().map((category) => ({ value: category.id, label: category.name })),
   );

@@ -5,7 +5,7 @@ import { getFeaturedRecipe } from '../../core/api/generated/fn/recipes/get-featu
 import { listPublishedRecipes } from '../../core/api/generated/fn/recipes/list-published-recipes';
 import { RecipeCard } from '../../core/api/generated/models/recipe-card';
 
-export const LATEST_RECIPES_COUNT = 6;
+export const LATEST_RECIPES_COUNT = 3;
 
 export interface HomeData {
   /** null when nothing is published yet (the API answers 204). */

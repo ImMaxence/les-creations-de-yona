@@ -6,6 +6,11 @@ import { Step } from '../models/step';
 export interface RecipeForm {
   categoryId: number;
   cookMinutes?: number;
+
+  /**
+   * From 1 to 5, by half points
+   */
+  difficulty?: number;
   featured: boolean;
   ingredients: Array<IngredientLine>;
   intro?: string;
@@ -14,4 +19,9 @@ export interface RecipeForm {
   status: 'DRAFT' | 'PUBLISHED';
   steps: Array<Step>;
   title: string;
+
+  /**
+   * YouTube link (watch, youtu.be, shorts…); blank for no video
+   */
+  videoUrl?: string;
 }

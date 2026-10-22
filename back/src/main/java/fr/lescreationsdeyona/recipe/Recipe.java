@@ -18,6 +18,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +58,11 @@ public class Recipe {
 	private Integer prepMinutes;
 
 	private Integer cookMinutes;
+
+	/** 1 to 5, by half points. */
+	private BigDecimal difficulty;
+
+	private String youtubeVideoId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	private Image image;

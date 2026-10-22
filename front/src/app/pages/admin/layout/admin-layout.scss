@@ -31,6 +31,12 @@
   font-size: var(--text-sm);
 }
 
+.admin__versions {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
 // Section tabs: one scrolling row on phones
 .admin__nav {
   display: flex;

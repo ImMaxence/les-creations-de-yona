@@ -12,7 +12,8 @@
 
 	<groupId>fr.lescreationsdeyona</groupId>
 	<artifactId>back</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<!-- Semantic version, shown in the back-office: bump it with front/package.json at each release. -->
+	<version>1.0.0</version>
 	<name>back</name>
 	<description>API of the Les créations de Yona cooking blog</description>
 
@@ -130,6 +131,14 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<!-- META-INF/build-info.properties: the version read by BuildProperties at runtime. -->
+					<execution>
+						<goals>
+							<goal>build-info</goal>
+						</goals>
+					</execution>
+				</executions>
 				<configuration>
 					<!-- ./mvnw spring-boot:run: libwebp is native, Java 24+ requires granting it. -->
 					<jvmArguments>--enable-native-access=ALL-UNNAMED</jvmArguments>

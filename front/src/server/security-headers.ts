@@ -31,6 +31,8 @@ function contentSecurityPolicy(nonce: string, scriptHashes: string[]): string {
     "style-src 'self' 'unsafe-inline'",
     // blob: preview of a photo before upload in the back-office.
     "img-src 'self' data: blob:",
+    // Recipe videos: YouTube's privacy-enhanced player, loaded only after a click (YoutubeVideo).
+    'frame-src https://www.youtube-nocookie.com',
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

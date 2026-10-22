@@ -11,15 +11,16 @@ Dernière mise à jour : 2026-10-22.
 - Accueil (`/`) :
   - Recette à la une : grande card en haut (image, titre, catégorie). Champ `featured`, une seule à la fois ; si aucune, la plus récente publiée.
   - À propos : présentation de l'auteur, texte court, photo en dur dans le projet Angular.
-  - Les 6 dernières recettes, toutes catégories confondues, bouton « Voir plus » vers `/recettes`.
+  - Les 3 dernières recettes, toutes catégories confondues, bouton « Voir plus » vers `/recettes`.
   - Toutes les catégories, avec image, cliquables vers `/recettes?categorie={slug}`.
 - Recettes (`/recettes`) :
   - Grille de cards de même taille : image, date de création, titre (tronqué avec ellipsis), catégorie.
   - Filtre par catégorie, barre de recherche avec autocomplétion sur le titre.
   - Pagination numérotée, nombre d'éléments par page au choix.
 - Recette (`/recettes/{slug-categorie}/{slug-recette}`) :
-  - Header : image pleine largeur, titre et catégorie superposés sur un dégradé noir qui part du bas de l'image, bouton « Retour » en haut à gauche (page précédente du site, sinon la catégorie de la recette).
-  - Ingrédients, étapes, date de dernière mise à jour.
+  - Header : image pleine largeur, titre et catégorie superposés sur un dégradé noir qui part du bas de l'image, bouton « Retour » en haut à gauche (page précédente du site, sinon la catégorie de la recette), bouton « Partager » en haut à droite (feuille de partage du téléphone, sinon lien copié).
+  - Temps, et difficulté de 1 à 5 étoiles par demi-étoile (facultative).
+  - Ingrédients, étapes, vidéo YouTube en bas de page si la recette en a une (chargée seulement au clic), date de dernière mise à jour.
 - Erreurs : 404 (URL inconnue, recette introuvable ou en brouillon) et erreur serveur.
 - Installer l'application (`/installer`) : bouton d'installation quand le navigateur le propose, guide pas à pas pour iPhone/iPad, Android et ordinateur.
 
@@ -48,7 +49,7 @@ Dernière mise à jour : 2026-10-22.
 ### Pages légales
 
 - Mentions légales (`/mentions-legales`) et politique de confidentialité (`/politique-de-confidentialite`), liées depuis le footer.
-- Éditeur et directeur de la publication : Maxence Bonnici, à titre non professionnel (adresse communiquée sur demande, art. 6, III, 2 LCEN). Hébergement : auto-hébergé à Aix-en-Provence, derrière Cloudflare. Contact et texte dans `front/src/app/pages/legal/`.
+- Mentions légales : certaines images d'illustration sont générées par IA (Google Gemini), comme l'exige la transparence sur les contenus générés. à titre non professionnel (adresse communiquée sur demande, art. 6, III, 2 LCEN). Hébergement : auto-hébergé à Aix-en-Provence, derrière Cloudflare. Contact et texte dans `front/src/app/pages/legal/`.
 
 ### SEO
 
@@ -145,7 +146,7 @@ npm run fonts:generate # régénère src/styles/_fonts.scss après une mise à j
   - `NG_TRUST_PROXY_HEADERS` : en-têtes du proxy à prendre en compte (`x-forwarded-host,x-forwarded-proto,x-forwarded-for`), seulement si le serveur n'est joignable qu'à travers ce proxy.
 - Cache HTTP : fichiers hashés (JS, CSS, polices) un an `immutable` ; fichiers de `public/` (favicon, photo de l'auteur, `robots.txt`) un jour, car leur nom ne change pas ; fichiers du service worker (`ngsw.json`, `ngsw-worker.js`, manifeste) jamais en cache, pour que les applications installées reçoivent les mises à jour.
 - En-têtes de sécurité (`src/server/security-headers.ts`), posés par le serveur de production sur toutes ses réponses (pas par `npm start`, dont les scripts seraient bloqués) :
-  - CSP : scripts du site uniquement. Les scripts inline du build (contrat d'event replay) sont autorisés par leur hash, calculé au démarrage depuis les fichiers HTML construits ; celui qu'Angular écrit au rendu par un nonce aléatoire propre à chaque réponse (`REQUEST_CONTEXT`, puis `CSP_NONCE`). Styles inline autorisés (styles de composants Angular). Aucune intégration dans une iframe (`frame-ancestors 'none'`).
+  - CSP : scripts du site uniquement. Les scripts inline du build (contrat d'event replay) sont autorisés par leur hash, calculé au démarrage depuis les fichiers HTML construits ; celui qu'Angular écrit au rendu par un nonce aléatoire propre à chaque réponse (`REQUEST_CONTEXT`, puis `CSP_NONCE`). Styles inline autorisés (styles de composants Angular). Aucune intégration dans une iframe (`frame-ancestors 'none'`). Iframes limitées au lecteur YouTube `youtube-nocookie.com` (vidéos des recettes, chargées au clic).
   - Inlining du CSS critique désactivé (`angular.json`) : son script de chargement ne peut pas recevoir le nonce. Coût faible, la feuille de style globale fait environ 15 Ko (2,5 Ko compressée).
   - HSTS (un an, sans sous-domaines), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (caméra, micro, géolocalisation, paiement coupés ; le maintien de l'écran allumé reste permis), `Cross-Origin-Opener-Policy`. `X-Powered-By` retiré.
 - Référencement :
@@ -177,7 +178,7 @@ scripts/       génération de styles/_fonts.scss (npm run fonts:generate)
 | Accès | Routes |
 | --- | --- |
 | Public (GET) | `/api/recipes` (recherche, filtre `category`, pagination), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/social-links`, `/api/theme`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
-| Admin | `/api/admin/me`, `/api/admin/recipes`, `/api/admin/categories`, `/api/admin/ingredients`, `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind` et `used`), `PUT /api/admin/theme`, `/api/admin/backup` |
+| Admin | `/api/admin/me`, `/api/admin/recipes`, `/api/admin/categories`, `/api/admin/ingredients`, `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind` et `used`), `PUT /api/admin/theme`, `/api/admin/version` (version du backend), `/api/admin/backup` |
 | Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
 
 - Erreurs : ProblemDetail avec `code` stable (`ErrorCode`) et `detail` en français. Erreurs de validation listées dans `errors` (`field`, `message`).
@@ -193,6 +194,7 @@ Fichier : `devops/compose.prod.yaml`. Mêmes services qu'en local, sans port pub
 - URL publique : Traefik transmet `X-Forwarded-Proto: https` et le domaine. Caddy les conserve (`trusted_proxies`), le backend les lit (`forward-headers-strategy: framework`) pour construire l'URL de retour Google, et le serveur SSR (`NG_TRUST_PROXY_HEADERS`). Vérifié en simulant Traefik devant la stack de production : URL de retour `https://les-creations-de-yona.fr/api/login/oauth2/code/google`, domaine inconnu refusé (400).
 - Secrets : identifiants PostgreSQL et S3 générés par Coolify au premier déploiement (`SERVICE_USER_*`, `SERVICE_PASSWORD_64_*`), conservés ensuite. À saisir : `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_ADMIN_EMAILS`. Ne jamais définir `API_DOCS_ENABLED`.
 - Données : volumes `postgres-data` et `seaweedfs-data`, conservés d'un déploiement à l'autre. Supprimer la ressource Coolify les supprime : faire une sauvegarde avant.
+- Versions : `back/pom.xml` et `front/package.json`, en version sémantique (1.0.0), à monter ensemble à chaque mise en production : `npm version x.y.z --no-git-tag-version` dans `front/`, la balise `<version>` du `pom.xml` à la main. Affichées en haut du back-office (« Site v… · API v… ») : la version du front est lue dans `package.json` au build, celle du backend dans `build-info.properties` (plugin Maven de Spring Boot), par `GET /api/admin/version`.
 
 Mise en place :
 
@@ -218,7 +220,7 @@ Cloudflare (offre gratuite, proxy seulement) :
 - `site_theme` : une seule ligne (id = 1) : preset (thème de couleurs), display_font, body_font, radius_px (0 à 999), updated_at, updated_by.
 - `image` : kind (envoyée pour une recette ou une catégorie), s3_prefix (`recipes/{uuid}/` ou `categories/{uuid}/`), created_at. Filtrable par type et par utilisation dans la galerie.
 - `category` : name, slug (unique), image_id (facultatif, vers `image`).
-- `recipe` : title, slug (unique), intro, status (publiée ou brouillon), category_id, servings, prep_minutes, cook_minutes, image_id (facultatif, vers `image`), featured (booléen), created_at, updated_at (timestamptz, UTC), created_by, updated_by (email de l'admin, texte).
+- `recipe` : title, slug (unique), intro, status (publiée ou brouillon), category_id, servings, prep_minutes, cook_minutes, difficulty (1 à 5 par demi-points, facultative), youtube_video_id (identifiant de 11 caractères, facultatif), image_id (facultatif, vers `image`), featured (booléen), created_at, updated_at (timestamptz, UTC), created_by, updated_by (email de l'admin, texte).
 - `ingredient` : name (unique).
 - `recipe_ingredient` : recipe_id, ingredient_id, quantity, unit, note, position. Clé primaire (recipe_id, ingredient_id).
 - `recipe_step` : recipe_id, position, description, duration_minutes.
@@ -282,7 +284,7 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 - Recherche par JPA Specifications sur titre et catégorie, insensible à la casse et aux accents (extension `unaccent`). Sécurisée contre l'injection SQL : valeurs passées en paramètres liés, jamais concaténées. Tri limité à une liste de champs autorisés, `%` et `_` saisis par l'utilisateur échappés.
 - Autocomplétion des titres : endpoint dédié, 5 suggestions maximum.
-- Pagination offset avec `Pageable`. L'accueil appelle la même route avec `size=6`.
+- Pagination offset avec `Pageable`. L'accueil appelle la même route avec `size=3`.
 - Recette recherchée par slug seul. Si le segment catégorie de l'URL ne correspond pas, redirection 301 vers l'URL canonique, gérée par Angular SSR qui interroge l'API par slug.
 
 ### Recettes
@@ -290,7 +292,9 @@ Cloudflare (offre gratuite, proxy seulement) :
 - Création : titre, catégorie, au moins 1 ingrédient et au moins 1 étape obligatoires. Image facultative.
 - Statut : publiée ou brouillon. Un brouillon n'est visible que dans le back-office.
 - Recette à la une (`featured`) : une seule à la fois, uniquement sur une recette publiée. Cocher une recette décoche l'ancienne, dans la même transaction.
-- Champs optionnels : portions, temps de préparation et de cuisson, durée d'une étape.
+- Champs optionnels : portions, temps de préparation et de cuisson, difficulté, vidéo YouTube, durée d'une étape.
+- Difficulté : de 1 à 5 par demi-points (1, 1,5 … 5), affichée en étoiles. Vérifiée par le formulaire, le service et une contrainte CHECK.
+- Vidéo : l'admin colle un lien YouTube (`watch?v=`, `youtu.be`, `shorts`, `embed`, `live`), le backend n'en garde que l'identifiant. Sur le site, la photo de la recette tient lieu de lecteur : rien n'est chargé depuis YouTube avant le clic, puis le lecteur vient de `youtube-nocookie.com` (seule origine autorisée en `frame-src` par la CSP). Mentionné dans la politique de confidentialité.
 - Ingrédients structurés (table dédiée + table de liaison), pas de texte ou HTML libre. Quantité et unité optionnelles, unité en texte libre. Unicité insensible à la casse et aux accents. Suppression bloquée si l'ingrédient est utilisé.
 - Étapes en texte ou Markdown rendu côté Angular, jamais de HTML brut en base.
 - Ordre des ingrédients et des étapes : glisser-déposer dans le back-office.
@@ -361,7 +365,7 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Thème par déf
 - [x] back : endpoints publics recettes et catégories
 - [x] back : endpoint d'autocomplétion des titres
 - [x] front : init Angular 22 (nettoyage des fichiers inutiles)
-- [x] front : page d'accueil (recette à la une, à propos, 6 dernières recettes, catégories)
+- [x] front : page d'accueil (recette à la une, à propos, 3 dernières recettes, catégories)
 - [x] front : page recettes (filtre par catégorie, recherche)
 - [x] front : navbar avec menu déroulant, menu mobile, footer, pages 404 et erreur serveur
 - [x] front : page recette
@@ -380,6 +384,8 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Thème par déf
 - [x] réseaux sociaux : Facebook, X, Threads, Reddit, WhatsApp
 - [x] back-office : galerie qui garde toutes les photos (filtre « Non utilisées », réutilisation), catégorie créée depuis la recette, ingrédients suggérés par usage, liste des recettes paginée
 - [x] front : bouton « Retour » sur la page recette
+- [x] versions du front et du backend affichées dans le back-office
+- [x] recettes : difficulté en étoiles, vidéo YouTube, bouton « Partager » ; accueil limité aux 3 dernières recettes
 
 ## Points ouverts
 

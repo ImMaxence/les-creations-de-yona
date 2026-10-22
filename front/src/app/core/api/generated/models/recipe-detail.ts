@@ -8,6 +8,11 @@ export interface RecipeDetail {
   category: CategoryResponse;
   cookMinutes?: number;
   createdAt: string;
+
+  /**
+   * From 1 to 5, by half points
+   */
+  difficulty?: number;
   featured: boolean;
   id: number;
   imageId?: string;
@@ -20,4 +25,9 @@ export interface RecipeDetail {
   steps: Array<Step>;
   title: string;
   updatedAt: string;
+
+  /**
+   * Id of the YouTube video shown at the bottom of the recipe
+   */
+  youtubeVideoId?: string;
 }

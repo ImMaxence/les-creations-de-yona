@@ -10,6 +10,7 @@ import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientService;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -157,9 +158,29 @@ public class RecipeService {
 		recipe.setServings(form.servings());
 		recipe.setPrepMinutes(form.prepMinutes());
 		recipe.setCookMinutes(form.cookMinutes());
+		recipe.setDifficulty(halfPoints(form.difficulty()));
+		recipe.setYoutubeVideoId(youtubeVideoId(form.videoUrl()));
 		replaceIngredients(recipe, form.ingredients());
 		recipe.getSteps().clear();
 		form.steps().forEach(step -> recipe.getSteps().add(new RecipeStep(step.description(), step.durationMinutes())));
+	}
+
+	/** The range is checked by the form; only half points are allowed in between (2.5, not 2.3). */
+	private static @Nullable BigDecimal halfPoints(@Nullable BigDecimal difficulty) {
+		if (difficulty == null) {
+			return null;
+		}
+		if (difficulty.multiply(BigDecimal.TWO).stripTrailingZeros().scale() > 0) {
+			throw new ApiException(ErrorCode.DIFFICULTY_NOT_HALF_POINT);
+		}
+		return difficulty;
+	}
+
+	private static @Nullable String youtubeVideoId(@Nullable String videoUrl) {
+		if (videoUrl == null || videoUrl.isBlank()) {
+			return null;
+		}
+		return YoutubeVideos.videoId(videoUrl).orElseThrow(() -> new ApiException(ErrorCode.VIDEO_URL_INVALID));
 	}
 
 	private void replaceIngredients(Recipe recipe, List<RecipeForm.IngredientLine> formLines) {

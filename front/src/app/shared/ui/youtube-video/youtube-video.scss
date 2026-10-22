@@ -1,0 +1,85 @@
+@use 'mixins' as m;
+
+:host {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.frame,
+.facade {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background-color: #000;
+}
+
+.facade {
+  position: relative;
+  color: var(--color-on-image);
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+
+  // Darker photo: the play button reads on any picture
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgb(20 14 12 / 40%);
+    transition: background-color var(--duration-base) var(--ease-out);
+  }
+
+  @include m.hover {
+    &::after {
+      background-color: rgb(20 14 12 / 25%);
+    }
+
+    .facade__play {
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+  }
+
+  &:active .facade__play {
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+}
+
+.facade__image {
+  position: absolute;
+  inset: 0;
+}
+
+.facade__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  // The icon's triangle sits a little left of its box
+  padding-left: 0.3rem;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: var(--shadow-md);
+  transform: translate(-50%, -50%);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.facade__label {
+  position: absolute;
+  bottom: var(--space-4);
+  left: 50%;
+  z-index: 1;
+  font-weight: 600;
+  transform: translateX(-50%);
+}
+
+.note {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

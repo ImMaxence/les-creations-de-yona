@@ -4,6 +4,9 @@
       <p class="eyebrow">Back-office</p>
       <h1 class="admin__title">Bonjour {{ firstName() }}</h1>
       <p class="admin__email">{{ email() }}</p>
+      <p class="admin__versions">
+        Site v{{ frontVersion }} · API v{{ backVersion.value()?.version ?? '…' }}
+      </p>
     </div>
     <button yonaButton variant="secondary" type="button" (click)="signOut()">
       <svg lucideLogOut></svg>

@@ -53,6 +53,8 @@ export type { GetImage$Params as GetImage$Params } from './fn/images/get-image';
 export { getImage as getImage } from './fn/images/get-image';
 export type { ListCategories$Params as ListCategories$Params } from './fn/categories/list-categories';
 export { listCategories as listCategories } from './fn/categories/list-categories';
+export type { GetVersion$Params as GetVersion$Params } from './fn/admin-version/get-version';
+export { getVersion as getVersion } from './fn/admin-version/get-version';
 export type { GetCurrentAdmin$Params as GetCurrentAdmin$Params } from './fn/authentication/get-current-admin';
 export { getCurrentAdmin as getCurrentAdmin } from './fn/authentication/get-current-admin';
 export type { ListImages$Params as ListImages$Params } from './fn/admin-images/list-images';

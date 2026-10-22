@@ -1,8 +1,17 @@
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { LucideArrowLeft, LucideArrowRight, LucideChefHat, LucideClock, LucideCookingPot } from '@lucide/angular';
+import {
+  LucideArrowLeft,
+  LucideArrowRight,
+  LucideChefHat,
+  LucideClock,
+  LucideCookingPot,
+  LucideGauge,
+  LucideShare2,
+} from '@lucide/angular';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
+import { Toaster } from '../../core/notifications/toaster';
 import { ParisDatePipe } from '../../shared/format/paris-date.pipe';
 import { formatMinutes } from '../../shared/format/units';
 import { Reveal } from '../../shared/motion/reveal';
@@ -10,6 +19,8 @@ import { RECIPE_IMAGE_TRANSITION } from '../../shared/motion/view-transitions';
 import { RECIPES_PATH, categoryQueryParams } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
+import { DifficultyStars } from '../../shared/ui/difficulty-stars/difficulty-stars';
+import { YoutubeVideo } from '../../shared/ui/youtube-video/youtube-video';
 import { RecipeIngredients } from './ingredients/recipe-ingredients';
 import { RecipeSteps } from './steps/recipe-steps';
 
@@ -19,6 +30,8 @@ import { RecipeSteps } from './steps/recipe-steps';
     RouterLink,
     Button,
     CoverImage,
+    DifficultyStars,
+    YoutubeVideo,
     ParisDatePipe,
     RecipeIngredients,
     RecipeSteps,
@@ -28,6 +41,8 @@ import { RecipeSteps } from './steps/recipe-steps';
     LucideChefHat,
     LucideClock,
     LucideCookingPot,
+    LucideGauge,
+    LucideShare2,
   ],
   templateUrl: './recipe.html',
   styleUrl: './recipe.scss',
@@ -48,6 +63,30 @@ export default class Recipe {
 
   private readonly router = inject(Router);
   private readonly location = inject(Location);
+  private readonly toaster = inject(Toaster);
+
+  /**
+   * The phone's own share sheet (messages, WhatsApp…) where there is one; otherwise the link is
+   * copied. The canonical address is shared, without the query of the page the visitor came from.
+   */
+  protected async share(): Promise<void> {
+    const url = `${window.location.origin}${window.location.pathname}`;
+    const title = this.recipe().title;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: `${title}, une recette des créations de Yona`, url });
+      } catch {
+        // Closed without sharing (AbortError), nothing to report
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      this.toaster.success('Lien de la recette copié : collez-le où vous voulez le partager.');
+    } catch {
+      this.toaster.error(`Copie impossible. Voici le lien : ${url}`);
+    }
+  }
 
   /** Back to the previous page of the site if there is one; otherwise the link leads to the category. */
   protected goBack(event: MouseEvent): void {

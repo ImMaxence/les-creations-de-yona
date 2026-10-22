@@ -12,6 +12,10 @@ export interface RecipeDraft {
   servings: number | null;
   prepMinutes: number | null;
   cookMinutes: number | null;
+  /** 1 to 5, by half points. */
+  difficulty: number | null;
+  /** YouTube link as pasted by the admin. */
+  videoUrl: string;
   ingredients: IngredientDraft[];
   steps: StepDraft[];
 }
@@ -47,6 +51,8 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       servings: null,
       prepMinutes: null,
       cookMinutes: null,
+      difficulty: null,
+      videoUrl: '',
       ingredients: [emptyIngredient()],
       steps: [emptyStep()],
     };
@@ -60,6 +66,8 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
     servings: recipe.servings ?? null,
     prepMinutes: recipe.prepMinutes ?? null,
     cookMinutes: recipe.cookMinutes ?? null,
+    difficulty: recipe.difficulty ?? null,
+    videoUrl: recipe.youtubeVideoId ? youtubeUrl(recipe.youtubeVideoId) : '',
     ingredients: recipe.ingredients.map((line) => ({
       name: line.name,
       quantity: line.quantity ?? null,
@@ -84,6 +92,8 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
     servings: draft.servings ?? undefined,
     prepMinutes: draft.prepMinutes ?? undefined,
     cookMinutes: draft.cookMinutes ?? undefined,
+    difficulty: draft.difficulty ?? undefined,
+    videoUrl: blankToUndefined(draft.videoUrl),
     ingredients: draft.ingredients.map((line) => ({
       name: line.name.trim(),
       quantity: line.quantity ?? undefined,
@@ -95,6 +105,14 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
       durationMinutes: step.durationMinutes ?? undefined,
     })),
   };
+}
+
+/** Same links as the API accepts (YoutubeVideos on the backend): watch, youtu.be, shorts, embed, live. */
+export const YOUTUBE_URL =
+  /^https:\/\/(?:(?:www|m)\.)?(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)[A-Za-z0-9_-]{11}(?:[?&#/].*)?$/;
+
+function youtubeUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`;
 }
 
 function blankToUndefined(text: string): string | undefined {
@@ -110,6 +128,14 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
   min(recipe.servings, 1, { message: 'Au moins 1 portion.' });
   min(recipe.prepMinutes, 0, { message: 'Durée positive.' });
   min(recipe.cookMinutes, 0, { message: 'Durée positive.' });
+  validate(recipe.videoUrl, ({ value }) =>
+    value().trim() && !YOUTUBE_URL.test(value().trim())
+      ? {
+          kind: 'videoUrl',
+          message: "Collez le lien d'une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…).",
+        }
+      : undefined,
+  );
   validate(recipe.featured, ({ value, valueOf }) =>
     value() && valueOf(recipe.status) !== 'PUBLISHED'
       ? { kind: 'featuredDraft', message: 'Seule une recette publiée peut être à la une.' }

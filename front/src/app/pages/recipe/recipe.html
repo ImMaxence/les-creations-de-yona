@@ -11,10 +11,14 @@
     <!-- A real link (works without JavaScript, and when the page was opened directly);
          within the site, goes back in the history, to the exact list and scroll position left -->
     <div class="container hero__top">
-      <a class="back enter" [routerLink]="recipesPath" [queryParams]="categoryQueryParams(recipe().category)" (click)="goBack($event)">
+      <a class="pill enter" [routerLink]="recipesPath" [queryParams]="categoryQueryParams(recipe().category)" (click)="goBack($event)">
         <svg lucideArrowLeft [size]="18"></svg>
         Retour
       </a>
+      <button type="button" class="pill enter" (click)="share()">
+        <svg lucideShare2 [size]="18"></svg>
+        Partager
+      </button>
     </div>
     <div class="container hero__content">
       <nav class="breadcrumb enter" aria-label="Fil d'Ariane">
@@ -29,7 +33,7 @@
   </header>
 
   <div class="container body">
-    @if (recipe().prepMinutes || recipe().cookMinutes) {
+    @if (recipe().prepMinutes || recipe().cookMinutes || recipe().difficulty) {
       <dl class="facts enter" style="--delay: 200ms">
         @if (recipe().prepMinutes; as prep) {
           <div class="fact">
@@ -52,6 +56,13 @@
             <dd>{{ formatMinutes(totalMinutes()) }}</dd>
           </div>
         }
+        @if (recipe().difficulty; as difficulty) {
+          <div class="fact">
+            <svg lucideGauge [size]="22" [strokeWidth]="1.75"></svg>
+            <dt>Difficulté</dt>
+            <dd><yona-difficulty-stars [value]="difficulty" /></dd>
+          </div>
+        }
       </dl>
     }
 
@@ -67,6 +78,13 @@
         <yona-recipe-steps [steps]="recipe().steps" />
       </section>
     </div>
+
+    @if (recipe().youtubeVideoId; as videoId) {
+      <section class="video" yonaReveal aria-labelledby="video-title">
+        <h2 id="video-title">La recette en vidéo</h2>
+        <yona-youtube-video [videoId]="videoId" [title]="recipe().title" [imageId]="recipe().imageId" />
+      </section>
+    }
 
     <footer class="footer" yonaReveal>
       <p>

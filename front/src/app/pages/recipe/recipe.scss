@@ -1,6 +1,9 @@
 @use 'mixins' as m;
 
-// Header: full-width photo, title on a black gradient rising from the bottom
+// Header: full-width photo, title on a black gradient rising from the bottom.
+// Page transition from a recipe card (_motion.scss): the photo, with its gradient, grows from the
+// card; the texts and the facts card have their own view-transition-name, so they are drawn above
+// the growing photo and rise in once it is in place, instead of popping up at the end.
 
 .hero {
   position: relative;
@@ -11,7 +14,14 @@
   @include m.from(md) {
     height: clamp(24rem, 64svh, 40rem);
   }
+}
 
+.hero__image {
+  position: absolute;
+  inset: 0;
+  animation: settle 1.8s var(--ease-out) both;
+
+  // On the image itself, so that it is part of its snapshot during the page transition
   &::after {
     content: '';
     position: absolute;
@@ -21,12 +31,6 @@
   }
 }
 
-.hero__image {
-  position: absolute;
-  inset: 0;
-  animation: settle 1.8s var(--ease-out) both;
-}
-
 .hero__content {
   position: absolute;
   inset: auto 0 0;
@@ -34,16 +38,21 @@
   display: grid;
   gap: var(--space-3);
   padding-bottom: var(--space-8);
+  view-transition-name: recipe-hero-text;
 }
 
 .hero__top {
   position: absolute;
   inset: var(--space-4) 0 auto;
   z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  view-transition-name: recipe-hero-top;
 }
 
-// Frosted pill over the photo, readable whatever the picture
-.back {
+// Frosted pill over the photo (back, share), readable whatever the picture
+.pill {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -66,7 +75,8 @@
   @include m.hover {
     background-color: rgb(20 14 12 / 55%);
 
-    svg {
+    // The back arrow points the way
+    &:is(a) svg {
       transform: translateX(-3px);
     }
   }
@@ -126,6 +136,7 @@
   border-radius: var(--radius-md);
   background-color: var(--color-bg);
   box-shadow: var(--shadow-md);
+  view-transition-name: recipe-facts;
 }
 
 .fact {
@@ -176,6 +187,16 @@
   @include m.from(md) {
     position: sticky;
     top: calc(var(--header-height) + var(--space-4));
+  }
+}
+
+.video {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 48rem;
+
+  h2 {
+    font-size: var(--text-2xl);
   }
 }
 

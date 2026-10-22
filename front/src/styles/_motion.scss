@@ -78,6 +78,31 @@
   overflow: clip;
 }
 
+// What the recipe page draws over its photo (texts, back and share buttons, facts card): above the
+// growing photo, and rising in once it has mostly grown
+::view-transition-group(recipe-hero-top),
+::view-transition-group(recipe-hero-text),
+::view-transition-group(recipe-facts) {
+  z-index: 2;
+}
+
+::view-transition-new(recipe-hero-top),
+::view-transition-new(recipe-hero-text),
+::view-transition-new(recipe-facts) {
+  animation: page-in var(--duration-slow) var(--ease-out) 300ms both;
+}
+
+::view-transition-old(recipe-hero-top),
+::view-transition-old(recipe-hero-text),
+::view-transition-old(recipe-facts) {
+  animation: page-out 180ms var(--ease-in-out) both;
+}
+
+// The fixed header stays on top of everything
+::view-transition-group(site-header) {
+  z-index: 3;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
