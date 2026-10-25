@@ -1,0 +1,29 @@
+@use 'mixins' as m;
+
+.preferences__title {
+  font-size: var(--text-xl);
+}
+
+// Photo beside the texts on large screens, above them on phones
+.preferences__about {
+  display: grid;
+  gap: var(--space-5);
+
+  @include m.from(lg) {
+    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.preferences__texts {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.preferences__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

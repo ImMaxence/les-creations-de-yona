@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.image;
 
 import fr.lescreationsdeyona.common.Pageables;
+import fr.lescreationsdeyona.content.SiteContentRepository;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.util.Collection;
@@ -44,6 +45,8 @@ public class ImageService {
 
 	private final ImageStorage imageStorage;
 
+	private final SiteContentRepository siteContentRepository;
+
 	/** {@code used}: true for images shown somewhere, false for unused ones, null for all. */
 	public Page<GalleryImage> gallery(@Nullable ImageKind kind, @Nullable Boolean used, Pageable pageable) {
 		Page<Image> images = imageRepository.findGallery(kind, used,
@@ -60,8 +63,10 @@ public class ImageService {
 					.collect(Collectors.groupingBy(GalleryImage.CategoryUsage::imageId, Collectors.mapping(
 							usage -> new GalleryImage.UsingCategory(usage.id(), usage.name(), usage.slug()),
 							Collectors.toList())));
+		UUID aboutImageId = siteContentRepository.findAboutImageId().orElse(null);
 		return images.map(image -> new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(),
-				recipes.getOrDefault(image.getId(), List.of()), categories.getOrDefault(image.getId(), List.of())));
+				recipes.getOrDefault(image.getId(), List.of()), categories.getOrDefault(image.getId(), List.of()),
+				image.getId().equals(aboutImageId)));
 	}
 
 	/** Opens a variant for the public site. Ids are random UUIDs, so they cannot be guessed. */
@@ -89,7 +94,7 @@ public class ImageService {
 	@Transactional
 	public GalleryImage upload(ProcessedImage processed) {
 		Image image = create(ImageKind.GALLERY, processed);
-		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of());
+		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of(), false);
 	}
 
 	/** The recipes and categories showing it fall back to the default visual ({@code ON DELETE SET NULL}). */

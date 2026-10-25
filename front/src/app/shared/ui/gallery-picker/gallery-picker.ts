@@ -62,7 +62,11 @@ export class GalleryPicker {
   }
 
   protected usage(image: GalleryImage): string {
-    const usedBy = [...image.recipes.map((recipe) => recipe.title), ...image.categories.map((category) => category.name)];
+    const usedBy = [
+      ...image.recipes.map((recipe) => recipe.title),
+      ...image.categories.map((category) => category.name),
+      ...(image.aboutPage ? ['À propos'] : []),
+    ];
     return usedBy.length ? usedBy.join(', ') : 'Non utilisée';
   }
 }

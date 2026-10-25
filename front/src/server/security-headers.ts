@@ -26,11 +26,14 @@ function contentSecurityPolicy(nonce: string, scriptHashes: string[]): string {
     "default-src 'self'",
     // Scripts: the site's own files, the build's inline scripts (hashes) and the one Angular
     // writes while rendering (nonce). Nothing else, so an injected script would not run.
-    `script-src 'self' 'nonce-${nonce}' ${scriptHashes.join(' ')}`,
+    // Google Analytics: its script, loaded only once the visitor has accepted (core/analytics).
+    `script-src 'self' 'nonce-${nonce}' ${scriptHashes.join(' ')} https://www.googletagmanager.com`,
     // Angular sets component styles and style bindings inline: no nonce on that side.
     "style-src 'self' 'unsafe-inline'",
     // blob: preview of a photo before upload in the back-office.
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com",
+    // Google Analytics sends its measures there.
+    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
     // Recipe videos: YouTube's privacy-enhanced player, loaded only after a click (YoutubeVideo).
     'frame-src https://www.youtube-nocookie.com',
     "object-src 'none'",

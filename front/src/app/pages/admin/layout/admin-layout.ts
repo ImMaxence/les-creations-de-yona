@@ -9,6 +9,7 @@ import {
   LucideLogOut,
   LucidePalette,
   LucideShare2,
+  LucideSlidersHorizontal,
   LucideTags,
 } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
@@ -18,6 +19,7 @@ import { ConfirmDialog } from '../../../core/dialog/confirm-dialog';
 import { Toaster } from '../../../core/notifications/toaster';
 import { FRONT_VERSION } from '../../../core/version';
 import { Button } from '../../../shared/ui/button/button';
+import { TooltipLayer } from '../../../shared/ui/tooltip/tooltip-layer';
 
 /**
  * Frame of the back-office: greeting, sign-out and section tabs. Its stylesheet holds the
@@ -28,6 +30,7 @@ import { Button } from '../../../shared/ui/button/button';
   selector: 'yona-admin-layout',
   imports: [
     ConfirmDialog,
+    TooltipLayer,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
@@ -40,6 +43,7 @@ import { Button } from '../../../shared/ui/button/button';
     LucideLogOut,
     LucidePalette,
     LucideShare2,
+    LucideSlidersHorizontal,
     LucideTags,
   ],
   templateUrl: './admin-layout.html',

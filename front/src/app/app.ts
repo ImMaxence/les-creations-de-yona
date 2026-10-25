@@ -7,6 +7,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { CookieBanner } from './core/analytics/cookie-banner';
 import { AdminSession } from './core/auth/admin-session';
 import { Footer } from './core/layout/footer/footer';
 import { Header } from './core/layout/header/header';
@@ -15,7 +16,7 @@ import { Toasts } from './core/notifications/toasts';
 
 @Component({
   selector: 'yona-root',
-  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts],
+  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts, CookieBanner],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

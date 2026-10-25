@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideImageUp, LucideLayoutGrid, LucideList, LucideTrash2 } from '@lucide/angular';
+import { LucideImageUp, LucideLayoutGrid, LucideList, LucideSlidersHorizontal, LucideTrash2 } from '@lucide/angular';
 import { attempt } from '../../../core/api/attempt';
 import { ImageUploads } from '../../../core/api/image-uploads';
 import { uploadImage } from '../../../core/api/generated/fn/admin-images/upload-image';
@@ -45,6 +45,7 @@ const PAGE_SIZE = 24;
     LucideImageUp,
     LucideLayoutGrid,
     LucideList,
+    LucideSlidersHorizontal,
     LucideTrash2,
   ],
   templateUrl: './admin-gallery.html',
@@ -63,6 +64,7 @@ export default class AdminGallery {
     { value: 'RECIPE', label: 'Envoyées pour une recette' },
     { value: 'CATEGORY', label: 'Envoyées pour une catégorie' },
     { value: 'GALLERY', label: 'Envoyées dans la galerie' },
+    { value: 'SITE', label: 'Envoyées pour « À propos »' },
   ];
   protected readonly usageOptions: SelectOption<UsageFilter>[] = [
     { value: 'ALL', label: 'Toutes les images' },
@@ -128,9 +130,13 @@ export default class AdminGallery {
     }
   }
 
-  /** Titles of the recipes and names of the categories showing it. */
+  /** Titles of the recipes, names of the categories, and the "À propos" section showing it. */
   protected usedBy(image: GalleryImage): string[] {
-    return [...image.recipes.map((recipe) => recipe.title), ...image.categories.map((category) => category.name)];
+    return [
+      ...image.recipes.map((recipe) => recipe.title),
+      ...image.categories.map((category) => category.name),
+      ...(image.aboutPage ? ['À propos'] : []),
+    ];
   }
 
   /** The back-office lists, filtered on this photo. */

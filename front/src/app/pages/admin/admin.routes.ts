@@ -74,6 +74,11 @@ export const adminRoutes: Routes = [
         title: 'Galerie · Back-office',
       },
       {
+        path: 'preferences',
+        loadComponent: () => import('./preferences/admin-preferences'),
+        title: 'Préférences · Back-office',
+      },
+      {
         path: 'apparence',
         loadComponent: () => import('./appearance/admin-appearance'),
         title: 'Apparence · Back-office',

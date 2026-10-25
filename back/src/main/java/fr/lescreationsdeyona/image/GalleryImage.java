@@ -5,10 +5,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** An image of the back-office gallery, with what shows it: both lists empty when unused. */
+/** An image of the back-office gallery, with what shows it: lists empty and aboutPage false when unused. */
 public record GalleryImage(UUID id, ImageKind kind, Instant createdAt,
 		@Schema(description = "Recipes showing it, by title") List<UsingRecipe> recipes,
-		@Schema(description = "Categories showing it, by name") List<UsingCategory> categories) {
+		@Schema(description = "Categories showing it, by name") List<UsingCategory> categories,
+		@Schema(description = "Shown in the \"À propos\" section of the home page") boolean aboutPage) {
 
 	public record UsingRecipe(Long id, String title) {
 	}

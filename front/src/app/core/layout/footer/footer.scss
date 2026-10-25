@@ -69,13 +69,22 @@
     grid-column: 1 / -1;
   }
 
-  a {
+  // "Gestion des cookies" is a button (it opens the banner) that looks like its neighbour links
+  a,
+  .footer__cookies {
+    text-decoration: underline;
     text-decoration-color: transparent;
+    text-underline-offset: 0.15em;
     transition: text-decoration-color var(--duration-base) var(--ease-out);
 
     @include m.hover {
       text-decoration-color: currentcolor;
     }
+  }
+
+  .footer__cookies {
+    font: inherit;
+    color: inherit;
   }
 }
 

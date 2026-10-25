@@ -10,7 +10,7 @@ import { RequestBuilder } from '../../request-builder';
 import { PageResponseGalleryImage } from '../../models/page-response-gallery-image';
 
 export interface ListImages$Params {
-  kind?: 'RECIPE' | 'CATEGORY' | 'GALLERY';
+  kind?: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE';
   used?: boolean;
 
 /**

@@ -1,0 +1,61 @@
+<form class="admin-section" aria-labelledby="preferences-title" novalidate (submit)="$event.preventDefault(); save()">
+  <div class="admin-section__head">
+    <h2 id="preferences-title">Préférences</h2>
+  </div>
+  <p class="field__hint">
+    Les textes et la photo de la section « À propos » de l'accueil, et le texte du pied de page. Le nom et l'icône du
+    site ne changent pas : les moteurs de recherche et l'application installée s'appuient sur eux.
+  </p>
+
+  <section class="admin-panel" aria-labelledby="about-title">
+    <h3 id="about-title" class="preferences__title">À propos (page d'accueil)</h3>
+    <div class="preferences__about">
+      <div class="field">
+        <span class="field__label">Photo</span>
+        <yona-image-upload
+          [imageId]="aboutImageId()"
+          [busy]="imageBusy()"
+          [progress]="uploadProgress()"
+          (fileChosen)="uploadImage($event)"
+          (galleryImageChosen)="chooseImage($event)"
+          (removed)="chooseImage(null)"
+        />
+        <span class="field__hint">Sans photo choisie, l'accueil affiche la photo d'origine du site. Elle est recadrée en cercle.</span>
+      </div>
+      <div class="preferences__texts">
+        <div class="field">
+          <label class="field__label" for="about-heading">Titre</label>
+          <input id="about-heading" class="input" [formField]="contentForm.aboutTitle" />
+          <yona-field-error [field]="contentForm.aboutTitle" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="about-text">Texte</label>
+          <textarea id="about-text" class="input" rows="8" [formField]="contentForm.aboutText"></textarea>
+          <span class="field__hint">
+            Une ligne vide commence un nouveau paragraphe. Le début du texte sert aussi de description de l'autrice pour
+            Google. {{ draft().aboutText.length }} / 1 500
+          </span>
+          <yona-field-error [field]="contentForm.aboutText" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="admin-panel" aria-labelledby="footer-title">
+    <h3 id="footer-title" class="preferences__title">Pied de page</h3>
+    <div class="field">
+      <label class="field__label" for="footer-text">Texte sous le nom du site</label>
+      <input id="footer-text" class="input" [formField]="contentForm.footerText" />
+      <yona-field-error [field]="contentForm.footerText" />
+    </div>
+  </section>
+
+  <div class="preferences__bar">
+    @if (unsaved()) {
+      <span class="field__hint">Modifications pas encore enregistrées</span>
+    }
+    <button yonaButton type="submit" [disabled]="saving() || !unsaved()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer les textes' }}
+    </button>
+  </div>
+</form>

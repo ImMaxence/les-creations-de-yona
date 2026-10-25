@@ -2,7 +2,7 @@
   <div class="container footer__inner" yonaReveal>
     <div class="footer__brand">
       <p class="footer__name">Les créations <em>de Yona</em></p>
-      <p class="footer__tagline">Des recettes maison, à partager sans modération.</p>
+      <p class="footer__tagline">{{ siteData.content().footerText }}</p>
     </div>
 
     @if (siteData.socialLinks().length) {
@@ -25,6 +25,7 @@
     <nav class="footer__legal" aria-label="Informations légales">
       <a [routerLink]="legalNoticePath">Mentions légales</a>
       <a [routerLink]="privacyPolicyPath">Politique de confidentialité</a>
+      <button type="button" class="footer__cookies" (click)="consent.reopen()">Gestion des cookies</button>
     </nav>
 
     <div class="footer__bottom">

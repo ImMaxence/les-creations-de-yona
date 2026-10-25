@@ -1,0 +1,57 @@
+@use 'mixins' as m;
+
+// A card at the bottom of the screen: the page stays usable around it
+.banner {
+  position: fixed;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  left: var(--space-3);
+  z-index: 50;
+  display: grid;
+  gap: var(--space-2);
+  max-width: 34rem;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+
+  @include m.from(md) {
+    right: auto;
+    bottom: var(--space-5);
+    left: var(--space-5);
+  }
+}
+
+.banner--enter {
+  animation: banner-in var(--duration-slow) var(--ease-out);
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+.banner__title {
+  font-size: var(--text-lg);
+}
+
+.banner__text {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+
+  a {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+}
+
+// Same buttons for both answers: refusing is as easy as accepting
+.banner__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}

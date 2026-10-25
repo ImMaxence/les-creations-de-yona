@@ -6,12 +6,17 @@ import { UsingRecipe } from '../models/using-recipe';
 export interface GalleryImage {
 
   /**
+   * Shown in the "À propos" section of the home page
+   */
+  aboutPage: boolean;
+
+  /**
    * Categories showing it, by name
    */
   categories: Array<UsingCategory>;
   createdAt: string;
   id: string;
-  kind: 'RECIPE' | 'CATEGORY' | 'GALLERY';
+  kind: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE';
 
   /**
    * Recipes showing it, by title

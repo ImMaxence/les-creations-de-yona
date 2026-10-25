@@ -11,15 +11,20 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface ImageRepository extends JpaRepository<Image, UUID> {
 
-	/** Images of the gallery, optionally only those shown (or not shown) by a recipe or a category. */
+	/**
+	 * Images of the gallery, optionally only those shown (or not shown) by a recipe, a category or
+	 * the "À propos" section.
+	 */
 	@Query("""
 			select i from Image i
 			where (:kind is null or i.kind = :kind)
 			and (:used is null
 				or (:used = true and (exists (select 1 from Recipe r where r.image = i)
-					or exists (select 1 from Category c where c.image = i)))
+					or exists (select 1 from Category c where c.image = i)
+					or exists (select 1 from SiteContent s where s.aboutImage = i)))
 				or (:used = false and not exists (select 1 from Recipe r where r.image = i)
-					and not exists (select 1 from Category c where c.image = i)))""")
+					and not exists (select 1 from Category c where c.image = i)
+					and not exists (select 1 from SiteContent s where s.aboutImage = i)))""")
 	Page<Image> findGallery(@Nullable ImageKind kind, @Nullable Boolean used, Pageable pageable);
 
 	@Query("""

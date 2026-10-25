@@ -71,7 +71,8 @@ public class StatsService {
 		return jdbc.sql("""
 				select count(*) as total,
 					count(*) filter (where not exists (select 1 from recipe r where r.image_id = i.id)
-						and not exists (select 1 from category c where c.image_id = i.id)) as unused
+						and not exists (select 1 from category c where c.image_id = i.id)
+						and not exists (select 1 from site_content s where s.about_image_id = i.id)) as unused
 				from image i""")
 			.query((row, index) -> new SiteStats.Images(row.getLong("total"), row.getLong("unused")))
 			.single();

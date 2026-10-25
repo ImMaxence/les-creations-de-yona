@@ -27,3 +27,12 @@
 .legal__body {
   margin-top: var(--space-6);
 }
+
+// "Gérer mes cookies": a button (it opens the consent banner) written like the links around it
+.legal__inline-button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}

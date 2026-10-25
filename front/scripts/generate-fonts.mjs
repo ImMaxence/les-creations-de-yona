@@ -13,11 +13,23 @@ const SOURCES = [
   ['cormorant-garamond', 'wght-italic.css'],
   ['dancing-script', 'wght.css'],
   ['quicksand', 'wght.css'],
+  ['bodoni-moda', 'opsz.css'],
+  ['bodoni-moda', 'opsz-italic.css'],
+  ['cinzel', 'wght.css'],
+  ['eb-garamond', 'wght.css'],
+  ['eb-garamond', 'wght-italic.css'],
+  ['caveat', 'wght.css'],
+  ['comfortaa', 'wght.css'],
   ['inter', 'wght.css'],
   ['nunito', 'wght.css'],
   ['dm-sans', 'wght.css'],
   ['source-sans-3', 'wght.css'],
   ['lora', 'wght.css'],
+  ['open-sans', 'wght.css'],
+  ['montserrat', 'wght.css'],
+  ['work-sans', 'wght.css'],
+  ['manrope', 'wght.css'],
+  ['merriweather', 'opsz.css'],
 ];
 const KEPT_SUBSET = /-latin(-ext)?-/;
 const OUTPUT = 'src/styles/_fonts.scss';

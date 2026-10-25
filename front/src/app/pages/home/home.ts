@@ -22,7 +22,11 @@ export default class Home {
   /** From homeResolver, bound by withComponentInputBinding. */
   readonly data = input.required<HomeData>();
 
-  protected readonly categories = inject(SiteData).categories;
+  private readonly siteData = inject(SiteData);
+  protected readonly categories = this.siteData.categories;
+  protected readonly content = this.siteData.content;
+  /** A blank line in the text written in the back-office starts a new paragraph. */
+  protected readonly aboutParagraphs = computed(() => paragraphs(this.content().aboutText));
   protected readonly featuredLink = computed(() => {
     const featured = this.data().featured;
     return featured ? recipeLink(featured) : null;
@@ -37,4 +41,11 @@ export default class Home {
       this.featuredTransition.set(RECIPE_IMAGE_TRANSITION);
     }
   }
+}
+
+function paragraphs(text: string): string[] {
+  return text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 }

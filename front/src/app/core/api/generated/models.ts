@@ -26,6 +26,8 @@ export type { RecipeForm } from './models/recipe-form';
 export type { Recipes } from './models/recipes';
 export type { RecipeSuggestion } from './models/recipe-suggestion';
 export type { SimilarIngredients } from './models/similar-ingredients';
+export type { SiteContentForm } from './models/site-content-form';
+export type { SiteContentResponse } from './models/site-content-response';
 export type { SiteStats } from './models/site-stats';
 export type { SocialLinkResponse } from './models/social-link-response';
 export type { SocialLinksForm } from './models/social-links-form';

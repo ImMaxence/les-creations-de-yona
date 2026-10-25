@@ -58,6 +58,12 @@
                       Voir les recettes ({{ image.recipes.length }})
                     </a>
                   }
+                  @if (image.aboutPage) {
+                    <a class="link-button" routerLink="/admin/preferences">
+                      <svg lucideSlidersHorizontal [size]="14"></svg>
+                      Voir « À propos »
+                    </a>
+                  }
                   @if (image.categories.length) {
                     <a class="link-button" routerLink="/admin/categories" [queryParams]="categoriesLink(image)">
                       <svg lucideLayoutGrid [size]="14"></svg>

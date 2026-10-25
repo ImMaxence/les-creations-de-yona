@@ -31,24 +31,37 @@
 
 <section class="container about" yonaReveal aria-labelledby="about-title">
   <div class="about__portrait">
-    <img
-      src="images/yona-480.webp"
-      srcset="images/yona-480.webp 480w, images/yona-960.webp 960w"
-      sizes="(width >= 48rem) 11rem, 9rem"
-      width="480"
-      height="480"
-      loading="lazy"
-      decoding="async"
-      alt="Yona, l'autrice des recettes"
-    />
+    <!-- The photo chosen in the back-office (Préférences), otherwise the one bundled with the site -->
+    @if (content().aboutImageId; as imageId) {
+      <img
+        [src]="'/api/images/' + imageId + '/800.webp'"
+        [srcset]="'/api/images/' + imageId + '/800.webp 800w, /api/images/' + imageId + '/1600.webp 1600w'"
+        sizes="(width >= 48rem) 11rem, 9rem"
+        width="480"
+        height="480"
+        loading="lazy"
+        decoding="async"
+        alt="Yona, l'autrice des recettes"
+      />
+    } @else {
+      <img
+        src="images/yona-480.webp"
+        srcset="images/yona-480.webp 480w, images/yona-960.webp 960w"
+        sizes="(width >= 48rem) 11rem, 9rem"
+        width="480"
+        height="480"
+        loading="lazy"
+        decoding="async"
+        alt="Yona, l'autrice des recettes"
+      />
+    }
   </div>
   <div class="about__text">
     <p class="eyebrow">À propos</p>
-    <h2 id="about-title">Bienvenue dans ma cuisine</h2>
-    <p>
-      Je m'appelle Yona, je relève un grand défi en me lançant dans une aventure extraordinaire :
-      faire de ma passion un métier et obtenir mon CAP Pâtisserie !
-    </p>
+    <h2 id="about-title">{{ content().aboutTitle }}</h2>
+    @for (paragraph of aboutParagraphs(); track $index) {
+      <p>{{ paragraph }}</p>
+    }
   </div>
 </section>
 

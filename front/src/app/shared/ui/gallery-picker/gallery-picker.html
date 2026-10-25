@@ -17,7 +17,7 @@
           <li>
             <button type="button" class="tile" (click)="choose(image)">
               <yona-cover-image class="tile__image" [imageId]="image.id" sizes="12rem" />
-              <span class="tile__usage" [class.is-unused]="!image.recipes.length && !image.categories.length">{{ usage(image) }}</span>
+              <span class="tile__usage" [class.is-unused]="!image.recipes.length && !image.categories.length && !image.aboutPage">{{ usage(image) }}</span>
               <span class="tile__date">{{ image.createdAt | parisDate }}</span>
             </button>
           </li>

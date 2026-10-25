@@ -5,10 +5,10 @@
 
   <div class="prose legal__body enter" style="--delay: 200ms">
     <p>
-      En bref : le site ne demande aucune information, ne crée aucun compte visiteur, ne mesure pas
-      l'audience et n'utilise aucun cookie publicitaire ni de suivi. Cette page détaille les rares
-      données techniques nécessaires à son fonctionnement, conformément au Règlement général sur la
-      protection des données (RGPD) et à la loi « Informatique et Libertés ».
+      En bref : le site ne demande aucune information, ne crée aucun compte visiteur et n'utilise
+      aucun cookie publicitaire. Il mesure sa fréquentation avec Google Analytics, uniquement si vous
+      l'acceptez. Cette page détaille ces données, conformément au Règlement général sur la protection
+      des données (RGPD) et à la loi « Informatique et Libertés ».
     </p>
 
     <h2>Responsable du traitement</h2>
@@ -20,9 +20,10 @@
     <h2>Visiteurs du site</h2>
     <p>
       Consulter les recettes ne demande ni inscription, ni formulaire, ni connexion. Aucun outil de
-      mesure d'audience, de publicité ou de réseau social n'est chargé sur le site : les polices et
-      les images sont servies par le site lui-même, sans appel à des services tiers. Seule exception,
-      à votre initiative : le lecteur d'une vidéo YouTube, si vous cliquez pour la lire (voir plus bas).
+      publicité ou de réseau social n'est chargé sur le site : les polices et les images sont servies
+      par le site lui-même, sans appel à des services tiers. Deux exceptions, toutes deux à votre
+      initiative : la mesure d'audience si vous l'acceptez, et le lecteur d'une vidéo YouTube si vous
+      cliquez pour la lire (voir plus bas).
     </p>
     <p>
       Comme tout site web, le serveur reçoit pour chaque page des données techniques : adresse IP,
@@ -31,6 +32,35 @@
       commerciales, et sont conservées au plus 12 mois dans les journaux du serveur.
     </p>
     <p>Base légale : l'intérêt légitime de l'éditeur à assurer le fonctionnement et la sécurité du site.</p>
+
+    <h2>Mesure d'audience (Google Analytics)</h2>
+    <p>
+      Si vous l'acceptez, le site utilise Google Analytics 4, un service de Google Ireland Limited,
+      pour mesurer sa fréquentation : pages vues, durée de visite, type d'appareil et de navigateur,
+      ville et pays approximatifs, site d'où vous venez. Ces statistiques servent uniquement à savoir
+      quelles recettes intéressent les visiteurs, jamais à de la publicité : les fonctions publicitaires
+      de Google sont désactivées. Le back-office n'est pas mesuré.
+    </p>
+    <p>
+      Tant que vous n'avez pas accepté, le script de Google n'est même pas téléchargé et aucun cookie
+      n'est déposé. Votre choix (accepter ou refuser) est gardé dans votre navigateur (stockage local,
+      clé <strong>yona-analytics-consent</strong>) pendant 6 mois, puis vous est redemandé.
+    </p>
+    <p>
+      Base légale : votre consentement. Vous pouvez le retirer à tout moment, aussi simplement que vous
+      l'avez donné, avec « Gestion des cookies » en bas de chaque page ou ce bouton :
+      <button type="button" class="legal__inline-button" (click)="consent.reopen()">Gérer mes cookies</button>.
+      La mesure s'arrête alors et ses cookies sont supprimés.
+    </p>
+    <p>
+      Google ne garde pas votre adresse IP : elle sert seulement à estimer votre ville, puis est
+      supprimée. Les statistiques sont conservées 14 mois au plus. Google pouvant traiter ces données
+      aux États-Unis, il adhère au cadre de protection des données UE – États-Unis (Data Privacy
+      Framework), reconnu par la Commission européenne. Pour en savoir plus :
+      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer"
+        >politique de confidentialité de Google</a
+      >.
+    </p>
 
     <h2>Cloudflare</h2>
     <p>
@@ -57,9 +87,18 @@
 
     <h2>Cookies</h2>
     <p>
-      Le site ne dépose aucun cookie chez les visiteurs. Les seuls cookies possibles sont
-      strictement nécessaires au fonctionnement ou à la sécurité, et sont donc dispensés de
-      consentement :
+      Sans votre accord, le site ne dépose aucun cookie de mesure d'audience. Ces cookies-là ne sont
+      déposés que si vous acceptez la mesure d'audience (voir plus haut) :
+    </p>
+    <ul>
+      <li>
+        <strong>_ga</strong> et <strong>{{ propertyCookie }}</strong> (Google Analytics) : distinguent les
+        visites, durée de 13 mois.
+      </li>
+    </ul>
+    <p>
+      Les autres cookies possibles sont strictement nécessaires au fonctionnement ou à la sécurité, et
+      sont donc dispensés de consentement :
     </p>
     <ul>
       <li>
@@ -71,7 +110,6 @@
         falsification de requêtes, déposés uniquement lors de la connexion d'un administrateur.
       </li>
     </ul>
-    <p>C'est pourquoi le site n'affiche pas de bandeau cookies.</p>
 
     <h2>Affichage clair ou sombre</h2>
     <p>

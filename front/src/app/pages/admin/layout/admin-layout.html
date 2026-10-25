@@ -22,6 +22,7 @@
     <a routerLink="reseaux-sociaux" routerLinkActive="is-active"><svg lucideShare2 [size]="18"></svg>Réseaux sociaux</a>
     <a routerLink="galerie" routerLinkActive="is-active"><svg lucideImages [size]="18"></svg>Galerie</a>
     <a routerLink="apparence" routerLinkActive="is-active"><svg lucidePalette [size]="18"></svg>Apparence</a>
+    <a routerLink="preferences" routerLinkActive="is-active"><svg lucideSlidersHorizontal [size]="18"></svg>Préférences</a>
     <a routerLink="sauvegarde" routerLinkActive="is-active"><svg lucideDatabaseBackup [size]="18"></svg>Sauvegarde</a>
   </nav>
 
@@ -29,3 +30,5 @@
 </div>
 <!-- Confirmations are asked in the back-office only: loaded with it, not by every visitor -->
 <yona-confirm-dialog />
+<!-- The aria-label of every icon without text, on hover or keyboard focus -->
+<yona-tooltip-layer />
