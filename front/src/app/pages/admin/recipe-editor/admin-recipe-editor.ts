@@ -11,14 +11,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
   computed,
   inject,
   input,
   linkedSignal,
   resource,
   signal,
-  viewChild,
 } from '@angular/core';
 import { FieldTree, FormField, form, submit } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
@@ -36,6 +34,7 @@ import {
 } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
+import { ImageUploads } from '../../../core/api/image-uploads';
 import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
 import { createRecipe } from '../../../core/api/generated/fn/admin-recipes/create-recipe';
 import { previewRecipe } from '../../../core/api/generated/fn/admin-recipes/preview-recipe';
@@ -49,6 +48,7 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
 import { recipeLink } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
+import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { FieldError } from '../../../shared/ui/field-error/field-error';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
@@ -90,6 +90,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     CdkDrag,
     CdkDragHandle,
     Button,
+    Dialog,
     FieldError,
     ImageUpload,
     RecipePreview,
@@ -115,6 +116,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   readonly recipe = input<RecipeDetail>();
 
   private readonly api = inject(Api);
+  private readonly imageUploads = inject(ImageUploads);
   private readonly router = inject(Router);
   private readonly confirm = inject(Confirm);
   private readonly toaster = inject(Toaster);
@@ -179,12 +181,19 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   private readonly pendingImage = signal<PendingImage | null>(null);
   protected readonly pendingPreview = signal<string | null>(null);
   protected readonly uploading = signal(false);
+  /** Share of a new photo sent (0 to 1) while it uploads. */
+  protected readonly uploadProgress = signal<number | null>(null);
   protected readonly saving = signal(false);
   protected readonly creatingCategory = signal(false);
   /** The form as it would be saved, shown full screen by "Aperçu". */
   protected readonly preview = signal<RecipeDetail | null>(null);
+  protected readonly previewOpen = signal(false);
   protected readonly previewing = signal(false);
-  private readonly previewDialog = viewChild.required<ElementRef<HTMLDialogElement>>('previewDialog');
+  /** Under "Aperçu", in the dialog's head. */
+  protected readonly previewStatus = computed(() => {
+    const status = this.preview()?.status === 'PUBLISHED' ? 'Recette publiée' : 'Brouillon, invisible sur le site';
+    return this.unsaved() ? `${status} · modifications pas encore enregistrées` : status;
+  });
   protected readonly newCategoryName = signal('');
 
   constructor() {
@@ -209,8 +218,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
         });
         // A new recipe gets its photo once created: the one chosen in the gallery shows already
         this.preview.set({ ...recipe, imageId: this.imageId() ?? undefined });
-        this.previewDialog().nativeElement.showModal();
-        this.previewDialog().nativeElement.scrollTo({ top: 0 });
+        this.previewOpen.set(true);
       } catch {
         // The API error is already shown as a toast
       } finally {
@@ -220,9 +228,6 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     });
   }
 
-  protected closePreview(): void {
-    this.previewDialog().nativeElement.close();
-  }
 
   protected isInvalid(field: FieldTree<unknown>): boolean {
     return field().touched() && field().invalid();
@@ -432,7 +437,20 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   }
 
   private async uploadImage(recipeId: number, file: File): Promise<void> {
-    await this.changeImage(() => this.api.invoke(replaceRecipeImage, { id: recipeId, body: { file } }), 'Photo enregistrée.');
+    this.uploadProgress.set(0);
+    try {
+      await this.changeImage(
+        () =>
+          this.imageUploads.send<RecipeDetail>(
+            replaceRecipeImage.PATH.replace('{id}', String(recipeId)),
+            file,
+            (sent) => this.uploadProgress.set(sent),
+          ),
+        'Photo enregistrée.',
+      );
+    } finally {
+      this.uploadProgress.set(null);
+    }
   }
 
   private async chooseImage(recipeId: number, imageId: string | null): Promise<void> {

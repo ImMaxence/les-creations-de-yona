@@ -15,6 +15,7 @@
   </header>
 
   <nav class="admin__nav" aria-label="Sections du back-office">
+    <a routerLink="statistiques" routerLinkActive="is-active"><svg lucideChartColumn [size]="18"></svg>Statistiques</a>
     <a routerLink="recettes" routerLinkActive="is-active"><svg lucideBookOpen [size]="18"></svg>Recettes</a>
     <a routerLink="categories" routerLinkActive="is-active"><svg lucideTags [size]="18"></svg>Catégories</a>
     <a routerLink="ingredients" routerLinkActive="is-active"><svg lucideCarrot [size]="18"></svg>Ingrédients</a>
@@ -26,3 +27,5 @@
 
   <router-outlet />
 </div>
+<!-- Confirmations are asked in the back-office only: loaded with it, not by every visitor -->
+<yona-confirm-dialog />

@@ -1,0 +1,396 @@
+@use 'mixins' as m;
+
+// One hue for the data (the theme's accent), a neutral gray for "the rest", a quiet track
+:host {
+  --chart-mark: var(--color-accent);
+  --chart-rest: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  --chart-track: color-mix(in srgb, var(--color-text) 9%, transparent);
+  --chart-line: var(--color-line);
+}
+
+// Headline figures --------------------------------------------------------------
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+
+  @include m.from(md) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+.tile {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.tile__label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.tile__value {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile__detail {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+
+  div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid var(--chart-line);
+  }
+
+  dt {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Storage -----------------------------------------------------------------------
+
+.storage__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  svg {
+    color: var(--color-accent);
+  }
+
+  h3 {
+    font-size: var(--text-xl);
+  }
+}
+
+.storage__figures {
+  display: grid;
+  gap: var(--space-4);
+
+  @include m.from(md) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  > div {
+    display: grid;
+    align-content: start;
+    gap: var(--space-1);
+  }
+}
+
+.storage__value {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+// Stacked bar: segments separated by a 2px gap in the panel's color, never by a stroke
+.meter {
+  display: flex;
+  gap: 2px;
+  height: 0.875rem;
+  overflow: hidden;
+  border-radius: 4px;
+
+  > span {
+    flex-basis: 0;
+    min-width: 0;
+  }
+}
+
+// Even a few megabytes on a large disk stay visible as a sliver
+.meter__images {
+  min-width: 3px !important;
+  background-color: var(--chart-mark);
+}
+
+.meter__other {
+  background-color: var(--chart-rest);
+}
+
+.meter__free {
+  background-color: var(--chart-track);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  strong {
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+}
+
+.swatch--images {
+  background-color: var(--chart-mark);
+}
+
+.swatch--other {
+  background-color: var(--chart-rest);
+}
+
+.swatch--free {
+  background-color: var(--chart-track);
+}
+
+// Charts ------------------------------------------------------------------------
+
+.charts {
+  display: grid;
+  gap: var(--space-5);
+
+  @include m.from(lg) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.chart {
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.chart--wide {
+  @include m.from(lg) {
+    grid-column: 1 / -1;
+  }
+}
+
+.chart__title {
+  font-size: var(--text-lg);
+}
+
+.chart__subtitle {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+// Columns: one per month, growing from a hairline baseline
+.columns {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 2px;
+  padding-top: var(--space-5);
+}
+
+.column {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-sm);
+  outline: none;
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.column__plot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  height: 9rem;
+  border-bottom: 1px solid var(--chart-line);
+}
+
+// Value on the cap, only for the busiest month and the current one
+.column__value {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  visibility: hidden;
+
+  &.is-shown {
+    visibility: visible;
+  }
+}
+
+.column__bar {
+  width: min(100%, 24px);
+  min-height: 0;
+  border-radius: 4px 4px 0 0;
+  background-color: var(--chart-mark);
+  transition: opacity var(--duration-fast) var(--ease-out);
+
+  &.is-empty {
+    height: 0 !important;
+  }
+}
+
+.column__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+// Phones: one month in two (the current one included), the others in the tooltip and the table
+.column:nth-child(odd) .column__label {
+  @include m.below(sm) {
+    visibility: hidden;
+  }
+}
+
+// Hover or keyboard focus: the exact figure
+.column__tip {
+  position: absolute;
+  bottom: calc(100% + var(--space-1));
+  left: 50%;
+  z-index: 2;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--chart-line);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    visibility var(--duration-fast);
+  pointer-events: none;
+
+  // Near the edges, anchored on the inner side: never beyond the chart (nor widening the page)
+  .column:nth-child(-n + 3) & {
+    left: 0;
+    transform: none;
+  }
+
+  .column:nth-last-child(-n + 3) & {
+    right: 0;
+    left: auto;
+    transform: none;
+  }
+
+  .column:focus-visible & {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  @media (hover: hover) {
+    .column:hover & {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}
+
+.chart__table {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+
+  summary {
+    width: fit-content;
+    font-weight: 600;
+    color: var(--color-accent);
+    cursor: pointer;
+  }
+
+  table {
+    width: 100%;
+    margin-top: var(--space-2);
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: var(--space-1) var(--space-2);
+    border-bottom: 1px solid var(--chart-line);
+    text-align: left;
+  }
+
+  td:last-child,
+  th:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Horizontal bars: label, bar from a common baseline, value at the tip
+.bars {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.bar__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar__track {
+  height: 0.75rem;
+  border-left: 1px solid var(--chart-line);
+}
+
+.bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background-color: var(--chart-mark);
+}
+
+.bar__value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

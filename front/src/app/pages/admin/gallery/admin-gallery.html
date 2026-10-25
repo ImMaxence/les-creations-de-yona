@@ -64,14 +64,8 @@
       </ul>
 
       @if (totalPages() > 1) {
-        <div class="admin-toolbar admin-more">
-          <button type="button" class="icon-button" aria-label="Page précédente" [disabled]="page() === 0" (click)="page.set(page() - 1)">
-            <svg lucideChevronLeft [size]="18"></svg>
-          </button>
-          <span>Page {{ page() + 1 }} sur {{ totalPages() }}</span>
-          <button type="button" class="icon-button" aria-label="Page suivante" [disabled]="page() + 1 >= totalPages()" (click)="page.set(page() + 1)">
-            <svg lucideChevronRight [size]="18"></svg>
-          </button>
+        <div class="admin-more">
+          <yona-pagination buttons [page]="page() + 1" [totalPages]="totalPages()" (pageChange)="page.set($event - 1)" />
         </div>
       }
     } @else {

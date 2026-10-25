@@ -41,15 +41,18 @@ export const adminErrorsInterceptor: HttpInterceptorFn = (request, next) => {
 };
 
 function messageOf(error: HttpErrorResponse): string {
-  const problem = (typeof error.error === 'string' ? safeParse(error.error) : error.error) as
-    | ProblemDetail
-    | null;
+  return problemMessage(typeof error.error === 'string' ? safeParse(error.error) : error.error);
+}
+
+/** The French message of a ProblemDetail body (field errors first), or a generic one. */
+export function problemMessage(body: unknown): string {
+  const problem = body as ProblemDetail | null;
   const fieldErrors = problem?.errors?.map((fieldError) => fieldError.message).join(' ');
   return fieldErrors || problem?.detail || DEFAULT_MESSAGE;
 }
 
 /** Endpoints answering text (DELETE) receive the ProblemDetail as a string. */
-function safeParse(text: string): unknown {
+export function safeParse(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch {

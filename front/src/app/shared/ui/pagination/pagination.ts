@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
 
@@ -7,6 +7,8 @@ type PageItem = { kind: 'page'; page: number } | { kind: 'gap'; key: string };
 /**
  * Numbered pagination made of real links (?page=n), so that every page can be crawled and opened
  * in a new tab. The current query parameters are kept; page 1 has no parameter at all.
+ * With "buttons" (a list without a URL of its own, in a dialog), the page chosen comes out of
+ * (pageChange) instead.
  */
 @Component({
   selector: 'yona-pagination',
@@ -19,6 +21,9 @@ export class Pagination {
   /** Current page, starting at 1. */
   readonly page = input.required<number>();
   readonly totalPages = input.required<number>();
+  readonly buttons = input(false, { transform: booleanAttribute });
+  /** With "buttons": the page chosen, starting at 1. */
+  readonly pageChange = output<number>();
 
   protected readonly items = computed(() => pageItems(this.page(), this.totalPages()));
 

@@ -50,6 +50,8 @@ Dernière mise à jour : 2026-10-25.
 - Galerie : toutes les photos envoyées, gardées même une fois remplacées. Filtres « Utilisées / Non utilisées » et type d'envoi, suppression, liens vers les recettes et catégories qui les affichent. Une photo de la galerie peut être remise sur une recette ou une catégorie (« Choisir dans la galerie »).
 - Apparence : thème de couleurs (5 thèmes, chacun en version claire et sombre), police des titres et police du texte (5 chacune), arrondi des coins de 0 à 999 px. Aperçu immédiat sur tout le site, visible des visiteurs une fois enregistré.
 - Sauvegarde : bouton « Sauvegarder mes données », qui télécharge une archive ZIP (base PostgreSQL et tout le bucket S3).
+- Statistiques (`/admin/statistiques`) : recettes (publiées, brouillons, sans photo, avec vidéo, en plusieurs parties, créées sur 30 jours), catégories, ingrédients et photos (dont non utilisés) ; recettes créées par mois sur 12 mois, recettes par catégorie, ingrédients les plus utilisés ; stockage : poids des photos (tout le bucket), taille de la base, espace libre et total du disque du serveur. Graphiques à une seule série, couleur d'accent du thème, valeurs écrites à côté des barres ou dans un tableau.
+- Photos : barre de progression pendant l'envoi, puis « Préparation de la photo… » pendant la conversion WebP. Choix dans la galerie : les plus récentes en premier, pagination numérotée.
 
 ### Pages légales
 
@@ -183,7 +185,7 @@ scripts/       génération de styles/_fonts.scss (npm run fonts:generate)
 | Accès | Routes |
 | --- | --- |
 | Public (GET) | `/api/recipes` (recherche, filtres `category` et `ingredient` (nom exact, accents ignorés), pagination), `/api/ingredients` (ingrédients des recettes publiées), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/social-links`, `/api/theme`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
-| Admin | `/api/admin/me`, `/api/admin/recipes`, `POST /api/admin/recipes/preview` (aperçu sans enregistrement), `/api/admin/categories`, `/api/admin/ingredients`, `GET /api/admin/ingredients/similar`, `POST /api/admin/ingredients/merge`, `DELETE` sur `/api/admin/recipes`, `/categories`, `/ingredients` et `/images` avec `?ids=` (suppression groupée, tout ou rien), `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind` et `used`), `PUT /api/admin/theme`, `/api/admin/version` (version du backend), `/api/admin/backup` |
+| Admin | `/api/admin/me`, `/api/admin/stats` (statistiques et stockage), `/api/admin/recipes`, `POST /api/admin/recipes/preview` (aperçu sans enregistrement), `/api/admin/categories`, `/api/admin/ingredients`, `GET /api/admin/ingredients/similar`, `POST /api/admin/ingredients/merge`, `DELETE` sur `/api/admin/recipes`, `/categories`, `/ingredients` et `/images` avec `?ids=` (suppression groupée, tout ou rien), `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind` et `used`), `PUT /api/admin/theme`, `/api/admin/version` (version du backend), `/api/admin/backup` |
 | Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
 
 - Erreurs : ProblemDetail avec `code` stable (`ErrorCode`) et `detail` en français. Erreurs de validation listées dans `errors` (`field`, `message`).
@@ -271,6 +273,8 @@ Cloudflare (offre gratuite, proxy seulement) :
 - Page recette pensée pour cuisiner avec un téléphone : portions ajustables (quantités recalculées puis arrondies à des valeurs mesurables), ingrédients et étapes à cocher, écran maintenu allumé (Screen Wake Lock, proposé seulement si le navigateur le permet).
 - Étapes en Markdown rendues par `marked` (MIT), puis nettoyées par le sanitizer d'Angular.
 - Back-office (`/admin`) : rendu dans le navigateur uniquement (la session est un cookie), chargé à la demande, protégé par un guard qui renvoie vers la connexion Google sans session. Formulaires en Signal Forms (`@angular/forms/signals`) avec les mêmes règles que l'API, ingrédients et étapes réordonnables par glisser-déposer (`@angular/cdk/drag-drop`, MIT) ou par boutons pour le clavier. Erreurs de l'API affichées en toast avec leur message, confirmation avant suppression, alerte avant de quitter une recette non enregistrée.
+- Modales : composant `yona-dialog` (`shared/ui/dialog`) pour toutes les modales (confirmation, choix dans la galerie, aperçu d'une recette) : `<dialog>` natif ouvert par `showModal()` (focus gardé, Échap, page inerte), en-tête (titre, croix) fixe en haut, actions (`dialogActions`) fixes en bas, seul le contenu défile ; tailles sm, md, lg, full ; fermeture au clic sur le fond. La confirmation n'est chargée qu'avec le back-office. Le menu mobile reste un panneau de navigation à part.
+- Upload des photos par `XMLHttpRequest` (`core/api/image-uploads.ts`) : `fetch`, utilisé par HttpClient, ne mesure pas l'envoi d'un fichier ; XSRF, contournement du service worker et erreurs en toast y sont repris.
 - Listes déroulantes : composant `yona-select` fait maison (pattern ARIA combobox), la liste native d'un `<select>` ne se stylant pas. Champ avec suggestions (ingrédients) : `yona-suggest-input`, pour la même raison avec `<datalist>`.
 
 ### Dates
@@ -398,6 +402,7 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Thème par déf
 - [x] versions du front et du backend affichées dans le back-office
 - [x] recettes : difficulté en étoiles, vidéo YouTube, bouton « Partager » ; accueil limité aux 3 dernières recettes
 - [x] recettes : parties facultatives (ingrédients et étapes par partie, total des ingrédients), catégories multiples, majuscule automatique (migration V4)
+- [x] composant de modale commun, galerie paginée, progression des envois de photos, page Statistiques (stockage compris)
 - [x] back-office : aperçu des recettes (brouillons compris), doublons d'ingrédients et fusion, suppressions groupées, filtres catégorie et ingrédient, miniatures, liens filtrés ; site : recherche par ingrédient, catégories en menu déroulant
 
 ## Points ouverts

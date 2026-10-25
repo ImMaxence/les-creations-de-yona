@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, viewChild } from '@angular/core';
 import { LucideImageOff, LucideImageUp, LucideImages, LucideLoaderCircle } from '@lucide/angular';
 import { Toaster } from '../../../core/notifications/toaster';
 import { CoverImage } from '../cover-image/cover-image';
@@ -23,10 +23,27 @@ const MAX_SIZE_BYTES = 10 * 1024 * 1024;
       } @else {
         <yona-cover-image [imageId]="imageId()" sizes="20rem" />
       }
-      @if (busy()) {
+      @if (progress() !== null) {
+        <div class="preview__busy">
+          <div class="progress">
+            <span class="progress__label" aria-live="polite">{{ progressLabel() }}</span>
+            <div
+              class="progress__track"
+              role="progressbar"
+              aria-label="Envoi de la photo"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-valuenow]="progressPercent()"
+              [class.is-processing]="progressPercent() === 100"
+            >
+              <div class="progress__bar" [style.transform]="'scaleX(' + progress() + ')'"></div>
+            </div>
+          </div>
+        </div>
+      } @else if (busy()) {
         <div class="preview__busy" aria-live="polite">
           <svg lucideLoaderCircle class="spin" [size]="28"></svg>
-          <span class="visually-hidden">Envoi de la photo…</span>
+          <span class="visually-hidden">Enregistrement de la photo…</span>
         </div>
       }
     </div>
@@ -59,12 +76,19 @@ export class ImageUpload {
   /** Local preview, before the file is sent (new recipe). */
   readonly previewUrl = input<string | null>(null);
   readonly busy = input(false);
+  /** Share of the new photo sent, from 0 to 1, while it uploads; null otherwise. */
+  readonly progress = input<number | null>(null);
   readonly fileChosen = output<File>();
   readonly galleryImageChosen = output<string>();
   /** "Retirer": back to the default visual. */
   readonly removed = output<void>();
 
   protected readonly accept = ACCEPTED_TYPES.join(',');
+  protected readonly progressPercent = computed(() => Math.round((this.progress() ?? 0) * 100));
+  /** Once sent, the server still makes its 800 and 1600 px versions. */
+  protected readonly progressLabel = computed(() =>
+    this.progressPercent() < 100 ? `Envoi de la photo… ${this.progressPercent()} %` : 'Préparation de la photo…',
+  );
   private readonly toaster = inject(Toaster);
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('file');
 

@@ -1,25 +1,16 @@
-<div class="banner" role="status">
-  <svg lucideEye [size]="20"></svg>
-  <p class="banner__text">
-    <strong>Aperçu</strong>
-    <span>
-      {{ recipe().status === 'PUBLISHED' ? 'Recette publiée' : 'Brouillon, invisible sur le site' }}{{
-        unsaved() ? ' · modifications pas encore enregistrées' : ''
-      }}
-    </span>
-  </p>
-  @if (closable()) {
-    <button type="button" class="banner__action" (click)="closed.emit()">
-      <svg lucideX [size]="16"></svg>
-      Fermer l'aperçu
-    </button>
-  } @else {
+@if (!embedded()) {
+  <div class="banner" role="status">
+    <svg lucideEye [size]="20"></svg>
+    <p class="banner__text">
+      <strong>Aperçu</strong>
+      <span>{{ recipe().status === 'PUBLISHED' ? 'Recette publiée' : 'Brouillon, invisible sur le site' }}</span>
+    </p>
     <a class="banner__action" [routerLink]="['/admin/recettes', recipe().id]">
       <svg lucidePencil [size]="16"></svg>
       Modifier
     </a>
-  }
-</div>
+  </div>
+}
 <div class="preview__page">
   <yona-recipe [recipe]="recipe()" />
 </div>

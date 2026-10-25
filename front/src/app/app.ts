@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AdminSession } from './core/auth/admin-session';
-import { ConfirmDialog } from './core/dialog/confirm-dialog';
 import { Footer } from './core/layout/footer/footer';
 import { Header } from './core/layout/header/header';
 import { NavigationProgress } from './core/layout/navigation-progress/navigation-progress';
@@ -16,7 +15,7 @@ import { Toasts } from './core/notifications/toasts';
 
 @Component({
   selector: 'yona-root',
-  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts, ConfirmDialog],
+  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

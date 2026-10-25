@@ -1,0 +1,185 @@
+<section class="admin-section" aria-labelledby="stats-title">
+  <div class="admin-section__head">
+    <div>
+      <h2 id="stats-title">Statistiques</h2>
+      @if (stats.value(); as data) {
+        <p class="admin-row__meta">Calculées le {{ data.computedAt | parisDate }}</p>
+      }
+    </div>
+    <button yonaButton variant="secondary" type="button" [disabled]="stats.isLoading()" (click)="stats.reload()">
+      <svg lucideRefreshCw></svg>Actualiser
+    </button>
+  </div>
+
+  @if (stats.value(); as data) {
+    <!-- Headline figures -->
+    <ul role="list" class="tiles">
+      <li class="tile">
+        <span class="tile__label">Recettes</span>
+        <strong class="tile__value">{{ data.recipes.total }}</strong>
+        <span class="tile__detail">
+          {{ plural(data.recipes.published, 'publiée', 'publiées') }} ·
+          {{ plural(data.recipes.drafts, 'brouillon', 'brouillons') }}
+        </span>
+      </li>
+      <li class="tile">
+        <span class="tile__label">Catégories</span>
+        <strong class="tile__value">{{ data.categories }}</strong>
+      </li>
+      <li class="tile">
+        <span class="tile__label">Ingrédients</span>
+        <strong class="tile__value">{{ data.ingredients.total }}</strong>
+        <span class="tile__detail">{{ plural(data.ingredients.unused, 'non utilisé', 'non utilisés') }}</span>
+      </li>
+      <li class="tile">
+        <span class="tile__label">Photos</span>
+        <strong class="tile__value">{{ data.images.total }}</strong>
+        <span class="tile__detail">{{ plural(data.images.unused, 'non utilisée', 'non utilisées') }}</span>
+      </li>
+    </ul>
+
+    <dl class="facts">
+      <div><dt>Créées ces 30 derniers jours</dt><dd>{{ data.recipes.createdLast30Days }}</dd></div>
+      <div><dt>Recettes sans photo</dt><dd>{{ data.recipes.withoutPhoto }}</dd></div>
+      <div><dt>Avec une vidéo</dt><dd>{{ data.recipes.withVideo }}</dd></div>
+      <div><dt>En plusieurs parties</dt><dd>{{ data.recipes.inParts }}</dd></div>
+      <div>
+        <dt>Dernière modification</dt>
+        <dd>{{ data.recipes.lastUpdate ? (data.recipes.lastUpdate | parisDate) : '—' }}</dd>
+      </div>
+    </dl>
+
+    <!-- Storage -->
+    @if (storage(); as disk) {
+      <section class="admin-panel storage" aria-labelledby="storage-title">
+        <div class="storage__head">
+          <svg lucideHardDrive [size]="22" [strokeWidth]="1.75"></svg>
+          <h3 id="storage-title">Stockage</h3>
+        </div>
+        <div class="storage__figures">
+          <div>
+            <span class="tile__label">Photos</span>
+            @if (disk.imageBytes !== undefined && disk.imageBytes !== null) {
+              <strong class="storage__value">{{ formatBytes(disk.imageBytes) }}</strong>
+              <span class="tile__detail">
+                {{ plural(disk.imageFiles ?? 0, 'fichier', 'fichiers') }} · {{ percent(disk.imagesShare) }} du disque
+              </span>
+            } @else {
+              <strong class="storage__value">Indisponible</strong>
+              <span class="tile__detail">Le stockage des images ne répond pas.</span>
+            }
+          </div>
+          <div>
+            <span class="tile__label">Base de données</span>
+            <strong class="storage__value">{{ formatBytes(disk.databaseBytes) }}</strong>
+          </div>
+          <div>
+            <span class="tile__label">Disque du serveur</span>
+            <strong class="storage__value">{{ formatBytes(disk.diskFreeBytes) }} libres</strong>
+            <span class="tile__detail">sur {{ formatBytes(disk.diskTotalBytes) }} · {{ percent(disk.usedShare) }} utilisé</span>
+          </div>
+        </div>
+
+        <!-- One hue (the photos) against a neutral gray (the rest of the disk used) and the empty track -->
+        <div
+          class="meter"
+          role="img"
+          [attr.aria-label]="
+            'Disque : photos ' + percent(disk.imagesShare) + ', autres données ' + percent(disk.otherShare) + ', libre ' + percent(disk.freeShare)
+          "
+        >
+          @if (disk.imageBytes) {
+            <span class="meter__images" [style.flex-grow]="disk.imagesShare"></span>
+          }
+          <span class="meter__other" [style.flex-grow]="disk.otherShare"></span>
+          <span class="meter__free" [style.flex-grow]="disk.freeShare"></span>
+        </div>
+        <ul role="list" class="legend">
+          <li><span class="swatch swatch--images"></span>Photos du site <strong>{{ formatBytes(disk.imageBytes ?? 0) }}</strong></li>
+          <li><span class="swatch swatch--other"></span>Autres données du serveur <strong>{{ formatBytes(disk.other) }}</strong></li>
+          <li><span class="swatch swatch--free"></span>Libre <strong>{{ formatBytes(disk.diskFreeBytes) }}</strong></li>
+        </ul>
+        <p class="field__hint">
+          Le disque est celui du serveur qui fait tourner le site : la base de données et les photos y sont, avec le reste
+          de ce que le serveur héberge. Chaque photo compte ses deux tailles (800 et 1600 px), y compris les photos qui ne
+          sont plus utilisées.
+        </p>
+      </section>
+    }
+
+    <div class="charts">
+      <!-- Recipes created per month -->
+      <section class="admin-panel chart chart--wide" aria-labelledby="months-title">
+        <h3 id="months-title" class="chart__title">Recettes créées par mois</h3>
+        <p class="chart__subtitle">Les 12 derniers mois</p>
+        <ol role="list" class="columns">
+          @for (month of months(); track month.long) {
+            <li class="column" tabindex="0" [attr.aria-label]="month.long + ' : ' + plural(month.count, 'recette', 'recettes')">
+              <span class="column__plot">
+                <span class="column__value" [class.is-shown]="month.labelled">{{ month.count }}</span>
+                <span class="column__bar" [style.height.%]="month.share * 100" [class.is-empty]="!month.count"></span>
+              </span>
+              <span class="column__label" aria-hidden="true">{{ month.short }}</span>
+              <span class="column__tip" aria-hidden="true">{{ month.long }} : {{ plural(month.count, 'recette', 'recettes') }}</span>
+            </li>
+          }
+        </ol>
+        <details class="chart__table">
+          <summary>Voir les chiffres</summary>
+          <table>
+            <thead>
+              <tr><th scope="col">Mois</th><th scope="col">Recettes</th></tr>
+            </thead>
+            <tbody>
+              @for (month of months(); track month.long) {
+                <tr><td>{{ month.long }}</td><td>{{ month.count }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </details>
+      </section>
+
+      <!-- Recipes per category -->
+      <section class="admin-panel chart" aria-labelledby="per-category-title">
+        <h3 id="per-category-title" class="chart__title">Recettes par catégorie</h3>
+        <p class="chart__subtitle">Une recette compte dans chacune de ses catégories</p>
+        @if (categories().length) {
+          <ul role="list" class="bars">
+            @for (bar of categories(); track bar.label) {
+              <li class="bar">
+                <span class="bar__label">{{ bar.label }}</span>
+                <span class="bar__track"><span class="bar__fill" [style.width.%]="bar.share * 100"></span></span>
+                <span class="bar__value">{{ bar.count }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="admin-empty">Aucune catégorie.</p>
+        }
+      </section>
+
+      <!-- Most used ingredients -->
+      <section class="admin-panel chart" aria-labelledby="top-ingredients-title">
+        <h3 id="top-ingredients-title" class="chart__title">Ingrédients les plus utilisés</h3>
+        <p class="chart__subtitle">Nombre de recettes qui les contiennent</p>
+        @if (ingredients().length) {
+          <ul role="list" class="bars">
+            @for (bar of ingredients(); track bar.label) {
+              <li class="bar">
+                <span class="bar__label">{{ bar.label }}</span>
+                <span class="bar__track"><span class="bar__fill" [style.width.%]="bar.share * 100"></span></span>
+                <span class="bar__value">{{ bar.count }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="admin-empty">Aucun ingrédient utilisé.</p>
+        }
+      </section>
+    </div>
+  } @else if (stats.isLoading()) {
+    <p class="admin-empty">Calcul des statistiques…</p>
+  } @else if (stats.error()) {
+    <p class="admin-empty">Les statistiques n'ont pas pu être calculées.</p>
+  }
+</section>

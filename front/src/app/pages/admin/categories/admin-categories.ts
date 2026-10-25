@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
+import { ImageUploads } from '../../../core/api/image-uploads';
 import { chooseCategoryImage } from '../../../core/api/generated/fn/admin-categories/choose-category-image';
 import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
 import { deleteCategories } from '../../../core/api/generated/fn/admin-categories/delete-categories';
@@ -36,6 +37,7 @@ export default class AdminCategories {
   readonly photo = input<string>();
 
   private readonly api = inject(Api);
+  private readonly imageUploads = inject(ImageUploads);
   private readonly confirm = inject(Confirm);
   private readonly toaster = inject(Toaster);
   private readonly siteData = inject(SiteData);
@@ -52,6 +54,8 @@ export default class AdminCategories {
   protected readonly editingId = signal<number | null>(null);
   protected readonly editedName = signal('');
   protected readonly uploadingId = signal<number | null>(null);
+  /** Share of a new photo sent (0 to 1) while it uploads, for the category uploadingId. */
+  protected readonly uploadProgress = signal<number | null>(null);
 
   protected readonly selection = new Selection<number>();
   protected readonly categoryIds = computed(() => this.categories().map((category) => category.id));
@@ -114,8 +118,14 @@ export default class AdminCategories {
 
   protected async uploadImage(category: CategoryResponse, file: File): Promise<void> {
     this.uploadingId.set(category.id);
-    const upload = await attempt(this.api.invoke(replaceCategoryImage, { id: category.id, body: { file } }));
+    this.uploadProgress.set(0);
+    const upload = await attempt(
+      this.imageUploads.send(replaceCategoryImage.PATH.replace('{id}', String(category.id)), file, (sent) =>
+        this.uploadProgress.set(sent),
+      ),
+    );
     this.uploadingId.set(null);
+    this.uploadProgress.set(null);
     if (upload.ok) {
       this.toaster.success('Photo enregistrée.');
       await this.siteData.load();

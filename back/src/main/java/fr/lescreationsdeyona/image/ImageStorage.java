@@ -52,6 +52,21 @@ public class ImageStorage {
 			.map(S3Object::key);
 	}
 
+	/** Files of the bucket and their total size, orphans included. */
+	public record Usage(long files, long bytes) {
+	}
+
+	/** Lists the whole bucket, 1000 keys per request. */
+	public Usage usage() {
+		long files = 0;
+		long bytes = 0;
+		for (S3Object object : s3.listObjectsV2Paginator(request -> request.bucket(properties.bucket())).contents()) {
+			files++;
+			bytes += object.size();
+		}
+		return new Usage(files, bytes);
+	}
+
 	void deleteFolder(String prefix) {
 		// Listed before deleting, so that deletions cannot shift the pages being read.
 		listKeys(prefix).toList()

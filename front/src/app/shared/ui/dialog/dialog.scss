@@ -1,0 +1,154 @@
+@use 'mixins' as m;
+
+// Geometry set explicitly: the reset (* { margin: 0 }) removes the margin: auto that centers a
+// native dialog, and it must hold while fading out, once the dialog loses the browser's styles.
+.dialog {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  width: min(100% - 2rem, var(--dialog-width));
+  height: fit-content;
+  max-height: min(100dvh - 2rem, 52rem);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    overlay var(--duration-base) allow-discrete,
+    display var(--duration-base) allow-discrete;
+
+  &[open] {
+    display: flex;
+    opacity: 1;
+    transform: none;
+
+    @starting-style {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+
+  &::backdrop {
+    background-color: color-mix(in srgb, var(--color-shadow) 40%, transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  @include m.from(md) {
+    max-height: min(100dvh - 4rem, 52rem);
+  }
+}
+
+.dialog--sm {
+  --dialog-width: 26rem;
+}
+
+.dialog--md {
+  --dialog-width: 40rem;
+}
+
+.dialog--lg {
+  --dialog-width: 56rem;
+}
+
+// The whole screen (recipe preview): no rounded corners, no margin
+.dialog--full {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+
+  @include m.from(md) {
+    max-height: none;
+  }
+}
+
+// Stays at the top while the content scrolls
+.dialog__head {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.dialog__titles {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  padding-top: var(--space-1);
+}
+
+.dialog__title {
+  font-size: var(--text-xl);
+  overflow-wrap: anywhere;
+}
+
+.dialog__subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.dialog__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+// The only part that scrolls
+.dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+
+  .dialog--full & {
+    padding: 0;
+  }
+}
+
+// Stays at the bottom while the content scrolls
+.dialog__actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-line);
+  background-color: var(--color-bg);
+
+  &:empty {
+    display: none;
+  }
+}

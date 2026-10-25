@@ -3,6 +3,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import {
   LucideBookOpen,
   LucideCarrot,
+  LucideChartColumn,
   LucideDatabaseBackup,
   LucideImages,
   LucideLogOut,
@@ -13,6 +14,7 @@ import {
 import { Api } from '../../../core/api/generated/api';
 import { getVersion } from '../../../core/api/generated/fn/admin-version/get-version';
 import { AdminSession } from '../../../core/auth/admin-session';
+import { ConfirmDialog } from '../../../core/dialog/confirm-dialog';
 import { Toaster } from '../../../core/notifications/toaster';
 import { FRONT_VERSION } from '../../../core/version';
 import { Button } from '../../../shared/ui/button/button';
@@ -25,11 +27,13 @@ import { Button } from '../../../shared/ui/button/button';
 @Component({
   selector: 'yona-admin-layout',
   imports: [
+    ConfirmDialog,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
     Button,
     LucideBookOpen,
+    LucideChartColumn,
     LucideCarrot,
     LucideDatabaseBackup,
     LucideImages,

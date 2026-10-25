@@ -34,6 +34,7 @@
           <yona-image-upload
             [imageId]="category.imageId"
             [busy]="uploadingId() === category.id"
+            [progress]="uploadingId() === category.id ? uploadProgress() : null"
             (fileChosen)="uploadImage(category, $event)"
             (galleryImageChosen)="chooseImage(category, $event)"
             (removed)="chooseImage(category, null)"

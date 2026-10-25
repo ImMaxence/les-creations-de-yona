@@ -1,14 +1,20 @@
 <nav class="pagination" aria-label="Pagination">
   @if (page() > 1) {
-    <a
-      class="pagination__step"
-      aria-label="Page précédente"
-      routerLink="."
-      queryParamsHandling="merge"
-      [queryParams]="queryParams(page() - 1)"
-    >
-      <svg lucideChevronLeft [size]="18"></svg>
-    </a>
+    @if (buttons()) {
+      <button type="button" class="pagination__step" aria-label="Page précédente" (click)="pageChange.emit(page() - 1)">
+        <svg lucideChevronLeft [size]="18"></svg>
+      </button>
+    } @else {
+      <a
+        class="pagination__step"
+        aria-label="Page précédente"
+        routerLink="."
+        queryParamsHandling="merge"
+        [queryParams]="queryParams(page() - 1)"
+      >
+        <svg lucideChevronLeft [size]="18"></svg>
+      </a>
+    }
   }
 
   <ol role="list" class="pagination__pages">
@@ -18,6 +24,10 @@
           <span class="pagination__gap" aria-hidden="true">…</span>
         } @else if (item.page === page()) {
           <span class="pagination__page is-current" aria-current="page">{{ item.page }}</span>
+        } @else if (buttons()) {
+          <button type="button" class="pagination__page" [attr.aria-label]="'Page ' + item.page" (click)="pageChange.emit(item.page)">
+            {{ item.page }}
+          </button>
         } @else {
           <a
             class="pagination__page"
@@ -33,14 +43,20 @@
   </ol>
 
   @if (page() < totalPages()) {
-    <a
-      class="pagination__step"
-      aria-label="Page suivante"
-      routerLink="."
-      queryParamsHandling="merge"
-      [queryParams]="queryParams(page() + 1)"
-    >
-      <svg lucideChevronRight [size]="18"></svg>
-    </a>
+    @if (buttons()) {
+      <button type="button" class="pagination__step" aria-label="Page suivante" (click)="pageChange.emit(page() + 1)">
+        <svg lucideChevronRight [size]="18"></svg>
+      </button>
+    } @else {
+      <a
+        class="pagination__step"
+        aria-label="Page suivante"
+        routerLink="."
+        queryParamsHandling="merge"
+        [queryParams]="queryParams(page() + 1)"
+      >
+        <svg lucideChevronRight [size]="18"></svg>
+      </a>
+    }
   }
 </nav>

@@ -1,58 +1,7 @@
-// Centered by margin: auto, which the reset (* { margin: 0 }) removes. Geometry set explicitly so that
-// it also holds while fading out, once the dialog is no longer :modal and loses the browser's styles.
-.confirm {
-  position: fixed;
-  inset: 0;
-  width: min(100% - 2rem, 26rem);
-  height: fit-content;
-  margin: auto;
-  padding: var(--space-6);
-  border: 0;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  box-shadow: var(--shadow-md);
-  opacity: 0;
-  transform: scale(0.96);
-  transition:
-    opacity var(--duration-base) var(--ease-out),
-    transform var(--duration-base) var(--ease-out),
-    overlay var(--duration-base) allow-discrete,
-    display var(--duration-base) allow-discrete;
-
-  &[open] {
-    opacity: 1;
-    transform: none;
-
-    @starting-style {
-      opacity: 0;
-      transform: scale(0.96);
-    }
-  }
-
-  &::backdrop {
-    background-color: color-mix(in srgb, var(--color-shadow) 40%, transparent);
-    backdrop-filter: blur(2px);
-  }
-
-  h2 {
-    font-size: var(--text-xl);
-  }
-
-  p {
-    margin-top: var(--space-2);
-    color: var(--color-text-muted);
-  }
+.message {
+  color: var(--color-text-muted);
 }
 
-.confirm__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  margin-top: var(--space-6);
-}
-
-.confirm__danger {
+.danger {
   background-color: var(--color-danger);
 }

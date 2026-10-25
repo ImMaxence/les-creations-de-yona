@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideChevronLeft, LucideChevronRight, LucideLayoutGrid, LucideList, LucideTrash2 } from '@lucide/angular';
+import { LucideLayoutGrid, LucideList, LucideTrash2 } from '@lucide/angular';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { deleteImage } from '../../../core/api/generated/fn/admin-images/delete-image';
@@ -12,6 +12,7 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
+import { Pagination } from '../../../shared/ui/pagination/pagination';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { ADMIN_CATEGORIES_QUERY } from '../categories/admin-categories-query';
@@ -33,10 +34,9 @@ const PAGE_SIZE = 24;
     RouterLink,
     BulkBar,
     CoverImage,
+    Pagination,
     Select,
     ParisDatePipe,
-    LucideChevronLeft,
-    LucideChevronRight,
     LucideLayoutGrid,
     LucideList,
     LucideTrash2,

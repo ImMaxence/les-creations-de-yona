@@ -34,6 +34,62 @@
   color: var(--color-accent);
 }
 
+// Upload progress over the photo, then a sliding glow while the server converts it
+.progress {
+  display: grid;
+  gap: var(--space-2);
+  width: min(80%, 16rem);
+  color: var(--color-text);
+  text-align: center;
+}
+
+.progress__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress__track {
+  position: relative;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.progress__bar {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--color-accent);
+  transform-origin: left;
+  transition: transform var(--duration-base) var(--ease-out);
+
+  .is-processing &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-on-accent) 45%, transparent), transparent);
+    animation: glow 1.2s linear infinite;
+  }
+}
+
+@keyframes glow {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-processing .progress__bar::after {
+    animation: none;
+  }
+}
+
 .spin {
   animation: spin 900ms linear infinite;
 }

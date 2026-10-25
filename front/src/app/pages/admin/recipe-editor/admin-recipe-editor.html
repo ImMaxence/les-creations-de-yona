@@ -119,6 +119,7 @@
         [imageId]="imageId()"
         [previewUrl]="pendingPreview()"
         [busy]="uploading()"
+        [progress]="uploadProgress()"
         (fileChosen)="onImageChosen($event)"
         (galleryImageChosen)="onImageSelected($event)"
         (removed)="onImageSelected(null)"
@@ -189,12 +190,11 @@
   </div>
 </form>
 
-<!-- Modal: focus kept inside, Escape closes it -->
-<dialog #previewDialog class="preview-dialog" aria-label="Aperçu de la recette" (close)="preview.set(null)">
+<yona-dialog size="full" title="Aperçu" [subtitle]="previewStatus()" [(open)]="previewOpen">
   @if (preview(); as recipe) {
-    <yona-recipe-preview closable [recipe]="recipe" [unsaved]="hasUnsavedChanges()" (closed)="closePreview()" />
+    <yona-recipe-preview embedded [recipe]="recipe" />
   }
-</dialog>
+</yona-dialog>
 
 <!-- Ingredients of a part (the only part of a recipe without parts) -->
 <ng-template #ingredientsEditor let-p>

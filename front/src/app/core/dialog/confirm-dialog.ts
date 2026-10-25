@@ -1,40 +1,38 @@
-import { ChangeDetectionStrategy, Component, ElementRef, effect, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
 import { Button } from '../../shared/ui/button/button';
-import { Confirm } from './confirm';
+import { Dialog } from '../../shared/ui/dialog/dialog';
+import { Confirm, ConfirmRequest } from './confirm';
 
-/** Native modal <dialog>: focus trap, Escape and inert page come with showModal(). */
+/** The question asked by Confirm, before a destructive action. Closing it in any way cancels. */
 @Component({
   selector: 'yona-confirm-dialog',
-  imports: [Button],
+  imports: [Button, Dialog],
   template: `
-    <dialog #dialog class="confirm" aria-labelledby="confirm-title" (close)="confirm.answer(false)">
-      @if (confirm.pending(); as request) {
-        <h2 id="confirm-title">{{ request.title }}</h2>
-        <p>{{ request.message }}</p>
-        <div class="confirm__actions">
-          <button yonaButton variant="secondary" type="button" (click)="confirm.answer(false)">Annuler</button>
-          <button yonaButton type="button" class="confirm__danger" (click)="confirm.answer(true)">
-            {{ request.confirmLabel }}
-          </button>
-        </div>
-      }
-    </dialog>
+    <yona-dialog
+      size="sm"
+      role="alertdialog"
+      [title]="request()?.title ?? ''"
+      [open]="isOpen()"
+      (closed)="confirm.answer(false)"
+    >
+      <p class="message">{{ request()?.message }}</p>
+      <ng-container dialogActions>
+        <button yonaButton variant="secondary" type="button" (click)="confirm.answer(false)">Annuler</button>
+        <button yonaButton type="button" class="danger" (click)="confirm.answer(true)">
+          {{ request()?.confirmLabel }}
+        </button>
+      </ng-container>
+    </yona-dialog>
   `,
   styleUrl: './confirm-dialog.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmDialog {
   protected readonly confirm = inject(Confirm);
-  private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
-
-  constructor() {
-    effect(() => {
-      const dialog = this.dialog().nativeElement;
-      if (this.confirm.pending() && !dialog.open) {
-        dialog.showModal();
-      } else if (!this.confirm.pending() && dialog.open) {
-        dialog.close();
-      }
-    });
-  }
+  protected readonly isOpen = computed(() => this.confirm.pending() !== null);
+  /** The last question, still shown while the dialog fades out. */
+  protected readonly request = linkedSignal<ConfirmRequest | null, ConfirmRequest | null>({
+    source: this.confirm.pending,
+    computation: (pending, previous) => pending ?? previous?.value ?? null,
+  });
 }

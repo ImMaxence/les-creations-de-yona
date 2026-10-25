@@ -5,10 +5,10 @@
   padding-bottom: var(--space-8);
 }
 
-// Stays in sight while scrolling, under the site header (at the very top in the editor's dialog)
+// Stays in sight while scrolling, under the site header
 .banner {
   position: sticky;
-  top: var(--preview-top, var(--header-height));
+  top: var(--header-height);
   z-index: 5;
   display: flex;
   flex-wrap: wrap;

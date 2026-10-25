@@ -36,3 +36,17 @@ export function roundForKitchen(quantity: number): number {
   const step = quantity < 0.5 ? 0.25 : 0.5;
   return Math.max(step, Math.round(quantity / step) * step);
 }
+
+const BYTE_UNITS = ['octets', 'Ko', 'Mo', 'Go', 'To'];
+const SIZE = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
+
+/** 274996 → "268,6 Ko", 1081101176832 → "1006,8 Go" (units of 1024, as file managers show them). */
+export function formatBytes(bytes: number): string {
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < BYTE_UNITS.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  return `${SIZE.format(value)} ${BYTE_UNITS[unit]}`;
+}
