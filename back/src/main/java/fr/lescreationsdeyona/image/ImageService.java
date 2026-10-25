@@ -85,6 +85,13 @@ public class ImageService {
 		return imageRepository.save(image);
 	}
 
+	/** "Ajouter une photo" of the gallery: kept there until a recipe or a category shows it. */
+	@Transactional
+	public GalleryImage upload(ProcessedImage processed) {
+		Image image = create(ImageKind.GALLERY, processed);
+		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of());
+	}
+
 	/** The recipes and categories showing it fall back to the default visual ({@code ON DELETE SET NULL}). */
 	@Transactional
 	public void delete(UUID id) {

@@ -59,6 +59,15 @@
   --dialog-width: 56rem;
 }
 
+// Same size whatever the content (gallery): only the content area grows or scrolls
+.dialog--fixed {
+  height: min(100dvh - 2rem, 44rem);
+
+  @include m.from(md) {
+    height: min(100dvh - 4rem, 44rem);
+  }
+}
+
 // The whole screen (recipe preview): no rounded corners, no margin
 .dialog--full {
   width: 100%;

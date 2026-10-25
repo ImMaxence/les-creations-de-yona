@@ -2,6 +2,7 @@
   #dialog
   class="dialog"
   [class]="'dialog--' + size()"
+  [class.dialog--fixed]="fixedHeight()"
   [attr.role]="role() === 'alertdialog' ? 'alertdialog' : null"
   [attr.aria-labelledby]="titleId"
   (close)="onClose()"

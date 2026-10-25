@@ -19,14 +19,14 @@ export class ImageUploads {
   private readonly session = inject(AdminSession);
 
   /**
-   * PUT of a multipart body (field "file") to an API path such as "/api/admin/recipes/12/image".
+   * Multipart body (field "file") to an API path: PUT "/api/admin/recipes/12/image" for instance.
    * onProgress receives the share sent so far, from 0 to 1; at 1, the server still converts the
    * photo before answering. Rejects once the error has been shown.
    */
-  send<T>(path: string, file: File, onProgress: (sent: number) => void): Promise<T> {
+  send<T>(path: string, file: File, onProgress: (sent: number) => void, method: 'PUT' | 'POST' = 'PUT'): Promise<T> {
     return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest();
-      request.open('PUT', path);
+      request.open(method, path);
       request.responseType = 'json';
       request.setRequestHeader('Accept', 'application/json');
       // Relayed by the service worker, Safari on iOS loses the file (see service-worker-bypass.ts)

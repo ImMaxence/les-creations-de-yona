@@ -180,9 +180,12 @@
   <yona-field-error [field]="recipeForm.parts" />
 
   <div class="editor__bar">
-    <a yonaButton variant="ghost" class="editor__back" routerLink="/admin/recettes">Retour à la liste</a>
-    <button yonaButton variant="secondary" type="button" class="editor__preview" [disabled]="previewing()" (click)="openPreview()">
-      <svg lucideEye></svg>Aperçu
+    <!-- Phones: "Retour" and the preview's icon, so that the three actions hold on one line -->
+    <a yonaButton variant="ghost" class="editor__back" routerLink="/admin/recettes">
+      <svg lucideArrowLeft></svg><span class="editor__narrow">Retour</span><span class="editor__wide">Retour à la liste</span>
+    </a>
+    <button yonaButton variant="secondary" type="button" class="editor__preview" aria-label="Aperçu" [disabled]="previewing()" (click)="openPreview()">
+      <svg lucideEye></svg><span class="editor__wide">Aperçu</span>
     </button>
     <button yonaButton type="submit" [disabled]="saving()">
       {{ saving() ? 'Enregistrement…' : isNew() ? 'Créer la recette' : 'Enregistrer' }}

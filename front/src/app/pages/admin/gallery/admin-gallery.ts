@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideLayoutGrid, LucideList, LucideTrash2 } from '@lucide/angular';
+import { LucideImageUp, LucideLayoutGrid, LucideList, LucideTrash2 } from '@lucide/angular';
 import { attempt } from '../../../core/api/attempt';
+import { ImageUploads } from '../../../core/api/image-uploads';
+import { uploadImage } from '../../../core/api/generated/fn/admin-images/upload-image';
 import { Api } from '../../../core/api/generated/api';
 import { deleteImage } from '../../../core/api/generated/fn/admin-images/delete-image';
 import { deleteImages } from '../../../core/api/generated/fn/admin-images/delete-images';
@@ -11,7 +13,9 @@ import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
+import { Button } from '../../../shared/ui/button/button';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
+import { PHOTO_ACCEPT, photoFileError } from '../../../shared/ui/image-upload/photo-file';
 import { Pagination } from '../../../shared/ui/pagination/pagination';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
@@ -33,10 +37,12 @@ const PAGE_SIZE = 24;
   imports: [
     RouterLink,
     BulkBar,
+    Button,
     CoverImage,
     Pagination,
     Select,
     ParisDatePipe,
+    LucideImageUp,
     LucideLayoutGrid,
     LucideList,
     LucideTrash2,
@@ -50,17 +56,27 @@ export default class AdminGallery {
   private readonly confirm = inject(Confirm);
   private readonly toaster = inject(Toaster);
   private readonly siteData = inject(SiteData);
+  private readonly imageUploads = inject(ImageUploads);
 
   protected readonly kindOptions: SelectOption<KindFilter>[] = [
     { value: 'ALL', label: 'Recettes et catégories' },
     { value: 'RECIPE', label: 'Envoyées pour une recette' },
     { value: 'CATEGORY', label: 'Envoyées pour une catégorie' },
+    { value: 'GALLERY', label: 'Envoyées dans la galerie' },
   ];
   protected readonly usageOptions: SelectOption<UsageFilter>[] = [
     { value: 'ALL', label: 'Toutes les images' },
     { value: 'USED', label: 'Utilisées' },
     { value: 'UNUSED', label: 'Non utilisées' },
   ];
+  protected readonly accept = PHOTO_ACCEPT;
+  /** Share of the new photo sent (0 to 1) while it uploads. */
+  protected readonly uploadProgress = signal<number | null>(null);
+  protected readonly uploadPercent = computed(() => Math.round((this.uploadProgress() ?? 0) * 100));
+  /** Once sent, the server still makes its 800 and 1600 px versions. */
+  protected readonly uploadLabel = computed(() =>
+    this.uploadPercent() < 100 ? `Envoi de la photo… ${this.uploadPercent()} %` : 'Préparation de la photo…',
+  );
   protected readonly kind = signal<KindFilter>('ALL');
   protected readonly usage = signal<UsageFilter>('ALL');
   protected readonly page = linkedSignal({ source: () => [this.kind(), this.usage()], computation: () => 0 });
@@ -79,6 +95,38 @@ export default class AdminGallery {
   protected readonly selection = new Selection<string>();
   protected readonly shownIds = computed(() => this.images.value()?.content.map((image) => image.id) ?? []);
   protected readonly deleting = signal(false);
+
+  /** "Ajouter une photo": shown first once uploaded (unused, the most recent). */
+  protected async onFileChosen(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Reset, so that choosing the same file again still triggers a change
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    const error = photoFileError(file);
+    if (error) {
+      this.toaster.error(error);
+      return;
+    }
+    this.uploadProgress.set(0);
+    const upload = await attempt(
+      this.imageUploads.send(uploadImage.PATH, file, (sent) => this.uploadProgress.set(sent), 'POST'),
+    );
+    this.uploadProgress.set(null);
+    if (upload.ok) {
+      this.toaster.success('Photo ajoutée à la galerie.');
+      if (this.kind() !== 'ALL' && this.kind() !== 'GALLERY') {
+        this.kind.set('ALL');
+      }
+      if (this.usage() === 'USED') {
+        this.usage.set('ALL');
+      }
+      this.page.set(0);
+      this.images.reload();
+    }
+  }
 
   /** Titles of the recipes and names of the categories showing it. */
   protected usedBy(image: GalleryImage): string[] {

@@ -300,9 +300,27 @@ yona-select {
   margin-left: auto;
 }
 
-// Phones: the back-office tabs above already lead back to the list, the bar keeps its two actions
-.editor__back {
+// Phones: shorter labels, so that the three actions of the bar hold on one line
+.editor__wide {
   @include m.below(sm) {
     display: none;
+  }
+}
+
+.editor__narrow {
+  @include m.from(sm) {
+    display: none;
+  }
+}
+
+.editor__bar {
+  @include m.below(sm) {
+    gap: var(--space-2);
+    padding-inline: var(--space-2);
+
+    .editor__back,
+    .editor__preview {
+      padding-inline: var(--space-3);
+    }
   }
 }

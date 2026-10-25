@@ -27,6 +27,10 @@
   display: grid;
   // Two per row on phones, more as room allows
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 8rem), 1fr));
+
+  @include m.from(sm) {
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  }
   gap: var(--space-3);
   transition: opacity var(--duration-base) var(--ease-out);
 

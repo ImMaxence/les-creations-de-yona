@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router, RouterLink, Scroll } from '@angular/router';
 import { LucideSearchX } from '@lucide/angular';
+import { filter } from 'rxjs';
 import { RecipeSuggestion } from '../../core/api/generated/models/recipe-suggestion';
 import { SiteData } from '../../core/site/site-data';
 import { Reveal } from '../../shared/motion/reveal';
@@ -24,6 +26,8 @@ export default class Recipes {
   readonly data = input.required<RecipesPageData>();
 
   private readonly router = inject(Router);
+  /** Scroll position kept through the next navigation: a change of page size, not of page. */
+  private keptScroll: number | null = null;
   protected readonly categories = inject(SiteData).categories;
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly pageSizeOptions: SelectOption<number>[] = PAGE_SIZES.map((size) => ({
@@ -75,7 +79,25 @@ export default class Recipes {
     this.router.navigate(recipeLink({ slug: suggestion.slug, categories: [{ slug: suggestion.categorySlug }] }));
   }
 
+  constructor() {
+    // The router scrolls back to the top on its Scroll event, after this subscriber has run: a
+    // change of page size puts the visitor back in the next frame, still before it is painted.
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof Scroll),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        const top = this.keptScroll;
+        if (top !== null) {
+          this.keptScroll = null;
+          requestAnimationFrame(() => window.scrollTo({ top, behavior: 'instant' }));
+        }
+      });
+  }
+
   protected changePageSize(pageSize: number | undefined): void {
+    this.keptScroll = window.scrollY;
     this.updateQuery({
       [RECIPES_QUERY.pageSize]: pageSize === DEFAULT_PAGE_SIZE ? null : (pageSize ?? null),
       [RECIPES_QUERY.page]: null,

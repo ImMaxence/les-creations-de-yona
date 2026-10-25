@@ -1,6 +1,7 @@
 <yona-dialog
   title="Choisir dans la galerie"
   size="lg"
+  fixedHeight
   [subtitle]="totalElements() ? totalElements() + ' photo' + (totalElements() > 1 ? 's' : '') + ', les plus récentes en premier' : undefined"
   [(open)]="isOpen"
 >

@@ -1,10 +1,24 @@
 <section class="admin-section" aria-labelledby="gallery-title">
   <div class="admin-section__head">
     <h2 id="gallery-title">Galerie</h2>
+    <!-- Hidden from assistive technologies: the button is the way to reach it -->
+    <input #file type="file" class="visually-hidden" tabindex="-1" aria-hidden="true" [accept]="accept" (change)="onFileChosen($event)" />
+    <button yonaButton type="button" [disabled]="uploadProgress() !== null" (click)="file.click()">
+      <svg lucideImageUp></svg>Ajouter une photo
+    </button>
   </div>
+  @if (uploadProgress() !== null) {
+    <div class="upload" role="status">
+      <span class="upload__label">{{ uploadLabel() }}</span>
+      <div class="upload__track" role="progressbar" aria-label="Envoi de la photo" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="uploadPercent()">
+        <div class="upload__bar" [style.transform]="'scaleX(' + uploadProgress() + ')'"></div>
+      </div>
+    </div>
+  }
   <p class="field__hint">
-    Toutes les photos envoyées restent ici, même remplacées. Une photo « Non utilisée » peut être supprimée, ou remise
-    sur une recette ou une catégorie avec « Choisir dans la galerie ».
+    Toutes les photos envoyées restent ici, même remplacées. « Ajouter une photo » la range ici sans l'afficher nulle part :
+    elle se met ensuite sur une recette ou une catégorie avec « Choisir dans la galerie ». Une photo « Non utilisée »
+    peut être supprimée.
   </p>
   <div class="admin-toolbar">
     <yona-select label="Utilisation" [options]="usageOptions" [(value)]="usage" />

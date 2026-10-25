@@ -3,10 +3,8 @@ import { LucideImageOff, LucideImageUp, LucideImages, LucideLoaderCircle } from 
 import { Toaster } from '../../../core/notifications/toaster';
 import { CoverImage } from '../cover-image/cover-image';
 import { GalleryPicker } from '../gallery-picker/gallery-picker';
+import { PHOTO_ACCEPT, photoFileError } from './photo-file';
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png'];
-/** Same limit as the API (10 MB): refused before sending rather than after a long upload. */
-const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
 /**
  * Photo of a recipe or a category in the back-office: current picture, or a local preview of the
@@ -83,7 +81,7 @@ export class ImageUpload {
   /** "Retirer": back to the default visual. */
   readonly removed = output<void>();
 
-  protected readonly accept = ACCEPTED_TYPES.join(',');
+  protected readonly accept = PHOTO_ACCEPT;
   protected readonly progressPercent = computed(() => Math.round((this.progress() ?? 0) * 100));
   /** Once sent, the server still makes its 800 and 1600 px versions. */
   protected readonly progressLabel = computed(() =>
@@ -103,10 +101,9 @@ export class ImageUpload {
     if (!file) {
       return;
     }
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      this.toaster.error('Choisissez une photo au format JPEG ou PNG.');
-    } else if (file.size > MAX_SIZE_BYTES) {
-      this.toaster.error('Cette photo dépasse 10 Mo.');
+    const error = photoFileError(file);
+    if (error) {
+      this.toaster.error(error);
     } else {
       this.fileChosen.emit(file);
     }

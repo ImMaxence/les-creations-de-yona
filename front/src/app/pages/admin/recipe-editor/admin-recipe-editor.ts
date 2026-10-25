@@ -22,6 +22,7 @@ import { FieldTree, FormField, form, submit } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import {
   LucideArrowDown,
+  LucideArrowLeft,
   LucideArrowUp,
   LucideCheck,
   LucideExternalLink,
@@ -97,6 +98,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     Select,
     SuggestInput,
     LucideArrowDown,
+    LucideArrowLeft,
     LucideArrowUp,
     LucideCheck,
     LucideExternalLink,

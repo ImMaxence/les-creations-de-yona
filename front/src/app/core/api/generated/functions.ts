@@ -49,6 +49,14 @@ export type { CreateCategory$Params as CreateCategory$Params } from './fn/admin-
 export { createCategory as createCategory } from './fn/admin-categories/create-category';
 export type { DeleteCategories$Params as DeleteCategories$Params } from './fn/admin-categories/delete-categories';
 export { deleteCategories as deleteCategories } from './fn/admin-categories/delete-categories';
+export type { ListImages$Params as ListImages$Params } from './fn/admin-images/list-images';
+export { listImages as listImages } from './fn/admin-images/list-images';
+export type { UploadImage$Params as UploadImage$Params } from './fn/admin-images/upload-image';
+export { uploadImage as uploadImage } from './fn/admin-images/upload-image';
+export type { DeleteImages$Params as DeleteImages$Params } from './fn/admin-images/delete-images';
+export { deleteImages as deleteImages } from './fn/admin-images/delete-images';
+export type { DeleteImage$Params as DeleteImage$Params } from './fn/admin-images/delete-image';
+export { deleteImage as deleteImage } from './fn/admin-images/delete-image';
 export type { GetTheme$Params as GetTheme$Params } from './fn/theme/get-theme';
 export { getTheme as getTheme } from './fn/theme/get-theme';
 export type { ListSocialLinks$Params as ListSocialLinks$Params } from './fn/social-links/list-social-links';
@@ -73,11 +81,5 @@ export type { GetStats$Params as GetStats$Params } from './fn/admin-stats/get-st
 export { getStats as getStats } from './fn/admin-stats/get-stats';
 export type { GetCurrentAdmin$Params as GetCurrentAdmin$Params } from './fn/authentication/get-current-admin';
 export { getCurrentAdmin as getCurrentAdmin } from './fn/authentication/get-current-admin';
-export type { ListImages$Params as ListImages$Params } from './fn/admin-images/list-images';
-export { listImages as listImages } from './fn/admin-images/list-images';
-export type { DeleteImages$Params as DeleteImages$Params } from './fn/admin-images/delete-images';
-export { deleteImages as deleteImages } from './fn/admin-images/delete-images';
-export type { DeleteImage$Params as DeleteImage$Params } from './fn/admin-images/delete-image';
-export { deleteImage as deleteImage } from './fn/admin-images/delete-image';
 export type { DownloadBackup$Params as DownloadBackup$Params } from './fn/admin-backup/download-backup';
 export { downloadBackup as downloadBackup } from './fn/admin-backup/download-backup';

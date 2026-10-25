@@ -3,7 +3,9 @@ package fr.lescreationsdeyona.image;
 public enum ImageKind {
 
 	RECIPE("recipes"),
-	CATEGORY("categories");
+	CATEGORY("categories"),
+	/** Uploaded from the gallery page, shown nowhere until chosen for a recipe or a category. */
+	GALLERY("gallery");
 
 	/** Top-level S3 folder of this kind of image. */
 	private final String folder;

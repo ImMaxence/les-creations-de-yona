@@ -30,6 +30,11 @@ export class Dialog {
   readonly size = input<DialogSize>('md');
   /** "alertdialog" for a question that needs an answer (confirmation). */
   readonly role = input<'dialog' | 'alertdialog'>('dialog');
+  /**
+   * Always as tall as the screen allows (within a limit), whatever its content: a list that
+   * loads, filters or changes page does not make the dialog jump.
+   */
+  readonly fixedHeight = input(false, { transform: booleanAttribute });
   /** A click on the dimmed page around closes it (true by default). */
   readonly closeOnBackdrop = input(true, { transform: booleanAttribute });
   readonly open = model(false);

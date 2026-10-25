@@ -11,7 +11,7 @@ export interface GalleryImage {
   categories: Array<UsingCategory>;
   createdAt: string;
   id: string;
-  kind: 'RECIPE' | 'CATEGORY';
+  kind: 'RECIPE' | 'CATEGORY' | 'GALLERY';
 
   /**
    * Recipes showing it, by title
