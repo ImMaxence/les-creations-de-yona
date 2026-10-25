@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
@@ -16,6 +16,8 @@ import { SiteData } from '../../../core/site/site-data';
 import { Button } from '../../../shared/ui/button/button';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { BulkBar } from '../bulk-bar/bulk-bar';
+import { FilterChip } from '../filter-chip/filter-chip';
+import { ADMIN_CATEGORIES_QUERY } from './admin-categories-query';
 import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
 import { Selection } from '../selection';
 
@@ -24,18 +26,27 @@ const MAX_NAME_LENGTH = 60;
 /** Categories also feed the navbar and the home page: SiteData is reloaded after each change. */
 @Component({
   selector: 'yona-admin-categories',
-  imports: [RouterLink, BulkBar, Button, ImageUpload, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX],
+  imports: [RouterLink, BulkBar, Button, FilterChip, ImageUpload, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX],
   templateUrl: './admin-categories.html',
   styleUrl: './admin-categories.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class AdminCategories {
+  /** ?photo=: from the gallery, only the categories showing this photo. */
+  readonly photo = input<string>();
+
   private readonly api = inject(Api);
   private readonly confirm = inject(Confirm);
   private readonly toaster = inject(Toaster);
   private readonly siteData = inject(SiteData);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
-  protected readonly categories = this.siteData.categories;
+  protected readonly categories = computed(() => {
+    const imageId = this.photo();
+    const all = this.siteData.categories();
+    return imageId ? all.filter((category) => category.imageId === imageId) : all;
+  });
   protected readonly maxNameLength = MAX_NAME_LENGTH;
   protected readonly newName = signal('');
   protected readonly editingId = signal<number | null>(null);
@@ -45,6 +56,14 @@ export default class AdminCategories {
   protected readonly selection = new Selection<number>();
   protected readonly categoryIds = computed(() => this.categories().map((category) => category.id));
   protected readonly deleting = signal(false);
+
+  protected clearImage(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { [ADMIN_CATEGORIES_QUERY.image]: null },
+      queryParamsHandling: 'merge',
+    });
+  }
 
   /** The back-office recipe list, filtered on this category. */
   protected recipesLink(category: CategoryResponse): Record<string, string> {

@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,9 +26,11 @@ final class RecipeSpecifications {
 	 * @param ingredientName name of one of its ingredients, in any part (case and accents ignored by
 	 *     the column collation)
 	 * @param ingredientId one of its ingredients (back-office)
+	 * @param imageId its photo (back-office, from the gallery)
 	 */
 	static Specification<Recipe> matching(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable String ingredientName, @Nullable Long ingredientId, @Nullable RecipeStatus status) {
+			@Nullable String ingredientName, @Nullable Long ingredientId, @Nullable UUID imageId,
+			@Nullable RecipeStatus status) {
 		List<Specification<Recipe>> criteria = new ArrayList<>();
 		if (status != null) {
 			criteria.add((recipe, query, cb) -> cb.equal(recipe.get("status"), status));
@@ -42,6 +45,9 @@ final class RecipeSpecifications {
 		if (StringUtils.hasText(ingredientName)) {
 			String name = ingredientName.strip();
 			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("name"), name)));
+		}
+		if (imageId != null) {
+			criteria.add((recipe, query, cb) -> cb.equal(recipe.get("image").get("id"), imageId));
 		}
 		if (ingredientId != null) {
 			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("id"), ingredientId)));

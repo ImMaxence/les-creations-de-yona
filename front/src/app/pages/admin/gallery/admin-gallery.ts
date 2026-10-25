@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideChevronLeft, LucideChevronRight, LucideList, LucidePencil, LucideTrash2 } from '@lucide/angular';
+import { LucideChevronLeft, LucideChevronRight, LucideLayoutGrid, LucideList, LucideTrash2 } from '@lucide/angular';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { deleteImage } from '../../../core/api/generated/fn/admin-images/delete-image';
 import { deleteImages } from '../../../core/api/generated/fn/admin-images/delete-images';
 import { listImages } from '../../../core/api/generated/fn/admin-images/list-images';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
-import { UsingCategory } from '../../../core/api/generated/models/using-category';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
@@ -15,6 +14,7 @@ import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
+import { ADMIN_CATEGORIES_QUERY } from '../categories/admin-categories-query';
 import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
 import { Selection } from '../selection';
 
@@ -37,8 +37,8 @@ const PAGE_SIZE = 24;
     ParisDatePipe,
     LucideChevronLeft,
     LucideChevronRight,
+    LucideLayoutGrid,
     LucideList,
-    LucidePencil,
     LucideTrash2,
   ],
   templateUrl: './admin-gallery.html',
@@ -85,8 +85,13 @@ export default class AdminGallery {
     return [...image.recipes.map((recipe) => recipe.title), ...image.categories.map((category) => category.name)];
   }
 
-  protected categoryRecipesLink(category: UsingCategory): Record<string, string> {
-    return { [ADMIN_RECIPES_QUERY.category]: category.slug };
+  /** The back-office lists, filtered on this photo. */
+  protected recipesLink(image: GalleryImage): Record<string, string> {
+    return { [ADMIN_RECIPES_QUERY.image]: image.id };
+  }
+
+  protected categoriesLink(image: GalleryImage): Record<string, string> {
+    return { [ADMIN_CATEGORIES_QUERY.image]: image.id };
   }
 
   protected async remove(image: GalleryImage): Promise<void> {

@@ -28,27 +28,11 @@
   padding: var(--space-3);
 }
 
-// What shows the photo, each one a link
+// What shows the photo: the recipes and categories lists, filtered on it
 .tile__links {
   display: grid;
+  justify-items: start;
   gap: 0.1rem;
-  max-width: 100%;
-
-  .link-button {
-    max-width: 100%;
-    padding-block: 0.15rem;
-    text-align: left;
-
-    svg {
-      flex: none;
-    }
-
-    span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
 }
 
 .tile__delete {

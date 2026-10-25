@@ -114,6 +114,7 @@ export class Select<T> {
       event.preventDefault();
       if (this.open()) {
         this.activeIndex.set(moves[event.key]());
+        this.revealActive();
       } else {
         this.show(this.selectedIndex());
       }
@@ -148,10 +149,19 @@ export class Select<T> {
     if (this.searchable()) {
       afterNextRender(() => this.filterInput()?.nativeElement.focus(), { injector: this.injector });
     }
+    this.revealActive();
   }
 
   private close(): void {
     this.open.set(false);
+  }
+
+  /** The list shows no scroll bar: it follows the keyboard (and opens on the chosen option). */
+  private revealActive(): void {
+    afterNextRender(
+      () => this.host.querySelector(`#${this.id}-${this.activeIndex()}`)?.scrollIntoView({ block: 'nearest' }),
+      { injector: this.injector },
+    );
   }
 
   private jumpTo(letter: string): void {

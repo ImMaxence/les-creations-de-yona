@@ -25,6 +25,11 @@ export interface SearchRecipes$Params {
  * Id of one of its ingredients
  */
   ingredientId?: number;
+
+/**
+ * Id of its photo
+ */
+  imageId?: string;
   status?: 'DRAFT' | 'PUBLISHED';
 
 /**
@@ -49,6 +54,7 @@ export function searchRecipes(http: HttpClient, rootUrl: string, params?: Search
     rb.query('q', params.q, {});
     rb.query('category', params.category, {});
     rb.query('ingredientId', params.ingredientId, {});
+    rb.query('imageId', params.imageId, {});
     rb.query('status', params.status, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});

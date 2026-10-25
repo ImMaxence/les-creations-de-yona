@@ -37,24 +37,20 @@
             <div class="tile__info">
               @if (usedBy(image).length) {
                 <span class="badge badge--published">Utilisée</span>
-                <ul role="list" class="tile__links">
-                  @for (recipe of image.recipes; track recipe.id) {
-                    <li>
-                      <a class="link-button" [routerLink]="['/admin/recettes', recipe.id]" [title]="'Modifier la recette « ' + recipe.title + ' »'">
-                        <svg lucidePencil [size]="14"></svg>
-                        <span>{{ recipe.title }}</span>
-                      </a>
-                    </li>
+                <div class="tile__links">
+                  @if (image.recipes.length) {
+                    <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(image)">
+                      <svg lucideList [size]="14"></svg>
+                      Voir les recettes ({{ image.recipes.length }})
+                    </a>
                   }
-                  @for (category of image.categories; track category.id) {
-                    <li>
-                      <a class="link-button" routerLink="/admin/recettes" [queryParams]="categoryRecipesLink(category)" [title]="'Recettes de la catégorie « ' + category.name + ' »'">
-                        <svg lucideList [size]="14"></svg>
-                        <span>Voir les recettes « {{ category.name }} »</span>
-                      </a>
-                    </li>
+                  @if (image.categories.length) {
+                    <a class="link-button" routerLink="/admin/categories" [queryParams]="categoriesLink(image)">
+                      <svg lucideLayoutGrid [size]="14"></svg>
+                      Voir les catégories ({{ image.categories.length }})
+                    </a>
                   }
-                </ul>
+                </div>
               } @else {
                 <span class="badge badge--unused">Non utilisée</span>
               }

@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springdoc.core.annotations.ParameterObject;
@@ -50,10 +51,12 @@ class AdminRecipeController {
 			@RequestParam(required = false) @Nullable String category,
 			@Parameter(description = "Id of one of its ingredients")
 			@RequestParam(required = false) @Nullable Long ingredientId,
+			@Parameter(description = "Id of its photo")
+			@RequestParam(required = false) @Nullable UUID imageId,
 			@RequestParam(required = false) @Nullable RecipeStatus status,
 			@ParameterObject @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
-		return PageResponse.of(recipeService.searchAll(q, category, ingredientId, status, pageable));
+		return PageResponse.of(recipeService.searchAll(q, category, ingredientId, imageId, status, pageable));
 	}
 
 	@Operation(summary = "A recipe, for the edit form")

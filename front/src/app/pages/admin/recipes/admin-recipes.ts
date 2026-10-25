@@ -21,6 +21,7 @@ import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { Pagination } from '../../../shared/ui/pagination/pagination';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
+import { FilterChip } from '../filter-chip/filter-chip';
 import { Selection } from '../selection';
 import { ADMIN_RECIPES_QUERY } from './admin-recipes-query';
 
@@ -40,6 +41,7 @@ const ALL_CATEGORIES = '';
   imports: [
     RouterLink,
     BulkBar,
+    FilterChip,
     Button,
     CoverImage,
     Select,
@@ -61,6 +63,7 @@ export default class AdminRecipes {
   readonly statut = input<string>();
   readonly categorie = input<string>();
   readonly idIngredient = input<string>();
+  readonly photo = input<string>();
   readonly page = input<string>();
 
   private readonly api = inject(Api);
@@ -89,6 +92,8 @@ export default class AdminRecipes {
     const id = Number(this.idIngredient());
     return Number.isInteger(id) && id > 0 ? id : undefined;
   });
+  /** From the gallery: the recipes showing this photo. */
+  protected readonly imageId = computed(() => this.photo() || undefined);
   /** 1-based, as shown and as in the URL. */
   protected readonly currentPage = computed(() => Math.max(1, Math.floor(Number(this.page())) || 1));
   /** What is typed, sent to the URL once the admin pauses. */
@@ -100,6 +105,7 @@ export default class AdminRecipes {
       status: this.status() === 'ALL' ? undefined : (this.status() as 'DRAFT' | 'PUBLISHED'),
       category: this.category() || undefined,
       ingredientId: this.ingredientId(),
+      imageId: this.imageId(),
       page: this.currentPage() - 1,
       size: PAGE_SIZE,
     }),
@@ -123,7 +129,8 @@ export default class AdminRecipes {
       !!this.q()?.trim() ||
       this.status() !== 'ALL' ||
       !!this.category() ||
-      this.ingredientId() !== undefined,
+      this.ingredientId() !== undefined ||
+      this.imageId() !== undefined,
   );
 
   /** Kept from one page of the list to another. */
@@ -170,6 +177,10 @@ export default class AdminRecipes {
 
   protected changeCategory(slug: string | undefined): void {
     this.updateQuery({ [ADMIN_RECIPES_QUERY.category]: slug || null });
+  }
+
+  protected clearImage(): void {
+    this.updateQuery({ [ADMIN_RECIPES_QUERY.image]: null });
   }
 
   protected changeIngredient(id: number | undefined): void {

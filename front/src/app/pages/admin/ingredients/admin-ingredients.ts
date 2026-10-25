@@ -38,6 +38,10 @@ type MergeChoice = { keptId: number } | { newName: string };
   templateUrl: './admin-ingredients.html',
   styleUrl: './admin-ingredients.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'closeHelpOutside($event)',
+    '(document:keydown.escape)': 'helpOpen.set(false)',
+  },
 })
 export default class AdminIngredients {
   private readonly api = inject(Api);
@@ -85,6 +89,13 @@ export default class AdminIngredients {
   protected readonly helpOpen = signal(false);
   protected readonly merging = signal<string | null>(null);
   private readonly choices = signal<ReadonlyMap<string, MergeChoice>>(new Map());
+
+  /** A tap anywhere else closes the tooltip. */
+  protected closeHelpOutside(event: MouseEvent): void {
+    if (this.helpOpen() && !(event.target as Element).closest('.detect')) {
+      this.helpOpen.set(false);
+    }
+  }
 
   protected recipesLink(ingredient: IngredientResponse): Record<string, number> {
     return { [ADMIN_RECIPES_QUERY.ingredientId]: ingredient.id };

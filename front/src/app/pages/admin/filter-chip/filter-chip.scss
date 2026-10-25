@@ -1,0 +1,33 @@
+@use 'mixins' as m;
+
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.thumb {
+  width: 2.25rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.clear {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  color: inherit;
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+}

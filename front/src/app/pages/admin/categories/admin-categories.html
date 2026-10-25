@@ -15,6 +15,10 @@
     <button yonaButton type="submit"><svg lucidePlus></svg>Ajouter</button>
   </form>
 
+  @if (photo(); as image) {
+    <yona-filter-chip label="Catégories avec cette photo" [imageId]="image" (cleared)="clearImage()" />
+  }
+
   @if (categories().length) {
     <yona-bulk-bar
       [count]="selection.size()"

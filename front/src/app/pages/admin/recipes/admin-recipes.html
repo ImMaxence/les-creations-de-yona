@@ -25,6 +25,10 @@
     <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="changeStatus($event)" />
   </div>
 
+  @if (imageId(); as image) {
+    <yona-filter-chip label="Recettes avec cette photo" [imageId]="image" (cleared)="clearImage()" />
+  }
+
   @if (recipes.value(); as result) {
     @if (result.content.length) {
       <yona-bulk-bar

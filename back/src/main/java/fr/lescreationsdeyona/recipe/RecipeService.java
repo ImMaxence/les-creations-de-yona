@@ -58,7 +58,7 @@ public class RecipeService {
 	public Page<RecipeCard> searchPublished(@Nullable String titleQuery, @Nullable String categorySlug,
 			@Nullable String ingredientName, Pageable pageable) {
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, ingredientName, null, RecipeStatus.PUBLISHED),
+			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, ingredientName, null, null, RecipeStatus.PUBLISHED),
 					Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toCard);
 	}
@@ -72,7 +72,7 @@ public class RecipeService {
 
 	public List<RecipeSuggestion> suggestTitles(String titleQuery) {
 		return recipeRepository
-			.findBy(RecipeSpecifications.matching(titleQuery, null, null, null, RecipeStatus.PUBLISHED),
+			.findBy(RecipeSpecifications.matching(titleQuery, null, null, null, null, RecipeStatus.PUBLISHED),
 					query -> query.sortBy(Sort.by("title")).limit(SUGGESTION_LIMIT).all())
 			.stream()
 			.map(recipeMapper::toSuggestion)
@@ -89,9 +89,9 @@ public class RecipeService {
 	// Back-office: every recipe, drafts included.
 
 	public Page<RecipeAdminSummary> searchAll(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable Long ingredientId, @Nullable RecipeStatus status, Pageable pageable) {
+			@Nullable Long ingredientId, @Nullable UUID imageId, @Nullable RecipeStatus status, Pageable pageable) {
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, null, ingredientId, status),
+			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, null, ingredientId, imageId, status),
 					Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toAdminSummary);
 	}

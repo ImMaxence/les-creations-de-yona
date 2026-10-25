@@ -2,6 +2,8 @@
 
 .editor {
   display: grid;
+  // Children may shrink below their content's width: nothing widens the page on phones
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   padding-bottom: var(--space-4);
 }
@@ -296,6 +298,13 @@ yona-select {
 // Pushes the save button to the right, next to it
 .editor__preview {
   margin-left: auto;
+}
+
+// Phones: the back-office tabs above already lead back to the list, the bar keeps its two actions
+.editor__back {
+  @include m.below(sm) {
+    display: none;
+  }
 }
 
 // Full-screen preview, scrolled on its own

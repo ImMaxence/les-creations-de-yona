@@ -179,7 +179,7 @@
   <yona-field-error [field]="recipeForm.parts" />
 
   <div class="editor__bar">
-    <a yonaButton variant="ghost" routerLink="/admin/recettes">Retour à la liste</a>
+    <a yonaButton variant="ghost" class="editor__back" routerLink="/admin/recettes">Retour à la liste</a>
     <button yonaButton variant="secondary" type="button" class="editor__preview" [disabled]="previewing()" (click)="openPreview()">
       <svg lucideEye></svg>Aperçu
     </button>

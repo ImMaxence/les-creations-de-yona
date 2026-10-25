@@ -13,7 +13,7 @@
 	<groupId>fr.lescreationsdeyona</groupId>
 	<artifactId>back</artifactId>
 	<!-- Semantic version, shown in the back-office: bump it with front/package.json at each release. -->
-	<version>1.2.1</version>
+	<version>1.2.2</version>
 	<name>back</name>
 	<description>API of the Les créations de Yona cooking blog</description>
 
