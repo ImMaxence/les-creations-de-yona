@@ -2,25 +2,26 @@
 
 Blog de cuisine : recettes, catégories, recherche. Projet monorepo.
 
-Dernière mise à jour : 2026-10-22.
+Dernière mise à jour : 2026-10-25.
 
 ## Périmètre v1
 
 ### Pages publiques
 
 - Accueil (`/`) :
-  - Recette à la une : grande card en haut (image, titre, catégorie). Champ `featured`, une seule à la fois ; si aucune, la plus récente publiée.
+  - Recette à la une : grande card en haut (image, titre, catégories). Champ `featured`, une seule à la fois ; si aucune, la plus récente publiée.
   - À propos : présentation de l'auteur, texte court, photo en dur dans le projet Angular.
   - Les 3 dernières recettes, toutes catégories confondues, bouton « Voir plus » vers `/recettes`.
   - Toutes les catégories, avec image, cliquables vers `/recettes?categorie={slug}`.
 - Recettes (`/recettes`) :
-  - Grille de cards de même taille : image, date de création, titre (tronqué avec ellipsis), catégorie.
-  - Filtre par catégorie, barre de recherche avec autocomplétion sur le titre.
+  - Grille de cards de même taille : image, date de création, titre (tronqué avec ellipsis), catégories.
+  - Filtre par catégorie (une recette apparaît dans chacune de ses catégories), barre de recherche avec autocomplétion sur le titre.
   - Pagination numérotée, nombre d'éléments par page au choix.
 - Recette (`/recettes/{slug-categorie}/{slug-recette}`) :
-  - Header : image pleine largeur, titre et catégorie superposés sur un dégradé noir qui part du bas de l'image, bouton « Retour » en haut à gauche (page précédente du site, sinon la catégorie de la recette), bouton « Partager » en haut à droite (feuille de partage du téléphone, sinon lien copié).
+  - Header : image pleine largeur, titre et catégories superposés sur un dégradé noir qui part du bas de l'image, bouton « Retour » en haut à gauche (page précédente du site, sinon la catégorie principale de la recette), bouton « Partager » en haut à droite (feuille de partage du téléphone, sinon lien copié).
   - Temps, et difficulté de 1 à 5 étoiles par demi-étoile (facultative).
   - Ingrédients, étapes, vidéo YouTube en bas de page si la recette en a une (chargée seulement au clic), date de dernière mise à jour.
+  - Recette en parties (la pâte, la garniture…) : la liste « Ingrédients » est le total de toutes les parties (quantités d'une même unité additionnées, parties concernées indiquées sous chaque ingrédient), puis « Préparation » détaille chaque partie (ses ingrédients et ses étapes), avec un sommaire cliquable des parties.
 - Erreurs : 404 (URL inconnue, recette introuvable ou en brouillon) et erreur serveur.
 - Installer l'application (`/installer`) : bouton d'installation quand le navigateur le propose, guide pas à pas pour iPhone/iPad, Android et ordinateur.
 
@@ -40,7 +41,7 @@ Dernière mise à jour : 2026-10-22.
 
 - Accès réservé à 2 admins via Google, pas de création de compte.
 - Entrée : lien « Espace admin » du footer, visible de tous (l'application installée n'a pas de barre d'adresse pour taper `/admin`). Un visiteur qui le suit arrive sur la connexion Google, puis sur la page d'accès refusé. Pages jamais indexées.
-- Recettes : liste paginée (20 par page), les dernières modifiées en premier, recherche et statut dans l'URL ; création, modification, publication ou brouillon, suppression. Catégorie créable depuis le formulaire de la recette. Ingrédients proposés pendant la saisie, les plus utilisés en premier.
+- Recettes : liste paginée (20 par page), les dernières modifiées en premier, recherche et statut dans l'URL ; création, modification, publication ou brouillon, suppression. Plusieurs catégories par recette (puces à cocher), dont une principale ; catégorie créable depuis le formulaire de la recette. Parties facultatives (« Découper en parties ») : titre, ingrédients et étapes par partie, ingrédients et étapes déplaçables d'une partie à l'autre par glisser-déposer. Ingrédients proposés pendant la saisie, les plus utilisés en premier.
 - Catégories, ingrédients (modifier, supprimer), réseaux sociaux.
 - Galerie : toutes les photos envoyées, gardées même une fois remplacées. Filtres « Utilisées / Non utilisées » et type d'envoi, suppression. Une photo de la galerie peut être remise sur une recette ou une catégorie (« Choisir dans la galerie »).
 - Apparence : thème de couleurs (5 thèmes, chacun en version claire et sombre), police des titres et police du texte (5 chacune), arrondi des coins de 0 à 999 px. Aperçu immédiat sur tout le site, visible des visiteurs une fois enregistré.
@@ -220,10 +221,12 @@ Cloudflare (offre gratuite, proxy seulement) :
 - `site_theme` : une seule ligne (id = 1) : preset (thème de couleurs), display_font, body_font, radius_px (0 à 999), updated_at, updated_by.
 - `image` : kind (envoyée pour une recette ou une catégorie), s3_prefix (`recipes/{uuid}/` ou `categories/{uuid}/`), created_at. Filtrable par type et par utilisation dans la galerie.
 - `category` : name, slug (unique), image_id (facultatif, vers `image`).
-- `recipe` : title, slug (unique), intro, status (publiée ou brouillon), category_id, servings, prep_minutes, cook_minutes, difficulty (1 à 5 par demi-points, facultative), youtube_video_id (identifiant de 11 caractères, facultatif), image_id (facultatif, vers `image`), featured (booléen), created_at, updated_at (timestamptz, UTC), created_by, updated_by (email de l'admin, texte).
+- `recipe` : title, slug (unique), intro, status (publiée ou brouillon), servings, prep_minutes, cook_minutes, difficulty (1 à 5 par demi-points, facultative), youtube_video_id (identifiant de 11 caractères, facultatif), image_id (facultatif, vers `image`), featured (booléen), created_at, updated_at (timestamptz, UTC), created_by, updated_by (email de l'admin, texte).
+- `recipe_category` : recipe_id, category_id, position. Clé primaire (recipe_id, position), (recipe_id, category_id) unique. Position 0 : catégorie principale.
+- `recipe_part` : recipe_id, position, title (facultatif). Au moins une par recette : une recette sans parties en a une seule, sans titre.
 - `ingredient` : name (unique).
-- `recipe_ingredient` : recipe_id, ingredient_id, quantity, unit, note, position. Clé primaire (recipe_id, ingredient_id).
-- `recipe_step` : recipe_id, position, description, duration_minutes.
+- `recipe_ingredient` : part_id, ingredient_id, quantity, unit, note, position. Clé primaire (part_id, ingredient_id) : un ingrédient une fois par partie, mais possible dans plusieurs parties d'une recette.
+- `recipe_step` : part_id, position, description, duration_minutes.
 
 ## Décisions
 
@@ -289,13 +292,17 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 ### Recettes
 
-- Création : titre, catégorie, au moins 1 ingrédient et au moins 1 étape obligatoires. Image facultative.
+- Création : titre, au moins 1 catégorie, au moins 1 ingrédient et au moins 1 étape obligatoires. Image facultative.
+- Majuscule : la première lettre du titre d'une recette, du nom d'une catégorie et du titre d'une partie est mise en majuscule par le backend, à la création comme à la modification (`Texts.capitalizeFirstLetter`).
+- Catégories multiples (10 au plus, chacune une fois). La première est la catégorie principale : elle figure dans l'URL, le bouton « Retour » et le lien « Plus de recettes ». Changer de catégorie principale change l'URL ; l'ancienne redirige en 301 vers la nouvelle.
+- Parties facultatives (10 au plus) : avec plusieurs parties, chacune a un titre et au moins un ingrédient ou une étape ; la recette garde au moins 1 ingrédient et 1 étape au total. Les parties sont réécrites à chaque enregistrement (contraintes de position différées).
 - Statut : publiée ou brouillon. Un brouillon n'est visible que dans le back-office.
 - Recette à la une (`featured`) : une seule à la fois, uniquement sur une recette publiée. Cocher une recette décoche l'ancienne, dans la même transaction.
 - Champs optionnels : portions, temps de préparation et de cuisson, difficulté, vidéo YouTube, durée d'une étape.
 - Difficulté : de 1 à 5 par demi-points (1, 1,5 … 5), affichée en étoiles. Vérifiée par le formulaire, le service et une contrainte CHECK.
 - Vidéo : l'admin colle un lien YouTube (`watch?v=`, `youtu.be`, `shorts`, `embed`, `live`), le backend n'en garde que l'identifiant. Sur le site, la photo de la recette tient lieu de lecteur : rien n'est chargé depuis YouTube avant le clic, puis le lecteur vient de `youtube-nocookie.com` (seule origine autorisée en `frame-src` par la CSP). Mentionné dans la politique de confidentialité.
-- Ingrédients structurés (table dédiée + table de liaison), pas de texte ou HTML libre. Quantité et unité optionnelles, unité en texte libre. Unicité insensible à la casse et aux accents. Suppression bloquée si l'ingrédient est utilisé.
+- Ingrédients structurés (table dédiée + table de liaison), pas de texte ou HTML libre. Quantité et unité optionnelles, unité en texte libre. Unicité insensible à la casse et aux accents. Suppression bloquée si l'ingrédient est utilisé. Nombre de recettes d'un ingrédient : recettes distinctes, même s'il apparaît dans plusieurs parties.
+- Total des ingrédients (page recette, JSON-LD) : calculé par le front (`pages/recipe/recipe-parts.ts`), quantités de même unité additionnées (casse ignorée), unités différentes juxtaposées (« 150 g + 1 c. à soupe »), puis ajusté aux portions choisies comme les quantités de chaque partie.
 - Étapes en texte ou Markdown rendu côté Angular, jamais de HTML brut en base.
 - Ordre des ingrédients et des étapes : glisser-déposer dans le back-office.
 - Slug : généré depuis le titre, suffixe numérique en cas de doublon. Pas de timestamp.
@@ -312,7 +319,7 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 ### Affichage et SEO
 
-- URL des recettes SEO friendly : `/recettes/{slug-categorie}/{slug-recette}`.
+- URL des recettes SEO friendly : `/recettes/{slug-categorie-principale}/{slug-recette}`. JSON-LD : `recipeCategory` liste toutes les catégories, `recipeInstructions` en `HowToSection` (une par partie) pour une recette en parties.
 - Clic sur une catégorie : la page recettes s'ouvre pré-filtrée (`/recettes?categorie={slug}`).
 - Recette sans image : visuel par défaut côté Angular.
 - Accueil : JSON-LD `Person` pour l'auteur, pour compenser l'absence de page à propos dédiée.
@@ -386,6 +393,7 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Thème par déf
 - [x] front : bouton « Retour » sur la page recette
 - [x] versions du front et du backend affichées dans le back-office
 - [x] recettes : difficulté en étoiles, vidéo YouTube, bouton « Partager » ; accueil limité aux 3 dernières recettes
+- [x] recettes : parties facultatives (ingrédients et étapes par partie, total des ingrédients), catégories multiples, majuscule automatique (migration V4)
 
 ## Points ouverts
 

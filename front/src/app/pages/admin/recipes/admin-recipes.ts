@@ -10,6 +10,7 @@ import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/sear
 import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
+import { categoryNames } from '../../../shared/format/categories';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { recipeLink } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
@@ -54,6 +55,7 @@ export default class AdminRecipes {
   private readonly confirm = inject(Confirm);
   private readonly toaster = inject(Toaster);
 
+  protected readonly categoryNames = categoryNames;
   protected readonly statusOptions: SelectOption<StatusFilter>[] = [
     { value: 'ALL', label: 'Tous les statuts' },
     { value: 'PUBLISHED', label: 'Publiées' },

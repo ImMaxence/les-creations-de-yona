@@ -54,11 +54,16 @@
   text-align: center;
 }
 
+// Every category of the recipe on one line: cards of a grid keep the same height
 .card__category {
+  max-width: 100%;
+  overflow: hidden;
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--color-accent);
 }
 

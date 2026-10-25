@@ -27,7 +27,12 @@ public enum ErrorCode {
 	// Recipes
 	RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "Recette introuvable."),
 	FEATURED_RECIPE_MUST_BE_PUBLISHED(HttpStatus.BAD_REQUEST, "Seule une recette publiée peut être mise à la une."),
-	DUPLICATE_RECIPE_INGREDIENT(HttpStatus.BAD_REQUEST, "Un même ingrédient apparaît plusieurs fois dans la recette."),
+	DUPLICATE_RECIPE_INGREDIENT(HttpStatus.BAD_REQUEST, "Un même ingrédient apparaît plusieurs fois dans une même partie de la recette."),
+	DUPLICATE_RECIPE_CATEGORY(HttpStatus.BAD_REQUEST, "Une même catégorie est choisie plusieurs fois."),
+	RECIPE_INGREDIENT_REQUIRED(HttpStatus.BAD_REQUEST, "La recette doit avoir au moins un ingrédient."),
+	RECIPE_STEP_REQUIRED(HttpStatus.BAD_REQUEST, "La recette doit avoir au moins une étape."),
+	RECIPE_PART_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "Quand la recette a plusieurs parties, chacune doit avoir un titre."),
+	RECIPE_PART_EMPTY(HttpStatus.BAD_REQUEST, "Chaque partie doit avoir au moins un ingrédient ou une étape."),
 	DIFFICULTY_NOT_HALF_POINT(HttpStatus.BAD_REQUEST, "La difficulté va de 1 à 5, par demi-points (2,5 par exemple)."),
 	VIDEO_URL_INVALID(HttpStatus.BAD_REQUEST, "Ce lien n'est pas une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…)."),
 

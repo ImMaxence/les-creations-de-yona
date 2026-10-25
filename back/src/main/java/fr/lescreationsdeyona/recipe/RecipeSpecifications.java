@@ -22,7 +22,8 @@ final class RecipeSpecifications {
 			criteria.add((recipe, query, cb) -> cb.equal(recipe.get("status"), status));
 		}
 		if (StringUtils.hasText(categorySlug)) {
-			criteria.add((recipe, query, cb) -> cb.equal(recipe.get("category").get("slug"), categorySlug));
+			// One row per recipe: a recipe is in a category once at most.
+			criteria.add((recipe, query, cb) -> cb.equal(recipe.join("categories").get("slug"), categorySlug));
 		}
 		if (StringUtils.hasText(titleQuery)) {
 			criteria.add(titleContains(titleQuery.strip()));

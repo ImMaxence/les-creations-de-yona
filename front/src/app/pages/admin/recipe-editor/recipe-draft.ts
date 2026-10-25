@@ -8,7 +8,8 @@ export interface RecipeDraft {
   intro: string;
   status: 'DRAFT' | 'PUBLISHED';
   featured: boolean;
-  categoryId: number | null;
+  /** The first one is the main category, in the recipe URL. */
+  categoryIds: number[];
   servings: number | null;
   prepMinutes: number | null;
   cookMinutes: number | null;
@@ -16,6 +17,13 @@ export interface RecipeDraft {
   difficulty: number | null;
   /** YouTube link as pasted by the admin. */
   videoUrl: string;
+  /** A recipe without parts has a single one, untitled. */
+  parts: PartDraft[];
+}
+
+/** The dough, the filling…: its own ingredients and steps. */
+export interface PartDraft {
+  title: string;
   ingredients: IngredientDraft[];
   steps: StepDraft[];
 }
@@ -30,6 +38,10 @@ export interface IngredientDraft {
 export interface StepDraft {
   description: string;
   durationMinutes: number | null;
+}
+
+export function emptyPart(): PartDraft {
+  return { title: '', ingredients: [emptyIngredient()], steps: [emptyStep()] };
 }
 
 export function emptyIngredient(): IngredientDraft {
@@ -47,14 +59,13 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       intro: '',
       status: 'DRAFT',
       featured: false,
-      categoryId: null,
+      categoryIds: [],
       servings: null,
       prepMinutes: null,
       cookMinutes: null,
       difficulty: null,
       videoUrl: '',
-      ingredients: [emptyIngredient()],
-      steps: [emptyStep()],
+      parts: [emptyPart()],
     };
   }
   return {
@@ -62,21 +73,24 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
     intro: recipe.intro ?? '',
     status: recipe.status,
     featured: recipe.featured,
-    categoryId: recipe.category.id,
+    categoryIds: recipe.categories.map((category) => category.id),
     servings: recipe.servings ?? null,
     prepMinutes: recipe.prepMinutes ?? null,
     cookMinutes: recipe.cookMinutes ?? null,
     difficulty: recipe.difficulty ?? null,
     videoUrl: recipe.youtubeVideoId ? youtubeUrl(recipe.youtubeVideoId) : '',
-    ingredients: recipe.ingredients.map((line) => ({
-      name: line.name,
-      quantity: line.quantity ?? null,
-      unit: line.unit ?? '',
-      note: line.note ?? '',
-    })),
-    steps: recipe.steps.map((step) => ({
-      description: step.description,
-      durationMinutes: step.durationMinutes ?? null,
+    parts: recipe.parts.map((part) => ({
+      title: part.title ?? '',
+      ingredients: part.ingredients.map((line) => ({
+        name: line.name,
+        quantity: line.quantity ?? null,
+        unit: line.unit ?? '',
+        note: line.note ?? '',
+      })),
+      steps: part.steps.map((step) => ({
+        description: step.description,
+        durationMinutes: step.durationMinutes ?? null,
+      })),
     })),
   };
 }
@@ -88,21 +102,24 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
     intro: blankToUndefined(draft.intro),
     status: draft.status,
     featured: draft.featured && draft.status === 'PUBLISHED',
-    categoryId: draft.categoryId!,
+    categoryIds: draft.categoryIds,
     servings: draft.servings ?? undefined,
     prepMinutes: draft.prepMinutes ?? undefined,
     cookMinutes: draft.cookMinutes ?? undefined,
     difficulty: draft.difficulty ?? undefined,
     videoUrl: blankToUndefined(draft.videoUrl),
-    ingredients: draft.ingredients.map((line) => ({
-      name: line.name.trim(),
-      quantity: line.quantity ?? undefined,
-      unit: blankToUndefined(line.unit),
-      note: blankToUndefined(line.note),
-    })),
-    steps: draft.steps.map((step) => ({
-      description: step.description.trim(),
-      durationMinutes: step.durationMinutes ?? undefined,
+    parts: draft.parts.map((part) => ({
+      title: blankToUndefined(part.title),
+      ingredients: part.ingredients.map((line) => ({
+        name: line.name.trim(),
+        quantity: line.quantity ?? undefined,
+        unit: blankToUndefined(line.unit),
+        note: blankToUndefined(line.note),
+      })),
+      steps: part.steps.map((step) => ({
+        description: step.description.trim(),
+        durationMinutes: step.durationMinutes ?? undefined,
+      })),
     })),
   };
 }
@@ -119,12 +136,19 @@ function blankToUndefined(text: string): string | undefined {
   return text.trim() || undefined;
 }
 
-/** Same rules as the API (RecipeForm on the backend), checked before sending. */
+/** Same comparison as the API: "Crème" and "creme" are the same ingredient. */
+function ingredientKey(name: string): string {
+  return name.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('fr').trim();
+}
+
+/** Same rules as the API (RecipeForm and RecipeService on the backend), checked before sending. */
 export const recipeSchema = schema<RecipeDraft>((recipe) => {
   required(recipe.title, { message: 'Donnez un titre à la recette.' });
   maxLength(recipe.title, 150, { message: '150 caractères au maximum.' });
   maxLength(recipe.intro, 1000, { message: '1 000 caractères au maximum.' });
-  required(recipe.categoryId, { message: 'Choisissez une catégorie.' });
+  validate(recipe.categoryIds, ({ value }) =>
+    value().length === 0 ? { kind: 'noCategory', message: 'Choisissez au moins une catégorie.' } : undefined,
+  );
   min(recipe.servings, 1, { message: 'Au moins 1 portion.' });
   min(recipe.prepMinutes, 0, { message: 'Durée positive.' });
   min(recipe.cookMinutes, 0, { message: 'Durée positive.' });
@@ -142,23 +166,52 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
       : undefined,
   );
 
-  validate(recipe.ingredients, ({ value }) =>
-    value().length === 0 ? { kind: 'noIngredient', message: 'Ajoutez au moins un ingrédient.' } : undefined,
-  );
-  applyEach(recipe.ingredients, (line) => {
-    required(line.name, { message: "Nom de l'ingrédient obligatoire." });
-    maxLength(line.name, 100, { message: '100 caractères au maximum.' });
-    min(line.quantity, 0.01, { message: 'Quantité positive.' });
-    maxLength(line.unit, 30, { message: '30 caractères au maximum.' });
-    maxLength(line.note, 200, { message: '200 caractères au maximum.' });
+  // At least one ingredient and one step in the whole recipe, whatever the part
+  validate(recipe.parts, ({ value }) => {
+    if (value().every((part) => part.ingredients.length === 0)) {
+      return { kind: 'noIngredient', message: 'Ajoutez au moins un ingrédient.' };
+    }
+    if (value().every((part) => part.steps.length === 0)) {
+      return { kind: 'noStep', message: 'Ajoutez au moins une étape.' };
+    }
+    return undefined;
   });
+  applyEach(recipe.parts, (part) => {
+    validate(part.title, ({ value, valueOf }) =>
+      valueOf(recipe.parts).length > 1 && !value().trim()
+        ? { kind: 'partTitle', message: 'Donnez un titre à cette partie (la pâte, la garniture…).' }
+        : undefined,
+    );
+    maxLength(part.title, 100, { message: '100 caractères au maximum.' });
+    validate(part, ({ value }) =>
+      value().ingredients.length === 0 && value().steps.length === 0
+        ? { kind: 'emptyPart', message: 'Ajoutez un ingrédient ou une étape à cette partie.' }
+        : undefined,
+    );
 
-  validate(recipe.steps, ({ value }) =>
-    value().length === 0 ? { kind: 'noStep', message: 'Ajoutez au moins une étape.' } : undefined,
-  );
-  applyEach(recipe.steps, (step) => {
-    required(step.description, { message: "Décrivez l'étape." });
-    maxLength(step.description, 5000, { message: '5 000 caractères au maximum.' });
-    min(step.durationMinutes, 1, { message: 'Au moins 1 minute.' });
+    // An ingredient once per part; another part may list it again
+    validate(part.ingredients, ({ value }) => {
+      const seen = new Set<string>();
+      const repeated = value().find((line) => {
+        const key = ingredientKey(line.name);
+        return key !== '' && (seen.has(key) || !seen.add(key));
+      });
+      return repeated
+        ? { kind: 'duplicateIngredient', message: `« ${repeated.name.trim()} » apparaît deux fois dans cette partie.` }
+        : undefined;
+    });
+    applyEach(part.ingredients, (line) => {
+      required(line.name, { message: "Nom de l'ingrédient obligatoire." });
+      maxLength(line.name, 100, { message: '100 caractères au maximum.' });
+      min(line.quantity, 0.01, { message: 'Quantité positive.' });
+      maxLength(line.unit, 30, { message: '30 caractères au maximum.' });
+      maxLength(line.note, 200, { message: '200 caractères au maximum.' });
+    });
+
+    applyEach(part.steps, (step) => {
+      required(step.description, { message: "Décrivez l'étape." });
+      maxLength(step.description, 5000, { message: '5 000 caractères au maximum.' });
+      min(step.durationMinutes, 1, { message: 'Au moins 1 minute.' });
+    });
   });
 });

@@ -18,4 +18,16 @@ public final class Texts {
 		return DIACRITICS.matcher(Normalizer.normalize(lowerCase, Normalizer.Form.NFD)).replaceAll("");
 	}
 
+	/** "éclair au café" becomes "Éclair au café", "« tarte »" becomes "« Tarte »"; "3 chocolats" stays. */
+	public static String capitalizeFirstLetter(String text) {
+		for (int index = 0; index < text.length(); index += Character.charCount(text.codePointAt(index))) {
+			int codePoint = text.codePointAt(index);
+			if (Character.isLetterOrDigit(codePoint)) {
+				return text.substring(0, index) + Character.toString(Character.toTitleCase(codePoint))
+						+ text.substring(index + Character.charCount(codePoint));
+			}
+		}
+		return text;
+	}
+
 }

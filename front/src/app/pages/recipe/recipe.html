@@ -11,7 +11,7 @@
     <!-- A real link (works without JavaScript, and when the page was opened directly);
          within the site, goes back in the history, to the exact list and scroll position left -->
     <div class="container hero__top">
-      <a class="pill enter" [routerLink]="recipesPath" [queryParams]="categoryQueryParams(recipe().category)" (click)="goBack($event)">
+      <a class="pill enter" [routerLink]="recipesPath" [queryParams]="categoryQueryParams(mainCategory())" (click)="goBack($event)">
         <svg lucideArrowLeft [size]="18"></svg>
         Retour
       </a>
@@ -24,9 +24,12 @@
       <nav class="breadcrumb enter" aria-label="Fil d'Ariane">
         <a [routerLink]="recipesPath">Recettes</a>
         <span aria-hidden="true">/</span>
-        <a [routerLink]="recipesPath" [queryParams]="categoryQueryParams(recipe().category)">{{
-          recipe().category.name
-        }}</a>
+        @for (category of recipe().categories; track category.id; let last = $last) {
+          <a [routerLink]="recipesPath" [queryParams]="categoryQueryParams(category)">{{ category.name }}</a>
+          @if (!last) {
+            <span aria-hidden="true">·</span>
+          }
+        }
       </nav>
       <h1 class="hero__title enter" style="--delay: 100ms">{{ recipe().title }}</h1>
     </div>
@@ -72,10 +75,44 @@
 
     <div class="layout">
       <section class="layout__ingredients" yonaReveal aria-labelledby="ingredients-title">
-        <yona-recipe-ingredients [ingredients]="recipe().ingredients" [servings]="recipe().servings" />
+        <yona-recipe-ingredients [lines]="ingredients()" [(servings)]="servings" [partCount]="parts().length" />
       </section>
-      <section aria-labelledby="steps-title">
-        <yona-recipe-steps [steps]="recipe().steps" />
+
+      <section class="preparation" aria-labelledby="steps-title">
+        <h2 id="steps-title" class="preparation__title" yonaReveal>Préparation</h2>
+        @if (hasParts()) {
+          <!-- Same page: replaces the history entry, so that "Retour" still leaves the recipe -->
+          <nav class="parts-nav" aria-label="Parties de la recette" yonaReveal>
+            @for (part of parts(); track $index; let i = $index) {
+              <a class="parts-nav__link" [routerLink]="[]" [fragment]="part.anchor" replaceUrl>
+                <span class="parts-nav__number" aria-hidden="true">{{ i + 1 }}</span>
+                {{ part.title }}
+              </a>
+            }
+          </nav>
+
+          @for (part of parts(); track $index; let i = $index) {
+            <section class="part" [id]="part.anchor" [attr.aria-labelledby]="part.anchor + '-title'">
+              <header class="part__head" yonaReveal>
+                <p class="eyebrow">Partie {{ i + 1 }} sur {{ parts().length }}</p>
+                <h3 class="part__title" [id]="part.anchor + '-title'">{{ part.title }}</h3>
+              </header>
+              @if (part.ingredients.length) {
+                <div class="part__ingredients" yonaReveal>
+                  <h4 class="part__subtitle">Ingrédients</h4>
+                  <yona-ingredient-list [lines]="part.ingredients" />
+                </div>
+              }
+              @if (part.steps.length) {
+                <yona-recipe-steps [steps]="part.steps" />
+              }
+            </section>
+          }
+        } @else {
+          @for (part of parts(); track $index) {
+            <yona-recipe-steps [steps]="part.steps" />
+          }
+        }
       </section>
     </div>
 
@@ -95,9 +132,9 @@
         yonaButton
         variant="secondary"
         [routerLink]="recipesPath"
-        [queryParams]="categoryQueryParams(recipe().category)"
+        [queryParams]="categoryQueryParams(mainCategory())"
       >
-        Plus de recettes : {{ recipe().category.name }}
+        Plus de recettes : {{ mainCategory().name }}
         <svg lucideArrowRight></svg>
       </a>
     </footer>

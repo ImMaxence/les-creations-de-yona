@@ -3,7 +3,11 @@
 
 import { CategoryResponse } from '../models/category-response';
 export interface RecipeAdminSummary {
-  category: CategoryResponse;
+
+  /**
+   * At least one; the first one is the main category, in the recipe URL
+   */
+  categories: Array<CategoryResponse>;
   featured: boolean;
   id: number;
   slug: string;

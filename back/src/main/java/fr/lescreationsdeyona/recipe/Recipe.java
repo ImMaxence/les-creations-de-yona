@@ -3,9 +3,7 @@ package fr.lescreationsdeyona.recipe;
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.image.Image;
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
@@ -14,6 +12,9 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
@@ -50,9 +51,6 @@ public class Recipe {
 	@Enumerated(EnumType.STRING)
 	private RecipeStatus status;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	private Category category;
-
 	private Integer servings;
 
 	private Integer prepMinutes;
@@ -70,16 +68,20 @@ public class Recipe {
 	private boolean featured;
 
 	// Collections are modified in place: replacing them would break orphan removal.
+
+	/** At least one; the first one is the main category, in the URL of the recipe. */
+	@Setter(AccessLevel.NONE)
+	@ManyToMany
+	@JoinTable(name = "recipe_category", joinColumns = @JoinColumn(name = "recipe_id"),
+			inverseJoinColumns = @JoinColumn(name = "category_id"))
+	@OrderColumn(name = "position")
+	private List<Category> categories = new ArrayList<>();
+
+	/** At least one: a recipe without parts has a single, untitled one. */
 	@Setter(AccessLevel.NONE)
 	@OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("position")
-	private List<RecipeIngredient> ingredients = new ArrayList<>();
-
-	@Setter(AccessLevel.NONE)
-	@ElementCollection
-	@CollectionTable(name = "recipe_step")
-	@OrderColumn(name = "position")
-	private List<RecipeStep> steps = new ArrayList<>();
+	private List<RecipePart> parts = new ArrayList<>();
 
 	@CreatedDate
 	@Column(updatable = false)
@@ -94,5 +96,10 @@ public class Recipe {
 
 	@LastModifiedBy
 	private String updatedBy;
+
+	/** In the URL of the recipe: /recettes/{main category slug}/{recipe slug}. */
+	public Category getMainCategory() {
+		return categories.getFirst();
+	}
 
 }

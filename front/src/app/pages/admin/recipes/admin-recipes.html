@@ -30,7 +30,7 @@
                 @if (recipe.featured) {
                   <span class="badge badge--featured"><svg lucideStar [size]="12"></svg>À la une</span>
                 }
-                <span>{{ recipe.category.name }}</span>
+                <span>{{ categoryNames(recipe.categories) }}</span>
                 <span>· modifiée le {{ recipe.updatedAt | parisDate }}</span>
               </span>
             </div>

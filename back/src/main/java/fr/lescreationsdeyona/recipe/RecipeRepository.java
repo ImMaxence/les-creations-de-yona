@@ -17,7 +17,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 
 	boolean existsBySlug(String slug);
 
-	boolean existsByCategoryId(long categoryId);
+	boolean existsByCategoriesId(long categoryId);
 
 	/** Unfeatures every recipe but {@code keptId} (all of them when null). */
 	@Modifying(flushAutomatically = true)

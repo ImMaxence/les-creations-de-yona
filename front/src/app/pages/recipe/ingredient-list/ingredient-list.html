@@ -1,0 +1,29 @@
+<ul role="list" class="list">
+  @for (line of lines(); track $index; let i = $index) {
+    <li>
+      <label class="ingredient" [class.is-checked]="checked().has(i)">
+        <input type="checkbox" class="visually-hidden" [checked]="checked().has(i)" (change)="toggle(i)" />
+        <span class="checkbox" aria-hidden="true">
+          <svg lucideCheck [size]="14" [strokeWidth]="3"></svg>
+        </span>
+        <span class="ingredient__text">
+          @if (line.amount) {
+            <strong>{{ line.amount }}</strong>
+          }
+          {{ line.name }}
+          @if (line.note) {
+            <span class="ingredient__note">{{ line.note }}</span>
+          }
+          @if (line.parts.length) {
+            <span class="ingredient__parts">
+              <span class="visually-hidden">Dans :</span>
+              @for (part of line.parts; track part) {
+                <span class="ingredient__part">{{ part }}</span>
+              }
+            </span>
+          }
+        </span>
+      </label>
+    </li>
+  }
+</ul>

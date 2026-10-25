@@ -4,14 +4,9 @@
   display: block;
 }
 
-h2 {
-  font-size: var(--text-2xl);
-}
-
 .list {
   display: grid;
   gap: var(--space-6);
-  margin-top: var(--space-5);
 }
 
 .step {

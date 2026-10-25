@@ -44,7 +44,7 @@ async function fetchPublishedRecipes(origin: string): Promise<RecipeCard[]> {
 
 /** Indexable pages only: no search results, no empty category (both are noindex). */
 function sitemapPaths(recipes: RecipeCard[]): string[] {
-  const categories = new Set(recipes.map((recipe) => recipe.category.slug));
+  const categories = new Set(recipes.flatMap((recipe) => recipe.categories.map((category) => category.slug)));
   return [
     ...STATIC_PATHS,
     ...[...categories].map(

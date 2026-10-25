@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { RouterLink } from '@angular/router';
 import { LucideArrowRight } from '@lucide/angular';
 import { SiteData } from '../../core/site/site-data';
+import { categoryNames } from '../../shared/format/categories';
 import { Reveal } from '../../shared/motion/reveal';
 import { RECIPE_IMAGE_TRANSITION, isSameTabClick } from '../../shared/motion/view-transitions';
 import { RECIPES_PATH, categoryQueryParams, recipeLink } from '../../shared/routing/links';
@@ -28,6 +29,7 @@ export default class Home {
   });
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;
+  protected readonly categoryNames = categoryNames;
   protected readonly featuredTransition = signal<string | null>(null);
 
   protected onFeaturedClick(event: MouseEvent): void {

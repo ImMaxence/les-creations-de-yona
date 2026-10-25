@@ -3,7 +3,11 @@
 
 import { CategoryResponse } from '../models/category-response';
 export interface RecipeCard {
-  category: CategoryResponse;
+
+  /**
+   * At least one; the first one is the main category, in the recipe URL
+   */
+  categories: Array<CategoryResponse>;
   createdAt: string;
   imageId?: string;
   slug: string;

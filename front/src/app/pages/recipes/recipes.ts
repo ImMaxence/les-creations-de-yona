@@ -53,7 +53,7 @@ export default class Recipes {
   }
 
   protected openRecipe(suggestion: RecipeSuggestion): void {
-    this.router.navigate(recipeLink({ slug: suggestion.slug, category: { slug: suggestion.categorySlug } }));
+    this.router.navigate(recipeLink({ slug: suggestion.slug, categories: [{ slug: suggestion.categorySlug }] }));
   }
 
   protected changePageSize(pageSize: number | undefined): void {

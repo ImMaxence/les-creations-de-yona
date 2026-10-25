@@ -1,8 +1,10 @@
 package fr.lescreationsdeyona.recipe;
 
+import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.category.CategoryRepository;
 import fr.lescreationsdeyona.common.Pageables;
 import fr.lescreationsdeyona.common.Slugs;
+import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageKind;
@@ -28,6 +30,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -141,6 +144,10 @@ public class RecipeService {
 
 	/** The slug is set at creation only: renaming a recipe keeps its URL. */
 	private void apply(RecipeForm form, Recipe recipe) {
+		// Read and checked before any change to the entity: the queries involved flush pending changes,
+		// which must not include a half-applied form.
+		List<Category> categories = categories(form.categoryIds());
+		List<RecipePart> parts = parts(recipe, form.parts());
 		if (form.featured()) {
 			if (form.status() != RecipeStatus.PUBLISHED) {
 				throw new ApiException(ErrorCode.FEATURED_RECIPE_MUST_BE_PUBLISHED);
@@ -149,20 +156,70 @@ public class RecipeService {
 			// featured recipe, which the database would reject.
 			recipeRepository.unfeatureAllExcept(recipe.getId());
 		}
-		recipe.setTitle(form.title().strip());
+		recipe.setTitle(Texts.capitalizeFirstLetter(form.title().strip()));
 		recipe.setIntro(form.intro());
 		recipe.setStatus(form.status());
 		recipe.setFeatured(form.featured());
-		recipe.setCategory(categoryRepository.findById(form.categoryId())
-			.orElseThrow(() -> new ApiException(ErrorCode.CATEGORY_NOT_FOUND)));
+		recipe.getCategories().clear();
+		recipe.getCategories().addAll(categories);
 		recipe.setServings(form.servings());
 		recipe.setPrepMinutes(form.prepMinutes());
 		recipe.setCookMinutes(form.cookMinutes());
 		recipe.setDifficulty(halfPoints(form.difficulty()));
 		recipe.setYoutubeVideoId(youtubeVideoId(form.videoUrl()));
-		replaceIngredients(recipe, form.ingredients());
-		recipe.getSteps().clear();
-		form.steps().forEach(step -> recipe.getSteps().add(new RecipeStep(step.description(), step.durationMinutes())));
+		// Parts are rewritten on each save. Hibernate inserts the new ones before deleting the previous
+		// ones, which the deferred (recipe_id, position) constraint allows; their ingredient lines have
+		// new keys, so they never collide with the previous ones.
+		recipe.getParts().clear();
+		recipe.getParts().addAll(parts);
+	}
+
+	/** In the order chosen: the first one is the main category, in the recipe URL. */
+	private List<Category> categories(List<Long> categoryIds) {
+		if (new HashSet<>(categoryIds).size() < categoryIds.size()) {
+			throw new ApiException(ErrorCode.DUPLICATE_RECIPE_CATEGORY);
+		}
+		Map<Long, Category> categoriesById = categoryRepository.findAllById(categoryIds)
+			.stream()
+			.collect(Collectors.toMap(Category::getId, Function.identity()));
+		return categoryIds.stream()
+			.map(id -> Optional.ofNullable(categoriesById.get(id))
+				.orElseThrow(() -> new ApiException(ErrorCode.CATEGORY_NOT_FOUND)))
+			.toList();
+	}
+
+	/**
+	 * A single part may be untitled (a recipe without parts); several parts all need a title. Each
+	 * part has an ingredient or a step at least, and the recipe at least one of each.
+	 */
+	private List<RecipePart> parts(Recipe recipe, List<RecipeForm.Part> formParts) {
+		List<RecipePart> parts = new ArrayList<>();
+		for (int position = 0; position < formParts.size(); position++) {
+			RecipeForm.Part formPart = formParts.get(position);
+			String title = StringUtils.hasText(formPart.title())
+					? Texts.capitalizeFirstLetter(formPart.title().strip())
+					: null;
+			if (title == null && formParts.size() > 1) {
+				throw new ApiException(ErrorCode.RECIPE_PART_TITLE_REQUIRED);
+			}
+			if (formPart.ingredients().isEmpty() && formPart.steps().isEmpty()) {
+				throw new ApiException(ErrorCode.RECIPE_PART_EMPTY);
+			}
+			RecipePart part = new RecipePart();
+			part.setRecipe(recipe);
+			part.setPosition(position);
+			part.setTitle(title);
+			addIngredients(part, formPart.ingredients());
+			formPart.steps().forEach(step -> part.getSteps().add(new RecipeStep(step.description(), step.durationMinutes())));
+			parts.add(part);
+		}
+		if (parts.stream().allMatch(part -> part.getIngredients().isEmpty())) {
+			throw new ApiException(ErrorCode.RECIPE_INGREDIENT_REQUIRED);
+		}
+		if (parts.stream().allMatch(part -> part.getSteps().isEmpty())) {
+			throw new ApiException(ErrorCode.RECIPE_STEP_REQUIRED);
+		}
+		return parts;
 	}
 
 	/** The range is checked by the form; only half points are allowed in between (2.5, not 2.3). */
@@ -183,37 +240,24 @@ public class RecipeService {
 		return YoutubeVideos.videoId(videoUrl).orElseThrow(() -> new ApiException(ErrorCode.VIDEO_URL_INVALID));
 	}
 
-	private void replaceIngredients(Recipe recipe, List<RecipeForm.IngredientLine> formLines) {
-		// Lines already in the recipe are updated in place: removing then re-adding the same
-		// (recipe, ingredient) key would fail, as Hibernate runs inserts before deletes.
-		Map<Long, RecipeIngredient> previousLines = recipe.getIngredients()
-			.stream()
-			.collect(Collectors.toMap(line -> line.getIngredient().getId(), Function.identity()));
+	/** An ingredient appears once per part; another part of the recipe may list it again. */
+	private void addIngredients(RecipePart part, List<RecipeForm.IngredientLine> formLines) {
 		Set<Long> seenIngredientIds = new HashSet<>();
-		List<RecipeIngredient> lines = new ArrayList<>();
 		for (int position = 0; position < formLines.size(); position++) {
 			RecipeForm.IngredientLine formLine = formLines.get(position);
 			Ingredient ingredient = ingredientService.findOrCreate(formLine.name());
 			if (!seenIngredientIds.add(ingredient.getId())) {
 				throw new ApiException(ErrorCode.DUPLICATE_RECIPE_INGREDIENT);
 			}
-			RecipeIngredient line = Optional.ofNullable(previousLines.get(ingredient.getId()))
-				.orElseGet(() -> newLine(recipe, ingredient));
+			RecipeIngredient line = new RecipeIngredient();
+			line.setPart(part);
+			line.setIngredient(ingredient);
 			line.setQuantity(formLine.quantity());
 			line.setUnit(formLine.unit());
 			line.setNote(formLine.note());
 			line.setPosition(position);
-			lines.add(line);
+			part.getIngredients().add(line);
 		}
-		recipe.getIngredients().clear();
-		recipe.getIngredients().addAll(lines);
-	}
-
-	private static RecipeIngredient newLine(Recipe recipe, Ingredient ingredient) {
-		RecipeIngredient line = new RecipeIngredient();
-		line.setRecipe(recipe);
-		line.setIngredient(ingredient);
-		return line;
 	}
 
 }

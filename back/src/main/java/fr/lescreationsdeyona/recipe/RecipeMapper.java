@@ -11,13 +11,15 @@ public interface RecipeMapper {
 	@Mapping(target = "imageId", source = "image.id")
 	RecipeCard toCard(Recipe recipe);
 
-	@Mapping(target = "categorySlug", source = "category.slug")
+	@Mapping(target = "categorySlug", source = "mainCategory.slug")
 	RecipeSuggestion toSuggestion(Recipe recipe);
 
 	RecipeAdminSummary toAdminSummary(Recipe recipe);
 
 	@Mapping(target = "imageId", source = "image.id")
 	RecipeDetail toDetail(Recipe recipe);
+
+	RecipeDetail.Part toPart(RecipePart part);
 
 	@Mapping(target = "name", source = "ingredient.name")
 	RecipeDetail.IngredientLine toIngredientLine(RecipeIngredient line);

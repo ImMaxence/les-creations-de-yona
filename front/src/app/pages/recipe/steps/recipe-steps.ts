@@ -5,7 +5,7 @@ import { MarkdownPipe } from '../../../shared/format/markdown.pipe';
 import { formatMinutes } from '../../../shared/format/units';
 import { Reveal } from '../../../shared/motion/reveal';
 
-/** Numbered timeline of the steps; a tap on a number marks the step as done. */
+/** Numbered timeline of the steps of a part; a tap on a number marks the step as done. */
 @Component({
   selector: 'yona-recipe-steps',
   imports: [LucideCheck, LucideTimer, MarkdownPipe, Reveal],

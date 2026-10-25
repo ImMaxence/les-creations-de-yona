@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RecipeCard as RecipeCardModel } from '../../../core/api/generated/models/recipe-card';
+import { categoryNames } from '../../format/categories';
 import { ParisDatePipe } from '../../format/paris-date.pipe';
 import { RECIPE_IMAGE_TRANSITION, isSameTabClick } from '../../motion/view-transitions';
 import { recipeLink } from '../../routing/links';
@@ -19,6 +20,7 @@ export class RecipeCard {
   readonly priority = input(false, { transform: booleanAttribute });
 
   protected readonly link = computed(() => recipeLink(this.recipe()));
+  protected readonly categories = computed(() => categoryNames(this.recipe().categories));
   protected readonly imageTransitionName = signal<string | null>(null);
 
   protected onClick(event: MouseEvent): void {

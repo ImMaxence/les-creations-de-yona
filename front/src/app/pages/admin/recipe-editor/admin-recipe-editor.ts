@@ -1,4 +1,12 @@
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  transferArrayItem,
+} from '@angular/cdk/drag-drop';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,6 +26,7 @@ import {
   LucideCheck,
   LucideExternalLink,
   LucideGripVertical,
+  LucideLayers,
   LucidePlus,
   LucideTrash2,
   LucideX,
@@ -31,6 +40,7 @@ import { replaceRecipeImage } from '../../../core/api/generated/fn/admin-recipes
 import { updateRecipe } from '../../../core/api/generated/fn/admin-recipes/update-recipe';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
 import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
+import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
 import { recipeLink } from '../../../shared/routing/links';
@@ -39,7 +49,8 @@ import { FieldError } from '../../../shared/ui/field-error/field-error';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { SuggestInput, Suggestion } from '../../../shared/ui/suggest-input/suggest-input';
-import { emptyIngredient, emptyStep, recipeSchema, toDraft, toRecipeForm } from './recipe-draft';
+import { hasParts } from '../../recipe/recipe-parts';
+import { PartDraft, emptyIngredient, emptyPart, emptyStep, recipeSchema, toDraft, toRecipeForm } from './recipe-draft';
 import { UnsavedChanges } from './unsaved-changes.guard';
 
 type ListName = 'ingredients' | 'steps';
@@ -67,6 +78,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
 @Component({
   selector: 'yona-admin-recipe-editor',
   imports: [
+    NgTemplateOutlet,
     RouterLink,
     FormField,
     CdkDropList,
@@ -82,6 +94,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     LucideCheck,
     LucideExternalLink,
     LucideGripVertical,
+    LucideLayers,
     LucidePlus,
     LucideTrash2,
     LucideX,
@@ -96,6 +109,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
 
   private readonly api = inject(Api);
   private readonly router = inject(Router);
+  private readonly confirm = inject(Confirm);
   private readonly toaster = inject(Toaster);
   private readonly siteData = inject(SiteData);
 
@@ -106,13 +120,24 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   private readonly savedSnapshot = linkedSignal(() => JSON.stringify(toDraft(this.recipe())));
   private readonly unsaved = computed(() => JSON.stringify(this.draft()) !== this.savedSnapshot());
 
+  /**
+   * Recipe in parts (the dough, the filling…), each with its title, ingredients and steps.
+   * Otherwise its single part is edited as plain ingredients and steps.
+   */
+  protected readonly usesParts = linkedSignal(() => hasParts(this.recipe()?.parts ?? []));
+
   protected readonly statusOptions: SelectOption<'DRAFT' | 'PUBLISHED'>[] = [
     { value: 'DRAFT', label: 'Brouillon (invisible sur le site)' },
     { value: 'PUBLISHED', label: 'Publiée' },
   ];
   protected readonly difficultyOptions = DIFFICULTY_OPTIONS;
-  protected readonly categoryOptions = computed<SelectOption<number | null>[]>(() =>
-    this.siteData.categories().map((category) => ({ value: category.id, label: category.name })),
+  protected readonly categories = this.siteData.categories;
+  /** Among the chosen ones: the main category, in the recipe URL. */
+  protected readonly mainCategoryOptions = computed<SelectOption<number>[]>(() =>
+    this.draft().categoryIds.map((id) => ({
+      value: id,
+      label: this.categories().find((category) => category.id === id)?.name ?? '',
+    })),
   );
   /** Ingredients already known, the most used first, so that the same one is not created twice. */
   private readonly knownIngredients = resource({
@@ -128,10 +153,15 @@ export default class AdminRecipeEditor implements UnsavedChanges {
           : undefined,
       })),
   );
-  /** Already in this recipe: not suggested again (a recipe lists an ingredient once). */
-  protected readonly ingredientNames = computed(
-    () => new Set(this.draft().ingredients.map((ingredient) => ingredient.name.trim()).filter(Boolean)),
+  /** Already in a part: not suggested again there (a part lists an ingredient once). */
+  protected readonly ingredientNames = computed(() =>
+    this.draft().parts.map(
+      (part) => new Set(part.ingredients.map((ingredient) => ingredient.name.trim()).filter(Boolean)),
+    ),
   );
+  /** Ingredients (or steps) can be dragged from one part to another. */
+  protected readonly ingredientListIds = computed(() => this.draft().parts.map((_part, index) => `ingredients-${index}`));
+  protected readonly stepListIds = computed(() => this.draft().parts.map((_part, index) => `steps-${index}`));
   protected readonly publicLink = computed(() => {
     const recipe = this.recipe();
     return recipe?.status === 'PUBLISHED' ? recipeLink(recipe) : null;
@@ -158,38 +188,33 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     return field().touched() && field().invalid();
   }
 
-  protected add(list: ListName): void {
-    this.draft.update((draft) =>
-      list === 'ingredients'
-        ? { ...draft, ingredients: [...draft.ingredients, emptyIngredient()] }
-        : { ...draft, steps: [...draft.steps, emptyStep()] },
-    );
+  // Categories
+
+  protected isChosen(categoryId: number): boolean {
+    return this.draft().categoryIds.includes(categoryId);
   }
 
-  protected remove(list: ListName, index: number): void {
+  /** Added at the end; removing the main category makes the next one the main category. */
+  protected toggleCategory(categoryId: number): void {
     this.draft.update((draft) => ({
       ...draft,
-      [list]: draft[list].filter((_item: unknown, position: number) => position !== index),
+      categoryIds: draft.categoryIds.includes(categoryId)
+        ? draft.categoryIds.filter((id) => id !== categoryId)
+        : [...draft.categoryIds, categoryId],
     }));
   }
 
-  /** Drag and drop, or the arrow buttons for keyboard users. */
-  protected move(list: ListName, from: number, to: number): void {
-    if (to < 0 || to >= this.draft()[list].length || from === to) {
+  protected chooseMainCategory(categoryId: number | undefined): void {
+    if (categoryId === undefined) {
       return;
     }
-    this.draft.update((draft) => {
-      const items = [...draft[list]];
-      moveItemInArray(items, from, to);
-      return { ...draft, [list]: items };
-    });
+    this.draft.update((draft) => ({
+      ...draft,
+      categoryIds: [categoryId, ...draft.categoryIds.filter((id) => id !== categoryId)],
+    }));
   }
 
-  protected drop(list: ListName, event: CdkDragDrop<unknown>): void {
-    this.move(list, event.previousIndex, event.currentIndex);
-  }
-
-  /** Creates a category without leaving the recipe, and chooses it. */
+  /** Creates a category without leaving the recipe, and adds it to the recipe's. */
   protected async addCategory(): Promise<void> {
     const name = this.newCategoryName().trim();
     if (!name) {
@@ -201,11 +226,114 @@ export default class AdminRecipeEditor implements UnsavedChanges {
       return;
     }
     await this.siteData.load();
-    this.draft.update((draft) => ({ ...draft, categoryId: created.value.id }));
+    this.draft.update((draft) => ({ ...draft, categoryIds: [...draft.categoryIds, created.value.id] }));
     this.creatingCategory.set(false);
     this.newCategoryName.set('');
-    this.toaster.success(`Catégorie « ${created.value.name} » créée et choisie.`);
+    this.toaster.success(`Catégorie « ${created.value.name} » créée et ajoutée à la recette.`);
   }
+
+  // Parts
+
+  /** The current ingredients and steps become the first part, followed by an empty one. */
+  protected splitIntoParts(): void {
+    this.usesParts.set(true);
+    this.draft.update((draft) => ({ ...draft, parts: [...draft.parts, emptyPart()] }));
+  }
+
+  /** Back to a recipe without parts, once a single part is left. */
+  protected stopUsingParts(): void {
+    this.usesParts.set(false);
+    this.updatePart(0, (part) => ({ ...part, title: '' }));
+  }
+
+  protected addPart(): void {
+    this.draft.update((draft) => ({ ...draft, parts: [...draft.parts, emptyPart()] }));
+  }
+
+  protected async removePart(index: number): Promise<void> {
+    const part = this.draft().parts[index];
+    const hasContent =
+      part &&
+      (part.title.trim() ||
+        part.ingredients.some((line) => line.name.trim()) ||
+        part.steps.some((step) => step.description.trim()));
+    if (
+      hasContent &&
+      !(await this.confirm.ask({
+        title: 'Supprimer cette partie ?',
+        message: `« ${part.title.trim() || `Partie ${index + 1}`} » sera retirée avec ses ingrédients et ses étapes.`,
+        confirmLabel: 'Supprimer',
+      }))
+    ) {
+      return;
+    }
+    this.draft.update((draft) => ({ ...draft, parts: draft.parts.filter((_part, position) => position !== index) }));
+  }
+
+  protected movePart(from: number, to: number): void {
+    if (to < 0 || to >= this.draft().parts.length) {
+      return;
+    }
+    this.draft.update((draft) => {
+      const parts = [...draft.parts];
+      moveItemInArray(parts, from, to);
+      return { ...draft, parts };
+    });
+  }
+
+  // Ingredients and steps of a part
+
+  protected add(list: ListName, partIndex: number): void {
+    this.updatePart(partIndex, (part) =>
+      list === 'ingredients'
+        ? { ...part, ingredients: [...part.ingredients, emptyIngredient()] }
+        : { ...part, steps: [...part.steps, emptyStep()] },
+    );
+  }
+
+  protected remove(list: ListName, partIndex: number, index: number): void {
+    this.updatePart(partIndex, (part) => ({
+      ...part,
+      [list]: part[list].filter((_item: unknown, position: number) => position !== index),
+    }));
+  }
+
+  /** Drag and drop, or the arrow buttons for keyboard users. */
+  protected move(list: ListName, partIndex: number, from: number, to: number): void {
+    const items = this.draft().parts[partIndex]?.[list] ?? [];
+    if (to < 0 || to >= items.length || from === to) {
+      return;
+    }
+    this.updatePart(partIndex, (part) => {
+      const moved = [...part[list]];
+      moveItemInArray(moved, from, to);
+      return { ...part, [list]: moved };
+    });
+  }
+
+  /** Within a part, or from one part to another (the list data is the part index). */
+  protected drop(list: ListName, event: CdkDragDrop<number>): void {
+    const from = event.previousContainer.data;
+    const to = event.container.data;
+    if (from === to) {
+      this.move(list, to, event.previousIndex, event.currentIndex);
+      return;
+    }
+    this.draft.update((draft) => {
+      const parts = draft.parts.map((part) => ({ ...part, [list]: [...part[list]] }));
+      transferArrayItem<unknown>(parts[from]![list], parts[to]![list], event.previousIndex, event.currentIndex);
+      return { ...draft, parts };
+    });
+  }
+
+  private updatePart(index: number, change: (part: PartDraft) => PartDraft): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      parts: draft.parts.map((part, position) => (position === index ? change(part) : part)),
+    }));
+  }
+
+  // Photo
 
   protected async onImageChosen(file: File): Promise<void> {
     const recipe = this.recipe();

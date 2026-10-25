@@ -15,7 +15,7 @@
         <p class="eyebrow hero__eyebrow enter" style="--delay: 150ms">À la une</p>
         <h2 class="hero__title enter" style="--delay: 230ms">{{ featured.title }}</h2>
         <div class="hero__meta enter" style="--delay: 310ms">
-          <span class="chip hero__chip">{{ featured.category.name }}</span>
+          <span class="chip hero__chip">{{ categoryNames(featured.categories) }}</span>
           <span class="hero__cta">Voir la recette <svg lucideArrowRight [size]="18"></svg></span>
         </div>
       </div>

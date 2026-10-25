@@ -1,6 +1,6 @@
 <div class="head">
   <h2 id="ingredients-title">Ingrédients</h2>
-  @if (chosenServings(); as count) {
+  @if (servings(); as count) {
     <div class="servings" role="group" aria-label="Nombre de portions">
       <button
         type="button"
@@ -27,27 +27,11 @@
   }
 </div>
 
-<ul role="list" class="list">
-  @for (line of lines(); track $index; let i = $index) {
-    <li>
-      <label class="ingredient" [class.is-checked]="checked().has(i)">
-        <input type="checkbox" class="visually-hidden" [checked]="checked().has(i)" (change)="toggle(i)" />
-        <span class="checkbox" aria-hidden="true">
-          <svg lucideCheck [size]="14" [strokeWidth]="3"></svg>
-        </span>
-        <span class="ingredient__text">
-          @if (line.quantity) {
-            <strong>{{ line.quantity }} {{ line.unit }}</strong>
-          }
-          {{ line.name }}
-          @if (line.note) {
-            <span class="ingredient__note">{{ line.note }}</span>
-          }
-        </span>
-      </label>
-    </li>
-  }
-</ul>
+@if (partCount() > 1) {
+  <p class="total-hint">Total pour les {{ partCount() }} parties, détaillées dans la préparation.</p>
+}
+
+<yona-ingredient-list class="list" [lines]="lines()" />
 
 @if (wakeLockSupported()) {
   <button

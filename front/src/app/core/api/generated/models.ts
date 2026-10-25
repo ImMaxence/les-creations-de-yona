@@ -13,6 +13,7 @@ export type { Link } from './models/link';
 export type { PageResponseGalleryImage } from './models/page-response-gallery-image';
 export type { PageResponseRecipeAdminSummary } from './models/page-response-recipe-admin-summary';
 export type { PageResponseRecipeCard } from './models/page-response-recipe-card';
+export type { Part } from './models/part';
 export type { RecipeAdminSummary } from './models/recipe-admin-summary';
 export type { RecipeCard } from './models/recipe-card';
 export type { RecipeDetail } from './models/recipe-detail';
