@@ -120,7 +120,10 @@
 
 .body {
   display: grid;
+  // Never wider than the screen, whatever the text: a very long word breaks rather than widen it
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-6);
+  overflow-wrap: break-word;
 }
 
 // Overlaps the bottom of the header photo
@@ -173,10 +176,11 @@
 
 .layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-7);
 
   @include m.from(md) {
-    grid-template-columns: minmax(17rem, 22rem) 1fr;
+    grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
     align-items: start;
     gap: var(--space-8);
   }
@@ -211,6 +215,13 @@
   border-top: 1px solid var(--color-line);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+
+// "Plus de recettes : …": a long category name wraps rather than widen the page
+.footer [yonaButton] {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
 }
 
 // Steps, by part when the recipe has some (the dough, the filling…)

@@ -27,6 +27,7 @@
   position: relative;
   z-index: 2; // suggestions above the cards
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 
   @include m.from(md) {

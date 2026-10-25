@@ -66,9 +66,12 @@ a {
 }
 
 // Grid of recipe cards (home page, recipes page): 1, 2 then 3 columns
-// One card per row on phones (their photo is lower there, see recipe-card.scss), then 2 and 3
+// One card per row on phones (their photo is lower there, see recipe-card.scss), then 2 and 3.
+// Tracks may shrink below their content: a long line of categories is cut with an ellipsis
+// instead of widening the whole page.
 .recipe-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 
   @include m.from(sm) {
