@@ -28,6 +28,7 @@
         "/api/recipes/**",
         "/api/featured-recipe",
         "/api/categories",
+        "/api/ingredients",
         "/api/social-links",
         "/api/theme"
       ],

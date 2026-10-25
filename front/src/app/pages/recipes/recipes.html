@@ -22,29 +22,21 @@
       (suggestionPicked)="openRecipe($event)"
     />
 
-    <form class="ingredient-search" role="search" (submit)="searchIngredient($event)">
-      <svg lucideCarrot class="ingredient-search__icon" [size]="20"></svg>
-      <input
-        type="search"
-        class="ingredient-search__input"
-        aria-label="Rechercher par ingrédient"
-        autocomplete="off"
-        enterkeyhint="search"
-        maxlength="100"
-        placeholder="Avec un ingrédient…"
-        [value]="ingredientQuery()"
-        (input)="ingredientQuery.set($any($event.target).value)"
-      />
-      @if (ingredientQuery()) {
-        <button type="button" class="ingredient-search__clear" aria-label="Effacer l'ingrédient" (click)="clearIngredient()">
-          <svg lucideX [size]="18"></svg>
-        </button>
-      }
-    </form>
+    <yona-select
+      class="tool-select"
+      label="Filtrer par ingrédient"
+      placeholder="Avec un ingrédient…"
+      size="large"
+      searchable
+      [options]="ingredientOptions()"
+      [value]="filters().ingredient"
+      (valueChange)="changeIngredient($event)"
+    />
 
     <yona-select
-      class="category-select"
+      class="tool-select"
       label="Filtrer par catégorie"
+      size="large"
       [options]="categoryOptions()"
       [value]="filters().category ?? ''"
       (valueChange)="changeCategory($event)"

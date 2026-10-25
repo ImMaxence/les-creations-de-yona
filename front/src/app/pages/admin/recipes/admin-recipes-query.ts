@@ -6,7 +6,6 @@ export const ADMIN_RECIPES_QUERY = {
   search: 'q',
   status: 'statut',
   category: 'categorie',
-  ingredient: 'ingredient',
   ingredientId: 'idIngredient',
   page: 'page',
 } as const;

@@ -353,16 +353,3 @@ textarea.input {
   overflow: hidden;
   border-radius: var(--radius-sm);
 }
-
-// Removes a filter, inside its badge
-.filter-chip__clear {
-  display: inline-grid;
-  place-items: center;
-  margin-right: -0.3rem;
-  padding: 0.1rem;
-  border-radius: 50%;
-
-  @include m.hover {
-    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
-  }
-}

@@ -22,7 +22,7 @@ export interface ListPublishedRecipes$Params {
   category?: string;
 
 /**
- * Part of the name of one of its ingredients, case and accents ignored
+ * Name of one of its ingredients (GET /api/ingredients), case and accents ignored
  */
   ingredient?: string;
 

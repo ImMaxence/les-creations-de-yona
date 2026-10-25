@@ -22,11 +22,12 @@ final class RecipeSpecifications {
 	}
 
 	/**
-	 * @param ingredientQuery part of the name of one of its ingredients, in any part
-	 * @param ingredientId one of its ingredients exactly (back-office link from the ingredients page)
+	 * @param ingredientName name of one of its ingredients, in any part (case and accents ignored by
+	 *     the column collation)
+	 * @param ingredientId one of its ingredients (back-office)
 	 */
 	static Specification<Recipe> matching(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable String ingredientQuery, @Nullable Long ingredientId, @Nullable RecipeStatus status) {
+			@Nullable String ingredientName, @Nullable Long ingredientId, @Nullable RecipeStatus status) {
 		List<Specification<Recipe>> criteria = new ArrayList<>();
 		if (status != null) {
 			criteria.add((recipe, query, cb) -> cb.equal(recipe.get("status"), status));
@@ -38,10 +39,9 @@ final class RecipeSpecifications {
 		if (StringUtils.hasText(titleQuery)) {
 			criteria.add(titleContains(titleQuery.strip()));
 		}
-		if (StringUtils.hasText(ingredientQuery)) {
-			String pattern = containsPattern(ingredientQuery.strip());
-			criteria.add(hasIngredient((line, cb) -> cb.like(folded(cb, line.get("ingredient").get("name")), pattern,
-					LIKE_ESCAPE)));
+		if (StringUtils.hasText(ingredientName)) {
+			String name = ingredientName.strip();
+			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("name"), name)));
 		}
 		if (ingredientId != null) {
 			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("id"), ingredientId)));
@@ -57,8 +57,8 @@ final class RecipeSpecifications {
 	}
 
 	/**
-	 * A subquery rather than a join: a recipe listing the ingredient in several parts, or several
-	 * matching ingredients, still comes out once.
+	 * A subquery rather than a join: a recipe listing the ingredient in several parts still comes
+	 * out once.
 	 */
 	private static Specification<Recipe> hasIngredient(
 			BiFunction<Root<RecipeIngredient>, CriteriaBuilder, Predicate> condition) {

@@ -56,9 +56,9 @@ public class RecipeService {
 	// Public site: published recipes only.
 
 	public Page<RecipeCard> searchPublished(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable String ingredientQuery, Pageable pageable) {
+			@Nullable String ingredientName, Pageable pageable) {
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, ingredientQuery, null, RecipeStatus.PUBLISHED),
+			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, ingredientName, null, RecipeStatus.PUBLISHED),
 					Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toCard);
 	}
@@ -89,10 +89,9 @@ public class RecipeService {
 	// Back-office: every recipe, drafts included.
 
 	public Page<RecipeAdminSummary> searchAll(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable String ingredientQuery, @Nullable Long ingredientId, @Nullable RecipeStatus status,
-			Pageable pageable) {
+			@Nullable Long ingredientId, @Nullable RecipeStatus status, Pageable pageable) {
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, ingredientQuery, ingredientId, status),
+			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, null, ingredientId, status),
 					Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toAdminSummary);
 	}

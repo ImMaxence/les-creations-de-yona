@@ -13,28 +13,17 @@
       [value]="search()"
       (input)="onSearch($event)"
     />
-    <input
-      type="search"
-      class="input"
-      placeholder="Avec l'ingrédient…"
-      aria-label="Rechercher par ingrédient"
-      [value]="ingredientSearch()"
-      (input)="onIngredientSearch($event)"
+    <yona-select
+      label="Ingrédient"
+      placeholder="Avec un ingrédient…"
+      searchable
+      [options]="ingredientOptions()"
+      [value]="ingredientId()"
+      (valueChange)="changeIngredient($event)"
     />
     <yona-select label="Catégorie" [options]="categoryOptions()" [value]="category()" (valueChange)="changeCategory($event)" />
     <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="changeStatus($event)" />
   </div>
-
-  @if (exactIngredient(); as name) {
-    <p class="admin-toolbar">
-      <span class="badge badge--featured">
-        Avec l'ingrédient « {{ name }} »
-        <button type="button" class="filter-chip__clear" aria-label="Retirer ce filtre" (click)="clearExactIngredient()">
-          <svg lucideX [size]="14"></svg>
-        </button>
-      </span>
-    </p>
-  }
 
   @if (recipes.value(); as result) {
     @if (result.content.length) {

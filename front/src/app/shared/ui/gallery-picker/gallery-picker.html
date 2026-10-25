@@ -18,7 +18,7 @@
           <li>
             <button type="button" class="picker__tile" (click)="choose(image)">
               <yona-cover-image class="picker__image" [imageId]="image.id" sizes="12rem" />
-              <span class="picker__usage" [class.is-unused]="!image.usedBy.length">{{ usage(image) }}</span>
+              <span class="picker__usage" [class.is-unused]="!image.recipes.length && !image.categories.length">{{ usage(image) }}</span>
             </button>
           </li>
         }

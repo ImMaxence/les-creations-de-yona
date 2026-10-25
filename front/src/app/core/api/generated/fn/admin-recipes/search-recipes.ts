@@ -22,11 +22,6 @@ export interface SearchRecipes$Params {
   category?: string;
 
 /**
- * Part of the name of one of its ingredients, case and accents ignored
- */
-  ingredient?: string;
-
-/**
  * Id of one of its ingredients
  */
   ingredientId?: number;
@@ -53,7 +48,6 @@ export function searchRecipes(http: HttpClient, rootUrl: string, params?: Search
   if (params) {
     rb.query('q', params.q, {});
     rb.query('category', params.category, {});
-    rb.query('ingredient', params.ingredient, {});
     rb.query('ingredientId', params.ingredientId, {});
     rb.query('status', params.status, {});
     rb.query('page', params.page, {});

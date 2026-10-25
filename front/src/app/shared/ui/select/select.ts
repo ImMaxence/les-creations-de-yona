@@ -2,6 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
+  booleanAttribute,
+  afterNextRender,
   computed,
   inject,
   input,
@@ -23,6 +26,7 @@ let nextId = 0;
  * list). Follows the ARIA "select-only combobox" pattern: arrows, Home/End, Enter or Space to
  * choose, Escape to close, and typing a letter jumps to the matching option.
  * Two-way binding: <yona-select [(value)]="size" [options]="sizes" label="Recettes par page" />
+ * Long lists (ingredients) can be "searchable": a field at the top of the open list filters them.
  */
 @Component({
   selector: 'yona-select',
@@ -32,6 +36,7 @@ let nextId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.opens-up]': "direction() === 'up'",
+    '[class.is-large]': "size() === 'large'",
     '(document:click)': 'closeOnOutsideClick($event)',
   },
 })
@@ -44,10 +49,23 @@ export class Select<T> {
   /** "up" near the bottom of the page. */
   readonly direction = input<'up' | 'down'>('down');
   readonly disabled = input(false);
+  /** "large": as tall as the site's search fields, next to them. */
+  readonly size = input<'medium' | 'large'>('medium');
+  /** A filter field at the top of the open list, accents and case ignored. */
+  readonly searchable = input(false, { transform: booleanAttribute });
 
   protected readonly id = `select-${nextId++}`;
   protected readonly open = signal(false);
+  /** Position in shown(), not in options(). */
   protected readonly activeIndex = signal(-1);
+  protected readonly filter = signal('');
+  /** Options matching the filter, with their position in options(). */
+  protected readonly shown = computed(() => {
+    const typed = normalize(this.filter());
+    return this.options()
+      .map((option, index) => ({ option, index }))
+      .filter(({ option }) => !typed || normalize(option.label).includes(typed));
+  });
   protected readonly selectedIndex = computed(() =>
     this.options().findIndex((option) => Object.is(option.value, this.value())),
   );
@@ -57,6 +75,8 @@ export class Select<T> {
 
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
+  private readonly filterInput = viewChild<ElementRef<HTMLInputElement>>('filterInput');
+  private readonly injector = inject(Injector);
 
   protected toggle(): void {
     if (this.open()) {
@@ -66,8 +86,8 @@ export class Select<T> {
     }
   }
 
-  protected choose(index: number): void {
-    const option = this.options()[index];
+  protected choose(position: number): void {
+    const option = this.shown()[position]?.option;
     if (option) {
       this.value.set(option.value);
     }
@@ -75,8 +95,14 @@ export class Select<T> {
     this.trigger().nativeElement.focus();
   }
 
-  protected onKeydown(event: KeyboardEvent): void {
-    const last = this.options().length - 1;
+  protected onFilterInput(event: Event): void {
+    this.filter.set((event.target as HTMLInputElement).value);
+    this.activeIndex.set(0);
+  }
+
+  /** From the button, or from the filter field (where letters and spaces are typed). */
+  protected onKeydown(event: KeyboardEvent, fromFilter = false): void {
+    const last = this.shown().length - 1;
     const moves: Record<string, () => number> = {
       ArrowDown: () => Math.min(last, this.activeIndex() + 1),
       ArrowUp: () => Math.max(0, this.activeIndex() - 1),
@@ -91,7 +117,7 @@ export class Select<T> {
       } else {
         this.show(this.selectedIndex());
       }
-    } else if (event.key === 'Enter' || event.key === ' ') {
+    } else if (event.key === 'Enter' || (event.key === ' ' && !fromFilter)) {
       event.preventDefault();
       if (this.open()) {
         this.choose(this.activeIndex());
@@ -101,9 +127,10 @@ export class Select<T> {
     } else if (event.key === 'Escape' && this.open()) {
       event.preventDefault();
       this.close();
+      this.trigger().nativeElement.focus();
     } else if (event.key === 'Tab') {
       this.close();
-    } else if (event.key.length === 1) {
+    } else if (event.key.length === 1 && !fromFilter) {
       this.jumpTo(event.key);
     }
   }
@@ -115,8 +142,12 @@ export class Select<T> {
   }
 
   private show(index: number): void {
+    this.filter.set('');
     this.open.set(true);
     this.activeIndex.set(Math.max(0, index));
+    if (this.searchable()) {
+      afterNextRender(() => this.filterInput()?.nativeElement.focus(), { injector: this.injector });
+    }
   }
 
   private close(): void {
@@ -125,7 +156,7 @@ export class Select<T> {
 
   private jumpTo(letter: string): void {
     const start = this.activeIndex() + 1;
-    const options = this.options();
+    const options = this.shown().map(({ option }) => option);
     const matches = (option: SelectOption<T>) =>
       option.label.toLocaleLowerCase('fr').startsWith(letter.toLocaleLowerCase('fr'));
     const index = [...options.slice(start), ...options.slice(0, start)].findIndex(matches);
@@ -133,4 +164,9 @@ export class Select<T> {
       this.show((start + index) % options.length);
     }
   }
+}
+
+/** "Crème" and "creme" match. */
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('fr').trim();
 }

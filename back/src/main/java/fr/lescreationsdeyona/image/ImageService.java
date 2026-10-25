@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -49,9 +48,20 @@ public class ImageService {
 	public Page<GalleryImage> gallery(@Nullable ImageKind kind, @Nullable Boolean used, Pageable pageable) {
 		Page<Image> images = imageRepository.findGallery(kind, used,
 				Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES));
-		Map<UUID, List<String>> usages = usagesOf(images.map(Image::getId).getContent());
+		List<UUID> ids = images.map(Image::getId).getContent();
+		Map<UUID, List<GalleryImage.UsingRecipe>> recipes = ids.isEmpty() ? Map.of()
+				: imageRepository.findRecipeUsages(ids)
+					.stream()
+					.collect(Collectors.groupingBy(GalleryImage.RecipeUsage::imageId, Collectors.mapping(
+							usage -> new GalleryImage.UsingRecipe(usage.id(), usage.title()), Collectors.toList())));
+		Map<UUID, List<GalleryImage.UsingCategory>> categories = ids.isEmpty() ? Map.of()
+				: imageRepository.findCategoryUsages(ids)
+					.stream()
+					.collect(Collectors.groupingBy(GalleryImage.CategoryUsage::imageId, Collectors.mapping(
+							usage -> new GalleryImage.UsingCategory(usage.id(), usage.name(), usage.slug()),
+							Collectors.toList())));
 		return images.map(image -> new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(),
-				usages.getOrDefault(image.getId(), List.of())));
+				recipes.getOrDefault(image.getId(), List.of()), categories.getOrDefault(image.getId(), List.of())));
 	}
 
 	/** Opens a variant for the public site. Ids are random UUIDs, so they cannot be guessed. */
@@ -88,16 +98,6 @@ public class ImageService {
 	@Transactional
 	public void deleteAll(Collection<UUID> ids) {
 		new HashSet<>(ids).forEach(this::delete);
-	}
-
-	private Map<UUID, List<String>> usagesOf(List<UUID> imageIds) {
-		if (imageIds.isEmpty()) {
-			return Map.of();
-		}
-		return Stream.concat(imageRepository.findRecipeUsages(imageIds).stream(),
-				imageRepository.findCategoryUsages(imageIds).stream())
-			.collect(Collectors.groupingBy(ImageUsage::imageId,
-					Collectors.mapping(ImageUsage::label, Collectors.toList())));
 	}
 
 	private static void onCompletion(int expectedStatus, Runnable cleanup) {

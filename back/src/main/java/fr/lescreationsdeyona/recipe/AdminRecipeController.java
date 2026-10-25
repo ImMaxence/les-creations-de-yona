@@ -48,14 +48,12 @@ class AdminRecipeController {
 			@RequestParam(required = false) @Size(max = 100) @Nullable String q,
 			@Parameter(description = "Category slug")
 			@RequestParam(required = false) @Nullable String category,
-			@Parameter(description = "Part of the name of one of its ingredients, case and accents ignored")
-			@RequestParam(required = false) @Size(max = 100) @Nullable String ingredient,
 			@Parameter(description = "Id of one of its ingredients")
 			@RequestParam(required = false) @Nullable Long ingredientId,
 			@RequestParam(required = false) @Nullable RecipeStatus status,
 			@ParameterObject @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
-		return PageResponse.of(recipeService.searchAll(q, category, ingredient, ingredientId, status, pageable));
+		return PageResponse.of(recipeService.searchAll(q, category, ingredientId, status, pageable));
 	}
 
 	@Operation(summary = "A recipe, for the edit form")

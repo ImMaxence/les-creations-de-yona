@@ -24,7 +24,7 @@
       />
       <ul role="list" class="gallery">
         @for (image of result.content; track image.id) {
-          <li class="tile" [class.is-unused]="!image.usedBy.length" [class.is-selected]="selection.has(image.id)">
+          <li class="tile" [class.is-unused]="!usedBy(image).length" [class.is-selected]="selection.has(image.id)">
             <label class="select-box tile__select">
               <input
                 type="checkbox"
@@ -33,18 +33,32 @@
                 (change)="selection.toggle(image.id)"
               />
             </label>
-            <yona-cover-image class="tile__image" [imageId]="image.id" [alt]="image.usedBy.join(', ')" sizes="16rem" />
+            <yona-cover-image class="tile__image" [imageId]="image.id" [alt]="usedBy(image).join(', ')" sizes="16rem" />
             <div class="tile__info">
-              @if (image.usedBy.length) {
+              @if (usedBy(image).length) {
                 <span class="badge badge--published">Utilisée</span>
-                <span class="tile__used" [title]="image.usedBy.join(', ')">{{ image.usedBy.join(', ') }}</span>
+                <ul role="list" class="tile__links">
+                  @for (recipe of image.recipes; track recipe.id) {
+                    <li>
+                      <a class="link-button" [routerLink]="['/admin/recettes', recipe.id]" [title]="'Modifier la recette « ' + recipe.title + ' »'">
+                        <svg lucidePencil [size]="14"></svg>
+                        <span>{{ recipe.title }}</span>
+                      </a>
+                    </li>
+                  }
+                  @for (category of image.categories; track category.id) {
+                    <li>
+                      <a class="link-button" routerLink="/admin/recettes" [queryParams]="categoryRecipesLink(category)" [title]="'Recettes de la catégorie « ' + category.name + ' »'">
+                        <svg lucideList [size]="14"></svg>
+                        <span>Voir les recettes « {{ category.name }} »</span>
+                      </a>
+                    </li>
+                  }
+                </ul>
               } @else {
                 <span class="badge badge--unused">Non utilisée</span>
               }
-              <span class="admin-row__meta">
-                {{ image.kind === 'RECIPE' ? 'Envoyée pour une recette' : 'Envoyée pour une catégorie' }}, le
-                {{ image.createdAt | parisDate }}
-              </span>
+              <span class="admin-row__meta">{{ image.createdAt | parisDate }}</span>
             </div>
             <button type="button" class="icon-button icon-button--danger tile__delete" aria-label="Supprimer l'image" (click)="remove(image)">
               <svg lucideTrash2 [size]="18"></svg>

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, resource, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { LucideExternalLink, LucideEye, LucidePencil, LucidePlus, LucideStar, LucideTrash2, LucideX } from '@lucide/angular';
+import { LucideExternalLink, LucideEye, LucidePencil, LucidePlus, LucideStar, LucideTrash2 } from '@lucide/angular';
 import { debounceTime } from 'rxjs';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
@@ -51,7 +51,6 @@ const ALL_CATEGORIES = '';
     LucidePlus,
     LucideStar,
     LucideTrash2,
-    LucideX,
   ],
   templateUrl: './admin-recipes.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,7 +60,6 @@ export default class AdminRecipes {
   readonly q = input<string>();
   readonly statut = input<string>();
   readonly categorie = input<string>();
-  readonly ingredient = input<string>();
   readonly idIngredient = input<string>();
   readonly page = input<string>();
 
@@ -87,7 +85,7 @@ export default class AdminRecipes {
     this.statut() === 'PUBLISHED' || this.statut() === 'DRAFT' ? (this.statut() as StatusFilter) : 'ALL',
   );
   protected readonly category = computed(() => this.categorie() ?? ALL_CATEGORIES);
-  private readonly ingredientId = computed(() => {
+  protected readonly ingredientId = computed(() => {
     const id = Number(this.idIngredient());
     return Number.isInteger(id) && id > 0 ? id : undefined;
   });
@@ -95,14 +93,12 @@ export default class AdminRecipes {
   protected readonly currentPage = computed(() => Math.max(1, Math.floor(Number(this.page())) || 1));
   /** What is typed, sent to the URL once the admin pauses. */
   protected readonly search = signal('');
-  protected readonly ingredientSearch = signal('');
 
   protected readonly recipes = resource({
     params: () => ({
       q: this.q()?.trim() || undefined,
       status: this.status() === 'ALL' ? undefined : (this.status() as 'DRAFT' | 'PUBLISHED'),
       category: this.category() || undefined,
-      ingredient: this.ingredient()?.trim() || undefined,
       ingredientId: this.ingredientId(),
       page: this.currentPage() - 1,
       size: PAGE_SIZE,
@@ -112,24 +108,21 @@ export default class AdminRecipes {
   protected readonly totalPages = computed(() => this.recipes.value()?.totalPages ?? 0);
   protected readonly totalElements = computed(() => this.recipes.value()?.totalElements ?? 0);
 
-  /** Name of the ingredient of ?idIngredient=, for the filter chip. */
+  /** Ingredients used by a recipe at least; choosing one filters the list at once. */
   private readonly knownIngredients = resource({
-    params: () => this.ingredientId(),
     loader: () => this.api.invoke(searchIngredients, {}),
   });
-  protected readonly exactIngredient = computed(() => {
-    const id = this.ingredientId();
-    if (id === undefined) {
-      return null;
-    }
-    return this.knownIngredients.value()?.find((ingredient) => ingredient.id === id)?.name ?? 'Ingrédient choisi';
-  });
+  protected readonly ingredientOptions = computed<SelectOption<number | undefined>[]>(() => [
+    { value: undefined, label: 'Tous les ingrédients' },
+    ...(this.knownIngredients.value() ?? [])
+      .filter((ingredient) => ingredient.recipeCount > 0 || ingredient.id === this.ingredientId())
+      .map((ingredient) => ({ value: ingredient.id, label: `${ingredient.name} (${ingredient.recipeCount})` })),
+  ]);
   protected readonly hasFilters = computed(
     () =>
       !!this.q()?.trim() ||
       this.status() !== 'ALL' ||
       !!this.category() ||
-      !!this.ingredient()?.trim() ||
       this.ingredientId() !== undefined,
   );
 
@@ -141,7 +134,6 @@ export default class AdminRecipes {
   constructor() {
     // The fields show the search of the URL (on arrival, back and forward)
     effect(() => this.search.set(this.q() ?? ''));
-    effect(() => this.ingredientSearch.set(this.ingredient() ?? ''));
     // A page past the end (after deleting its last recipes, or an old link): to the last one
     effect(() => {
       const result = this.recipes.value();
@@ -161,13 +153,6 @@ export default class AdminRecipes {
           this.updateQuery({ [ADMIN_RECIPES_QUERY.search]: search.trim() || null });
         }
       });
-    toObservable(this.ingredientSearch)
-      .pipe(debounceTime(SEARCH_DELAY_MS), takeUntilDestroyed())
-      .subscribe((search) => {
-        if (search.trim() !== (this.ingredient() ?? '').trim()) {
-          this.updateQuery({ [ADMIN_RECIPES_QUERY.ingredient]: search.trim() || null });
-        }
-      });
   }
 
   protected publicLink(recipe: RecipeAdminSummary): string[] {
@@ -178,9 +163,6 @@ export default class AdminRecipes {
     this.search.set((event.target as HTMLInputElement).value);
   }
 
-  protected onIngredientSearch(event: Event): void {
-    this.ingredientSearch.set((event.target as HTMLInputElement).value);
-  }
 
   protected changeStatus(status: StatusFilter | undefined): void {
     this.updateQuery({ [ADMIN_RECIPES_QUERY.status]: status && status !== 'ALL' ? status : null });
@@ -190,8 +172,8 @@ export default class AdminRecipes {
     this.updateQuery({ [ADMIN_RECIPES_QUERY.category]: slug || null });
   }
 
-  protected clearExactIngredient(): void {
-    this.updateQuery({ [ADMIN_RECIPES_QUERY.ingredientId]: null });
+  protected changeIngredient(id: number | undefined): void {
+    this.updateQuery({ [ADMIN_RECIPES_QUERY.ingredientId]: id === undefined ? null : String(id) });
   }
 
   protected clearFilters(): void {

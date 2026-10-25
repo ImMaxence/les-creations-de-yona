@@ -1,5 +1,51 @@
 @use 'mixins' as m;
 
+// "Détecter les doublons" and its tooltip
+.detect {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.detect__tip {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 10;
+  display: grid;
+  gap: var(--space-2);
+  width: min(22rem, calc(100vw - 2 * var(--container-padding)));
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--text-sm);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    visibility var(--duration-fast);
+
+  ul {
+    display: grid;
+    gap: 0.15rem;
+    margin: 0;
+    padding-left: var(--space-4);
+  }
+
+  .detect:hover &,
+  .detect:focus-within &,
+  &.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+}
+
 // Groups of ingredients written several ways, each with its merge choice
 .duplicates__head {
   display: flex;

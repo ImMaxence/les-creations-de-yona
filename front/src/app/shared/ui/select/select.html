@@ -18,31 +18,44 @@
 </button>
 
 @if (open()) {
-  <ul
-    role="listbox"
-    class="list"
-    [id]="id + '-list'"
-    [attr.aria-label]="label()"
-    animate.enter="list--enter"
-    animate.leave="list--leave"
-  >
-    @for (option of options(); track $index; let i = $index) {
-      <!-- mousedown is cancelled so that the button keeps the focus -->
-      <li
-        role="option"
-        class="option"
-        [id]="id + '-' + i"
-        [class.is-active]="i === activeIndex()"
-        [attr.aria-selected]="i === selectedIndex()"
-        (mousedown)="$event.preventDefault()"
-        (mouseenter)="activeIndex.set(i)"
-        (click)="choose(i)"
-      >
-        {{ option.label }}
-        @if (i === selectedIndex()) {
-          <svg lucideCheck class="option__check" [size]="16" [strokeWidth]="2.5"></svg>
-        }
-      </li>
+  <div class="list" animate.enter="list--enter" animate.leave="list--leave">
+    @if (searchable()) {
+      <input
+        #filterInput
+        type="search"
+        class="list__filter"
+        autocomplete="off"
+        placeholder="Filtrer…"
+        [attr.aria-label]="'Filtrer : ' + label()"
+        [attr.aria-controls]="id + '-list'"
+        [attr.aria-activedescendant]="activeIndex() >= 0 ? id + '-' + activeIndex() : null"
+        [value]="filter()"
+        (input)="onFilterInput($event)"
+        (keydown)="onKeydown($event, true)"
+      />
     }
-  </ul>
+    <ul role="listbox" class="options" [id]="id + '-list'" [attr.aria-label]="label()">
+      @for (item of shown(); track item.index; let i = $index) {
+        <!-- mousedown is cancelled so that the button (or the filter) keeps the focus -->
+        <li
+          role="option"
+          class="option"
+          [id]="id + '-' + i"
+          [class.is-active]="i === activeIndex()"
+          [attr.aria-selected]="item.index === selectedIndex()"
+          (mousedown)="$event.preventDefault()"
+          (mouseenter)="activeIndex.set(i)"
+          (click)="choose(i)"
+        >
+          {{ item.option.label }}
+          @if (item.index === selectedIndex()) {
+            <svg lucideCheck class="option__check" [size]="16" [strokeWidth]="2.5"></svg>
+          }
+        </li>
+      }
+    </ul>
+    @if (!shown().length) {
+      <p class="list__empty">Aucun résultat</p>
+    }
+  </div>
 }

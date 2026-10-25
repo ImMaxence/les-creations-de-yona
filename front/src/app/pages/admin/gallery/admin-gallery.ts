@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
-import { LucideChevronLeft, LucideChevronRight, LucideTrash2 } from '@lucide/angular';
+import { RouterLink } from '@angular/router';
+import { LucideChevronLeft, LucideChevronRight, LucideList, LucidePencil, LucideTrash2 } from '@lucide/angular';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { deleteImage } from '../../../core/api/generated/fn/admin-images/delete-image';
 import { deleteImages } from '../../../core/api/generated/fn/admin-images/delete-images';
 import { listImages } from '../../../core/api/generated/fn/admin-images/list-images';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
+import { UsingCategory } from '../../../core/api/generated/models/using-category';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
@@ -13,6 +15,7 @@ import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
+import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
 import { Selection } from '../selection';
 
 type KindFilter = 'ALL' | GalleryImage['kind'];
@@ -26,7 +29,18 @@ const PAGE_SIZE = 24;
  */
 @Component({
   selector: 'yona-admin-gallery',
-  imports: [BulkBar, CoverImage, Select, ParisDatePipe, LucideChevronLeft, LucideChevronRight, LucideTrash2],
+  imports: [
+    RouterLink,
+    BulkBar,
+    CoverImage,
+    Select,
+    ParisDatePipe,
+    LucideChevronLeft,
+    LucideChevronRight,
+    LucideList,
+    LucidePencil,
+    LucideTrash2,
+  ],
   templateUrl: './admin-gallery.html',
   styleUrl: './admin-gallery.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,11 +80,21 @@ export default class AdminGallery {
   protected readonly shownIds = computed(() => this.images.value()?.content.map((image) => image.id) ?? []);
   protected readonly deleting = signal(false);
 
+  /** Titles of the recipes and names of the categories showing it. */
+  protected usedBy(image: GalleryImage): string[] {
+    return [...image.recipes.map((recipe) => recipe.title), ...image.categories.map((category) => category.name)];
+  }
+
+  protected categoryRecipesLink(category: UsingCategory): Record<string, string> {
+    return { [ADMIN_RECIPES_QUERY.category]: category.slug };
+  }
+
   protected async remove(image: GalleryImage): Promise<void> {
+    const usedBy = this.usedBy(image);
     const confirmed = await this.confirm.ask({
       title: "Supprimer l'image ?",
-      message: image.usedBy.length
-        ? `Elle disparaîtra de ${image.usedBy.map((name) => `« ${name} »`).join(', ')}, qui afficheront le visuel par défaut.`
+      message: usedBy.length
+        ? `Elle disparaîtra de ${usedBy.map((name) => `« ${name} »`).join(', ')}, qui afficheront le visuel par défaut.`
         : "Elle n'est utilisée nulle part. Elle sera supprimée définitivement.",
       confirmLabel: 'Supprimer',
     });

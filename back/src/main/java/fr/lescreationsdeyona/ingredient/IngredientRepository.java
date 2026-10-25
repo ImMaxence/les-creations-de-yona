@@ -29,6 +29,13 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 			from RecipeIngredient line group by line.ingredient.id""")
 	List<RecipeCount> countRecipesPerIngredient();
 
+	/** Ingredients of at least one published recipe: drafts would reveal what is not online yet. */
+	@Query("""
+			select distinct line.ingredient.name from RecipeIngredient line
+			where line.part.recipe.status = fr.lescreationsdeyona.recipe.RecipeStatus.PUBLISHED
+			order by line.ingredient.name""")
+	List<String> findPublishedNames();
+
 	/** Titles of the recipes having two of these ingredients in the same part, which a merge would collide. */
 	@Query(value = """
 			select distinct recipe.title from recipe_ingredient line

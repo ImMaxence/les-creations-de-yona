@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, ParamMap, ResolveFn } from '@angular/router';
 import { Api } from '../../core/api/generated/api';
+import { listPublishedIngredients } from '../../core/api/generated/fn/ingredients/list-published-ingredients';
 import { listPublishedRecipes } from '../../core/api/generated/fn/recipes/list-published-recipes';
 import { PageResponseRecipeCard } from '../../core/api/generated/models/page-response-recipe-card';
 import { PageSeo, excerpt } from '../../core/seo/page-seo';
@@ -22,7 +23,7 @@ export const RECIPES_QUERY = {
 export interface RecipeFilters {
   search: string;
   category: string | null;
-  /** Part of the name of one of its ingredients. */
+  /** Name of one of its ingredients, chosen in the list. */
   ingredient: string;
   /** Starts at 1, as displayed. */
   page: number;
@@ -32,6 +33,8 @@ export interface RecipeFilters {
 export interface RecipesPageData {
   filters: RecipeFilters;
   result: PageResponseRecipeCard;
+  /** Ingredients of the published recipes, for the ingredient filter. */
+  ingredients: string[];
 }
 
 /** Reads the filters from the URL; anything invalid falls back to its default. */
@@ -50,14 +53,17 @@ export function readFilters(params: ParamMap): RecipeFilters {
 export const recipesResolver: ResolveFn<RecipesPageData> = async (route) => {
   const api = inject(Api);
   const filters = readFilters(route.queryParamMap);
-  const result = await api.invoke(listPublishedRecipes, {
-    q: filters.search || undefined,
-    category: filters.category ?? undefined,
-    ingredient: filters.ingredient || undefined,
-    page: filters.page - 1,
-    size: filters.pageSize,
-  });
-  return { filters, result };
+  const [result, ingredients] = await Promise.all([
+    api.invoke(listPublishedRecipes, {
+      q: filters.search || undefined,
+      category: filters.category ?? undefined,
+      ingredient: filters.ingredient || undefined,
+      page: filters.page - 1,
+      size: filters.pageSize,
+    }),
+    api.invoke(listPublishedIngredients, {}),
+  ]);
+  return { filters, result, ingredients };
 };
 
 /** A category page is indexed on its own; search results and empty pages are not. */

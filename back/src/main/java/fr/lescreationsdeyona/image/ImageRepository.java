@@ -22,10 +22,14 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 					and not exists (select 1 from Category c where c.image = i)))""")
 	Page<Image> findGallery(@Nullable ImageKind kind, @Nullable Boolean used, Pageable pageable);
 
-	@Query("select new fr.lescreationsdeyona.image.ImageUsage(r.image.id, r.title) from Recipe r where r.image.id in :imageIds")
-	List<ImageUsage> findRecipeUsages(Collection<UUID> imageIds);
+	@Query("""
+			select new fr.lescreationsdeyona.image.GalleryImage$RecipeUsage(r.image.id, r.id, r.title)
+			from Recipe r where r.image.id in :imageIds order by r.title""")
+	List<GalleryImage.RecipeUsage> findRecipeUsages(Collection<UUID> imageIds);
 
-	@Query("select new fr.lescreationsdeyona.image.ImageUsage(c.image.id, c.name) from Category c where c.image.id in :imageIds")
-	List<ImageUsage> findCategoryUsages(Collection<UUID> imageIds);
+	@Query("""
+			select new fr.lescreationsdeyona.image.GalleryImage$CategoryUsage(c.image.id, c.id, c.name, c.slug)
+			from Category c where c.image.id in :imageIds order by c.name""")
+	List<GalleryImage.CategoryUsage> findCategoryUsages(Collection<UUID> imageIds);
 
 }

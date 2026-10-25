@@ -61,6 +61,8 @@ export type { SuggestRecipeTitles$Params as SuggestRecipeTitles$Params } from '.
 export { suggestRecipeTitles as suggestRecipeTitles } from './fn/recipes/suggest-recipe-titles';
 export type { GetFeaturedRecipe$Params as GetFeaturedRecipe$Params } from './fn/recipes/get-featured-recipe';
 export { getFeaturedRecipe as getFeaturedRecipe } from './fn/recipes/get-featured-recipe';
+export type { ListPublishedIngredients$Params as ListPublishedIngredients$Params } from './fn/ingredients/list-published-ingredients';
+export { listPublishedIngredients as listPublishedIngredients } from './fn/ingredients/list-published-ingredients';
 export type { GetImage$Params as GetImage$Params } from './fn/images/get-image';
 export { getImage as getImage } from './fn/images/get-image';
 export type { ListCategories$Params as ListCategories$Params } from './fn/categories/list-categories';

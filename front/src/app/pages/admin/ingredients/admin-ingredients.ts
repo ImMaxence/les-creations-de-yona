@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { LucideArrowRight, LucideCheck, LucideCopy, LucidePencil, LucideTrash2, LucideX } from '@lucide/angular';
+import { LucideArrowRight, LucideCheck, LucideCopy, LucideInfo, LucidePencil, LucideTrash2, LucideX } from '@lucide/angular';
 import { debounceTime } from 'rxjs';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
@@ -34,7 +34,7 @@ type MergeChoice = { keptId: number } | { newName: string };
  */
 @Component({
   selector: 'yona-admin-ingredients',
-  imports: [RouterLink, BulkBar, Button, Select, LucideArrowRight, LucideCheck, LucideCopy, LucidePencil, LucideTrash2, LucideX],
+  imports: [RouterLink, BulkBar, Button, Select, LucideArrowRight, LucideCheck, LucideCopy, LucideInfo, LucidePencil, LucideTrash2, LucideX],
   templateUrl: './admin-ingredients.html',
   styleUrl: './admin-ingredients.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -81,6 +81,8 @@ export default class AdminIngredients {
   /** Null until "Détecter les doublons"; then the groups found, without those merged or ignored. */
   protected readonly similarGroups = signal<SimilarIngredients[] | null>(null);
   protected readonly detecting = signal(false);
+  /** Tooltip of "Détecter les doublons", opened by a tap on phones. */
+  protected readonly helpOpen = signal(false);
   protected readonly merging = signal<string | null>(null);
   private readonly choices = signal<ReadonlyMap<string, MergeChoice>>(new Map());
 

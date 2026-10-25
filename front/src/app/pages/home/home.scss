@@ -173,12 +173,10 @@
 
 // Latest recipes --------------------------------------------------------------
 
-// Three latest recipes: on two columns (tablets), the first one takes the whole row rather than
-// leaving the third alone on its line
+// Three latest recipes: on two columns (phones, tablets), the first one takes the whole row rather
+// than leaving the third alone on its line
 .latest .recipe-grid > li:first-child:nth-last-child(3) {
-  @include m.from(sm) {
-    grid-column: 1 / -1;
-  }
+  grid-column: 1 / -1;
 
   @include m.from(lg) {
     grid-column: auto;

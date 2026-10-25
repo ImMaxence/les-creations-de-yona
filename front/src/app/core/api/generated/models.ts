@@ -26,4 +26,6 @@ export type { SocialLinksForm } from './models/social-links-form';
 export type { Step } from './models/step';
 export type { ThemeForm } from './models/theme-form';
 export type { ThemeResponse } from './models/theme-response';
+export type { UsingCategory } from './models/using-category';
+export type { UsingRecipe } from './models/using-recipe';
 export type { VersionResponse } from './models/version-response';

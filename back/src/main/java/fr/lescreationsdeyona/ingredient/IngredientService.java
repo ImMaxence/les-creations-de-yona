@@ -35,6 +35,11 @@ public class IngredientService {
 			.toList();
 	}
 
+	/** For the ingredient filter of the public recipes page. */
+	public List<String> publishedNames() {
+		return ingredientRepository.findPublishedNames();
+	}
+
 	/** Ingredients probably written several ways ("Pomme", "pommes"), each group the most used first. */
 	public List<SimilarIngredients> findSimilar() {
 		Map<Long, Long> recipeCounts = recipeCounts();

@@ -28,12 +28,27 @@
   padding: var(--space-3);
 }
 
-.tile__used {
-  overflow: hidden;
+// What shows the photo, each one a link
+.tile__links {
+  display: grid;
+  gap: 0.1rem;
   max-width: 100%;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+  .link-button {
+    max-width: 100%;
+    padding-block: 0.15rem;
+    text-align: left;
+
+    svg {
+      flex: none;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
 }
 
 .tile__delete {

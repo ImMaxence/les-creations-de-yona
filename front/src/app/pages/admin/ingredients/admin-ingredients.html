@@ -1,9 +1,30 @@
 <section class="admin-section" aria-labelledby="ingredients-title">
   <div class="admin-section__head">
     <h2 id="ingredients-title">Ingrédients</h2>
-    <button yonaButton variant="secondary" type="button" [disabled]="detecting()" (click)="detectSimilar()">
-      <svg lucideCopy></svg>{{ detecting() ? 'Recherche…' : 'Détecter les doublons' }}
-    </button>
+    <div class="detect">
+      <button yonaButton variant="secondary" type="button" aria-describedby="detect-help" [disabled]="detecting()" (click)="detectSimilar()">
+        <svg lucideCopy></svg>{{ detecting() ? 'Recherche…' : 'Détecter les doublons' }}
+      </button>
+      <!-- Tooltip: on hover or keyboard focus, and on a tap of the "i" (phones have no hover) -->
+      <button
+        type="button"
+        class="icon-button"
+        aria-label="Comment fonctionne la détection ?"
+        [attr.aria-expanded]="helpOpen()"
+        (click)="helpOpen.set(!helpOpen())"
+      >
+        <svg lucideInfo [size]="18"></svg>
+      </button>
+      <div id="detect-help" role="tooltip" class="detect__tip" [class.is-open]="helpOpen()">
+        <p>Repère les ingrédients sans doute écrits de plusieurs façons :</p>
+        <ul>
+          <li>majuscules et accents (« Crème », « creme ») ;</li>
+          <li>pluriels et ponctuation (« pomme », « pommes ») ;</li>
+          <li>une faute de frappe (« échalote », « échalotte »), deux pour les noms longs.</li>
+        </ul>
+        <p>« Sucre » et « Sucre glace » restent distincts. Rien n'est modifié tout de suite : pour chaque groupe, vous choisissez de fusionner ou d'ignorer.</p>
+      </div>
+    </div>
   </div>
   <p class="field__hint">
     Les ingrédients sont créés depuis les recettes. Un renommage s'applique à toutes les recettes qui
