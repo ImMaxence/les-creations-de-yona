@@ -5,6 +5,9 @@ import fr.lescreationsdeyona.image.ImageProcessor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,6 +44,13 @@ class AdminCategoryController {
 	@PutMapping("/{id}")
 	CategoryResponse renameCategory(@PathVariable long id, @Valid @RequestBody CategoryForm form) {
 		return categoryService.rename(id, form);
+	}
+
+	@Operation(summary = "Delete several categories, all or none; refused while one still contains recipes")
+	@DeleteMapping
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void deleteCategories(@RequestParam @NotEmpty @Size(max = 100) List<Long> ids) {
+		categoryService.deleteAll(ids);
 	}
 
 	@Operation(summary = "Delete a category; refused while it still contains recipes. Its photo stays in the gallery")

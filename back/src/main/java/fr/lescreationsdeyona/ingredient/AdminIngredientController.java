@@ -3,6 +3,7 @@ package fr.lescreationsdeyona.ingredient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,20 @@ class AdminIngredientController {
 		return ingredientService.search(q);
 	}
 
+	@Operation(summary = "Ingredients probably written several ways (\"Pomme\", \"pommes\"), to be merged",
+			description = "Case, accents, punctuation, plurals and one typo ignored (two for long names).")
+	@GetMapping("/similar")
+	List<SimilarIngredients> findSimilarIngredients() {
+		return ingredientService.findSimilar();
+	}
+
+	@Operation(summary = "Merge ingredients: their recipes switch to the one kept, or to a new name",
+			description = "The others are deleted. Refused when two of them are in the same part of a recipe.")
+	@PostMapping("/merge")
+	IngredientResponse mergeIngredients(@Valid @RequestBody IngredientMergeForm form) {
+		return ingredientService.merge(form);
+	}
+
 	@Operation(summary = "Create an ingredient")
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
@@ -44,6 +59,13 @@ class AdminIngredientController {
 	@PutMapping("/{id}")
 	IngredientResponse renameIngredient(@PathVariable long id, @Valid @RequestBody IngredientForm form) {
 		return ingredientService.rename(id, form);
+	}
+
+	@Operation(summary = "Delete several ingredients, all or none; refused while a recipe uses one of them")
+	@DeleteMapping
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void deleteIngredients(@RequestParam @NotEmpty @Size(max = 500) List<Long> ids) {
+		ingredientService.deleteAll(ids);
 	}
 
 	@Operation(summary = "Delete an ingredient; refused while a recipe uses it")

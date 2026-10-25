@@ -14,6 +14,7 @@ export const DEFAULT_PAGE_SIZE = PAGE_SIZES[0];
 export const RECIPES_QUERY = {
   search: 'q',
   category: 'categorie',
+  ingredient: 'ingredient',
   page: 'page',
   pageSize: 'parPage',
 } as const;
@@ -21,6 +22,8 @@ export const RECIPES_QUERY = {
 export interface RecipeFilters {
   search: string;
   category: string | null;
+  /** Part of the name of one of its ingredients. */
+  ingredient: string;
   /** Starts at 1, as displayed. */
   page: number;
   pageSize: number;
@@ -38,6 +41,7 @@ export function readFilters(params: ParamMap): RecipeFilters {
   return {
     search: (params.get(RECIPES_QUERY.search) ?? '').trim().slice(0, 100),
     category: params.get(RECIPES_QUERY.category) || null,
+    ingredient: (params.get(RECIPES_QUERY.ingredient) ?? '').trim().slice(0, 100),
     page: Number.isInteger(page) && page >= 1 ? page : 1,
     pageSize: (PAGE_SIZES as readonly number[]).includes(pageSize) ? pageSize : DEFAULT_PAGE_SIZE,
   };
@@ -49,6 +53,7 @@ export const recipesResolver: ResolveFn<RecipesPageData> = async (route) => {
   const result = await api.invoke(listPublishedRecipes, {
     q: filters.search || undefined,
     category: filters.category ?? undefined,
+    ingredient: filters.ingredient || undefined,
     page: filters.page - 1,
     size: filters.pageSize,
   });
@@ -80,6 +85,6 @@ export function recipesSeo(route: ActivatedRouteSnapshot): PageSeo {
     ),
     canonicalPath: query ? `${RECIPES_PATH}?${query}` : RECIPES_PATH,
     // Search results and pages past the end are not worth indexing
-    noIndex: filters.search !== '' || result.content.length === 0,
+    noIndex: filters.search !== '' || filters.ingredient !== '' || result.content.length === 0,
   };
 }

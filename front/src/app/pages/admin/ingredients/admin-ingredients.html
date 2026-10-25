@@ -1,11 +1,58 @@
 <section class="admin-section" aria-labelledby="ingredients-title">
   <div class="admin-section__head">
     <h2 id="ingredients-title">Ingrédients</h2>
+    <button yonaButton variant="secondary" type="button" [disabled]="detecting()" (click)="detectSimilar()">
+      <svg lucideCopy></svg>{{ detecting() ? 'Recherche…' : 'Détecter les doublons' }}
+    </button>
   </div>
   <p class="field__hint">
     Les ingrédients sont créés depuis les recettes. Un renommage s'applique à toutes les recettes qui
     l'utilisent.
   </p>
+
+  @if (similarGroups(); as groups) {
+    @if (groups.length) {
+      <section class="admin-panel duplicates" aria-labelledby="duplicates-title">
+        <div class="duplicates__head">
+          <h3 id="duplicates-title">Ingrédients écrits de plusieurs façons</h3>
+          <button type="button" class="icon-button" aria-label="Fermer les doublons" (click)="similarGroups.set(null)"><svg lucideX [size]="18"></svg></button>
+        </div>
+        <p class="field__hint">
+          Pour chaque groupe, gardez l'un d'eux (le plus utilisé est proposé), ou remplacez-les tous par un nouveau nom.
+          Les recettes sont mises à jour, les autres ingrédients supprimés.
+        </p>
+        <ul role="list" class="duplicates__list">
+          @for (group of groups; track groupKey(group)) {
+            <li class="duplicate">
+              <fieldset class="duplicate__choices">
+                <legend class="visually-hidden">Ingrédient à garder</legend>
+                @for (ingredient of group.ingredients; track ingredient.id) {
+                  <label class="duplicate__choice">
+                    <input type="radio" [name]="'merge-' + groupKey(group)" [checked]="isKept(group, ingredient)" (change)="keep(group, ingredient)" />
+                    <span>
+                      Garder <strong>« {{ ingredient.name }} »</strong>
+                      <span class="admin-row__meta">{{ ingredient.recipeCount }} recette{{ ingredient.recipeCount > 1 ? 's' : '' }}</span>
+                    </span>
+                  </label>
+                }
+                <label class="duplicate__choice">
+                  <input type="radio" [name]="'merge-' + groupKey(group)" [checked]="newNameOf(group) !== null" (change)="renameAll(group)" />
+                  <span>Tout remplacer par un nouvel ingrédient</span>
+                </label>
+                @if (newNameOf(group) !== null) {
+                  <input class="input duplicate__name" aria-label="Nom du nouvel ingrédient" [maxLength]="maxNameLength" [value]="newNameOf(group)" (input)="renameAll(group, $event)" />
+                }
+              </fieldset>
+              <div class="duplicate__actions">
+                <button type="button" class="link-button" (click)="ignore(group)">Ignorer</button>
+                <button yonaButton type="button" [disabled]="merging() === groupKey(group)" (click)="merge(group)">Fusionner</button>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
 
   <div class="admin-toolbar">
     <input
@@ -16,13 +63,34 @@
       [value]="search()"
       (input)="onSearch($event)"
     />
+    <yona-select label="Utilisation" [options]="usageOptions" [(value)]="usage" />
+    @if (unusedCount()) {
+      <span class="admin-row__meta">{{ unusedCount() }} non utilisé{{ unusedCount() > 1 ? 's' : '' }}</span>
+    }
   </div>
 
-  @if (ingredients.value(); as list) {
-    @if (list.length) {
+  @if (ingredients.value()) {
+    @if (shown().length) {
+      <yona-bulk-bar
+        [shownLabel]="shown().length + ' affichés'"
+        [count]="selection.size()"
+        [allShown]="selection.hasAll(shownIds())"
+        [busy]="deleting()"
+        (toggleAll)="selection.toggleAll(shownIds())"
+        (cleared)="selection.clear()"
+        (deleted)="removeSelected()"
+      />
       <ul role="list" class="admin-list">
-        @for (ingredient of list; track ingredient.id) {
-          <li class="admin-row">
+        @for (ingredient of shown(); track ingredient.id) {
+          <li class="admin-row" [class.is-selected]="selection.has(ingredient.id)">
+            <label class="select-box">
+              <input
+                type="checkbox"
+                [checked]="selection.has(ingredient.id)"
+                [attr.aria-label]="'Sélectionner ' + ingredient.name"
+                (change)="selection.toggle(ingredient.id)"
+              />
+            </label>
             @if (editingId() === ingredient.id) {
               <form class="admin-row__main admin-toolbar" (submit)="$event.preventDefault(); rename(ingredient)">
                 <input class="input" aria-label="Nouveau nom" [maxLength]="maxNameLength" [value]="editedName()" (input)="readEditedName($event)" />
@@ -33,7 +101,14 @@
               <span class="admin-row__main">
                 <span class="admin-row__title">{{ ingredient.name }}</span>
                 <span class="admin-row__meta">
-                  {{ ingredient.recipeCount ? 'Dans ' + ingredient.recipeCount + (ingredient.recipeCount > 1 ? ' recettes' : ' recette') : 'Utilisé dans aucune recette' }}
+                  @if (ingredient.recipeCount) {
+                    <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(ingredient)">
+                      Voir {{ ingredient.recipeCount > 1 ? 'les ' + ingredient.recipeCount + ' recettes' : 'la recette' }}
+                      <svg lucideArrowRight [size]="14"></svg>
+                    </a>
+                  } @else {
+                    Utilisé dans aucune recette
+                  }
                 </span>
               </span>
               <div class="admin-row__actions">

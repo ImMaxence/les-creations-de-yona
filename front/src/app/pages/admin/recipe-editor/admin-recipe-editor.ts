@@ -11,12 +11,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   inject,
   input,
   linkedSignal,
   resource,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FieldTree, FormField, form, submit } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
@@ -25,6 +27,7 @@ import {
   LucideArrowUp,
   LucideCheck,
   LucideExternalLink,
+  LucideEye,
   LucideGripVertical,
   LucideLayers,
   LucidePlus,
@@ -35,6 +38,7 @@ import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
 import { createRecipe } from '../../../core/api/generated/fn/admin-recipes/create-recipe';
+import { previewRecipe } from '../../../core/api/generated/fn/admin-recipes/preview-recipe';
 import { chooseRecipeImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-image';
 import { replaceRecipeImage } from '../../../core/api/generated/fn/admin-recipes/replace-recipe-image';
 import { updateRecipe } from '../../../core/api/generated/fn/admin-recipes/update-recipe';
@@ -50,6 +54,7 @@ import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { SuggestInput, Suggestion } from '../../../shared/ui/suggest-input/suggest-input';
 import { hasParts } from '../../recipe/recipe-parts';
+import RecipePreview from '../recipe-preview/recipe-preview';
 import { PartDraft, emptyIngredient, emptyPart, emptyStep, recipeSchema, toDraft, toRecipeForm } from './recipe-draft';
 import { UnsavedChanges } from './unsaved-changes.guard';
 
@@ -87,12 +92,14 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     Button,
     FieldError,
     ImageUpload,
+    RecipePreview,
     Select,
     SuggestInput,
     LucideArrowDown,
     LucideArrowUp,
     LucideCheck,
     LucideExternalLink,
+    LucideEye,
     LucideGripVertical,
     LucideLayers,
     LucidePlus,
@@ -174,6 +181,10 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly uploading = signal(false);
   protected readonly saving = signal(false);
   protected readonly creatingCategory = signal(false);
+  /** The form as it would be saved, shown full screen by "Aperçu". */
+  protected readonly preview = signal<RecipeDetail | null>(null);
+  protected readonly previewing = signal(false);
+  private readonly previewDialog = viewChild.required<ElementRef<HTMLDialogElement>>('previewDialog');
   protected readonly newCategoryName = signal('');
 
   constructor() {
@@ -182,6 +193,35 @@ export default class AdminRecipeEditor implements UnsavedChanges {
 
   hasUnsavedChanges(): boolean {
     return this.unsaved();
+  }
+
+  /**
+   * The recipe as visitors would see it once saved, changes included, without saving anything:
+   * the API applies the same checks and transformations as a save, then discards them.
+   */
+  protected async openPreview(): Promise<void> {
+    await submit(this.recipeForm, async () => {
+      this.previewing.set(true);
+      try {
+        const recipe = await this.api.invoke(previewRecipe, {
+          id: this.recipe()?.id,
+          body: toRecipeForm(this.draft()),
+        });
+        // A new recipe gets its photo once created: the one chosen in the gallery shows already
+        this.preview.set({ ...recipe, imageId: this.imageId() ?? undefined });
+        this.previewDialog().nativeElement.showModal();
+        this.previewDialog().nativeElement.scrollTo({ top: 0 });
+      } catch {
+        // The API error is already shown as a toast
+      } finally {
+        this.previewing.set(false);
+      }
+      return undefined;
+    });
+  }
+
+  protected closePreview(): void {
+    this.previewDialog().nativeElement.close();
   }
 
   protected isInvalid(field: FieldTree<unknown>): boolean {

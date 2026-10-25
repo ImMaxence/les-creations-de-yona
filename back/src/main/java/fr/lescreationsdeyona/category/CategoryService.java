@@ -8,6 +8,8 @@ import fr.lescreationsdeyona.image.ImageKind;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.recipe.RecipeRepository;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,24 @@ public class CategoryService {
 			throw new ApiException(ErrorCode.CATEGORY_IN_USE);
 		}
 		categoryRepository.delete(category);
+	}
+
+	/** All or none: refused while one of them still contains recipes, naming those. */
+	@Transactional
+	public void deleteAll(Collection<Long> ids) {
+		List<Category> categories = categoryRepository.findAllById(ids);
+		if (categories.size() != new HashSet<>(ids).size()) {
+			throw new ApiException(ErrorCode.CATEGORY_NOT_FOUND);
+		}
+		List<String> inUse = categories.stream()
+			.filter(category -> recipeRepository.existsByCategoriesId(category.getId()))
+			.map(category -> "« " + category.getName() + " »")
+			.toList();
+		if (!inUse.isEmpty()) {
+			throw new ApiException(ErrorCode.CATEGORY_IN_USE, "Suppression annulée : " + String.join(", ", inUse)
+					+ (inUse.size() > 1 ? " contiennent" : " contient") + " encore des recettes.");
+		}
+		categoryRepository.deleteAll(categories);
 	}
 
 	/** "Modifier la photo": the new image is shown, the previous one stays in the gallery. */

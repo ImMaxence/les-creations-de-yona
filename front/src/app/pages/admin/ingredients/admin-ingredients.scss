@@ -1,0 +1,75 @@
+@use 'mixins' as m;
+
+// Groups of ingredients written several ways, each with its merge choice
+.duplicates__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+
+  h3 {
+    font-size: var(--text-xl);
+  }
+}
+
+.duplicates__list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.duplicate {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: 0 0 0 1px var(--color-line);
+
+  @include m.from(md) {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+}
+
+.duplicate__choices {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.duplicate__choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  cursor: pointer;
+
+  input {
+    flex: none;
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--color-accent);
+  }
+
+  > span {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-2);
+  }
+}
+
+.duplicate__name {
+  max-width: 24rem;
+  margin-left: calc(1.1rem + var(--space-2));
+}
+
+.duplicate__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-4);
+}

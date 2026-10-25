@@ -3,6 +3,7 @@ import { LucideChevronLeft, LucideChevronRight, LucideTrash2 } from '@lucide/ang
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { deleteImage } from '../../../core/api/generated/fn/admin-images/delete-image';
+import { deleteImages } from '../../../core/api/generated/fn/admin-images/delete-images';
 import { listImages } from '../../../core/api/generated/fn/admin-images/list-images';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
 import { Confirm } from '../../../core/dialog/confirm';
@@ -11,6 +12,8 @@ import { SiteData } from '../../../core/site/site-data';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { BulkBar } from '../bulk-bar/bulk-bar';
+import { Selection } from '../selection';
 
 type KindFilter = 'ALL' | GalleryImage['kind'];
 type UsageFilter = 'ALL' | 'USED' | 'UNUSED';
@@ -23,7 +26,7 @@ const PAGE_SIZE = 24;
  */
 @Component({
   selector: 'yona-admin-gallery',
-  imports: [CoverImage, Select, ParisDatePipe, LucideChevronLeft, LucideChevronRight, LucideTrash2],
+  imports: [BulkBar, CoverImage, Select, ParisDatePipe, LucideChevronLeft, LucideChevronRight, LucideTrash2],
   templateUrl: './admin-gallery.html',
   styleUrl: './admin-gallery.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,6 +61,11 @@ export default class AdminGallery {
   });
   protected readonly totalPages = computed(() => this.images.value()?.totalPages ?? 0);
 
+  /** Kept from one page to another. */
+  protected readonly selection = new Selection<string>();
+  protected readonly shownIds = computed(() => this.images.value()?.content.map((image) => image.id) ?? []);
+  protected readonly deleting = signal(false);
+
   protected async remove(image: GalleryImage): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: "Supprimer l'image ?",
@@ -68,8 +76,33 @@ export default class AdminGallery {
     });
     if (confirmed && (await attempt(this.api.invoke(deleteImage, { id: image.id }))).ok) {
       this.toaster.success('Image supprimée.');
+      if (this.selection.has(image.id)) {
+        this.selection.toggle(image.id);
+      }
       this.images.reload();
       // A category may have shown it: the navbar and the home page follow
+      await this.siteData.load();
+    }
+  }
+
+  protected async removeSelected(): Promise<void> {
+    const count = this.selection.size();
+    const confirmed = await this.confirm.ask({
+      title: count > 1 ? `Supprimer ${count} images ?` : "Supprimer l'image ?",
+      message:
+        'Elles seront supprimées définitivement. Les recettes et catégories qui en affichent une passeront au visuel par défaut.',
+      confirmLabel: 'Supprimer',
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.deleting.set(true);
+    const deletion = await attempt(this.api.invoke(deleteImages, { ids: this.selection.ids() }));
+    this.deleting.set(false);
+    if (deletion.ok) {
+      this.toaster.success(count > 1 ? `${count} images supprimées.` : 'Image supprimée.');
+      this.selection.clear();
+      this.images.reload();
       await this.siteData.load();
     }
   }

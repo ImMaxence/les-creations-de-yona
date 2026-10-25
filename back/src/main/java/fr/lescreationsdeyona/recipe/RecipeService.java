@@ -15,6 +15,7 @@ import fr.lescreationsdeyona.ingredient.IngredientService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.StringUtils;
 
 @Service
@@ -54,9 +56,9 @@ public class RecipeService {
 	// Public site: published recipes only.
 
 	public Page<RecipeCard> searchPublished(@Nullable String titleQuery, @Nullable String categorySlug,
-			Pageable pageable) {
+			@Nullable String ingredientQuery, Pageable pageable) {
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, RecipeStatus.PUBLISHED),
+			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, ingredientQuery, null, RecipeStatus.PUBLISHED),
 					Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toCard);
 	}
@@ -70,7 +72,7 @@ public class RecipeService {
 
 	public List<RecipeSuggestion> suggestTitles(String titleQuery) {
 		return recipeRepository
-			.findBy(RecipeSpecifications.matching(titleQuery, null, RecipeStatus.PUBLISHED),
+			.findBy(RecipeSpecifications.matching(titleQuery, null, null, null, RecipeStatus.PUBLISHED),
 					query -> query.sortBy(Sort.by("title")).limit(SUGGESTION_LIMIT).all())
 			.stream()
 			.map(recipeMapper::toSuggestion)
@@ -87,9 +89,10 @@ public class RecipeService {
 	// Back-office: every recipe, drafts included.
 
 	public Page<RecipeAdminSummary> searchAll(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable RecipeStatus status, Pageable pageable) {
+			@Nullable String ingredientQuery, @Nullable Long ingredientId, @Nullable RecipeStatus status,
+			Pageable pageable) {
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, status),
+			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, ingredientQuery, ingredientId, status),
 					Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toAdminSummary);
 	}
@@ -116,10 +119,39 @@ public class RecipeService {
 		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 
+	/**
+	 * The recipe as it would be saved from this form, for the preview of the back-office: same
+	 * checks and same transformations (capital letter, video id, known ingredients), but nothing is
+	 * written. {@code id} is null for a recipe not created yet.
+	 */
+	@Transactional
+	public RecipeDetail preview(@Nullable Long id, RecipeForm form) {
+		// Rolled back whatever happens: new ingredients and every change are discarded.
+		TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+		Recipe recipe = id == null ? new Recipe() : find(id);
+		if (id == null) {
+			recipe.setSlug(Slugs.uniqueSlug(form.title(), "recette", recipeRepository::existsBySlug));
+			recipe.setCreatedAt(Instant.now());
+		}
+		apply(form, recipe);
+		recipe.setUpdatedAt(Instant.now());
+		return recipeMapper.toDetail(recipe);
+	}
+
 	/** Its photo stays in the gallery. */
 	@Transactional
 	public void delete(long id) {
 		recipeRepository.delete(find(id));
+	}
+
+	/** All or none: an unknown id cancels the whole deletion. Their photos stay in the gallery. */
+	@Transactional
+	public void deleteAll(Collection<Long> ids) {
+		List<Recipe> recipes = recipeRepository.findAllById(ids);
+		if (recipes.size() != new HashSet<>(ids).size()) {
+			throw new ApiException(ErrorCode.RECIPE_NOT_FOUND);
+		}
+		recipeRepository.deleteAll(recipes);
 	}
 
 	/** "Modifier la photo": the new image is shown, the previous one stays in the gallery. */

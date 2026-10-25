@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { LucideSearchX } from '@lucide/angular';
+import { LucideCarrot, LucideSearchX, LucideX } from '@lucide/angular';
 import { RecipeSuggestion } from '../../core/api/generated/models/recipe-suggestion';
 import { SiteData } from '../../core/site/site-data';
 import { Reveal } from '../../shared/motion/reveal';
@@ -14,7 +14,7 @@ import { DEFAULT_PAGE_SIZE, PAGE_SIZES, RECIPES_QUERY, RecipesPageData } from '.
 
 @Component({
   selector: 'yona-recipes',
-  imports: [RouterLink, LucideSearchX, Button, Pagination, RecipeCard, Reveal, SearchBox, Select],
+  imports: [RouterLink, LucideCarrot, LucideSearchX, LucideX, Button, Pagination, RecipeCard, Reveal, SearchBox, Select],
   templateUrl: './recipes.html',
   styleUrl: './recipes.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,15 +37,32 @@ export default class Recipes {
     () => this.categories().find((category) => category.slug === this.filters().category) ?? null,
   );
   protected readonly hasFilters = computed(
-    () => this.filters().search !== '' || this.filters().category !== null,
+    () => this.filters().search !== '' || this.filters().category !== null || this.filters().ingredient !== '',
   );
+  /** A drop-down rather than a row of chips: the categories grow in number. */
+  protected readonly categoryOptions = computed<SelectOption<string>[]>(() => [
+    { value: '', label: 'Toutes les catégories' },
+    ...this.categories().map((category) => ({ value: category.slug, label: category.name })),
+  ]);
+  /** Typed in the ingredient field, applied on Enter. */
+  protected readonly ingredientQuery = linkedSignal(() => this.filters().ingredient);
   protected readonly countLabel = computed(() => {
     const count = this.result().totalElements;
     return count === 0 ? 'Aucune recette' : count === 1 ? '1 recette' : `${count} recettes`;
   });
 
-  protected categoryParams(slug: string | null): Record<string, string | null> {
-    return { [RECIPES_QUERY.category]: slug, [RECIPES_QUERY.page]: null };
+  protected changeCategory(slug: string | undefined): void {
+    this.updateQuery({ [RECIPES_QUERY.category]: slug || null, [RECIPES_QUERY.page]: null });
+  }
+
+  protected searchIngredient(event: Event): void {
+    event.preventDefault();
+    this.updateQuery({ [RECIPES_QUERY.ingredient]: this.ingredientQuery().trim() || null, [RECIPES_QUERY.page]: null });
+  }
+
+  protected clearIngredient(): void {
+    this.ingredientQuery.set('');
+    this.updateQuery({ [RECIPES_QUERY.ingredient]: null, [RECIPES_QUERY.page]: null });
   }
 
   protected search(search: string): void {

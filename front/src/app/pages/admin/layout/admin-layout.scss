@@ -304,3 +304,65 @@ textarea.input {
   display: flex;
   justify-content: center;
 }
+
+// Text button, e.g. "Désélectionner", "Nouvelle catégorie"
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-1);
+  padding-block: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+
+  @include m.hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
+// Selection (the bar itself: bulk-bar.ts) ----------------------------------------
+
+// Tick box at the start of a row or a card
+.select-box {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  cursor: pointer;
+
+  input {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+  }
+}
+
+.admin-row.is-selected {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+// Small photo at the start of a recipe row
+.admin-thumb {
+  flex: none;
+  width: 4rem;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+// Removes a filter, inside its badge
+.filter-chip__clear {
+  display: inline-grid;
+  place-items: center;
+  margin-right: -0.3rem;
+  padding: 0.1rem;
+  border-radius: 50%;
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+}

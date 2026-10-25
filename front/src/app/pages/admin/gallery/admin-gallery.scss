@@ -59,3 +59,19 @@
   background-color: color-mix(in srgb, var(--color-danger) 14%, transparent);
   color: var(--color-danger);
 }
+
+// Tick box over the photo, top left (the delete button is top right)
+.tile__select {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 1;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--color-bg) 85%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.tile.is-selected {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}

@@ -7,7 +7,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springdoc.core.annotations.ParameterObject;
@@ -46,10 +48,14 @@ class AdminRecipeController {
 			@RequestParam(required = false) @Size(max = 100) @Nullable String q,
 			@Parameter(description = "Category slug")
 			@RequestParam(required = false) @Nullable String category,
+			@Parameter(description = "Part of the name of one of its ingredients, case and accents ignored")
+			@RequestParam(required = false) @Size(max = 100) @Nullable String ingredient,
+			@Parameter(description = "Id of one of its ingredients")
+			@RequestParam(required = false) @Nullable Long ingredientId,
 			@RequestParam(required = false) @Nullable RecipeStatus status,
 			@ParameterObject @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
-		return PageResponse.of(recipeService.searchAll(q, category, status, pageable));
+		return PageResponse.of(recipeService.searchAll(q, category, ingredient, ingredientId, status, pageable));
 	}
 
 	@Operation(summary = "A recipe, for the edit form")
@@ -71,6 +77,20 @@ class AdminRecipeController {
 	@PutMapping("/{id}")
 	RecipeDetail updateRecipe(@PathVariable long id, @Valid @RequestBody RecipeForm form) {
 		return recipeService.update(id, form);
+	}
+
+	@Operation(summary = "Preview a recipe as it would be saved, without saving anything",
+			description = "Same checks as a save. id: the recipe being edited, absent for a new one.")
+	@PostMapping("/preview")
+	RecipeDetail previewRecipe(@RequestParam(required = false) @Nullable Long id, @Valid @RequestBody RecipeForm form) {
+		return recipeService.preview(id, form);
+	}
+
+	@Operation(summary = "Delete several recipes, all or none; their photos stay in the gallery")
+	@DeleteMapping
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void deleteRecipes(@RequestParam @NotEmpty @Size(max = 100) List<Long> ids) {
+		recipeService.deleteAll(ids);
 	}
 
 	@Operation(summary = "Delete a recipe with its ingredients and steps; its photo stays in the gallery")

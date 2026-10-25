@@ -1,9 +1,12 @@
 <form class="editor" novalidate (submit)="$event.preventDefault(); save()">
   <div class="admin-section__head">
     <h2>{{ isNew() ? 'Nouvelle recette' : draft().title || 'Recette sans titre' }}</h2>
-    @if (publicLink(); as link) {
-      <a yonaButton variant="ghost" target="_blank" [routerLink]="link"><svg lucideExternalLink></svg>Voir sur le site</a>
-    }
+    <div class="editor__head-actions">
+      <button yonaButton variant="secondary" type="button" [disabled]="previewing()" (click)="openPreview()"><svg lucideEye></svg>Aperçu</button>
+      @if (publicLink(); as link) {
+        <a yonaButton variant="ghost" target="_blank" [routerLink]="link"><svg lucideExternalLink></svg>Voir sur le site</a>
+      }
+    </div>
   </div>
 
   <section class="admin-panel" aria-labelledby="info-title">
@@ -177,11 +180,21 @@
 
   <div class="editor__bar">
     <a yonaButton variant="ghost" routerLink="/admin/recettes">Retour à la liste</a>
+    <button yonaButton variant="secondary" type="button" class="editor__preview" [disabled]="previewing()" (click)="openPreview()">
+      <svg lucideEye></svg>Aperçu
+    </button>
     <button yonaButton type="submit" [disabled]="saving()">
       {{ saving() ? 'Enregistrement…' : isNew() ? 'Créer la recette' : 'Enregistrer' }}
     </button>
   </div>
 </form>
+
+<!-- Modal: focus kept inside, Escape closes it -->
+<dialog #previewDialog class="preview-dialog" aria-label="Aperçu de la recette" (close)="preview.set(null)">
+  @if (preview(); as recipe) {
+    <yona-recipe-preview closable [recipe]="recipe" [unsaved]="hasUnsavedChanges()" (closed)="closePreview()" />
+  }
+</dialog>
 
 <!-- Ingredients of a part (the only part of a recipe without parts) -->
 <ng-template #ingredientsEditor let-p>

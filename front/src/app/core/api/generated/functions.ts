@@ -19,6 +19,10 @@ export type { SearchRecipes$Params as SearchRecipes$Params } from './fn/admin-re
 export { searchRecipes as searchRecipes } from './fn/admin-recipes/search-recipes';
 export type { CreateRecipe$Params as CreateRecipe$Params } from './fn/admin-recipes/create-recipe';
 export { createRecipe as createRecipe } from './fn/admin-recipes/create-recipe';
+export type { DeleteRecipes$Params as DeleteRecipes$Params } from './fn/admin-recipes/delete-recipes';
+export { deleteRecipes as deleteRecipes } from './fn/admin-recipes/delete-recipes';
+export type { PreviewRecipe$Params as PreviewRecipe$Params } from './fn/admin-recipes/preview-recipe';
+export { previewRecipe as previewRecipe } from './fn/admin-recipes/preview-recipe';
 export type { RenameIngredient$Params as RenameIngredient$Params } from './fn/admin-ingredients/rename-ingredient';
 export { renameIngredient as renameIngredient } from './fn/admin-ingredients/rename-ingredient';
 export type { DeleteIngredient$Params as DeleteIngredient$Params } from './fn/admin-ingredients/delete-ingredient';
@@ -27,6 +31,12 @@ export type { SearchIngredients$Params as SearchIngredients$Params } from './fn/
 export { searchIngredients as searchIngredients } from './fn/admin-ingredients/search-ingredients';
 export type { CreateIngredient$Params as CreateIngredient$Params } from './fn/admin-ingredients/create-ingredient';
 export { createIngredient as createIngredient } from './fn/admin-ingredients/create-ingredient';
+export type { DeleteIngredients$Params as DeleteIngredients$Params } from './fn/admin-ingredients/delete-ingredients';
+export { deleteIngredients as deleteIngredients } from './fn/admin-ingredients/delete-ingredients';
+export type { MergeIngredients$Params as MergeIngredients$Params } from './fn/admin-ingredients/merge-ingredients';
+export { mergeIngredients as mergeIngredients } from './fn/admin-ingredients/merge-ingredients';
+export type { FindSimilarIngredients$Params as FindSimilarIngredients$Params } from './fn/admin-ingredients/find-similar-ingredients';
+export { findSimilarIngredients as findSimilarIngredients } from './fn/admin-ingredients/find-similar-ingredients';
 export type { RenameCategory$Params as RenameCategory$Params } from './fn/admin-categories/rename-category';
 export { renameCategory as renameCategory } from './fn/admin-categories/rename-category';
 export type { DeleteCategory$Params as DeleteCategory$Params } from './fn/admin-categories/delete-category';
@@ -37,6 +47,8 @@ export type { ChooseCategoryImage$Params as ChooseCategoryImage$Params } from '.
 export { chooseCategoryImage as chooseCategoryImage } from './fn/admin-categories/choose-category-image';
 export type { CreateCategory$Params as CreateCategory$Params } from './fn/admin-categories/create-category';
 export { createCategory as createCategory } from './fn/admin-categories/create-category';
+export type { DeleteCategories$Params as DeleteCategories$Params } from './fn/admin-categories/delete-categories';
+export { deleteCategories as deleteCategories } from './fn/admin-categories/delete-categories';
 export type { GetTheme$Params as GetTheme$Params } from './fn/theme/get-theme';
 export { getTheme as getTheme } from './fn/theme/get-theme';
 export type { ListSocialLinks$Params as ListSocialLinks$Params } from './fn/social-links/list-social-links';
@@ -59,6 +71,8 @@ export type { GetCurrentAdmin$Params as GetCurrentAdmin$Params } from './fn/auth
 export { getCurrentAdmin as getCurrentAdmin } from './fn/authentication/get-current-admin';
 export type { ListImages$Params as ListImages$Params } from './fn/admin-images/list-images';
 export { listImages as listImages } from './fn/admin-images/list-images';
+export type { DeleteImages$Params as DeleteImages$Params } from './fn/admin-images/delete-images';
+export { deleteImages as deleteImages } from './fn/admin-images/delete-images';
 export type { DeleteImage$Params as DeleteImage$Params } from './fn/admin-images/delete-image';
 export { deleteImage as deleteImage } from './fn/admin-images/delete-image';
 export type { DownloadBackup$Params as DownloadBackup$Params } from './fn/admin-backup/download-backup';

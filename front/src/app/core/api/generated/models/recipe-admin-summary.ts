@@ -10,6 +10,7 @@ export interface RecipeAdminSummary {
   categories: Array<CategoryResponse>;
   featured: boolean;
   id: number;
+  imageId?: string;
   slug: string;
   status: 'DRAFT' | 'PUBLISHED';
   title: string;

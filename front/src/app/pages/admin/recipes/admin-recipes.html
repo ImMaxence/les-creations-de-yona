@@ -13,16 +13,60 @@
       [value]="search()"
       (input)="onSearch($event)"
     />
+    <input
+      type="search"
+      class="input"
+      placeholder="Avec l'ingrédient…"
+      aria-label="Rechercher par ingrédient"
+      [value]="ingredientSearch()"
+      (input)="onIngredientSearch($event)"
+    />
+    <yona-select label="Catégorie" [options]="categoryOptions()" [value]="category()" (valueChange)="changeCategory($event)" />
     <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="changeStatus($event)" />
   </div>
 
+  @if (exactIngredient(); as name) {
+    <p class="admin-toolbar">
+      <span class="badge badge--featured">
+        Avec l'ingrédient « {{ name }} »
+        <button type="button" class="filter-chip__clear" aria-label="Retirer ce filtre" (click)="clearExactIngredient()">
+          <svg lucideX [size]="14"></svg>
+        </button>
+      </span>
+    </p>
+  }
+
   @if (recipes.value(); as result) {
     @if (result.content.length) {
+      <yona-bulk-bar
+        shownLabel="cette page"
+        [count]="selection.size()"
+        [allShown]="selection.hasAll(shownIds())"
+        [busy]="deleting()"
+        (toggleAll)="selection.toggleAll(shownIds())"
+        (cleared)="selection.clear()"
+        (deleted)="removeSelected()"
+      />
+      <p class="admin-row__meta" aria-live="polite">
+        {{ totalElements() }} recette{{ totalElements() > 1 ? 's' : '' }}
+        @if (totalPages() > 1) {
+          · page {{ currentPage() }} sur {{ totalPages() }}
+        }
+      </p>
       <ul role="list" class="admin-list">
         @for (recipe of result.content; track recipe.id) {
-          <li class="admin-row">
+          <li class="admin-row" [class.is-selected]="selection.has(recipe.id)">
+            <label class="select-box">
+              <input
+                type="checkbox"
+                [checked]="selection.has(recipe.id)"
+                [attr.aria-label]="'Sélectionner « ' + recipe.title + ' »'"
+                (change)="selection.toggle(recipe.id)"
+              />
+            </label>
+            <yona-cover-image class="admin-thumb" [imageId]="recipe.imageId" [alt]="''" sizes="4rem" />
             <div class="admin-row__main">
-              <span class="admin-row__title">{{ recipe.title }}</span>
+              <a class="admin-row__title" [routerLink]="[recipe.id]">{{ recipe.title }}</a>
               <span class="admin-row__meta">
                 <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'">
                   {{ recipe.status === 'PUBLISHED' ? 'Publiée' : 'Brouillon' }}
@@ -38,6 +82,10 @@
               @if (recipe.status === 'PUBLISHED') {
                 <a class="icon-button" target="_blank" [routerLink]="publicLink(recipe)" [attr.aria-label]="'Voir « ' + recipe.title + ' » sur le site'">
                   <svg lucideExternalLink [size]="18"></svg>
+                </a>
+              } @else {
+                <a class="icon-button" target="_blank" [routerLink]="['/admin/apercu', recipe.id]" [attr.aria-label]="'Aperçu de « ' + recipe.title + ' »'">
+                  <svg lucideEye [size]="18"></svg>
                 </a>
               }
               <a class="icon-button" [routerLink]="[recipe.id]" [attr.aria-label]="'Modifier « ' + recipe.title + ' »'">
@@ -55,7 +103,12 @@
         <yona-pagination [page]="currentPage()" [totalPages]="totalPages()" />
       }
     } @else {
-      <p class="admin-empty">Aucune recette ne correspond.</p>
+      <div class="admin-empty">
+        <p>Aucune recette ne correspond.</p>
+        @if (hasFilters()) {
+          <button type="button" class="link-button" (click)="clearFilters()">Retirer tous les filtres</button>
+        }
+      </div>
     }
   } @else if (recipes.isLoading()) {
     <p class="admin-empty">Chargement…</p>

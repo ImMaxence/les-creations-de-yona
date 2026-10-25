@@ -31,3 +31,12 @@
     font-size: var(--text-lg);
   }
 }
+
+.card.is-selected {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+// The check box sits in the name row: no extra gap before the name
+.card__name .select-box {
+  margin-left: calc(-1 * var(--space-2));
+}

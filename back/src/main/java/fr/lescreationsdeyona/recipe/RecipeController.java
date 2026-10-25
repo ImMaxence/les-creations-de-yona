@@ -29,16 +29,18 @@ class RecipeController {
 	private final RecipeService recipeService;
 
 	@Operation(summary = "Published recipes, filtered by title and category",
-			description = "Sort on title, createdAt or updatedAt. The home page asks for size=6.")
+			description = "Sort on title, createdAt or updatedAt. The home page asks for size=3.")
 	@GetMapping("/recipes")
 	PageResponse<RecipeCard> listPublishedRecipes(
 			@Parameter(description = "Part of the title, case and accents ignored")
 			@RequestParam(required = false) @Size(max = 100) @Nullable String q,
 			@Parameter(description = "Category slug")
 			@RequestParam(required = false) @Nullable String category,
+			@Parameter(description = "Part of the name of one of its ingredients, case and accents ignored")
+			@RequestParam(required = false) @Size(max = 100) @Nullable String ingredient,
 			@ParameterObject @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
-		return PageResponse.of(recipeService.searchPublished(q, category, pageable));
+		return PageResponse.of(recipeService.searchPublished(q, category, ingredient, pageable));
 	}
 
 	@Operation(summary = "Published recipe by slug; 404 for a draft")

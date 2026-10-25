@@ -10,6 +10,12 @@ public class ApiException extends RuntimeException {
 		this.code = code;
 	}
 
+	/** With a detail more precise than the code's message, e.g. naming the items concerned. */
+	public ApiException(ErrorCode code, String detail) {
+		super(detail);
+		this.code = code;
+	}
+
 	public ApiException(ErrorCode code, Throwable cause) {
 		super(code.message(), cause);
 		this.code = code;

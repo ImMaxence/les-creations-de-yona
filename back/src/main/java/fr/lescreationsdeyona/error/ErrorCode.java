@@ -44,6 +44,8 @@ public enum ErrorCode {
 	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable."),
 	INGREDIENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Cet ingrédient existe déjà."),
 	INGREDIENT_IN_USE(HttpStatus.CONFLICT, "Cet ingrédient est utilisé dans au moins une recette."),
+	INGREDIENT_MERGE_INVALID(HttpStatus.BAD_REQUEST, "Choisissez au moins deux ingrédients, et l'ingrédient à garder ou le nouveau nom."),
+	INGREDIENT_MERGE_CONFLICT(HttpStatus.CONFLICT, "Ces ingrédients figurent ensemble dans une même partie d'une recette : corrigez-la avant de les fusionner."),
 
 	// Social links
 	DUPLICATE_SOCIAL_PLATFORM(HttpStatus.BAD_REQUEST, "Chaque réseau social ne peut apparaître qu'une seule fois."),

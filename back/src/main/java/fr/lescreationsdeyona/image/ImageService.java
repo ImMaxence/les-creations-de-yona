@@ -3,6 +3,8 @@ package fr.lescreationsdeyona.image;
 import fr.lescreationsdeyona.common.Pageables;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,6 +82,12 @@ public class ImageService {
 		String folder = image.getS3Prefix();
 		imageRepository.delete(image);
 		onCompletion(TransactionSynchronization.STATUS_COMMITTED, () -> imageStorage.deleteFolder(folder));
+	}
+
+	/** All or none, in a single transaction: files are removed once every deletion is committed. */
+	@Transactional
+	public void deleteAll(Collection<UUID> ids) {
+		new HashSet<>(ids).forEach(this::delete);
 	}
 
 	private Map<UUID, List<String>> usagesOf(List<UUID> imageIds) {

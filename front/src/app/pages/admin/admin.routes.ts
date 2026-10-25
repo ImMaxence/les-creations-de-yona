@@ -14,6 +14,15 @@ export const adminRoutes: Routes = [
     title: 'Accès refusé',
     data: { [SEO_DATA_KEY]: NO_INDEX },
   },
+  // A recipe as visitors see it, drafts included: outside the back-office layout, within the site's
+  {
+    path: 'apercu/:id',
+    loadComponent: () => import('./recipe-preview/recipe-preview'),
+    canActivate: [adminGuard],
+    resolve: { recipe: adminRecipeResolver },
+    title: 'Aperçu · Back-office',
+    data: { [SEO_DATA_KEY]: NO_INDEX },
+  },
   {
     path: '',
     loadComponent: () => import('./layout/admin-layout'),

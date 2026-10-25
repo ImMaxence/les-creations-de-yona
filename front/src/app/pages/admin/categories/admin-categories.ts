@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { LucideCheck, LucidePencil, LucidePlus, LucideTrash2, LucideX } from '@lucide/angular';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { chooseCategoryImage } from '../../../core/api/generated/fn/admin-categories/choose-category-image';
 import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
+import { deleteCategories } from '../../../core/api/generated/fn/admin-categories/delete-categories';
 import { deleteCategory } from '../../../core/api/generated/fn/admin-categories/delete-category';
 import { renameCategory } from '../../../core/api/generated/fn/admin-categories/rename-category';
 import { replaceCategoryImage } from '../../../core/api/generated/fn/admin-categories/replace-category-image';
@@ -13,13 +15,16 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
 import { Button } from '../../../shared/ui/button/button';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
+import { BulkBar } from '../bulk-bar/bulk-bar';
+import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
+import { Selection } from '../selection';
 
 const MAX_NAME_LENGTH = 60;
 
 /** Categories also feed the navbar and the home page: SiteData is reloaded after each change. */
 @Component({
   selector: 'yona-admin-categories',
-  imports: [Button, ImageUpload, LucideCheck, LucidePencil, LucidePlus, LucideTrash2, LucideX],
+  imports: [RouterLink, BulkBar, Button, ImageUpload, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX],
   templateUrl: './admin-categories.html',
   styleUrl: './admin-categories.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +41,15 @@ export default class AdminCategories {
   protected readonly editingId = signal<number | null>(null);
   protected readonly editedName = signal('');
   protected readonly uploadingId = signal<number | null>(null);
+
+  protected readonly selection = new Selection<number>();
+  protected readonly categoryIds = computed(() => this.categories().map((category) => category.id));
+  protected readonly deleting = signal(false);
+
+  /** The back-office recipe list, filtered on this category. */
+  protected recipesLink(category: CategoryResponse): Record<string, string> {
+    return { [ADMIN_RECIPES_QUERY.category]: category.slug };
+  }
 
   protected readNewName(event: Event): void {
     this.newName.set((event.target as HTMLInputElement).value);
@@ -112,6 +126,31 @@ export default class AdminCategories {
       return;
     }
     this.toaster.success('Catégorie supprimée.');
+    if (this.selection.has(category.id)) {
+      this.selection.toggle(category.id);
+    }
     await this.siteData.load();
+  }
+
+  /** All or none: the API refuses if one of them still contains recipes, and names it. */
+  protected async removeSelected(): Promise<void> {
+    const count = this.selection.size();
+    const confirmed = await this.confirm.ask({
+      title: count > 1 ? `Supprimer ${count} catégories ?` : 'Supprimer la catégorie ?',
+      message:
+        "Leurs photos resteront dans la galerie. Impossible si l'une d'elles contient encore des recettes : rien n'est alors supprimé.",
+      confirmLabel: 'Supprimer',
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.deleting.set(true);
+    const deletion = await attempt(this.api.invoke(deleteCategories, { ids: this.selection.ids() }));
+    this.deleting.set(false);
+    if (deletion.ok) {
+      this.toaster.success(count > 1 ? `${count} catégories supprimées.` : 'Catégorie supprimée.');
+      this.selection.clear();
+      await this.siteData.load();
+    }
   }
 }

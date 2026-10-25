@@ -13,9 +13,26 @@
 
   @if (images.value(); as result) {
     @if (result.content.length) {
+      <yona-bulk-bar
+        shownLabel="cette page"
+        [count]="selection.size()"
+        [allShown]="selection.hasAll(shownIds())"
+        [busy]="deleting()"
+        (toggleAll)="selection.toggleAll(shownIds())"
+        (cleared)="selection.clear()"
+        (deleted)="removeSelected()"
+      />
       <ul role="list" class="gallery">
         @for (image of result.content; track image.id) {
-          <li class="tile" [class.is-unused]="!image.usedBy.length">
+          <li class="tile" [class.is-unused]="!image.usedBy.length" [class.is-selected]="selection.has(image.id)">
+            <label class="select-box tile__select">
+              <input
+                type="checkbox"
+                [checked]="selection.has(image.id)"
+                aria-label="Sélectionner l'image"
+                (change)="selection.toggle(image.id)"
+              />
+            </label>
             <yona-cover-image class="tile__image" [imageId]="image.id" [alt]="image.usedBy.join(', ')" sizes="16rem" />
             <div class="tile__info">
               @if (image.usedBy.length) {

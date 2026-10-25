@@ -16,9 +16,17 @@
   </form>
 
   @if (categories().length) {
+    <yona-bulk-bar
+      [count]="selection.size()"
+      [allShown]="selection.hasAll(categoryIds())"
+      [busy]="deleting()"
+      (toggleAll)="selection.toggleAll(categoryIds())"
+      (cleared)="selection.clear()"
+      (deleted)="removeSelected()"
+    />
     <ul role="list" class="cards">
       @for (category of categories(); track category.id) {
-        <li class="admin-panel card">
+        <li class="admin-panel card" [class.is-selected]="selection.has(category.id)">
           <yona-image-upload
             [imageId]="category.imageId"
             [busy]="uploadingId() === category.id"
@@ -26,6 +34,10 @@
             (galleryImageChosen)="chooseImage(category, $event)"
             (removed)="chooseImage(category, null)"
           />
+          <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(category)">
+            <svg lucideList [size]="16"></svg>
+            Voir ses recettes
+          </a>
           @if (editingId() === category.id) {
             <form class="card__rename" (submit)="$event.preventDefault(); rename(category)">
               <input
@@ -40,6 +52,14 @@
             </form>
           } @else {
             <div class="card__name">
+              <label class="select-box">
+                <input
+                  type="checkbox"
+                  [checked]="selection.has(category.id)"
+                  [attr.aria-label]="'Sélectionner ' + category.name"
+                  (change)="selection.toggle(category.id)"
+                />
+              </label>
               <strong>{{ category.name }}</strong>
               <div class="admin-row__actions">
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + category.name" (click)="startRename(category)">

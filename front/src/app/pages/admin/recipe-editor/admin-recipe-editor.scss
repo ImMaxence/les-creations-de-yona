@@ -101,22 +101,6 @@ yona-select {
   gap: var(--space-1);
 }
 
-.link-button {
-  display: inline-flex;
-  align-items: center;
-  justify-self: start;
-  gap: var(--space-1);
-  padding-block: var(--space-1);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-accent);
-
-  @include m.hover {
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
-}
-
 // Parts of a recipe (the dough, the filling…)
 .part__head {
   display: flex;
@@ -301,4 +285,36 @@ yona-select {
   background-color: color-mix(in srgb, var(--color-bg) 90%, transparent);
   box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
   backdrop-filter: blur(10px);
+}
+
+.editor__head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+// Pushes the save button to the right, next to it
+.editor__preview {
+  margin-left: auto;
+}
+
+// Full-screen preview, scrolled on its own
+.preview-dialog {
+  --preview-top: 0;
+
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+
+  &::backdrop {
+    background-color: rgb(0 0 0 / 40%);
+  }
 }

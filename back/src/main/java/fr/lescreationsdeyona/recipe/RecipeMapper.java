@@ -14,6 +14,7 @@ public interface RecipeMapper {
 	@Mapping(target = "categorySlug", source = "mainCategory.slug")
 	RecipeSuggestion toSuggestion(Recipe recipe);
 
+	@Mapping(target = "imageId", source = "image.id")
 	RecipeAdminSummary toAdminSummary(Recipe recipe);
 
 	@Mapping(target = "imageId", source = "image.id")

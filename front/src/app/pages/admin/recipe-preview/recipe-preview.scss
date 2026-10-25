@@ -1,0 +1,51 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+  padding-bottom: var(--space-8);
+}
+
+// Stays in sight while scrolling, under the site header (at the very top in the editor's dialog)
+.banner {
+  position: sticky;
+  top: var(--preview-top, var(--header-height));
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--container-padding);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: var(--shadow-md);
+}
+
+.banner__text {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.banner__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-on-accent) 18%, transparent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-on-accent) 30%, transparent);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}

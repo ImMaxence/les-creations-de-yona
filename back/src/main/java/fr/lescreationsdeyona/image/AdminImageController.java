@@ -3,6 +3,9 @@ package fr.lescreationsdeyona.image;
 import fr.lescreationsdeyona.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -35,6 +38,13 @@ class AdminImageController {
 			@ParameterObject @PageableDefault(size = 24, sort = "createdAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		return PageResponse.of(imageService.gallery(kind, used, pageable));
+	}
+
+	@Operation(summary = "Delete several images, all or none; the recipes and categories showing them fall back to the default visual")
+	@DeleteMapping
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void deleteImages(@RequestParam @NotEmpty @Size(max = 100) List<UUID> ids) {
+		imageService.deleteAll(ids);
 	}
 
 	@Operation(summary = "Delete an image; the recipes and categories showing it fall back to the default visual")

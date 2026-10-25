@@ -30,70 +30,84 @@
   gap: var(--space-4);
 
   @include m.from(md) {
-    grid-template-columns: minmax(18rem, 26rem) 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: center;
-    gap: var(--space-6);
+  }
+
+  @include m.from(lg) {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(12rem, 16rem);
   }
 }
 
-// Category chips: one scrolling row on phones, wrapped on larger screens
-.filters {
-  margin-inline: calc(-1 * var(--container-padding));
-  overflow-x: auto;
-  scrollbar-width: none;
-  mask-image: linear-gradient(to right, transparent, #000 var(--space-4), #000 calc(100% - var(--space-6)), transparent);
-
-  @include m.from(md) {
-    margin-inline: 0;
-    overflow: visible;
-    mask-image: none;
-  }
-}
-
-.filters__list {
+// Ingredient search: same look as the title search next to it, without suggestions
+.ingredient-search {
+  position: relative;
   display: flex;
-  gap: var(--space-2);
-  width: max-content;
-  padding: var(--space-1) var(--container-padding);
+  align-items: center;
+}
 
-  @include m.from(md) {
-    flex-wrap: wrap;
-    width: auto;
-    padding: 0;
+.ingredient-search__icon {
+  position: absolute;
+  left: var(--space-4);
+  color: var(--color-text-muted);
+  pointer-events: none;
+  transition: color var(--duration-base) var(--ease-out);
+
+  .ingredient-search:focus-within & {
+    color: var(--color-accent);
   }
 }
 
-.filter {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.5rem;
-  padding: var(--space-2) var(--space-4);
+.ingredient-search__input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: var(--space-3) var(--space-8) var(--space-3) calc(var(--space-4) + 1.75rem);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  white-space: nowrap;
-  text-decoration: none;
+  background-color: var(--color-bg);
+  font-size: var(--text-base); // 16px minimum: no zoom on focus in iOS Safari
+  box-shadow: var(--shadow-sm);
   transition:
-    background-color var(--duration-base) var(--ease-out),
     border-color var(--duration-base) var(--ease-out),
-    color var(--duration-base) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
-  -webkit-tap-highlight-color: transparent;
+    box-shadow var(--duration-base) var(--ease-out);
+  appearance: none;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &::-webkit-search-cancel-button {
+    appearance: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--color-accent) 15%, transparent),
+      var(--shadow-sm);
+  }
+}
+
+.ingredient-search__clear {
+  position: absolute;
+  right: var(--space-2);
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  transition: background-color var(--duration-fast) var(--ease-out);
 
   @include m.hover {
-    border-color: var(--color-text-muted);
+    background-color: var(--color-surface);
+    color: var(--color-text);
   }
+}
 
-  &:active {
-    transform: scale(0.96);
-  }
-
-  &.is-active {
-    border-color: var(--color-accent);
-    background-color: var(--color-accent);
-    color: var(--color-on-accent);
-  }
+.category-select {
+  display: block;
 }
 
 .card-enter {

@@ -2,8 +2,13 @@ package fr.lescreationsdeyona.ingredient;
 
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -24,11 +29,24 @@ public class IngredientService {
 		List<Ingredient> ingredients = StringUtils.hasText(query)
 				? ingredientRepository.findByNameContainingOrderByNameAsc(query.strip())
 				: ingredientRepository.findAll(Sort.by("name"));
-		Map<Long, Long> recipeCounts = ingredientRepository.countRecipesPerIngredient()
-			.stream()
-			.collect(Collectors.toMap(RecipeCount::ingredientId, RecipeCount::recipes));
+		Map<Long, Long> recipeCounts = recipeCounts();
 		return ingredients.stream()
 			.map(ingredient -> toResponse(ingredient, recipeCounts.getOrDefault(ingredient.getId(), 0L)))
+			.toList();
+	}
+
+	/** Ingredients probably written several ways ("Pomme", "pommes"), each group the most used first. */
+	public List<SimilarIngredients> findSimilar() {
+		Map<Long, Long> recipeCounts = recipeCounts();
+		List<IngredientResponse> ingredients = ingredientRepository.findAll(Sort.by("name"))
+			.stream()
+			.map(ingredient -> toResponse(ingredient, recipeCounts.getOrDefault(ingredient.getId(), 0L)))
+			.toList();
+		return SimilarNames.groups(ingredients, IngredientResponse::name)
+			.stream()
+			.map(group -> new SimilarIngredients(group.stream()
+				.sorted(Comparator.comparingLong(IngredientResponse::recipeCount).reversed())
+				.toList()))
 			.toList();
 	}
 
@@ -55,6 +73,35 @@ public class IngredientService {
 		return toResponse(ingredient, ingredientRepository.countRecipesUsing(id));
 	}
 
+	/**
+	 * Every recipe using one of the ingredients switches to the one kept (or to the one named
+	 * {@code newName}, created unless it exists); the others are deleted. Refused when two of them
+	 * are in the same part of a recipe: their lines would collide.
+	 */
+	@Transactional
+	public IngredientResponse merge(IngredientMergeForm form) {
+		Set<Long> ids = new LinkedHashSet<>(form.ingredientIds());
+		if (ids.size() < 2) {
+			throw new ApiException(ErrorCode.INGREDIENT_MERGE_INVALID);
+		}
+		if (ingredientRepository.findAllById(ids).size() != ids.size()) {
+			throw new ApiException(ErrorCode.INGREDIENT_NOT_FOUND);
+		}
+		Ingredient target = mergeTarget(ids, form.keptId(), form.newName());
+		Set<Long> involved = new HashSet<>(ids);
+		involved.add(target.getId());
+		List<String> collisions = ingredientRepository.findRecipesListingTwiceAny(involved);
+		if (!collisions.isEmpty()) {
+			throw new ApiException(ErrorCode.INGREDIENT_MERGE_CONFLICT, "Fusion impossible : ces ingrédients figurent "
+					+ "ensemble dans une même partie de " + quoted(collisions) + ". Corrigez d'abord la recette.");
+		}
+		Set<Long> sourceIds = new HashSet<>(ids);
+		sourceIds.remove(target.getId());
+		ingredientRepository.moveLines(target.getId(), sourceIds);
+		ingredientRepository.deleteAllByIdInBatch(sourceIds);
+		return toResponse(target, ingredientRepository.countRecipesUsing(target.getId()));
+	}
+
 	@Transactional
 	public void delete(long id) {
 		Ingredient ingredient = find(id);
@@ -62,6 +109,25 @@ public class IngredientService {
 			throw new ApiException(ErrorCode.INGREDIENT_IN_USE);
 		}
 		ingredientRepository.delete(ingredient);
+	}
+
+	/** All or none: refused while a recipe uses one of them, naming those. */
+	@Transactional
+	public void deleteAll(Collection<Long> ids) {
+		List<Ingredient> ingredients = ingredientRepository.findAllById(ids);
+		if (ingredients.size() != new HashSet<>(ids).size()) {
+			throw new ApiException(ErrorCode.INGREDIENT_NOT_FOUND);
+		}
+		Map<Long, Long> recipeCounts = recipeCounts();
+		List<String> inUse = ingredients.stream()
+			.filter(ingredient -> recipeCounts.containsKey(ingredient.getId()))
+			.map(Ingredient::getName)
+			.toList();
+		if (!inUse.isEmpty()) {
+			throw new ApiException(ErrorCode.INGREDIENT_IN_USE, "Suppression annulée : " + quoted(inUse)
+					+ (inUse.size() > 1 ? " sont utilisés" : " est utilisé") + " dans au moins une recette.");
+		}
+		ingredientRepository.deleteAll(ingredients);
 	}
 
 	/** Used by the recipe form: the admin types a name, an existing ingredient is reused if any. */
@@ -72,8 +138,36 @@ public class IngredientService {
 			.orElseGet(() -> ingredientRepository.save(newIngredient(strippedName)));
 	}
 
+	/**
+	 * The kept ingredient; or the one named {@code newName}, renamed to this exact spelling (it may
+	 * be one of the merged ones, written differently) or created.
+	 */
+	private Ingredient mergeTarget(Set<Long> ids, @Nullable Long keptId, @Nullable String newName) {
+		if (StringUtils.hasText(newName)) {
+			String name = newName.strip();
+			Ingredient target = ingredientRepository.findByName(name)
+				.orElseGet(() -> ingredientRepository.save(newIngredient(name)));
+			target.setName(name);
+			return target;
+		}
+		if (keptId == null || !ids.contains(keptId)) {
+			throw new ApiException(ErrorCode.INGREDIENT_MERGE_INVALID);
+		}
+		return find(keptId);
+	}
+
+	private Map<Long, Long> recipeCounts() {
+		return ingredientRepository.countRecipesPerIngredient()
+			.stream()
+			.collect(Collectors.toMap(RecipeCount::ingredientId, RecipeCount::recipes));
+	}
+
 	private Ingredient find(long id) {
 		return ingredientRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.INGREDIENT_NOT_FOUND));
+	}
+
+	private static String quoted(List<String> names) {
+		return names.stream().map(name -> "« " + name + " »").collect(Collectors.joining(", "));
 	}
 
 	private static IngredientResponse toResponse(Ingredient ingredient, long recipeCount) {
