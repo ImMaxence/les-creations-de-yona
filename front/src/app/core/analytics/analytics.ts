@@ -6,7 +6,7 @@ import { ADMIN_PATH } from '../../shared/routing/links';
 import { Consent } from './consent';
 
 /** Google Analytics 4 property of the site. */
-export const GA_MEASUREMENT_ID = 'G-JV03TP7H4N';
+export const GA_MEASUREMENT_ID = 'G-914Y0MV42H';
 /** Only the production site is measured: local runs and test servers stay out of the figures. */
 const MEASURED_HOSTS = ['les-creations-de-yona.fr', 'www.les-creations-de-yona.fr', 'localhost'];
 const GA_SCRIPT = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;

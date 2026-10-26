@@ -221,6 +221,20 @@ Cloudflare (offre gratuite, proxy seulement) :
 - **Rocket Loader** (désactivé par défaut) : le laisser désactivé, il réécrit les balises `<script>`.
 - Photos (`/api/images/*`) : Cloudflare les garde en cache (un an, réponse `immutable`). Une photo supprimée reste accessible à qui connaît son URL (UUID impossible à deviner) jusqu'à purge manuelle (**Caching → Purge Cache**). Accepté.
 
+## Services Google
+
+| Service | Rôle | Adresse |
+| --- | --- | --- |
+| Google Cloud Console, Identifiants | Client OAuth de la connexion admin : URI de retour et origines autorisées | https://console.cloud.google.com/apis/credentials |
+| Google Cloud Console, Audience | Mode « Test » de l'application, adresses admin dans « Utilisateurs test » | https://console.cloud.google.com/auth/audience |
+| Google Analytics 4 | Mesure d'audience, propriété `G-914Y0MV42H` (`front/src/app/core/analytics/analytics.ts`), après accord du visiteur | https://analytics.google.com/ |
+| Google Search Console | Indexation, sitemap, recherches Google qui mènent au site | https://search.google.com/search-console |
+| Test des résultats enrichis | Vérifier les données structurées Recipe (JSON-LD) d'une page | https://search.google.com/test/rich-results |
+
+- Client OAuth : un seul client (`894227614182-d19k….apps.googleusercontent.com`) pour le local et la production. Ses URI de retour doivent contenir les 4 adresses listées dans `devops/.env.example`, à l'identique (`localhost` et `127.0.0.1` sont différents pour Google). Une adresse manquante donne `Erreur 400 : redirect_uri_mismatch` ; « Détails de l'erreur » sur la page de Google montre l'adresse envoyée. Une modification peut mettre quelques minutes à s'appliquer.
+- Analytics : **Rapports → Temps réel** montre une visite dans la minute (site ouvert dans un autre navigateur, cookies acceptés, sans bloqueur de publicité). Les autres rapports arrivent en 24 à 48 h. **Administration → Flux de données → Mesure améliorée** : « Changements de page basés sur les événements de l'historique du navigateur » doit rester désactivé, sinon chaque page est comptée deux fois.
+- Search Console : **Sitemaps** (`sitemap.xml` à l'état « Opération effectuée », nombre d'URL découvertes), **Inspection de l'URL** sur une recette (« Tester l'URL en ligne » : page indexable, recette détectée). Indexation en quelques jours à quelques semaines.
+
 ## Modèle de données
 
 - `social_link` : platform (liste fixe : YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp), url, position. Éditable depuis le back-office.
