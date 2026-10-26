@@ -125,7 +125,7 @@ Dernière mise à jour : 2026-10-26 (version 3.1.0). Historique des versions : [
 back/      API Spring Boot
 front/     application Angular
 devops/    Docker Compose (local : compose.yaml, Coolify : compose.prod.yaml), passerelle Caddy, configuration d'environnement
-docs/      documentation technique (restauration d'une sauvegarde)
+docs/      documentation technique : restauration d'une sauvegarde, services Google, changement de domaine
 ReadMe.md
 ```
 
@@ -268,6 +268,8 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 ## Services Google
 
+Réglages pas à pas (projet Google Cloud, client OAuth, Google Drive, Analytics, Search Console) et problèmes courants : [docs/google.md](docs/google.md).
+
 | Service | Rôle | Adresse |
 | --- | --- | --- |
 | Google Cloud Console, Identifiants | Client OAuth de la connexion admin : URI de retour et origines autorisées | https://console.cloud.google.com/apis/credentials |
@@ -281,14 +283,7 @@ Cloudflare (offre gratuite, proxy seulement) :
 - Analytics : **Rapports → Temps réel** montre une visite dans la minute (site ouvert dans un autre navigateur, cookies acceptés, sans bloqueur de publicité). Les autres rapports arrivent en 24 à 48 h. **Administration → Flux de données → Mesure améliorée** : « Changements de page basés sur les événements de l'historique du navigateur » doit rester désactivé, sinon chaque page est comptée deux fois.
 - Search Console : **Sitemaps** (`sitemap.xml` à l'état « Opération effectuée », nombre d'URL découvertes), **Inspection de l'URL** sur une recette (« Tester l'URL en ligne » : page indexable, recette détectée). Indexation en quelques jours à quelques semaines.
 
-Google Drive (une fois, dans le même projet Google Cloud que la connexion admin) :
-
-1. **API et services → Bibliothèque** : activer **Google Drive API**.
-2. **Identifiants** → client OAuth existant : ajouter les URI de retour `…/api/admin/drive/callback` listées dans `devops/.env.example` (`https://les-creations-de-yona.fr/api/admin/drive/callback` en production).
-3. **Audience** (écran de consentement) : passer l'application **En production**. En mode « Test », Google fait expirer l'accès au bout de 7 jours et les sauvegardes de nuit s'arrêteraient. Avec les seules portées `openid`, `email` et `drive.file` (non sensible), aucune validation par Google n'est demandée ; l'accès au back-office reste limité par `APP_ADMIN_EMAILS`.
-4. **Accès aux données** : ajouter la portée `.../auth/drive.file`.
-5. Back-office → Sauvegarde → « Connecter Google Drive », avec le compte qui doit recevoir les sauvegardes, puis « Sauvegarder maintenant » pour vérifier.
-
+- Google Drive : un seul compte reçoit les sauvegardes pour tout le site, choisi par l'admin qui clique sur « Connecter Google Drive ». Mise en place (API Drive, URI de retour, portée `drive.file`, application « En production ») : [docs/google.md](docs/google.md#2-sauvegarde-de-nuit-sur-google-drive).
 - Le jeton d'accès durable (refresh token) est gardé en base (`google_drive_link`), jamais dans les sauvegardes : il ne sert à rien sans le secret du client OAuth, qui n'est que dans l'environnement. Retiré chez Google à la déconnexion.
 
 ## Modèle de données
@@ -324,7 +319,7 @@ Google Drive (une fois, dans le même projet Google Cloud que la connexion admin
 - Pas de commentaires sur le site, ni en v1 ni prévus.
 - Logo en dur dans le projet Angular, photo de l'autrice par défaut aussi (remplaçable dans Préférences). Couleurs, polices et arrondi choisis dans le back-office (`site_theme`).
 - Sans compte visiteur : favoris et liste de courses restent dans le navigateur (`localStorage`), rien n'est envoyé au serveur. Notifications de nouvelle recette : Web Push standard, sans service tiers ni bibliothèque (chiffrement RFC 8291 et signature VAPID RFC 8292 avec le JDK seul, `push/WebPushCrypto.java`) ; envoyées une fois, à la première publication d'une recette (date `published_at`), après validation de la transaction, en arrière-plan (`PushService`).
-- Routage sur un domaine unique : site à la racine, API sous `/api`. Domaine `https://les-creations-de-yona.fr/`, déjà en place.
+- Routage sur un domaine unique : site à la racine, API sous `/api`. Domaine `https://les-creations-de-yona.fr/`, déjà en place. Pour en changer : [docs/changement-de-domaine.md](docs/changement-de-domaine.md).
 - Flyway Community (gratuit) plutôt que Liquibase : migrations SQL simples, base PostgreSQL unique.
 - Erreurs API en ProblemDetail (RFC 9457) : format JSON standard (`type`, `title`, `status`, `detail`), identique pour toutes les erreurs. Ajout d'un code stable et d'un message en français, affichables en toast côté Angular.
 

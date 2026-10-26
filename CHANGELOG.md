@@ -48,7 +48,7 @@ Front 3.1.0, backend 3.1.0. Migration de base : V9.
 
 ### À faire au déploiement
 
-1. Google Cloud : activer **Google Drive API**, ajouter l'URI de retour `https://les-creations-de-yona.fr/api/admin/drive/callback` au client OAuth, la portée `drive.file`, et passer l'application **en production** (en mode « Test », l'accès au Drive expire au bout de 7 jours). Détail dans le ReadMe, « Services Google ».
+1. Google Cloud : activer **Google Drive API**, ajouter l'URI de retour `https://les-creations-de-yona.fr/api/admin/drive/callback` au client OAuth, la portée `drive.file`, et passer l'application **en production** (en mode « Test », l'accès au Drive expire au bout de 7 jours). Détail dans [docs/google.md](docs/google.md).
 2. Back-office → Sauvegarde → « Connecter Google Drive », puis « Sauvegarder maintenant ».
 3. Vérifier une notification sur Android et sur un iPhone avec l'application installée.
 
