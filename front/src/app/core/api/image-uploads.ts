@@ -8,10 +8,10 @@ const XSRF_COOKIE = 'XSRF-TOKEN';
 const XSRF_HEADER = 'X-XSRF-TOKEN';
 
 /**
- * Photo uploads of the back-office, with their progress. HttpClient runs on fetch here, which
- * cannot report how much of a request body is sent: XMLHttpRequest can. What the interceptors do
- * for other calls is done here too: XSRF header, service worker bypass, errors shown as a toast,
- * expired session sent back to the sign-in.
+ * Uploads of the back-office (photos, chunks of a backup), with their progress. HttpClient runs on
+ * fetch here, which cannot report how much of a request body is sent: XMLHttpRequest can. What the
+ * interceptors do for other calls is done here too: XSRF header, service worker bypass, errors
+ * shown as a toast, expired session sent back to the sign-in.
  */
 @Injectable({ providedIn: 'root' })
 export class ImageUploads {
@@ -24,6 +24,29 @@ export class ImageUploads {
    * photo before answering. Rejects once the error has been shown.
    */
   send<T>(path: string, file: File, onProgress: (sent: number) => void, method: 'PUT' | 'POST' = 'PUT'): Promise<T> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.request(method, path, body, onProgress, "L'envoi de la photo a échoué. Vérifiez la connexion et réessayez.");
+  }
+
+  /** Raw bytes (application/octet-stream) with PUT: a chunk of a backup archive, for instance. */
+  sendBytes<T>(path: string, bytes: Blob, onProgress: (sent: number) => void): Promise<T> {
+    return this.request(
+      'PUT',
+      path,
+      new Blob([bytes], { type: 'application/octet-stream' }),
+      onProgress,
+      "L'envoi du fichier a échoué. Vérifiez la connexion et réessayez.",
+    );
+  }
+
+  private request<T>(
+    method: 'PUT' | 'POST',
+    path: string,
+    body: FormData | Blob,
+    onProgress: (sent: number) => void,
+    networkError: string,
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest();
       request.open(method, path);
@@ -54,11 +77,9 @@ export class ImageUploads {
         reject(new Error(`Upload answered ${request.status}`));
       });
       request.addEventListener('error', () => {
-        this.toaster.error("L'envoi de la photo a échoué. Vérifiez la connexion et réessayez.");
+        this.toaster.error(networkError);
         reject(new Error('Upload failed'));
       });
-      const body = new FormData();
-      body.append('file', file);
       request.send(body);
     });
   }

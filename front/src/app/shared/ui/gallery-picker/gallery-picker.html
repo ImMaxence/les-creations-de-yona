@@ -12,7 +12,7 @@
 
   @if (images.value(); as result) {
     @if (result.content.length) {
-      <ul role="list" class="grid" [class.is-loading]="images.isLoading()">
+      <ul role="list" class="grid" [class.is-loading]="images.isLoading()" [class.grid--portrait]="portrait()">
         @for (image of result.content; track image.id) {
           <li>
             <button type="button" class="tile" (click)="choose(image)">

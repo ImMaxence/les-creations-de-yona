@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.category.CategoryResponse;
+import fr.lescreationsdeyona.tag.TagResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,10 +14,12 @@ public record RecipeDetail(Long id, String title, String slug, @Nullable String 
 		boolean featured,
 		@Schema(description = "At least one; the first one is the main category, in the recipe URL")
 		List<CategoryResponse> categories,
+		@Schema(description = "Sorted by name; empty when none") List<TagResponse> tags,
 		@Nullable Integer servings, @Nullable Integer prepMinutes, @Nullable Integer cookMinutes,
 		@Schema(description = "From 1 to 5, by half points") @Nullable BigDecimal difficulty,
 		@Schema(description = "Id of the YouTube video shown at the bottom of the recipe") @Nullable String youtubeVideoId,
 		@Nullable UUID imageId,
+		@Schema(description = "Vertical photo for Pinterest; absent: the main photo is offered") @Nullable UUID pinterestImageId,
 		@Schema(description = "At least one: a recipe without parts has a single, untitled one")
 		List<Part> parts,
 		Instant createdAt, Instant updatedAt) {

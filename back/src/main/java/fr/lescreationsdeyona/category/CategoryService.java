@@ -90,7 +90,7 @@ public class CategoryService {
 	@Transactional
 	public CategoryResponse chooseImage(long id, @Nullable UUID imageId) {
 		Category category = find(id);
-		category.setImage(imageId == null ? null : imageService.get(imageId));
+		category.setImage(imageId == null ? null : imageService.getLandscape(imageId));
 		return categoryMapper.toResponse(categoryRepository.saveAndFlush(category));
 	}
 

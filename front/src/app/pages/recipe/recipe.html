@@ -15,10 +15,22 @@
         <svg lucideArrowLeft [size]="18"></svg>
         Retour
       </a>
-      <button type="button" class="pill enter" (click)="share()">
-        <svg lucideShare2 [size]="18"></svg>
-        Partager
-      </button>
+      <div class="hero__actions">
+        <button
+          type="button"
+          class="pill pill--icon enter"
+          [class.is-on]="isFavorite()"
+          [attr.aria-pressed]="isFavorite()"
+          [attr.aria-label]="isFavorite() ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+          (click)="toggleFavorite()"
+        >
+          <svg lucideHeart [size]="18"></svg>
+        </button>
+        <button type="button" class="pill enter" (click)="share()">
+          <svg lucideShare2 [size]="18"></svg>
+          Partager
+        </button>
+      </div>
     </div>
     <div class="container hero__content">
       <nav class="breadcrumb enter" aria-label="Fil d'Ariane">
@@ -73,9 +85,36 @@
       <p class="intro enter" style="--delay: 260ms">{{ recipe().intro }}</p>
     }
 
+    @if (recipe().tags.length) {
+      <ul role="list" class="tags enter" style="--delay: 280ms" aria-label="Tags">
+        @for (tag of recipe().tags; track tag.id) {
+          <li><a class="chip" [routerLink]="recipesPath" [queryParams]="tagQueryParams(tag)">{{ tag.name }}</a></li>
+        }
+      </ul>
+    }
+
+    <div class="tools enter no-print" style="--delay: 300ms">
+      @if (hasSteps()) {
+        <button yonaButton type="button" (click)="startCooking()"><svg lucideChefHat></svg>Mode cuisine</button>
+      }
+      <a yonaButton variant="secondary" target="_blank" rel="noopener noreferrer" [href]="pinterestLink()">
+        <svg lucidePin></svg>Épingler
+      </a>
+      <button yonaButton variant="secondary" type="button" (click)="print()"><svg lucidePrinter></svg>Imprimer</button>
+    </div>
+
     <div class="layout">
       <section class="layout__ingredients" yonaReveal aria-labelledby="ingredients-title">
         <yona-recipe-ingredients [lines]="ingredients()" [(servings)]="servings" [partCount]="parts().length" />
+        <div class="basket no-print">
+          <button yonaButton variant="secondary" type="button" (click)="addToShoppingList()">
+            <svg lucideShoppingBasket></svg>
+            {{ inShoppingList() ? 'Mettre à jour ma liste de courses' : 'Ajouter à ma liste de courses' }}
+          </button>
+          @if (inShoppingList()) {
+            <a class="basket__link" [routerLink]="shoppingListPath">Voir ma liste</a>
+          }
+        </div>
       </section>
 
       <section class="preparation" aria-labelledby="steps-title">
@@ -123,7 +162,7 @@
       </section>
     }
 
-    <footer class="footer" yonaReveal>
+    <footer class="footer no-print" yonaReveal>
       <p>
         Mise à jour le
         <time [attr.datetime]="recipe().updatedAt">{{ recipe().updatedAt | parisDate }}</time>
@@ -140,3 +179,5 @@
     </footer>
   </div>
 </article>
+
+<yona-cooking-mode [title]="recipe().title" [parts]="parts()" [ingredients]="ingredients()" />

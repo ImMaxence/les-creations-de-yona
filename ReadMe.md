@@ -2,7 +2,7 @@
 
 Blog de cuisine : recettes, catégories, recherche. Projet monorepo.
 
-Dernière mise à jour : 2026-10-25.
+Dernière mise à jour : 2026-10-26 (version 3.0.0).
 
 ## Périmètre v1
 
@@ -10,20 +10,31 @@ Dernière mise à jour : 2026-10-25.
 
 - Accueil (`/`) :
   - Recette à la une : grande card en haut (image, titre, catégories). Champ `featured`, une seule à la fois ; si aucune, la plus récente publiée.
-  - À propos : présentation de l'auteur, texte court, photo en dur dans le projet Angular.
+  - À propos : présentation de l'autrice, titre, texte et photo modifiables dans le back-office (Préférences) ; sans photo choisie, celle du projet Angular.
   - Les 3 dernières recettes, toutes catégories confondues, bouton « Voir plus » vers `/recettes`.
   - Toutes les catégories, avec image, cliquables vers `/recettes?categorie={slug}` (grille de 2 sur téléphone, 4 au-delà).
 - Recettes (`/recettes`) :
   - Grille de cards de même taille (une par ligne sur téléphone avec une photo moins haute, 2 puis 3 colonnes) : image, date de création, titre (tronqué avec ellipsis), catégories.
   - Recherche par titre avec autocomplétion, ingrédient et catégorie choisis dans des menus déroulants (celui des ingrédients se filtre en tapant ; seuls les ingrédients des recettes publiées y figurent), recherche lancée dès le choix (une recette apparaît dans chacune de ses catégories). Filtres combinables, dans l'URL (`q`, `ingredient`, `categorie`).
+  - « Plus de filtres » (repliés sur téléphone, sauf s'ils sont utilisés) : tag, temps total (prêt en 15 min, 30 min, 1 h au plus ; préparation + cuisson, une recette sans aucun temps est écartée) et difficulté (facile 1 à 2 étoiles, moyenne 2,5 à 3,5, difficile 4 à 5). Dans l'URL : `tag`, `temps`, `difficulte`. Pages filtrées ainsi en `noindex`.
+  - « Effacer tous les filtres » dès qu'un filtre est actif (recherche comprise) : retour à toutes les recettes, en gardant le nombre par page.
+  - Une recherche par titre sans aucun résultat est notée, anonymement, pour la page Statistiques (voir « Recherches sans résultat »).
   - Pagination numérotée, nombre d'éléments par page au choix.
 - Recette (`/recettes/{slug-categorie}/{slug-recette}`) :
-  - Header : image pleine largeur, titre et catégories superposés sur un dégradé noir qui part du bas de l'image, bouton « Retour » en haut à gauche (page précédente du site, sinon la catégorie principale de la recette), bouton « Partager » en haut à droite (feuille de partage du téléphone, sinon lien copié).
+  - Header : image pleine largeur, titre et catégories superposés sur un dégradé noir qui part du bas de l'image, bouton « Retour » en haut à gauche (page précédente du site, sinon la catégorie principale de la recette), cœur (favori) et bouton « Partager » en haut à droite (feuille de partage du téléphone, sinon lien copié).
+  - Tags de la recette sous l'introduction, chacun vers `/recettes?tag={slug}`.
+  - Boutons « Mode cuisine », « Épingler » (Pinterest) et « Imprimer ».
   - Temps, et difficulté de 1 à 5 étoiles par demi-étoile (facultative).
   - Ingrédients, étapes, vidéo YouTube en bas de page si la recette en a une (chargée seulement au clic), date de dernière mise à jour.
   - Recette en parties (la pâte, la garniture…) : la liste « Ingrédients » est le total de toutes les parties (quantités d'une même unité additionnées, parties concernées indiquées sous chaque ingrédient), puis « Préparation » détaille chaque partie (ses ingrédients et ses étapes), avec un sommaire cliquable des parties.
+  - « Ajouter à ma liste de courses » sous les ingrédients, avec les portions choisies (ajoutée de nouveau, la recette est mise à jour).
+  - Mode cuisine : plein écran, une étape par écran en gros caractères, partie et numéro d'étape, barre de progression ; flèches du clavier ou glissement du doigt pour changer d'étape. Une étape qui a une durée a un minuteur (lecture, pause, remise à zéro) qui continue pendant qu'on change d'étape et sonne à la fin (bip et vibration) ; les minuteurs en cours restent affichés. Ingrédients de la partie (ou de la recette) à portée de main. Écran maintenu allumé pendant le mode, si le navigateur le permet.
+  - Épingler : simple lien vers la page d'épinglage de Pinterest (adresse, photo et titre de la recette), sans aucun script de Pinterest ; photo verticale de la recette si elle en a une, sinon sa photo.
+  - Impression : feuille de style d'impression (photo réduite, ingrédients puis étapes, sans boutons ni en-tête du site, couleurs claires).
 - Erreurs : 404 (URL inconnue, recette introuvable ou en brouillon) et erreur serveur.
 - Installer l'application (`/installer`) : bouton d'installation quand le navigateur le propose, guide pas à pas pour iPhone/iPad, Android et ordinateur.
+- Mes favoris (`/favoris`) : recettes marquées du cœur, gardées dans le navigateur seulement (`localStorage`, clé `yona-favorites`, 200 au plus), sous forme de cards : lisibles hors connexion dans l'application installée. Pas de compte.
+- Ma liste de courses (`/liste-de-courses`) : ingrédients des recettes ajoutées, les mêmes additionnés (même calcul que le total d'une recette en parties, recettes concernées sous chaque ingrédient), à cocher (cochés en bas), articles libres en plus, partage par WhatsApp, feuille de partage ou copie du texte, liste vidée sur confirmation. Gardée dans le navigateur (clé `yona-shopping-list`). Ces deux pages sont en `noindex`, et leur contenu n'apparaît qu'une fois la page chargée dans le navigateur (le serveur ne le connaît pas).
 
 ### Application installable (PWA)
 
@@ -32,8 +43,8 @@ Dernière mise à jour : 2026-10-25.
 
 ### Navigation
 
-- Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), installer l'application, administration (admins seulement).
-- Menu mobile : bouton hamburger, panneau plein écran avec les mêmes entrées.
+- Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), installer l'application, administration (admins seulement). Icônes cœur (favoris) et panier (liste de courses) avec leur nombre d'éléments, aussi sur téléphone à côté du menu.
+- Menu mobile : bouton hamburger, panneau plein écran avec les mêmes entrées, plus « Mes favoris » et « Ma liste de courses ».
 - Footer sur toutes les pages : réseaux sociaux, mentions légales, politique de confidentialité, lien discret « Espace admin ».
 - Affichage Clair / Auto / Sombre au choix du visiteur : icône dans la navbar, trois boutons dans le menu mobile. « Auto » (par défaut) suit le réglage du système. Choix gardé dans le navigateur (`localStorage`), appliqué avant le premier affichage.
 
@@ -41,26 +52,40 @@ Dernière mise à jour : 2026-10-25.
 
 - Accès réservé à 2 admins via Google, pas de création de compte.
 - Entrée : lien « Espace admin » du footer, visible de tous (l'application installée n'a pas de barre d'adresse pour taper `/admin`). Un visiteur qui le suit arrive sur la connexion Google, puis sur la page d'accès refusé. Pages jamais indexées.
-- Recettes : liste paginée (20 par page), les dernières modifiées en premier, avec miniature de la photo ; recherche par titre, filtres ingrédient (menu filtrable), catégorie et statut, le tout dans l'URL (`q`, `idIngredient`, `categorie`, `statut`, `page`) ; création, modification, publication ou brouillon, suppression.
+- Recettes : liste paginée (20 par page), les dernières modifiées en premier, avec miniature de la photo ; recherche par titre, filtres ingrédient (menu filtrable), catégorie, tag et statut, le tout dans l'URL (`q`, `idIngredient`, `categorie`, `tag`, `statut`, `page`) ; création, modification, publication ou brouillon, suppression.
+- Éditeur de recette : tags à cocher (facultatifs), créables depuis le formulaire ; « Photo Pinterest (facultative) » : photo verticale (1000 × 1333 px au moins, 3:4 ou plus haute, 2:3 conseillé), envoyée ou choisie parmi les photos verticales de la galerie, proposée par le bouton « Épingler » et jamais affichée sur le site.
 - Aperçu : bouton « Aperçu » de l'éditeur, qui affiche en plein écran la recette telle que les visiteurs la verront, modifications non enregistrées comprises, sans rien enregistrer. Page `/admin/apercu/{id}` (version enregistrée, brouillon compris), liée depuis la liste pour les brouillons. Réservé aux admins (guard, et API sous `/api/admin`).
 - Sélection multiple et suppression groupée (recettes, catégories, ingrédients, galerie) : cases à cocher, « Tout sélectionner » pour les éléments affichés, sélection gardée d'une page à l'autre. Tout ou rien : une catégorie qui contient des recettes ou un ingrédient utilisé annule la suppression, en les nommant.
 - Liens filtrés : « Voir ses recettes » sous la photo de chaque catégorie, « Voir les recettes » sur chaque ingrédient utilisé, vers la liste des recettes filtrée. Galerie : sous chaque photo, « Voir les recettes » et « Voir les catégories » qui l'affichent (listes filtrées par `?photo=`), et sa date d'envoi. Plusieurs catégories par recette (puces à cocher), dont une principale ; catégorie créable depuis le formulaire de la recette. Parties facultatives (« Découper en parties ») : titre, ingrédients et étapes par partie, ingrédients et étapes déplaçables d'une partie à l'autre par glisser-déposer. Ingrédients proposés pendant la saisie, les plus utilisés en premier.
-- Catégories, ingrédients (modifier, supprimer), réseaux sociaux.
+- Catégories, ingrédients (modifier, supprimer), réseaux sociaux (Pinterest compris).
+- Tags (`/admin/tags`) : végétarien, sans gluten, de saison… Création, renommage, suppression (une à une ou groupée), nombre de recettes (brouillons compris), « Voir les recettes ». Nom unique (casse et accents ignorés), 40 caractères au plus. Contrairement à une catégorie, un tag utilisé peut être supprimé : il est retiré de ses recettes.
 - Ingrédients : filtre « Utilisés / Non utilisés ». « Détecter les doublons » regroupe les ingrédients écrits de plusieurs façons (casse, accents, ponctuation, pluriels en -s/-x, une faute de frappe à partir de 6 lettres, deux à partir de 12) et propose de les fusionner : garder l'un d'eux (le plus utilisé par défaut) ou tout remplacer par un nouveau nom. Les recettes sont mises à jour, les autres ingrédients supprimés. Fusion refusée si deux d'entre eux figurent dans une même partie d'une recette.
-- Galerie : toutes les photos envoyées, gardées même une fois remplacées. « Ajouter une photo » l'y range directement (avec barre de progression), sans l'afficher nulle part. Filtres « Utilisées / Non utilisées » et type d'envoi, suppression, liens vers les recettes et catégories qui les affichent. Une photo de la galerie peut être remise sur une recette ou une catégorie (« Choisir dans la galerie »).
-- Apparence : thème de couleurs (5 thèmes, chacun en version claire et sombre), police des titres et police du texte (5 chacune), arrondi des coins de 0 à 999 px. Aperçu immédiat sur tout le site, visible des visiteurs une fois enregistré.
-- Sauvegarde : bouton « Sauvegarder mes données », qui télécharge une archive ZIP (base PostgreSQL et tout le bucket S3).
-- Statistiques (`/admin/statistiques`) : recettes (publiées, brouillons, sans photo, avec vidéo, en plusieurs parties, créées sur 30 jours), catégories, ingrédients et photos (dont non utilisés) ; recettes créées par mois sur 12 mois, recettes par catégorie, ingrédients les plus utilisés ; stockage : poids des photos (tout le bucket), taille de la base, espace libre et total du disque du serveur. Graphiques à une seule série, couleur d'accent du thème, valeurs écrites à côté des barres ou dans un tableau.
+- Galerie : toutes les photos envoyées, gardées même une fois remplacées. « Ajouter une photo » l'y range directement (avec barre de progression), sans l'afficher nulle part. Filtres « Utilisées / Non utilisées » et type d'envoi (dont « Photos Pinterest »), suppression, liens vers les recettes et catégories qui les affichent. Une photo de la galerie peut être remise sur une recette ou une catégorie (« Choisir dans la galerie ») : les photos paysage pour les photos du site, les photos verticales pour Pinterest, jamais l'une à la place de l'autre.
+- Apparence : thème de couleurs (20 thèmes, chacun en version claire et sombre, dont 5 plus audacieux : Néon, Art déco, Lagon, Bonbon, Aurore boréale), police des titres (15) et police du texte (10), arrondi des coins de 0 à 999 px. Aperçu immédiat sur tout le site, visible des visiteurs une fois enregistré.
+- Préréglages d'apparence (« Mes préréglages », en haut de la page Apparence) : un thème, deux polices et un arrondi gardés sous un nom libre (unique, 50 caractères au plus). Chaque préréglage montre ce qu'il contient (couleurs claires et sombres, polices, arrondi) ; un clic remplit les choix de la page (et l'aperçu), à enregistrer ensuite comme d'habitude ; celui qui correspond aux choix en cours est coché. Remplacer par les choix actuels, renommer, supprimer.
+- Préférences : textes et photo de « À propos » et texte du pied de page ; la nouvelle photo n'est qu'un aperçu tant que « Enregistrer » n'est pas cliqué, comme les textes ; « Annuler les changements ».
+- Sauvegarde : bouton « Sauvegarder mes données », qui télécharge une archive ZIP (base PostgreSQL, tout le bucket S3, et un `manifest.json` avec la date et la version du site).
+- Restauration (même page) : glisser le ZIP (ou le choisir). Il est envoyé par morceaux de 32 Mio (Cloudflare refuse les requêtes de plus de 100 Mo), avec barre de progression ; le serveur l'analyse dans une base à part, sans toucher au site, puis affiche la date et la version de la sauvegarde et un tableau « dans la sauvegarde / sur le site / manquant sur le site ». Deux choix :
+  - « Ajouter ce qui manque » (conseillé) : n'ajoute que ce que le site n'a pas, sans rien modifier ni supprimer (détails dans « Sauvegarde et restauration »).
+  - « Tout remplacer », dans une zone danger repliée : avertissements chiffrés (recettes perdues, fichiers photo supprimés), case « J'ai compris », mot REMPLACER à taper, confirmation finale.
+  - Une restauration à la fois ; elle reprend si la page est rechargée (identifiant gardé dans `sessionStorage`) ; « Annuler » supprime l'archive du serveur.
+- Statistiques (`/admin/statistiques`) : recettes (publiées, brouillons, sans photo, avec vidéo, en plusieurs parties, créées sur 30 jours), catégories, ingrédients et photos (dont non utilisés) ; recettes créées par mois sur 12 mois, recettes par catégorie, ingrédients les plus utilisés ; stockage : poids des photos (tout le bucket), taille de la base, espace libre et total du disque du serveur. Graphiques à une seule série, couleur d'accent du thème, valeurs écrites à côté des barres ou dans un tableau. Puis ce qui reste à faire :
+  - Recettes à compléter (100 au plus) : sans photo, introduction, temps, portions ou difficulté, ce qui manque à chacune, les publiées d'abord.
+  - Brouillons oubliés (pas modifiés depuis 30 jours) et recettes à rafraîchir (publiées, pas modifiées depuis 12 mois), 50 au plus chacun.
+  - Recherches sans résultat (30 au plus, les plus fréquentes d'abord), à effacer une à une ou toutes.
+  - Bouton « Visites (Google Analytics) » vers `analytics.google.com` (la fréquentation n'est pas recopiée dans le back-office) et « Exporter en PDF » : impression de la page (tableaux dépliés, sans menus), que le navigateur propose d'enregistrer en PDF.
+- Infobulles des boutons-icônes : à droite de l'icône, centrées (à gauche s'il n'y a pas la place, au-dessus en dernier recours), jamais par-dessus.
 - Photos : barre de progression pendant l'envoi, puis « Préparation de la photo… » pendant la conversion WebP. Choix dans la galerie : les plus récentes en premier, pagination numérotée.
 
 ### Pages légales
 
 - Mentions légales (`/mentions-legales`) et politique de confidentialité (`/politique-de-confidentialite`), liées depuis le footer.
-- Mentions légales : certaines images d'illustration sont générées par IA (Google Gemini), comme l'exige la transparence sur les contenus générés. à titre non professionnel (adresse communiquée sur demande, art. 6, III, 2 LCEN). Hébergement : auto-hébergé à Aix-en-Provence, derrière Cloudflare. Contact et texte dans `front/src/app/pages/legal/`.
+- Mentions légales : certaines images d'illustration sont générées par IA (Google Gemini), comme l'exige la transparence sur les contenus générés. à titre non professionnel (adresse communiquée sur demande, art. 6, III, 2 LCEN). Hébergement : auto-hébergé à Aix-en-Provence, derrière Cloudflare. Crédits : les 25 polices proposées (licence SIL Open Font License), à tenir à jour avec `theme-fonts.ts`. Contact et texte dans `front/src/app/pages/legal/`.
+- Politique de confidentialité : mesure d'audience Google Analytics sur consentement, recherches sans résultat (texte seul, 12 mois), favoris et liste de courses (stockage local), bouton « Épingler » (simple lien).
 
 ### SEO
 
-- Angular SSR, balises meta par page, données structurées Recipe (JSON-LD), sitemap.xml, robots.txt.
+- Angular SSR, balises meta par page, données structurées Recipe (JSON-LD, avec les tags en `keywords`), sitemap.xml, robots.txt.
 
 ## Stack
 
@@ -147,6 +172,8 @@ npm run fonts:generate # régénère src/styles/_fonts.scss après une mise à j
 ```
 
 - Client API généré par `ng-openapi-gen` dans `src/app/core/api/generated` (versionné, ne pas modifier à la main). À régénérer après chaque changement d'API du backend.
+- Budgets de build (`angular.json`) : bundle initial 800 Ko (avertissement), styles d'un composant 8 Ko. Lucide (`@lucide/angular`) est un seul fichier : toutes les icônes utilisées, back-office compris, vont dans le bundle initial (environ 320 Ko bruts, bien compressés : 135 Ko transférés en tout).
+- Ajouter une police : paquet `@fontsource-variable/…` (version exacte), ligne dans `scripts/generate-fonts.mjs`, `npm run fonts:generate`, entrée dans `core/theme/theme-fonts.ts`, enum et contrainte CHECK côté backend (migration), crédits des mentions légales.
 - Serveur SSR de production : `npm run serve:ssr` (port `PORT`, 4000 par défaut). Variables :
   - `API_URL` : URL interne du backend (ex. `http://back:8080`). Le serveur SSR l'appelle directement, sans repasser par Cloudflare. Sans elle, il appelle l'origine publique du site.
   - `NG_ALLOWED_HOSTS` : hôtes acceptés en plus de `les-creations-de-yona.fr` (protection SSRF d'Angular), ex. `localhost` pour un test local.
@@ -172,10 +199,10 @@ Image Docker (`front/Dockerfile`) : build Node 24 multi-étapes, image finale sa
 Organisation de `front/src` :
 
 ```
-app/core/      services globaux, layout (header, menus, footer), thème (couleurs, polices, clair/sombre), client API généré
+app/core/      services globaux, layout (header, menus, footer), thème (couleurs, polices, clair/sombre), favoris et liste de courses (kitchen/), client API généré
 app/shared/    composants d'interface (bouton, carte de recette, image), directive de reveal, utilitaires
 app/pages/     une page par route, chargée à la demande
-styles/        variables (espacements, breakpoints, animations), polices (généré), reset, base typographique, animations
+styles/        variables (espacements, breakpoints, animations), polices (généré), reset, base typographique, animations, impression
 server/        middlewares du serveur SSR Express (en-têtes de sécurité, sitemap) ; point d'entrée : server.ts
 scripts/       génération de styles/_fonts.scss (npm run fonts:generate)
 ```
@@ -184,14 +211,14 @@ scripts/       génération de styles/_fonts.scss (npm run fonts:generate)
 
 | Accès | Routes |
 | --- | --- |
-| Public (GET) | `/api/recipes` (recherche, filtres `category` et `ingredient` (nom exact, accents ignorés), pagination), `/api/ingredients` (ingrédients des recettes publiées), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/social-links`, `/api/theme`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
-| Admin | `/api/admin/me`, `/api/admin/stats` (statistiques et stockage), `/api/admin/recipes`, `POST /api/admin/recipes/preview` (aperçu sans enregistrement), `/api/admin/categories`, `/api/admin/ingredients`, `GET /api/admin/ingredients/similar`, `POST /api/admin/ingredients/merge`, `DELETE` sur `/api/admin/recipes`, `/categories`, `/ingredients` et `/images` avec `?ids=` (suppression groupée, tout ou rien), `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind` et `used` ; `POST` multipart pour y ajouter une photo), `PUT /api/admin/theme`, `/api/admin/version` (version du backend), `/api/admin/backup` |
+| Public (GET) | `/api/recipes` (recherche, filtres `category`, `tag`, `ingredient` (nom exact, accents ignorés), `maxMinutes` (1 à 1440), `difficulty` (`EASY`, `MEDIUM`, `HARD`), pagination ; une recherche `q` sans résultat est notée), `/api/ingredients` (ingrédients des recettes publiées), `/api/recipes/{slug}`, `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/tags` (avec le nombre de recettes publiées), `/api/social-links`, `/api/site-content`, `/api/theme`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
+| Admin | `/api/admin/me`, `/api/admin/stats` (statistiques et stockage), `/api/admin/recipes`, `POST /api/admin/recipes/preview` (aperçu sans enregistrement), `/api/admin/categories`, `/api/admin/ingredients`, `GET /api/admin/ingredients/similar`, `POST /api/admin/ingredients/merge`, `DELETE` sur `/api/admin/recipes`, `/categories`, `/ingredients` et `/images` avec `?ids=` (suppression groupée, tout ou rien), `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind`, `portrait` et `used` ; `POST` multipart pour y ajouter une photo), `PUT /api/admin/recipes/{id}/pinterest-image` et `…/pinterest-image-choice` (photo verticale), `/api/admin/tags` (`DELETE` avec `?ids=`), `PUT /api/admin/theme`, `/api/admin/appearance-presets`, `/api/admin/site-content`, `DELETE /api/admin/search-misses` (`?term=`, ou toutes), `/api/admin/version` (version du backend), `/api/admin/backup`, `/api/admin/restore` (`POST` pour commencer, `PUT …/{id}/chunks/{index}` en `application/octet-stream`, `GET …/{id}` pour l'état, `POST …/{id}/apply` avec `MERGE` ou `REPLACE` + `REMPLACER`, `DELETE …/{id}`) |
 | Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
 
 - Erreurs : ProblemDetail avec `code` stable (`ErrorCode`) et `detail` en français. Erreurs de validation listées dans `errors` (`field`, `message`).
 - Écritures admin : en-tête `X-XSRF-TOKEN` recopié du cookie `XSRF-TOKEN`, que `GET /api/admin/me` crée. Angular le fait automatiquement. Aucun cookie n'est posé pour un visiteur public.
 - Images : le front construit l'URL à partir du `imageId` des recettes et catégories. Réponse `Cache-Control: public, max-age=31536000, immutable` : une nouvelle photo a un nouvel identifiant, donc une nouvelle URL.
-- Sauvegarde : à ouvrir comme un lien classique (`<a href="/api/admin/backup">`), pas via `HttpClient`, qui chargerait toute l'archive en mémoire.
+- Sauvegarde : à ouvrir comme un lien classique (`<a href="/api/admin/backup">`), pas via `HttpClient`, qui chargerait toute l'archive en mémoire. Restauration : morceaux envoyés par `XMLHttpRequest` (progression), comme les photos (`core/api/image-uploads.ts`).
 - Toute route non listée est refusée.
 
 ## Production (Coolify)
@@ -237,12 +264,17 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 ## Modèle de données
 
-- `social_link` : platform (liste fixe : YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp), url, position. Éditable depuis le back-office.
+- `social_link` : platform (liste fixe : YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp, Pinterest), url, position. Éditable depuis le back-office.
 - `site_theme` : une seule ligne (id = 1) : preset (thème de couleurs), display_font, body_font, radius_px (0 à 999), updated_at, updated_by.
-- `image` : kind (envoyée pour une recette, une catégorie, ou directement dans la galerie), s3_prefix (`recipes/{uuid}/`, `categories/{uuid}/` ou `gallery/{uuid}/`), created_at. Filtrable par type et par utilisation dans la galerie.
+- `appearance_preset` : name (unique, casse et accents ignorés), preset, display_font, body_font, radius_px, created_at, updated_at, updated_by. Valeurs vérifiées par l'application (mêmes enums que `site_theme`), sans contrainte CHECK : ajouter un thème ou une police ne touche pas cette table.
+- `site_content` : une seule ligne : about_title, about_text, about_image_id (facultatif), footer_text, updated_at, updated_by.
+- `search_miss` : term (texte cherché, en minuscules, 100 caractères au plus, clé), count, first_searched_at, last_searched_at. 500 lignes au plus, effacées après 12 mois.
+- `image` : kind (envoyée pour une recette, une catégorie, « À propos », directement dans la galerie, ou photo Pinterest), s3_prefix (`recipes/{uuid}/`, `categories/{uuid}/`, `site/{uuid}/`, `gallery/{uuid}/` ou `pinterest/{uuid}/`), created_at. Filtrable par type et par utilisation dans la galerie.
 - `category` : name, slug (unique), image_id (facultatif, vers `image`).
-- `recipe` : title, slug (unique), intro, status (publiée ou brouillon), servings, prep_minutes, cook_minutes, difficulty (1 à 5 par demi-points, facultative), youtube_video_id (identifiant de 11 caractères, facultatif), image_id (facultatif, vers `image`), featured (booléen), created_at, updated_at (timestamptz, UTC), created_by, updated_by (email de l'admin, texte).
+- `recipe` : title, slug (unique), intro, status (publiée ou brouillon), servings, prep_minutes, cook_minutes, difficulty (1 à 5 par demi-points, facultative), youtube_video_id (identifiant de 11 caractères, facultatif), image_id (facultatif, vers `image`), pinterest_image_id (photo verticale, facultative, vers `image`), featured (booléen), created_at, updated_at (timestamptz, UTC), created_by, updated_by (email de l'admin, texte).
 - `recipe_category` : recipe_id, category_id, position. Clé primaire (recipe_id, position), (recipe_id, category_id) unique. Position 0 : catégorie principale.
+- `tag` : name (unique, casse et accents ignorés), slug (unique).
+- `recipe_tag` : recipe_id, tag_id. Clé primaire (recipe_id, tag_id) ; supprimer un tag le retire de ses recettes (`ON DELETE CASCADE`).
 - `recipe_part` : recipe_id, position, title (facultatif). Au moins une par recette : une recette sans parties en a une seule, sans titre.
 - `ingredient` : name (unique).
 - `recipe_ingredient` : part_id, ingredient_id, quantity, unit, note, position. Clé primaire (part_id, ingredient_id) : un ingrédient une fois par partie, mais possible dans plusieurs parties d'une recette.
@@ -254,9 +286,10 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 - Interface en français uniquement. Mobile first : conception pour écran de téléphone d'abord (environ 90 % du trafic), puis adaptation desktop.
 - Noms de tables, colonnes et code en anglais.
-- Pas de tests pour la v1, ni backend ni frontend. À l'init du back et du front, supprimer les fichiers générés inutiles (tests unitaires, configuration Prettier, etc.).
+- Pas de tests automatisés, ni backend ni frontend (la restauration a été testée à la main sur une pile Docker jetable, voir SECURITY-REVIEW.md). À l'init du back et du front, supprimer les fichiers générés inutiles (tests unitaires, configuration Prettier, etc.).
 - Pas de commentaires sur le site, ni en v1 ni prévus.
-- Logo et photo de l'auteur en dur dans le projet Angular. Couleurs, polices et arrondi choisis dans le back-office (`site_theme`).
+- Logo en dur dans le projet Angular, photo de l'autrice par défaut aussi (remplaçable dans Préférences). Couleurs, polices et arrondi choisis dans le back-office (`site_theme`).
+- Sans compte visiteur : favoris et liste de courses restent dans le navigateur (`localStorage`), rien n'est envoyé au serveur. Notifications de nouvelle recette (Web Push) : prévues plus tard.
 - Routage sur un domaine unique : site à la racine, API sous `/api`. Domaine `https://les-creations-de-yona.fr/`, déjà en place.
 - Flyway Community (gratuit) plutôt que Liquibase : migrations SQL simples, base PostgreSQL unique.
 - Erreurs API en ProblemDetail (RFC 9457) : format JSON standard (`type`, `title`, `status`, `detail`), identique pour toutes les erreurs. Ajout d'un code stable et d'un message en français, affichables en toast côté Angular.
@@ -303,11 +336,11 @@ Cloudflare (offre gratuite, proxy seulement) :
 - Session serveur (cookie HttpOnly, Secure, SameSite), expirée après 7 jours d'inactivité, plutôt que JWT. Sessions en mémoire, sans persistance : un redémarrage ou un redéploiement déconnecte l'admin, accepté. Bouton de déconnexion.
 - Autorisation par règles d'URL dans Spring Security : `/api/admin/**` réservé aux admins.
 - Pas de bouton de connexion sur le site public : l'admin passe par `/admin`, via le lien discret « Espace admin » du footer. Ce lien ne donne aucun droit : la protection est côté serveur (Google, liste des admins, rôle exigé sur `/api/admin/**`).
-- Cookies : aucun cookie de suivi ni d'analyse. Cookies techniques seulement, dispensés de consentement : session admin et CSRF (posés uniquement à la connexion d'un admin), et éventuellement `__cf_bm` de Cloudflare. Donc pas de bandeau cookies ; le détail est dans la politique de confidentialité.
+- Cookies : ceux de Google Analytics (`_ga`, `_ga_…`) seulement si le visiteur accepte la mesure d'audience dans le bandeau (choix gardé 6 mois, script de Google non téléchargé avant). Sinon, cookies techniques seulement, dispensés de consentement : session admin et CSRF (posés uniquement à la connexion d'un admin), et éventuellement `__cf_bm` de Cloudflare. Détail dans la politique de confidentialité.
 
 ### Recherche et pagination
 
-- Recherche par JPA Specifications sur titre et catégorie, insensible à la casse et aux accents (extension `unaccent`). Sécurisée contre l'injection SQL : valeurs passées en paramètres liés, jamais concaténées. Tri limité à une liste de champs autorisés, `%` et `_` saisis par l'utilisateur échappés.
+- Recherche par JPA Specifications sur titre, catégorie, tag, ingrédient, temps total et difficulté, insensible à la casse et aux accents (extension `unaccent`). Sécurisée contre l'injection SQL : valeurs passées en paramètres liés, jamais concaténées. Tri limité à une liste de champs autorisés, `%` et `_` saisis par l'utilisateur échappés.
 - Autocomplétion des titres : endpoint dédié, 5 suggestions maximum.
 - Pagination offset avec `Pageable`. L'accueil appelle la même route avec `size=3`.
 - Recette recherchée par slug seul. Si le segment catégorie de l'URL ne correspond pas, redirection 301 vers l'URL canonique, gérée par Angular SSR qui interroge l'API par slug.
@@ -315,7 +348,7 @@ Cloudflare (offre gratuite, proxy seulement) :
 ### Recettes
 
 - Création : titre, au moins 1 catégorie, au moins 1 ingrédient et au moins 1 étape obligatoires. Image facultative.
-- Majuscule : la première lettre du titre d'une recette, du nom d'une catégorie et du titre d'une partie est mise en majuscule par le backend, à la création comme à la modification (`Texts.capitalizeFirstLetter`).
+- Majuscule : la première lettre du titre d'une recette, du nom d'une catégorie, d'un tag, d'un ingrédient et du titre d'une partie est mise en majuscule par le backend, à la création comme à la modification (`Texts.capitalizeFirstLetter`). Ce qui précède la première lettre (emoji, guillemet…) est sauté : « 🍰 tarte » devient « 🍰 Tarte ». Un nom qui commence par un chiffre reste tel quel (« 3 chocolats »). Les noms déjà en base ont été corrigés par la migration Java `V8__capitalize_names` (`back/src/main/java/db/migration/`), avec la même règle.
 - Catégories multiples (10 au plus, chacune une fois). La première est la catégorie principale : elle figure dans l'URL, le bouton « Retour » et le lien « Plus de recettes ». Changer de catégorie principale change l'URL ; l'ancienne redirige en 301 vers la nouvelle.
 - Parties facultatives (10 au plus) : avec plusieurs parties, chacune a un titre et au moins un ingrédient ou une étape ; la recette garde au moins 1 ingrédient et 1 étape au total. Les parties sont réécrites à chaque enregistrement (contraintes de position différées).
 - Statut : publiée ou brouillon. Un brouillon n'est visible que dans le back-office.
@@ -330,14 +363,23 @@ Cloudflare (offre gratuite, proxy seulement) :
 - Slug : généré depuis le titre, suffixe numérique en cas de doublon. Pas de timestamp.
 - Suppression d'une recette : sa photo reste dans la galerie.
 - Suppression d'une catégorie encore utilisée : bloquée tant qu'elle contient des recettes.
-- Réseaux sociaux : plateforme en liste fixe (YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp), une fois chacune au plus. Ajouter une plateforme : enum `SocialPlatform`, contrainte CHECK (migration Flyway) et icône côté Angular.
+- Tags : facultatifs, 20 au plus par recette, triés par nom ; la première lettre passe en majuscule, comme les catégories. Un tag utilisé peut être supprimé (retiré de ses recettes).
+- Recherches sans résultat : notées par `GET /api/recipes` quand une recherche `q` ne trouve rien en première page ; le même texte compte une fois par minute (le navigateur rejoue la requête d'une page rendue par le serveur, pour la lecture hors connexion).
+- Réseaux sociaux : plateforme en liste fixe (YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp, Pinterest), une fois chacune au plus. Ajouter une plateforme : enum `SocialPlatform`, contrainte CHECK (migration Flyway) et icône côté Angular.
 
 ### Sauvegarde
 
 - Bouton « Sauvegarder mes données » (`/api/admin/backup`) : télécharge dans le navigateur une archive ZIP contenant le dump PostgreSQL (`pg_dump`, format custom) et une copie de tout le bucket S3 (toutes les images, orphelines comprises).
 - Archive streamée : rien n'est stocké sur le serveur. Google Drive hors v1. Contenu : `database.dump` et `images/{clé S3}`. Une erreur survenue pendant le téléchargement coupe la connexion (téléchargement marqué en échec par le navigateur) et est journalisée.
 - Le backend embarque le client `pg_dump` en version 18, identique au serveur.
-- Procédure de restauration (base et S3) : [docs/restauration.md](docs/restauration.md), testée sur la stack locale.
+- Contenu : `manifest.json` (date, version du site ; absent des sauvegardes d'avant la 2.1.0), `database.dump`, `images/{clé S3}`.
+- Restauration depuis le back-office (`backup/RestoreService.java`) :
+  - L'archive est gardée dans un dossier temporaire du conteneur backend (`/tmp/yona-restore-*`), 20 Go au plus, espace libre vérifié (2,2 fois sa taille). Abandonnée au bout d'une heure sans activité ; nettoyage toutes les 10 minutes.
+  - Analyse : `pg_restore` charge le dump dans une base temporaire `yona_restore_…`, propriété d'un rôle créé pour l'occasion, sans droits d'administration (le SQL d'un fichier envoyé ne s'exécute jamais avec les droits du site) ; Flyway l'amène au schéma actuel (une sauvegarde plus ancienne est mise à niveau, une plus récente refusée) ; mêmes tables et colonnes que le site exigées, aucune vue, fonction, trigger ou règle.
+  - Fusion : ce qui manque est ajouté, rien n'est modifié. Reconnus par leur adresse (slug) pour les recettes, catégories et tags, leur nom pour les ingrédients, tags et préréglages, leur plateforme pour les réseaux sociaux, leur identifiant pour les photos. Les fichiers absents du stockage sont envoyés d'abord, puis la base en une transaction ; une photo n'est ajoutée que si ses deux fichiers sont là. Une recette ajoutée n'est jamais mise à la une si le site en a déjà une.
+  - Remplacement : fichiers manquants ou différents envoyés, puis toutes les tables (sauf l'historique Flyway) vidées et remplies par `COPY` depuis la base temporaire, en une transaction, séquences recalées ; enfin les fichiers absents de l'archive sont supprimés du stockage.
+  - Le rôle PostgreSQL du site doit pouvoir créer des rôles et des bases : c'est le cas de l'utilisateur de l'image `postgres` (superutilisateur), en local comme sur Coolify.
+- Procédure manuelle (base et S3), en secours : [docs/restauration.md](docs/restauration.md), testée sur la stack locale.
 
 ### Affichage et SEO
 
@@ -358,10 +400,10 @@ Cloudflare (offre gratuite, proxy seulement) :
 - Accès : bucket S3 privé, images servies par le backend avec cache HTTP. Seul le backend accède au bucket.
 - Formats : JPEG et PNG, vérifiés sur le contenu réel (magic bytes) et non sur l'extension. HEIC non accepté en v1.
 - Taille max à l'upload : 10 Mo, et 100 mégapixels au plus, lus dans l'en-tête avant tout décodage, pour bloquer les images piégées. Les grandes photos sont décodées en sous-échantillonnant (au moins deux fois la plus grande sortie), pour limiter la mémoire.
-- Paysage uniquement : largeur minimale 1200 px, hauteur minimale 800 px, ratio largeur/hauteur d'au moins 4:3.
+- Paysage : largeur minimale 1200 px, hauteur minimale 800 px, ratio largeur/hauteur d'au moins 4:3. Seule exception, la photo Pinterest d'une recette : verticale, 1000 × 1333 px au moins, hauteur au moins 4/3 de la largeur (2:3 conseillé).
 - Traitement : suppression des métadonnées EXIF (dont la localisation GPS), rotation appliquée selon l'EXIF, pas d'agrandissement.
 - Sorties WebP de 800 px et 1600 px de large, qualité 80. L'original JPEG ou PNG n'est pas conservé.
-- En base : table `image` (type et préfixe S3). Chaque préfixe contient `800.webp` et `1600.webp`. `recipe.image_id` et `category.image_id` pointent vers elle (`ON DELETE SET NULL`), sans contrainte d'unicité. Les identifiants S3 sont dans les variables d'environnement.
+- En base : table `image` (type et préfixe S3). Chaque préfixe contient `800.webp` et `1600.webp`. `recipe.image_id`, `recipe.pinterest_image_id`, `category.image_id` et `site_content.about_image_id` pointent vers elle (`ON DELETE SET NULL`), sans contrainte d'unicité. Les identifiants S3 sont dans les variables d'environnement.
 
 ## Charte graphique
 
@@ -419,8 +461,11 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Thème par déf
 - [x] envoi de photos depuis la galerie (migration V5)
 - [x] composant de modale commun, galerie paginée, progression des envois de photos, page Statistiques (stockage compris)
 - [x] back-office : aperçu des recettes (brouillons compris), doublons d'ingrédients et fusion, suppressions groupées, filtres catégorie et ingrédient, miniatures, liens filtrés ; site : recherche par ingrédient, catégories en menu déroulant
+- [x] 3.0.0 : tags (migration V7), filtres temps et difficulté, photo Pinterest et bouton « Épingler », favoris, liste de courses, mode cuisine, impression ; restauration d'une sauvegarde (fusion ou remplacement) ; statistiques (recettes à compléter, brouillons oubliés, recettes à rafraîchir, recherches sans résultat, export PDF) ; préréglages d'apparence, 5 thèmes et 5 polices de titres en plus ; photo « À propos » enregistrée avec le bouton ; infobulles à côté des icônes
+- [x] 3.0.0 : majuscule aux ingrédients et aux noms commençant par un emoji (migration V8), « Effacer tous les filtres » sur la page Recettes
+- [ ] Notifications de nouvelle recette (Web Push : accord du visiteur, clés VAPID, politique de confidentialité ; sur iPhone, application installée seulement)
 
 ## Points ouverts
 
-- Vérification en ligne : connexion Google, upload d'une photo depuis l'iPhone, sauvegarde ZIP.
+- Vérification en ligne : connexion Google, upload d'une photo depuis l'iPhone, sauvegarde ZIP, restauration (d'abord une fusion avec une sauvegarde toute fraîche : rien à ajouter attendu).
 - Après la mise en ligne : déclarer `https://les-creations-de-yona.fr/sitemap.xml` dans Google Search Console.

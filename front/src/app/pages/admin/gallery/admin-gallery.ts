@@ -65,6 +65,7 @@ export default class AdminGallery {
     { value: 'CATEGORY', label: 'Envoyées pour une catégorie' },
     { value: 'GALLERY', label: 'Envoyées dans la galerie' },
     { value: 'SITE', label: 'Envoyées pour « À propos »' },
+    { value: 'PINTEREST', label: 'Photos Pinterest (verticales)' },
   ];
   protected readonly usageOptions: SelectOption<UsageFilter>[] = [
     { value: 'ALL', label: 'Toutes les images' },

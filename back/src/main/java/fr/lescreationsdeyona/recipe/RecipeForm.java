@@ -26,6 +26,7 @@ public record RecipeForm(
 		@NotNull Boolean featured,
 		@Schema(description = "Each one once; the first one is the main category, in the recipe URL")
 		@NotEmpty @Size(max = 10) List<@NotNull Long> categoryIds,
+		@Schema(description = "Absent or empty for none") @Size(max = 20) @Nullable List<@NotNull Long> tagIds,
 		@Positive @Nullable Integer servings,
 		@PositiveOrZero @Nullable Integer prepMinutes,
 		@PositiveOrZero @Nullable Integer cookMinutes,

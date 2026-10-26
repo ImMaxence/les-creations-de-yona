@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   LucideArrowLeft,
@@ -8,19 +8,34 @@ import {
   LucideClock,
   LucideCookingPot,
   LucideGauge,
+  LucideHeart,
+  LucidePin,
+  LucidePrinter,
   LucideShare2,
+  LucideShoppingBasket,
 } from '@lucide/angular';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
+import { Favorites } from '../../core/kitchen/favorites';
+import { ShoppingList } from '../../core/kitchen/shopping-list';
 import { Toaster } from '../../core/notifications/toaster';
+import { absoluteUrl } from '../../core/seo/page-seo';
 import { ParisDatePipe } from '../../shared/format/paris-date.pipe';
-import { formatMinutes } from '../../shared/format/units';
+import { formatMinutes, roundForKitchen } from '../../shared/format/units';
 import { Reveal } from '../../shared/motion/reveal';
 import { RECIPE_IMAGE_TRANSITION } from '../../shared/motion/view-transitions';
-import { RECIPES_PATH, categoryQueryParams, mainCategory } from '../../shared/routing/links';
+import {
+  RECIPES_PATH,
+  SHOPPING_LIST_PATH,
+  categoryQueryParams,
+  mainCategory,
+  recipeLink,
+  tagQueryParams,
+} from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { DifficultyStars } from '../../shared/ui/difficulty-stars/difficulty-stars';
 import { YoutubeVideo } from '../../shared/ui/youtube-video/youtube-video';
+import { CookingMode } from './cooking-mode/cooking-mode';
 import { IngredientList } from './ingredient-list/ingredient-list';
 import { RecipeIngredients } from './ingredients/recipe-ingredients';
 import { hasParts, shownIngredients, totalIngredients } from './recipe-parts';
@@ -31,6 +46,7 @@ import { RecipeSteps } from './steps/recipe-steps';
   imports: [
     RouterLink,
     Button,
+    CookingMode,
     CoverImage,
     DifficultyStars,
     YoutubeVideo,
@@ -45,7 +61,11 @@ import { RecipeSteps } from './steps/recipe-steps';
     LucideClock,
     LucideCookingPot,
     LucideGauge,
+    LucideHeart,
+    LucidePin,
+    LucidePrinter,
     LucideShare2,
+    LucideShoppingBasket,
   ],
   templateUrl: './recipe.html',
   styleUrl: './recipe.scss',
@@ -56,7 +76,9 @@ export default class Recipe {
   readonly recipe = input.required<RecipeDetail>();
 
   protected readonly recipesPath = RECIPES_PATH;
+  protected readonly shoppingListPath = SHOPPING_LIST_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;
+  protected readonly tagQueryParams = tagQueryParams;
   protected readonly formatMinutes = formatMinutes;
   protected readonly imageTransition = RECIPE_IMAGE_TRANSITION;
 
@@ -84,9 +106,66 @@ export default class Recipe {
     })),
   );
 
+  protected readonly hasSteps = computed(() => this.parts().some((part) => part.steps.length > 0));
+  private readonly cookingMode = viewChild.required(CookingMode);
+
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly toaster = inject(Toaster);
+  private readonly favorites = inject(Favorites);
+  private readonly shoppingList = inject(ShoppingList);
+
+  protected readonly isFavorite = computed(() => this.favorites.list().some((card) => card.slug === this.recipe().slug));
+  protected readonly inShoppingList = computed(() =>
+    this.shoppingList.recipes().some((recipe) => recipe.slug === this.recipe().slug),
+  );
+
+  /**
+   * "Épingler": Pinterest's own page to save a pin, opened as a plain link (no script of theirs on
+   * the site). The vertical photo when there is one, the recipe's photo otherwise.
+   */
+  protected readonly pinterestLink = computed(() => {
+    const recipe = this.recipe();
+    const imageId = recipe.pinterestImageId ?? recipe.imageId;
+    const params = new URLSearchParams({ url: absoluteUrl(recipeLink(recipe).join('/')), description: recipe.title });
+    if (imageId) {
+      params.set('media', absoluteUrl(`/api/images/${imageId}/1600.webp`));
+    }
+    return `https://www.pinterest.com/pin/create/button/?${params}`;
+  });
+
+  protected toggleFavorite(): void {
+    const added = this.favorites.toggle(this.recipe());
+    this.toaster.success(added ? 'Ajoutée à vos favoris.' : 'Retirée de vos favoris.');
+  }
+
+  /** With the servings chosen: the quantities are those shown. Added again, it is updated. */
+  protected addToShoppingList(): void {
+    const recipe = this.recipe();
+    const ratio = this.ratio();
+    this.shoppingList.add({
+      slug: recipe.slug,
+      title: recipe.title,
+      categorySlug: mainCategory(recipe).slug,
+      servings: this.servings(),
+      lines: recipe.parts.flatMap((part) =>
+        part.ingredients.map((line) => ({
+          name: line.name,
+          quantity: line.quantity == null ? null : ratio === 1 ? line.quantity : roundForKitchen(line.quantity * ratio),
+          unit: line.unit ?? null,
+        })),
+      ),
+    });
+    this.toaster.success('Ingrédients ajoutés à votre liste de courses.');
+  }
+
+  protected startCooking(): void {
+    this.cookingMode().start();
+  }
+
+  protected print(): void {
+    window.print();
+  }
 
   /**
    * The phone's own share sheet (messages, WhatsApp…) where there is one; otherwise the link is

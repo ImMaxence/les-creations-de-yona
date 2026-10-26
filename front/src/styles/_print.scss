@@ -1,0 +1,42 @@
+// Printing (a recipe, the statistics exported as PDF): the content only, in the light colors of
+// the theme, without the site's chrome (header, footer, banners) nor anything marked .no-print.
+@media print {
+  :root,
+  :root[data-color-scheme] {
+    color-scheme: light;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  yona-header,
+  yona-footer,
+  yona-toasts,
+  yona-cookie-banner,
+  yona-navigation-progress,
+  yona-tooltip-layer,
+  .skip-link,
+  .admin__nav,
+  .admin__head button,
+  .no-print {
+    display: none !important;
+  }
+
+  .main {
+    padding-top: 0 !important;
+  }
+
+  // Revealed on scroll: a page printed before scrolling must not lose its lower sections
+  .reveal-pending,
+  .enter {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}

@@ -24,6 +24,11 @@ export interface RecipeForm {
   prepMinutes?: number;
   servings?: number;
   status: 'DRAFT' | 'PUBLISHED';
+
+  /**
+   * Absent or empty for none
+   */
+  tagIds?: Array<number>;
   title: string;
 
   /**

@@ -2,6 +2,7 @@ package fr.lescreationsdeyona.image;
 
 import fr.lescreationsdeyona.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
@@ -40,10 +41,12 @@ class AdminImageController {
 			description = "Sort on createdAt only. used=false lists the images shown nowhere.")
 	@GetMapping
 	PageResponse<GalleryImage> listImages(@RequestParam(required = false) @Nullable ImageKind kind,
+			@Parameter(description = "true: the vertical Pinterest photos only; false: the landscape ones only")
+			@RequestParam(required = false) @Nullable Boolean portrait,
 			@RequestParam(required = false) @Nullable Boolean used,
 			@ParameterObject @PageableDefault(size = 24, sort = "createdAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
-		return PageResponse.of(imageService.gallery(kind, used, pageable));
+		return PageResponse.of(imageService.gallery(kind, portrait, used, pageable));
 	}
 
 	@Operation(summary = "Upload a photo to the gallery, shown nowhere until chosen for a recipe or a category",

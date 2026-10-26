@@ -133,3 +133,9 @@
   background-color: transparent;
   color: var(--color-text-muted);
 }
+
+// The vertical Pinterest photo: a tall preview
+:host(.is-portrait) .preview {
+  max-width: 12rem;
+  aspect-ratio: 2 / 3;
+}

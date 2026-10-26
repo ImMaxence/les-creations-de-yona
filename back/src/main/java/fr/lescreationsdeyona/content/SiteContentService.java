@@ -44,7 +44,7 @@ public class SiteContentService {
 	@Transactional
 	public SiteContentResponse chooseAboutImage(@Nullable UUID imageId) {
 		SiteContent content = find();
-		content.setAboutImage(imageId == null ? null : imageService.get(imageId));
+		content.setAboutImage(imageId == null ? null : imageService.getLandscape(imageId));
 		return toResponse(siteContentRepository.saveAndFlush(content));
 	}
 

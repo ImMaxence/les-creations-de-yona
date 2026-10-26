@@ -59,6 +59,11 @@ export const adminRoutes: Routes = [
         title: 'Catégories · Back-office',
       },
       {
+        path: 'tags',
+        loadComponent: () => import('./tags/admin-tags'),
+        title: 'Tags · Back-office',
+      },
+      {
         path: 'ingredients',
         loadComponent: () => import('./ingredients/admin-ingredients'),
         title: 'Ingrédients · Back-office',

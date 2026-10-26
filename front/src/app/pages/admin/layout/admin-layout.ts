@@ -10,6 +10,7 @@ import {
   LucidePalette,
   LucideShare2,
   LucideSlidersHorizontal,
+  LucideTag,
   LucideTags,
 } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
@@ -44,6 +45,7 @@ import { TooltipLayer } from '../../../shared/ui/tooltip/tooltip-layer';
     LucidePalette,
     LucideShare2,
     LucideSlidersHorizontal,
+    LucideTag,
     LucideTags,
   ],
   templateUrl: './admin-layout.html',

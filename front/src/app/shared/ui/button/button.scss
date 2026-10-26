@@ -74,3 +74,12 @@
     transform: none;
   }
 }
+
+.button--danger {
+  background-color: var(--color-danger);
+  color: var(--color-bg);
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-text));
+  }
+}

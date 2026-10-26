@@ -6,9 +6,17 @@
         <p class="admin-row__meta">Calculées le {{ data.computedAt | parisDate }}</p>
       }
     </div>
-    <button yonaButton variant="secondary" type="button" [disabled]="stats.isLoading()" (click)="stats.reload()">
-      <svg lucideRefreshCw></svg>Actualiser
-    </button>
+    <div class="stats__actions no-print">
+      <a yonaButton variant="ghost" target="_blank" rel="noopener" [href]="analyticsUrl">
+        <svg lucideChartLine></svg>Visites (Google Analytics)
+      </a>
+      <button yonaButton variant="secondary" type="button" [disabled]="!stats.value()" (click)="exportPdf()">
+        <svg lucideFileDown></svg>Exporter en PDF
+      </button>
+      <button yonaButton variant="secondary" type="button" [disabled]="stats.isLoading()" (click)="stats.reload()">
+        <svg lucideRefreshCw></svg>Actualiser
+      </button>
+    </div>
   </div>
 
   @if (stats.value(); as data) {
@@ -177,6 +185,120 @@
         }
       </section>
     </div>
+
+    <!-- What to work on -->
+    <section class="admin-panel todo" aria-labelledby="incomplete-title">
+      <h3 id="incomplete-title" class="chart__title">Recettes à compléter</h3>
+      <p class="chart__subtitle">
+        Google met mieux en avant une recette avec photo, introduction, temps et portions. Les recettes publiées d'abord.
+      </p>
+      @if (data.incompleteRecipes.length) {
+        <ul role="list" class="admin-list">
+          @for (recipe of data.incompleteRecipes; track recipe.id) {
+            <li class="admin-row">
+              <div class="admin-row__main">
+                <a class="admin-row__title" [routerLink]="['/admin/recettes', recipe.id]">{{ recipe.title }}</a>
+                <span class="admin-row__meta">
+                  <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'">
+                    {{ recipe.status === 'PUBLISHED' ? 'Publiée' : 'Brouillon' }}
+                  </span>
+                  Manque :
+                  @for (field of recipe.missing; track field) {
+                    <span class="admin-label">{{ missingLabels[field] }}</span>
+                  }
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="admin-empty">Toutes les recettes sont complètes.</p>
+      }
+    </section>
+
+    <div class="charts">
+      <section class="admin-panel todo" aria-labelledby="drafts-title">
+        <h3 id="drafts-title" class="chart__title">Brouillons oubliés</h3>
+        <p class="chart__subtitle">Pas modifiés depuis plus de 30 jours</p>
+        @if (data.staleDrafts.length) {
+          <ul role="list" class="admin-dated">
+            @for (recipe of data.staleDrafts; track recipe.id) {
+              <li>
+                <a [routerLink]="['/admin/recettes', recipe.id]">{{ recipe.title }}</a>
+                <span class="admin-row__meta">{{ recipe.updatedAt | parisDate }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="admin-empty">Aucun brouillon oublié.</p>
+        }
+      </section>
+
+      <section class="admin-panel todo" aria-labelledby="outdated-title">
+        <h3 id="outdated-title" class="chart__title">Recettes à rafraîchir</h3>
+        <p class="chart__subtitle">Publiées, pas modifiées depuis plus de 12 mois</p>
+        @if (data.outdatedRecipes.length) {
+          <ul role="list" class="admin-dated">
+            @for (recipe of data.outdatedRecipes; track recipe.id) {
+              <li>
+                <a [routerLink]="['/admin/recettes', recipe.id]">{{ recipe.title }}</a>
+                <span class="admin-row__meta">{{ recipe.updatedAt | parisDate }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="admin-empty">Aucune recette publiée depuis plus d'un an sans retouche.</p>
+        }
+      </section>
+    </div>
+
+    <section class="admin-panel todo" aria-labelledby="misses-title">
+      <div class="todo__head">
+        <div>
+          <h3 id="misses-title" class="chart__title">Recherches sans résultat</h3>
+          <p class="chart__subtitle">
+            Ce que les visiteurs ont cherché sans trouver de recette : des idées de recettes à écrire. Seul le texte tapé est
+            gardé, sans rien sur le visiteur, et effacé au bout de 12 mois.
+          </p>
+        </div>
+        @if (data.searchMisses.length) {
+          <button yonaButton variant="ghost" type="button" class="no-print" (click)="forgetSearch()">
+            <svg lucideTrash2></svg>Tout effacer
+          </button>
+        }
+      </div>
+      @if (data.searchMisses.length) {
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">Recherche</th>
+              <th scope="col">Fois</th>
+              <th scope="col">Dernière</th>
+              <th scope="col" class="no-print"><span class="visually-hidden">Effacer</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (miss of data.searchMisses; track miss.term) {
+              <tr>
+                <td>{{ miss.term }}</td>
+                <td>{{ miss.count }}</td>
+                <td>{{ miss.lastSearchedAt | parisDate }}</td>
+                <td class="no-print">
+                  <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Effacer « ' + miss.term + ' »'" (click)="forgetSearch(miss.term)">
+                    <svg lucideTrash2 [size]="16"></svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="admin-empty">
+          <svg lucideSearchX [size]="20"></svg>
+          Aucune recherche sans résultat pour le moment.
+        </p>
+      }
+    </section>
   } @else if (stats.isLoading()) {
     <p class="admin-empty">Calcul des statistiques…</p>
   } @else if (stats.error()) {

@@ -7,7 +7,9 @@ public enum ImageKind {
 	/** Uploaded from the gallery page, shown nowhere until chosen for a recipe or a category. */
 	GALLERY("gallery"),
 	/** Uploaded for the "À propos" section of the home page. */
-	SITE("site");
+	SITE("site"),
+	/** Vertical photo of a recipe, offered to Pinterest by the "Épingler" button. */
+	PINTEREST("pinterest");
 
 	/** Top-level S3 folder of this kind of image. */
 	private final String folder;

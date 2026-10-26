@@ -2,6 +2,8 @@ import { Params } from '@angular/router';
 
 export const RECIPES_PATH = '/recettes';
 export const INSTALL_PATH = '/installer';
+export const FAVORITES_PATH = '/favoris';
+export const SHOPPING_LIST_PATH = '/liste-de-courses';
 export const LEGAL_NOTICE_PATH = '/mentions-legales';
 export const PRIVACY_POLICY_PATH = '/politique-de-confidentialite';
 export const ADMIN_PATH = '/admin';
@@ -19,4 +21,9 @@ export function recipeLink(recipe: { slug: string; categories: { slug: string }[
 /** Query params of the recipes page filtered on a category: /recettes?categorie={slug}. */
 export function categoryQueryParams(category: { slug: string }): Params {
   return { categorie: category.slug };
+}
+
+/** Query params of the recipes page filtered on a tag: /recettes?tag={slug}. */
+export function tagQueryParams(tag: { slug: string }): Params {
+  return { tag: tag.slug };
 }

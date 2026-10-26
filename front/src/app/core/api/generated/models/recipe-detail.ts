@@ -3,6 +3,7 @@
 
 import { CategoryResponse } from '../models/category-response';
 import { Part } from '../models/part';
+import { TagResponse } from '../models/tag-response';
 export interface RecipeDetail {
 
   /**
@@ -25,10 +26,20 @@ export interface RecipeDetail {
    * At least one: a recipe without parts has a single, untitled one
    */
   parts: Array<Part>;
+
+  /**
+   * Vertical photo for Pinterest; absent: the main photo is offered
+   */
+  pinterestImageId?: string;
   prepMinutes?: number;
   servings?: number;
   slug: string;
   status: 'DRAFT' | 'PUBLISHED';
+
+  /**
+   * Sorted by name; empty when none
+   */
+  tags: Array<TagResponse>;
   title: string;
   updatedAt: string;
 

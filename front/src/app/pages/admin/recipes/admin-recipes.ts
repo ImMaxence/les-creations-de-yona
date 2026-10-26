@@ -9,6 +9,7 @@ import { deleteRecipe } from '../../../core/api/generated/fn/admin-recipes/delet
 import { deleteRecipes } from '../../../core/api/generated/fn/admin-recipes/delete-recipes';
 import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
+import { listAdminTags } from '../../../core/api/generated/fn/admin-tags/list-admin-tags';
 import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
@@ -30,11 +31,12 @@ type StatusFilter = 'ALL' | 'DRAFT' | 'PUBLISHED';
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
 const ALL_CATEGORIES = '';
+const ALL_TAGS = '';
 
 /**
  * Every recipe, drafts included, the last modified first (the API's default order). Filters and
  * page live in the URL: back from editing a recipe, the admin finds the same list, and the
- * categories and ingredients pages link to the recipes using one of them.
+ * categories, tags and ingredients pages link to the recipes using one of them.
  */
 @Component({
   selector: 'yona-admin-recipes',
@@ -62,6 +64,7 @@ export default class AdminRecipes {
   readonly q = input<string>();
   readonly statut = input<string>();
   readonly categorie = input<string>();
+  readonly tag = input<string>();
   readonly idIngredient = input<string>();
   readonly photo = input<string>();
   readonly page = input<string>();
@@ -88,6 +91,12 @@ export default class AdminRecipes {
     this.statut() === 'PUBLISHED' || this.statut() === 'DRAFT' ? (this.statut() as StatusFilter) : 'ALL',
   );
   protected readonly category = computed(() => this.categorie() ?? ALL_CATEGORIES);
+  protected readonly tagSlug = computed(() => this.tag() ?? ALL_TAGS);
+  private readonly tags = resource({ loader: () => this.api.invoke(listAdminTags) });
+  protected readonly tagOptions = computed<SelectOption<string>[]>(() => [
+    { value: ALL_TAGS, label: 'Tous les tags' },
+    ...(this.tags.value() ?? []).map((tag) => ({ value: tag.slug, label: `${tag.name} (${tag.recipeCount})` })),
+  ]);
   protected readonly ingredientId = computed(() => {
     const id = Number(this.idIngredient());
     return Number.isInteger(id) && id > 0 ? id : undefined;
@@ -104,6 +113,7 @@ export default class AdminRecipes {
       q: this.q()?.trim() || undefined,
       status: this.status() === 'ALL' ? undefined : (this.status() as 'DRAFT' | 'PUBLISHED'),
       category: this.category() || undefined,
+      tag: this.tagSlug() || undefined,
       ingredientId: this.ingredientId(),
       imageId: this.imageId(),
       page: this.currentPage() - 1,
@@ -129,6 +139,7 @@ export default class AdminRecipes {
       !!this.q()?.trim() ||
       this.status() !== 'ALL' ||
       !!this.category() ||
+      !!this.tagSlug() ||
       this.ingredientId() !== undefined ||
       this.imageId() !== undefined,
   );
@@ -177,6 +188,10 @@ export default class AdminRecipes {
 
   protected changeCategory(slug: string | undefined): void {
     this.updateQuery({ [ADMIN_RECIPES_QUERY.category]: slug || null });
+  }
+
+  protected changeTag(slug: string | undefined): void {
+    this.updateQuery({ [ADMIN_RECIPES_QUERY.tag]: slug || null });
   }
 
   protected clearImage(): void {

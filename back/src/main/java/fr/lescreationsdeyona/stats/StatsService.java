@@ -1,6 +1,8 @@
 package fr.lescreationsdeyona.stats;
 
 import fr.lescreationsdeyona.image.ImageStorage;
+import fr.lescreationsdeyona.recipe.RecipeStatus;
+import fr.lescreationsdeyona.search.SearchMissService;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileStore;
@@ -8,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -26,14 +29,79 @@ public class StatsService {
 
 	private static final int TOP_INGREDIENTS = 8;
 
+	private static final int INCOMPLETE_RECIPES = 100;
+
+	private static final int DATED_RECIPES = 50;
+
+	private static final int SEARCH_MISSES = 30;
+
 	private final JdbcClient jdbc;
 
 	private final ImageStorage imageStorage;
 
+	private final SearchMissService searchMissService;
+
 	public SiteStats compute() {
 		return new SiteStats(recipes(), jdbc.sql("select count(*) from category").query(Long.class).single(),
 				ingredients(), images(), recipesPerCategory(), topIngredients(), recipesPerMonth(), storage(),
-				Instant.now());
+				incompleteRecipes(), datedRecipes("DRAFT", "30 days"), datedRecipes("PUBLISHED", "12 months"),
+				searchMissService.top(SEARCH_MISSES), Instant.now());
+	}
+
+	/**
+	 * What Google shows in its recipe results (photo, description, times, yield) and what visitors
+	 * look for on the page (difficulty).
+	 */
+	private List<SiteStats.IncompleteRecipe> incompleteRecipes() {
+		return jdbc.sql("""
+				select id, title, status, image_id is null as no_photo, coalesce(trim(intro), '') = '' as no_intro,
+					prep_minutes is null and cook_minutes is null as no_time, servings is null as no_servings,
+					difficulty is null as no_difficulty
+				from recipe
+				where image_id is null or coalesce(trim(intro), '') = '' or (prep_minutes is null and cook_minutes is null)
+					or servings is null or difficulty is null
+				order by status = 'PUBLISHED' desc,
+					(image_id is null)::int + (coalesce(trim(intro), '') = '')::int
+						+ (prep_minutes is null and cook_minutes is null)::int + (servings is null)::int
+						+ (difficulty is null)::int desc,
+					title
+				limit :limit""")
+			.param("limit", INCOMPLETE_RECIPES)
+			.query((row, index) -> {
+				List<SiteStats.MissingField> missing = new ArrayList<>();
+				if (row.getBoolean("no_photo")) {
+					missing.add(SiteStats.MissingField.PHOTO);
+				}
+				if (row.getBoolean("no_intro")) {
+					missing.add(SiteStats.MissingField.INTRO);
+				}
+				if (row.getBoolean("no_time")) {
+					missing.add(SiteStats.MissingField.TIME);
+				}
+				if (row.getBoolean("no_servings")) {
+					missing.add(SiteStats.MissingField.SERVINGS);
+				}
+				if (row.getBoolean("no_difficulty")) {
+					missing.add(SiteStats.MissingField.DIFFICULTY);
+				}
+				return new SiteStats.IncompleteRecipe(row.getLong("id"), row.getString("title"),
+						RecipeStatus.valueOf(row.getString("status")), missing);
+			})
+			.list();
+	}
+
+	/** Recipes of this status not changed for {@code age} (a PostgreSQL interval), the oldest first. */
+	private List<SiteStats.DatedRecipe> datedRecipes(String status, String age) {
+		return jdbc.sql("""
+				select id, title, updated_at from recipe
+				where status = :status and updated_at < now() - cast(:age as interval)
+				order by updated_at limit :limit""")
+			.param("status", status)
+			.param("age", age)
+			.param("limit", DATED_RECIPES)
+			.query((row, index) -> new SiteStats.DatedRecipe(row.getLong("id"), row.getString("title"),
+					row.getObject("updated_at", OffsetDateTime.class).toInstant()))
+			.list();
 	}
 
 	private SiteStats.Recipes recipes() {
@@ -70,7 +138,7 @@ public class StatsService {
 	private SiteStats.Images images() {
 		return jdbc.sql("""
 				select count(*) as total,
-					count(*) filter (where not exists (select 1 from recipe r where r.image_id = i.id)
+					count(*) filter (where not exists (select 1 from recipe r where r.image_id = i.id or r.pinterest_image_id = i.id)
 						and not exists (select 1 from category c where c.image_id = i.id)
 						and not exists (select 1 from site_content s where s.about_image_id = i.id)) as unused
 				from image i""")

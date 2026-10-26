@@ -1,5 +1,7 @@
 package fr.lescreationsdeyona.stats;
 
+import fr.lescreationsdeyona.recipe.RecipeStatus;
+import fr.lescreationsdeyona.search.SearchMissService;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
@@ -12,7 +14,26 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 		@Schema(description = "The 8 ingredients in the most recipes") List<NamedCount> topIngredients,
 		@Schema(description = "Recipes created each month, the last 12 months (Paris time), oldest first")
 		List<MonthCount> recipesPerMonth,
-		Storage storage, Instant computedAt) {
+		Storage storage,
+		@Schema(description = "Recipes lacking what Google shows best: published ones first, the most incomplete first (100 at most)")
+		List<IncompleteRecipe> incompleteRecipes,
+		@Schema(description = "Drafts not changed for 30 days, the oldest first (50 at most)")
+		List<DatedRecipe> staleDrafts,
+		@Schema(description = "Published recipes not changed for 12 months, the oldest first (50 at most)")
+		List<DatedRecipe> outdatedRecipes,
+		@Schema(description = "What visitors searched for without finding any recipe, the most searched first (30 at most)")
+		List<SearchMissService.SearchMiss> searchMisses,
+		Instant computedAt) {
+
+	public enum MissingField {
+		PHOTO, INTRO, TIME, SERVINGS, DIFFICULTY
+	}
+
+	public record IncompleteRecipe(Long id, String title, RecipeStatus status, List<MissingField> missing) {
+	}
+
+	public record DatedRecipe(Long id, String title, Instant updatedAt) {
+	}
 
 	public record Recipes(long total, long published, long drafts, long withoutPhoto, long withVideo,
 			@Schema(description = "With several parts, or a titled one") long inParts, long createdLast30Days,

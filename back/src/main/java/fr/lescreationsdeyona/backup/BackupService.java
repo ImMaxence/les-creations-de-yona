@@ -3,9 +3,12 @@ package fr.lescreationsdeyona.backup;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageStorage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +18,8 @@ import java.util.zip.ZipOutputStream;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -22,6 +27,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 /**
  * Builds the "Sauvegarder mes données" archive while it downloads, so nothing is written on the server:
  * <ul>
+ * <li>{@code manifest.json}: date of the backup and version of the site;</li>
  * <li>{@code database.dump}: {@code pg_dump} in custom format, restored with {@code pg_restore};</li>
  * <li>{@code images/...}: every file of the bucket, orphans included, under its S3 key.</li>
  * </ul>
@@ -32,10 +38,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 @RequiredArgsConstructor
 public class BackupService {
 
-	private static final String DATABASE_ENTRY = "database.dump";
-
-	private static final String IMAGES_FOLDER = "images/";
-
 	private static final Logger log = LoggerFactory.getLogger(BackupService.class);
 
 	private final BackupProperties properties;
@@ -43,6 +45,8 @@ public class BackupService {
 	private final DataSourceProperties dataSource;
 
 	private final ImageStorage imageStorage;
+
+	private final ObjectProvider<BuildProperties> buildProperties;
 
 	/** Starts {@code pg_dump} right away, so that a missing client is still reported as an error. */
 	public StreamingResponseBody start() {
@@ -82,8 +86,10 @@ public class BackupService {
 			// The dump and the WebP files are already compressed: compressing them again would only cost CPU.
 			zip.setLevel(Deflater.NO_COMPRESSION);
 
+			addEntry(zip, BackupArchive.MANIFEST_ENTRY, new ByteArrayInputStream(
+					BackupArchive.manifest(Instant.now(), version()).getBytes(StandardCharsets.UTF_8)));
 			try (InputStream dump = pgDump.getInputStream()) {
-				addEntry(zip, DATABASE_ENTRY, dump);
+				addEntry(zip, BackupArchive.DATABASE_ENTRY, dump);
 			}
 			requireSuccess(pgDump);
 
@@ -91,10 +97,15 @@ public class BackupService {
 			while (keys.hasNext()) {
 				String key = keys.next();
 				try (InputStream content = imageStorage.open(key).content()) {
-					addEntry(zip, IMAGES_FOLDER + key, content);
+					addEntry(zip, BackupArchive.IMAGES_FOLDER + key, content);
 				}
 			}
 		}
+	}
+
+	private String version() {
+		BuildProperties build = buildProperties.getIfAvailable();
+		return build != null ? build.getVersion() : "dev";
 	}
 
 	private static void addEntry(ZipOutputStream zip, String name, InputStream content) throws IOException {

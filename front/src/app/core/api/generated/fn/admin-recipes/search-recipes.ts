@@ -22,12 +22,17 @@ export interface SearchRecipes$Params {
   category?: string;
 
 /**
+ * Tag slug
+ */
+  tag?: string;
+
+/**
  * Id of one of its ingredients
  */
   ingredientId?: number;
 
 /**
- * Id of its photo
+ * Id of its photo or of its Pinterest photo
  */
   imageId?: string;
   status?: 'DRAFT' | 'PUBLISHED';
@@ -53,6 +58,7 @@ export function searchRecipes(http: HttpClient, rootUrl: string, params?: Search
   if (params) {
     rb.query('q', params.q, {});
     rb.query('category', params.category, {});
+    rb.query('tag', params.tag, {});
     rb.query('ingredientId', params.ingredientId, {});
     rb.query('imageId', params.imageId, {});
     rb.query('status', params.status, {});

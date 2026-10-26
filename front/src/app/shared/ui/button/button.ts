@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+/** danger: a destructive action that cannot be undone (back-office). */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 /**
  * Site button, on a native <a> or <button> so that links stay links (SEO, middle click) and
@@ -17,6 +18,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
     class: 'button',
     '[class.button--secondary]': "variant() === 'secondary'",
     '[class.button--ghost]': "variant() === 'ghost'",
+    '[class.button--danger]': "variant() === 'danger'",
   },
 })
 export class Button {

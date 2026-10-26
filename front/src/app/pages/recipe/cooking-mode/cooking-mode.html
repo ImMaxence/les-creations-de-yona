@@ -1,0 +1,92 @@
+<yona-dialog size="full" title="Mode cuisine" [subtitle]="title()" [(open)]="open">
+  @if (current(); as shown) {
+    <div
+      class="cooking"
+      (pointerdown)="onPointerDown($event)"
+      (pointerup)="onPointerUp($event)"
+    >
+      <div class="cooking__progress" aria-hidden="true">
+        <span class="cooking__bar" [style.transform]="'scaleX(' + (index() + 1) / steps().length + ')'"></span>
+      </div>
+
+      <p class="cooking__where" aria-live="polite">
+        @if (hasParts()) {
+          <span class="cooking__part">{{ shown.part.title }}</span> ·
+        }
+        Étape {{ index() + 1 }} sur {{ steps().length }}
+      </p>
+
+      <!-- Created anew for each step, so that it slides in -->
+      @for (key of [index()]; track key) {
+        <div class="cooking__step prose" [innerHTML]="shown.step.description | markdown"></div>
+      }
+
+      @if (shown.step.durationMinutes; as minutes) {
+        <div class="timer" [class.is-ringing]="ringing() === index()" [class.is-done]="timerOf(index())?.remainingMs === 0">
+          <svg lucideTimer [size]="28" [strokeWidth]="1.75"></svg>
+          <span class="timer__clock" role="timer" aria-live="off">{{ clock(remainingMs(index())) }}</span>
+          <button
+            type="button"
+            class="timer__button"
+            [attr.aria-label]="timerOf(index())?.endsAt ? 'Mettre en pause' : 'Lancer le minuteur de ' + formatMinutes(minutes)"
+            (click)="toggleTimer(index())"
+          >
+            @if (timerOf(index())?.endsAt) {
+              <svg lucidePause [size]="22"></svg>
+            } @else {
+              <svg lucidePlay [size]="22"></svg>
+            }
+          </button>
+          @if (timerOf(index())) {
+            <button type="button" class="timer__button timer__button--quiet" aria-label="Remettre le minuteur à zéro" (click)="resetTimer(index())">
+              <svg lucideRotateCcw [size]="20"></svg>
+            </button>
+          }
+          @if (timerOf(index())?.remainingMs === 0) {
+            <strong class="timer__done">C'est prêt !</strong>
+          }
+        </div>
+      }
+
+      @if (otherTimers().length) {
+        <ul role="list" class="cooking__timers" aria-label="Autres minuteurs">
+          @for (other of otherTimers(); track other.stepIndex) {
+            <li>
+              <button type="button" class="chip-timer" [class.is-done]="other.remaining === 0" (click)="goTo(other.stepIndex)">
+                <svg lucideTimer [size]="14"></svg>
+                Étape {{ other.stepIndex + 1 }} : {{ other.remaining === 0 ? 'terminé' : clock(other.remaining) }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (stepIngredients().length) {
+        <button type="button" class="cooking__toggle" [attr.aria-expanded]="showIngredients()" (click)="showIngredients.set(!showIngredients())">
+          <svg lucideListChecks [size]="18"></svg>
+          {{ showIngredients() ? 'Masquer les ingrédients' : hasParts() ? 'Ingrédients de cette partie' : 'Ingrédients' }}
+        </button>
+        @if (showIngredients()) {
+          <yona-ingredient-list class="cooking__ingredients" [lines]="stepIngredients()" />
+        }
+      }
+    </div>
+  }
+
+  <ng-container dialogActions>
+    <div class="cooking__nav">
+      <button type="button" class="nav-button" [disabled]="index() === 0" (click)="go(-1)">
+        <svg lucideChevronLeft [size]="22"></svg>
+        Précédente
+      </button>
+      @if (index() < steps().length - 1) {
+        <button type="button" class="nav-button nav-button--primary" (click)="go(1)">
+          Suivante
+          <svg lucideChevronRight [size]="22"></svg>
+        </button>
+      } @else {
+        <button type="button" class="nav-button nav-button--primary" (click)="open.set(false)">Terminer</button>
+      }
+    </div>
+  </ng-container>
+</yona-dialog>

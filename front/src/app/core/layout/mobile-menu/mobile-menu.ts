@@ -20,7 +20,13 @@ import { LucideChevronRight, LucideMenu, LucideX } from '@lucide/angular';
 import { filter } from 'rxjs';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
-import { INSTALL_PATH, RECIPES_PATH, categoryQueryParams } from '../../../shared/routing/links';
+import {
+  FAVORITES_PATH,
+  INSTALL_PATH,
+  RECIPES_PATH,
+  SHOPPING_LIST_PATH,
+  categoryQueryParams,
+} from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
@@ -55,6 +61,8 @@ export class MobileMenu {
   protected readonly adminSession = inject(AdminSession);
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly installPath = INSTALL_PATH;
+  protected readonly favoritesPath = FAVORITES_PATH;
+  protected readonly shoppingListPath = SHOPPING_LIST_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;
   protected readonly socialPlatformLabel = socialPlatformLabel;
 

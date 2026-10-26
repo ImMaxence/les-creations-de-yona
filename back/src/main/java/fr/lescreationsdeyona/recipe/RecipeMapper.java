@@ -2,10 +2,11 @@ package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.category.CategoryMapper;
 import fr.lescreationsdeyona.common.CentralMapperConfig;
+import fr.lescreationsdeyona.tag.TagMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(config = CentralMapperConfig.class, uses = CategoryMapper.class)
+@Mapper(config = CentralMapperConfig.class, uses = { CategoryMapper.class, TagMapper.class })
 public interface RecipeMapper {
 
 	@Mapping(target = "imageId", source = "image.id")
@@ -18,6 +19,7 @@ public interface RecipeMapper {
 	RecipeAdminSummary toAdminSummary(Recipe recipe);
 
 	@Mapping(target = "imageId", source = "image.id")
+	@Mapping(target = "pinterestImageId", source = "pinterestImage.id")
 	RecipeDetail toDetail(Recipe recipe);
 
 	RecipeDetail.Part toPart(RecipePart part);

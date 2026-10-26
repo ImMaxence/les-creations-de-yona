@@ -40,6 +40,10 @@ public enum ErrorCode {
 	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Catégorie introuvable."),
 	CATEGORY_IN_USE(HttpStatus.CONFLICT, "Cette catégorie contient encore des recettes."),
 
+	// Tags
+	TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "Tag introuvable."),
+	TAG_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce tag existe déjà."),
+
 	// Ingredients
 	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable."),
 	INGREDIENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Cet ingrédient existe déjà."),
@@ -59,10 +63,28 @@ public enum ErrorCode {
 	IMAGE_TOO_MANY_PIXELS(HttpStatus.BAD_REQUEST, "L'image dépasse 100 mégapixels."),
 	IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image doit mesurer au moins 1200 × 800 pixels."),
 	IMAGE_NOT_LANDSCAPE(HttpStatus.BAD_REQUEST, "L'image doit être au format paysage (4:3 ou plus large)."),
+	PORTRAIT_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image Pinterest doit mesurer au moins 1000 × 1333 pixels."),
+	IMAGE_NOT_PORTRAIT(HttpStatus.BAD_REQUEST, "L'image Pinterest doit être verticale (3:4 ou plus haute, 2:3 conseillé)."),
 	STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Le stockage des images est indisponible, réessayez plus tard."),
 
 	// Backup
-	BACKUP_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La sauvegarde n'est pas disponible sur ce serveur.");
+	BACKUP_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La sauvegarde n'est pas disponible sur ce serveur."),
+
+	// Restore
+	RESTORE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La restauration n'est pas disponible sur ce serveur."),
+	RESTORE_NOT_FOUND(HttpStatus.NOT_FOUND, "Cet envoi de sauvegarde a expiré ou n'existe plus : recommencez."),
+	RESTORE_BUSY(HttpStatus.CONFLICT, "Une restauration est déjà en cours : attendez qu'elle se termine ou annulez-la."),
+	RESTORE_CHUNK_INVALID(HttpStatus.BAD_REQUEST, "Morceau de fichier inattendu : recommencez l'envoi."),
+	RESTORE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "La sauvegarde dépasse 20 Go."),
+	RESTORE_NOT_ENOUGH_SPACE(HttpStatus.INSUFFICIENT_STORAGE, "Pas assez d'espace libre sur le serveur pour traiter cette sauvegarde."),
+	RESTORE_ARCHIVE_INVALID(HttpStatus.BAD_REQUEST, "Ce fichier n'est pas une sauvegarde du site (l'archive ZIP de « Sauvegarder mes données »)."),
+	RESTORE_NEWER_VERSION(HttpStatus.CONFLICT, "Cette sauvegarde vient d'une version plus récente du site : mettez le site à jour avant de la restaurer."),
+	RESTORE_NOT_READY(HttpStatus.CONFLICT, "La sauvegarde n'est pas prête : attendez la fin de l'envoi et de l'analyse."),
+	RESTORE_CONFIRMATION_REQUIRED(HttpStatus.BAD_REQUEST, "Tapez REMPLACER pour confirmer le remplacement de toutes les données."),
+
+	// Appearance presets
+	APPEARANCE_PRESET_NOT_FOUND(HttpStatus.NOT_FOUND, "Préréglage introuvable."),
+	APPEARANCE_PRESET_NAME_TAKEN(HttpStatus.CONFLICT, "Un préréglage porte déjà ce nom.");
 
 	private final HttpStatus status;
 

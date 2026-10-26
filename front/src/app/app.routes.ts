@@ -39,6 +39,17 @@ export const routes: Routes = [
       } satisfies RouteSeo,
     },
   },
+  // Kept in the visitor's browser: nothing for search engines
+  {
+    path: 'favoris',
+    loadComponent: () => import('./pages/favorites/favorites'),
+    data: { [SEO_DATA_KEY]: { title: 'Mes favoris', noIndex: true } satisfies RouteSeo },
+  },
+  {
+    path: 'liste-de-courses',
+    loadComponent: () => import('./pages/shopping-list/shopping-list'),
+    data: { [SEO_DATA_KEY]: { title: 'Ma liste de courses', noIndex: true } satisfies RouteSeo },
+  },
   {
     path: 'mentions-legales',
     loadComponent: () => import('./pages/legal/legal-notice'),

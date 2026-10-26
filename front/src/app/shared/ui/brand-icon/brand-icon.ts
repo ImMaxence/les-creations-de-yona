@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import {
   siFacebook,
   siInstagram,
+  siPinterest,
   siReddit,
   siThreads,
   siTiktok,
@@ -23,6 +24,7 @@ const BRANDS: Record<SocialPlatform, { label: string; path: string }> = {
   THREADS: { label: 'Threads', path: siThreads.path },
   REDDIT: { label: 'Reddit', path: siReddit.path },
   WHATSAPP: { label: 'WhatsApp', path: siWhatsapp.path },
+  PINTEREST: { label: 'Pinterest', path: siPinterest.path },
 };
 
 /** Every platform, in the order the back-office offers them. */

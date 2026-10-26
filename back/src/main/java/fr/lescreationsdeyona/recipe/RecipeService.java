@@ -12,6 +12,8 @@ import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientService;
+import fr.lescreationsdeyona.tag.Tag;
+import fr.lescreationsdeyona.tag.TagService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -51,15 +53,18 @@ public class RecipeService {
 
 	private final ImageService imageService;
 
+	private final TagService tagService;
+
 	private final RecipeMapper recipeMapper;
 
 	// Public site: published recipes only.
 
-	public Page<RecipeCard> searchPublished(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable String ingredientName, Pageable pageable) {
+	/** Published recipes only, whatever {@code filter.status()}; no back-office criteria. */
+	public Page<RecipeCard> searchPublished(RecipeFilter filter, Pageable pageable) {
+		RecipeFilter published = new RecipeFilter(filter.titleQuery(), filter.categorySlug(), filter.tagSlug(),
+				filter.ingredientName(), null, null, RecipeStatus.PUBLISHED, filter.maxMinutes(), filter.difficulty());
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, ingredientName, null, null, RecipeStatus.PUBLISHED),
-					Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
+			.findAll(RecipeSpecifications.matching(published), Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toCard);
 	}
 
@@ -72,7 +77,7 @@ public class RecipeService {
 
 	public List<RecipeSuggestion> suggestTitles(String titleQuery) {
 		return recipeRepository
-			.findBy(RecipeSpecifications.matching(titleQuery, null, null, null, null, RecipeStatus.PUBLISHED),
+			.findBy(RecipeSpecifications.matching(RecipeFilter.publishedTitled(titleQuery)),
 					query -> query.sortBy(Sort.by("title")).limit(SUGGESTION_LIMIT).all())
 			.stream()
 			.map(recipeMapper::toSuggestion)
@@ -88,11 +93,9 @@ public class RecipeService {
 
 	// Back-office: every recipe, drafts included.
 
-	public Page<RecipeAdminSummary> searchAll(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable Long ingredientId, @Nullable UUID imageId, @Nullable RecipeStatus status, Pageable pageable) {
+	public Page<RecipeAdminSummary> searchAll(RecipeFilter filter, Pageable pageable) {
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(titleQuery, categorySlug, null, ingredientId, imageId, status),
-					Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
+			.findAll(RecipeSpecifications.matching(filter), Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toAdminSummary);
 	}
 
@@ -165,7 +168,23 @@ public class RecipeService {
 	@Transactional
 	public RecipeDetail chooseImage(long id, @Nullable UUID imageId) {
 		Recipe recipe = find(id);
-		recipe.setImage(imageId == null ? null : imageService.get(imageId));
+		recipe.setImage(imageId == null ? null : imageService.getLandscape(imageId));
+		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
+	}
+
+	/** The vertical photo offered to Pinterest; the previous one stays in the gallery. */
+	@Transactional
+	public RecipeDetail replacePinterestImage(long id, ProcessedImage processed) {
+		Recipe recipe = find(id);
+		recipe.setPinterestImage(imageService.create(ImageKind.PINTEREST, processed));
+		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
+	}
+
+	/** A vertical photo of the gallery, or none: Pinterest is then offered the main photo. */
+	@Transactional
+	public RecipeDetail choosePinterestImage(long id, @Nullable UUID imageId) {
+		Recipe recipe = find(id);
+		recipe.setPinterestImage(imageId == null ? null : imageService.getPortrait(imageId));
 		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 
@@ -178,6 +197,7 @@ public class RecipeService {
 		// Read and checked before any change to the entity: the queries involved flush pending changes,
 		// which must not include a half-applied form.
 		List<Category> categories = categories(form.categoryIds());
+		List<Tag> tags = form.tagIds() == null ? List.of() : tagService.findAll(form.tagIds());
 		List<RecipePart> parts = parts(recipe, form.parts());
 		if (form.featured()) {
 			if (form.status() != RecipeStatus.PUBLISHED) {
@@ -193,6 +213,8 @@ public class RecipeService {
 		recipe.setFeatured(form.featured());
 		recipe.getCategories().clear();
 		recipe.getCategories().addAll(categories);
+		recipe.getTags().clear();
+		recipe.getTags().addAll(tags);
 		recipe.setServings(form.servings());
 		recipe.setPrepMinutes(form.prepMinutes());
 		recipe.setCookMinutes(form.cookMinutes());

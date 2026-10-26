@@ -1,6 +1,6 @@
 {
   "name": "les-creations-de-yona",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -31,7 +31,10 @@
     "@fontsource-variable/dm-sans": "^5.3.0",
     "@fontsource-variable/eb-garamond": "^5.3.0",
     "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/fredoka": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/josefin-sans": "^5.3.0",
+    "@fontsource-variable/kalnia": "^5.3.0",
     "@fontsource-variable/lora": "^5.3.0",
     "@fontsource-variable/manrope": "^5.3.0",
     "@fontsource-variable/merriweather": "^5.3.0",
@@ -41,6 +44,8 @@
     "@fontsource-variable/playfair-display": "^5.3.0",
     "@fontsource-variable/quicksand": "^5.3.0",
     "@fontsource-variable/source-sans-3": "^5.3.1",
+    "@fontsource-variable/syne": "^5.3.0",
+    "@fontsource-variable/unbounded": "^5.3.0",
     "@fontsource-variable/work-sans": "^5.3.0",
     "@lucide/angular": "^1.61.0",
     "express": "^5.1.0",

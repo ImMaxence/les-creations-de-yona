@@ -326,3 +326,99 @@
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
+
+// Header actions: favorite (heart only) and share
+.hero__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.pill--icon {
+  padding: var(--space-2);
+
+  &.is-on svg {
+    fill: currentcolor;
+  }
+}
+
+// Tags, under the intro: each one leads to the recipes having it
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+
+  a {
+    text-decoration: none;
+  }
+}
+
+// Cooking mode, Pinterest, print
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.basket {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.basket__link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+// Printed: the recipe on paper, photo smaller, ingredients then steps, nothing interactive
+@media print {
+  .hero {
+    height: auto;
+    overflow: visible;
+    color: var(--color-text);
+  }
+
+  .hero__image {
+    position: relative;
+    height: 6cm;
+    animation: none;
+
+    &::after {
+      display: none;
+    }
+  }
+
+  .hero__top,
+  .breadcrumb,
+  .video {
+    display: none;
+  }
+
+  .hero__content {
+    position: static;
+    padding: var(--space-4) 0 0;
+    view-transition-name: none;
+  }
+
+  .hero__title {
+    text-shadow: none;
+  }
+
+  .facts {
+    margin-top: 0;
+    box-shadow: none;
+  }
+
+  .layout {
+    display: block;
+  }
+
+  .layout__ingredients {
+    position: static;
+    break-inside: avoid;
+    margin-bottom: var(--space-6);
+  }
+}

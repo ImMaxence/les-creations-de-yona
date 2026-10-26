@@ -1,0 +1,255 @@
+<section class="admin-section" aria-labelledby="backup-title">
+  <div class="admin-section__head">
+    <h2 id="backup-title">Sauvegarde</h2>
+  </div>
+  <div class="admin-panel">
+    <p>
+      Télécharge une archive ZIP avec toute la base de données (recettes, catégories, tags, ingrédients, réseaux sociaux,
+      apparence) et toutes les photos. Gardez-la en lieu sûr, hors du serveur : sur votre ordinateur, un disque externe
+      ou un stockage en ligne.
+    </p>
+    <p class="field__hint">
+      La préparation commence aussitôt : le téléchargement peut durer quelques minutes selon le nombre de photos. Pensez
+      à en faire une régulièrement, par exemple une fois par mois.
+    </p>
+    <div>
+      <a yonaButton href="/api/admin/backup" download>
+        <svg lucideDownload></svg>
+        Sauvegarder mes données
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="admin-section" aria-labelledby="restore-title">
+  <div class="admin-section__head">
+    <h2 id="restore-title">Restaurer une sauvegarde</h2>
+  </div>
+
+  @if (status(); as current) {
+    <div class="admin-panel restore">
+      <div class="restore__head">
+        @if (current.state === 'DONE') {
+          <svg lucideCircleCheck class="restore__icon restore__icon--done" [size]="24"></svg>
+        } @else if (current.state === 'FAILED') {
+          <svg lucideTriangleAlert class="restore__icon restore__icon--failed" [size]="24"></svg>
+        } @else if (current.state !== 'READY') {
+          <svg lucideLoaderCircle class="restore__icon spin" [size]="24"></svg>
+        } @else {
+          <svg lucideDatabaseZap class="restore__icon" [size]="24"></svg>
+        }
+        <div>
+          <h3 class="restore__title">{{ label(current.state) }}</h3>
+          <p class="field__hint">
+            {{ fileName() ?? 'Archive envoyée' }} · {{ formatBytes(current.size) }}
+          </p>
+        </div>
+      </div>
+
+      @if (current.state === 'UPLOADING') {
+        <div
+          class="progress__track"
+          role="progressbar"
+          aria-label="Envoi de la sauvegarde"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          [attr.aria-valuenow]="((sent() ?? current.received / current.size) * 100).toFixed(0)"
+        >
+          <div class="progress__bar" [style.transform]="'scaleX(' + (sent() ?? current.received / current.size) + ')'"></div>
+        </div>
+        @if (sent() === null) {
+          <p class="field__hint">L'envoi a été interrompu : choisissez de nouveau le fichier pour recommencer.</p>
+        }
+      } @else if (current.state === 'ANALYZING') {
+        <p class="field__hint">
+          Le serveur ouvre la sauvegarde dans une base à part, sans toucher au site, puis la compare avec les données en
+          ligne. Cela prend de quelques secondes à quelques minutes.
+        </p>
+      } @else if (current.state === 'APPLYING') {
+        <p class="field__hint">Ne fermez pas cette page tant que ce n'est pas terminé.</p>
+      } @else if (current.state === 'FAILED') {
+        <p class="restore__error">{{ current.error }}</p>
+      }
+
+      @if (analysis(); as found) {
+        @if (current.state === 'READY') {
+          <p>
+            Sauvegarde
+            @if (found.backupCreatedAt) {
+              du {{ found.backupCreatedAt | parisDate }}
+            }
+            @if (found.backupVersion) {
+              (site v{{ found.backupVersion }})
+            }
+            : {{ plural(found.imageFiles, 'fichier photo', 'fichiers photo') }}.
+          </p>
+          <table class="admin-table admin-table--numbers">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Dans la sauvegarde</th>
+                <th scope="col">Sur le site</th>
+                <th scope="col">Manquant sur le site</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of countRows; track row.key) {
+                <tr>
+                  <th scope="row">{{ row.label }}</th>
+                  <td>{{ found.backup[row.key] }}</td>
+                  <td>{{ found.current[row.key] }}</td>
+                  <td>{{ found.missing[row.key] }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <!-- Merge: the safe choice, first -->
+          <div class="choice">
+            <h4 class="choice__title">Ajouter ce qui manque (conseillé)</h4>
+            <p class="field__hint">
+              Seul ce que le site n'a pas est ajouté : rien n'est modifié ni supprimé. Une recette, une catégorie ou un tag
+              est reconnu à son adresse, un ingrédient à son nom.
+            </p>
+            @if (nothingToMerge()) {
+              <p class="admin-empty">Rien à ajouter : le site contient déjà tout ce que cette sauvegarde contient.</p>
+            } @else {
+              <ul class="choice__list">
+                @if (found.missing.recipes) {
+                  <li>
+                    {{ plural(found.missing.recipes, 'recette', 'recettes') }} :
+                    {{ found.missing.recipeTitles.join(', ') }}{{ found.missing.recipes > found.missing.recipeTitles.length ? '…' : '' }}
+                  </li>
+                }
+                @if (found.missing.categories) {
+                  <li>{{ plural(found.missing.categories, 'catégorie', 'catégories') }} : {{ found.missing.categoryNames.join(', ') }}</li>
+                }
+                @if (found.missing.tags) {
+                  <li>{{ plural(found.missing.tags, 'tag', 'tags') }} : {{ found.missing.tagNames.join(', ') }}</li>
+                }
+                @if (found.missing.ingredients) {
+                  <li>{{ plural(found.missing.ingredients, 'ingrédient', 'ingrédients') }}</li>
+                }
+                @if (found.missing.images || found.imageFilesMissing) {
+                  <li>
+                    {{ plural(found.missing.images, 'photo', 'photos') }}
+                    ({{ plural(found.imageFilesMissing, 'fichier absent', 'fichiers absents') }} du stockage)
+                  </li>
+                }
+                @if (found.missing.socialLinks) {
+                  <li>Réseaux sociaux : {{ found.missing.socialPlatforms.join(', ') }}</li>
+                }
+                @if (found.missing.appearancePresets) {
+                  <li>Préréglages : {{ found.missing.appearancePresetNames.join(', ') }}</li>
+                }
+              </ul>
+              <div>
+                <button yonaButton type="button" [disabled]="busy()" (click)="merge()">Ajouter ce qui manque</button>
+              </div>
+            }
+          </div>
+
+          <!-- Replace: hidden away, with warnings and a typed confirmation -->
+          <details class="danger">
+            <summary>Zone danger : tout remplacer par la sauvegarde</summary>
+            <div class="danger__body">
+              <p class="danger__warning">
+                <svg lucideTriangleAlert [size]="20"></svg>
+                <strong>
+                  Toute la base de données du site est effacée puis remplacée par celle de la sauvegarde. C'est définitif.
+                </strong>
+              </p>
+              <ul class="choice__list">
+                <li>
+                  Les {{ plural(found.current.recipes, 'recette', 'recettes') }} du site sont supprimées, remplacées par les
+                  {{ plural(found.backup.recipes, 'recette', 'recettes') }} de la sauvegarde. Tout ce qui a été créé ou modifié
+                  depuis la sauvegarde est perdu.
+                </li>
+                <li>
+                  {{ plural(found.imageFilesExtra, 'fichier photo absent', 'fichiers photo absents') }} de la sauvegarde
+                  {{ found.imageFilesExtra > 1 ? 'sont supprimés' : 'est supprimé' }} du stockage.
+                </li>
+                <li>L'apparence, les textes et les réseaux sociaux reprennent ceux de la sauvegarde.</li>
+              </ul>
+              <p class="field__hint">
+                Par précaution, téléchargez d'abord une sauvegarde de l'état actuel avec « Sauvegarder mes données » plus haut.
+              </p>
+              <label class="checkbox-field">
+                <input type="checkbox" [checked]="understood()" (change)="understood.set($any($event.target).checked)" />
+                J'ai compris que les données actuelles seront supprimées.
+              </label>
+              <div class="field">
+                <label class="field__label" for="replace-word">Tapez {{ replaceWordExpected }} pour confirmer</label>
+                <input
+                  id="replace-word"
+                  class="input danger__word"
+                  autocomplete="off"
+                  spellcheck="false"
+                  [value]="replaceWord()"
+                  (input)="replaceWord.set($any($event.target).value)"
+                />
+              </div>
+              <div>
+                <button yonaButton variant="danger" type="button" [disabled]="!canReplace()" (click)="replace()">
+                  Remplacer toutes les données
+                </button>
+              </div>
+            </div>
+          </details>
+        }
+      }
+
+      @if (current.report; as report) {
+        <div class="report">
+          @if (report.mode === 'MERGE') {
+            <p>
+              Ajouté : {{ plural(report.added.recipes, 'recette', 'recettes') }},
+              {{ plural(report.added.categories, 'catégorie', 'catégories') }}, {{ plural(report.added.tags, 'tag', 'tags') }},
+              {{ plural(report.added.ingredients, 'ingrédient', 'ingrédients') }}, {{ plural(report.added.images, 'photo', 'photos') }},
+              {{ plural(report.added.socialLinks, 'réseau social', 'réseaux sociaux') }},
+              {{ plural(report.added.appearancePresets, 'préréglage', 'préréglages') }}.
+            </p>
+          } @else {
+            <p>
+              Le site contient maintenant {{ plural(report.added.recipes, 'recette', 'recettes') }},
+              {{ plural(report.added.categories, 'catégorie', 'catégories') }} et
+              {{ plural(report.added.images, 'photo', 'photos') }}.
+            </p>
+          }
+          <p class="field__hint">{{ filesLine(report) }}</p>
+          @for (warning of report.warnings; track $index) {
+            <p class="restore__error">{{ warning }}</p>
+          }
+        </div>
+      }
+
+      @if (current.state !== 'ANALYZING' && current.state !== 'APPLYING') {
+        <div class="restore__actions">
+          <button yonaButton variant="secondary" type="button" (click)="reset()">
+            {{ current.state === 'DONE' || current.state === 'FAILED' ? 'Terminer' : 'Annuler et supprimer l\'archive du serveur' }}
+          </button>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="admin-panel">
+      <p>
+        Envoyez une archive téléchargée avec « Sauvegarder mes données » : le serveur l'analyse sans rien changer au site,
+        puis vous montre ce qu'elle contient et ce qui manque en ligne. Vous choisissez ensuite d'ajouter ce qui manque, ou
+        (plus loin, en zone danger) de tout remplacer.
+      </p>
+      <label
+        class="dropzone"
+        [class.is-dragging]="dragging()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="dragging.set(false)"
+        (drop)="onDrop($event)"
+      >
+        <svg lucideUpload [size]="28" [strokeWidth]="1.75"></svg>
+        <span class="dropzone__title">Glissez le fichier .zip ici</span>
+        <span class="field__hint">ou cliquez pour le choisir</span>
+        <input type="file" class="visually-hidden" accept=".zip,application/zip" (change)="onFileChosen($event)" />
+      </label>
+    </div>
+  }
+</section>

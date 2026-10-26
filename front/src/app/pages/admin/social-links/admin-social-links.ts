@@ -24,6 +24,7 @@ const URL_EXAMPLES: Record<SocialPlatform, string> = {
   THREADS: 'https://www.threads.com/@…',
   REDDIT: 'https://www.reddit.com/user/…',
   WHATSAPP: 'https://whatsapp.com/channel/… ou https://wa.me/33…',
+  PINTEREST: 'https://www.pinterest.fr/…',
 };
 
 interface SocialLinksDraft {

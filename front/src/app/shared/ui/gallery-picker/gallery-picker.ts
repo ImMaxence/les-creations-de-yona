@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, output, resource, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, resource, signal, viewChild } from '@angular/core';
 import { Api } from '../../../core/api/generated/api';
 import { listImages } from '../../../core/api/generated/fn/admin-images/list-images';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
@@ -12,7 +12,7 @@ const PAGE_SIZE = 12;
 /**
  * Back-office: picks a photo already in the gallery, the most recent first, in a dialog. The
  * gallery is only loaded once the dialog is open. Open it with open(); the chosen image comes out
- * of (chosen).
+ * of (chosen). Landscape photos only, or vertical Pinterest photos only (portrait).
  */
 @Component({
   selector: 'yona-gallery-picker',
@@ -23,6 +23,7 @@ const PAGE_SIZE = 12;
 })
 export class GalleryPicker {
   readonly chosen = output<string>();
+  readonly portrait = input(false);
 
   private readonly api = inject(Api);
   private readonly dialog = viewChild.required(Dialog);
@@ -36,6 +37,7 @@ export class GalleryPicker {
       this.isOpen()
         ? {
             used: this.onlyUnused() ? false : undefined,
+            portrait: this.portrait(),
             page: this.page() - 1,
             size: PAGE_SIZE,
             sort: ['createdAt,desc'],

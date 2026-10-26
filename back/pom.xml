@@ -13,7 +13,7 @@
 	<groupId>fr.lescreationsdeyona</groupId>
 	<artifactId>back</artifactId>
 	<!-- Semantic version, shown in the back-office: bump it with front/package.json at each release. -->
-	<version>2.0.0</version>
+	<version>3.0.0</version>
 	<name>back</name>
 	<description>API of the Les créations de Yona cooking blog</description>
 
@@ -72,7 +72,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
+			<!-- Compile scope: the restore of a backup copies tables with the driver's COPY API. -->
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -35,6 +35,16 @@
           >Recettes <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
         ></a>
       </li>
+      <li class="stagger" style="--i: 1">
+        <a [routerLink]="favoritesPath" routerLinkActive="is-active"
+          >Mes favoris <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+        ></a>
+      </li>
+      <li class="stagger" style="--i: 2">
+        <a [routerLink]="shoppingListPath" routerLinkActive="is-active"
+          >Ma liste de courses <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+        ></a>
+      </li>
       <li class="stagger" style="--i: 2">
         <a [routerLink]="installPath" routerLinkActive="is-active"
           >Installer l'application <svg lucideChevronRight [size]="20" aria-hidden="true"></svg

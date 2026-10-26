@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, linkedSignal, signal } from '@angular/core';
 import { FormField, form, maxLength, required, schema, submit } from '@angular/forms/signals';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
@@ -19,6 +19,9 @@ interface ContentDraft {
   footerText: string;
 }
 
+/** A photo chosen but not saved yet: a file to send, an image of the gallery, or none (null). */
+type PendingImage = { file: File; previewUrl: string } | { imageId: string | null };
+
 /** Same rules as the API (SiteContentForm on the backend). */
 const contentSchema = schema<ContentDraft>((content) => {
   required(content.aboutTitle, { message: 'Donnez un titre à la section.' });
@@ -32,7 +35,8 @@ const contentSchema = schema<ContentDraft>((content) => {
 /**
  * Texts and photo of the site: the "À propos" section of the home page and the footer. The
  * site's name and icon are not editable: they stay in the code, for search engines and the
- * installed app. The photo is saved at once, like those of recipes; the texts with "Enregistrer".
+ * installed app. Nothing reaches the site before "Enregistrer", the photo included: until then it
+ * is only previewed here.
  */
 @Component({
   selector: 'yona-admin-preferences',
@@ -59,59 +63,96 @@ export default class AdminPreferences {
   );
   protected readonly draft = linkedSignal<ContentDraft>(() => ({ ...this.savedTexts() }));
   protected readonly contentForm = form(this.draft, contentSchema);
-  protected readonly aboutImageId = computed(() => this.siteData.content().aboutImageId ?? null);
-  protected readonly unsaved = computed(() => {
+  private readonly pendingImage = signal<PendingImage | null>(null);
+  /** The photo shown here: the one chosen, or the saved one. */
+  protected readonly aboutImageId = computed(() => {
+    const pending = this.pendingImage();
+    if (pending && 'imageId' in pending) {
+      return pending.imageId;
+    }
+    return pending ? null : (this.siteData.content().aboutImageId ?? null);
+  });
+  protected readonly previewUrl = computed(() => {
+    const pending = this.pendingImage();
+    return pending && 'file' in pending ? pending.previewUrl : null;
+  });
+  private readonly textsChanged = computed(() => {
     const saved = this.savedTexts();
     const draft = this.draft();
     return (
       draft.aboutTitle !== saved.aboutTitle || draft.aboutText !== saved.aboutText || draft.footerText !== saved.footerText
     );
   });
+  protected readonly unsaved = computed(() => this.textsChanged() || this.pendingImage() !== null);
 
   protected readonly saving = signal(false);
-  protected readonly imageBusy = signal(false);
   /** Share of a new photo sent (0 to 1) while it uploads. */
   protected readonly uploadProgress = signal<number | null>(null);
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.choose(null));
+  }
+
+  protected chooseFile(file: File): void {
+    this.choose({ file, previewUrl: URL.createObjectURL(file) });
+  }
+
+  /** A photo of the gallery, or none (null): back to the photo bundled with the site. */
+  protected chooseImage(imageId: string | null): void {
+    this.choose({ imageId });
+  }
+
+  protected reset(): void {
+    this.draft.set({ ...this.savedTexts() });
+    this.choose(null);
+  }
 
   protected async save(): Promise<void> {
     await submit(this.contentForm, async () => {
       this.saving.set(true);
-      const saved = await attempt(this.api.invoke(updateSiteContent, { body: this.draft() }));
+      let content = this.siteData.content();
+      let ok = true;
+      if (this.textsChanged()) {
+        const saved = await attempt(this.api.invoke(updateSiteContent, { body: this.draft() }));
+        ok = saved.ok;
+        if (saved.ok) {
+          content = saved.value;
+        }
+      }
+      const image = this.pendingImage();
+      if (ok && image) {
+        const changed = await attempt(this.saveImage(image));
+        ok = changed.ok;
+        if (changed.ok) {
+          content = { ...content, aboutImageId: changed.value.aboutImageId };
+          this.choose(null);
+        }
+      }
       this.saving.set(false);
-      if (saved.ok) {
-        this.siteData.setContent(saved.value);
-        this.toaster.success('Textes enregistrés : ils sont en ligne.');
+      this.siteData.setContent(content);
+      if (ok) {
+        this.toaster.success('Préférences enregistrées : elles sont en ligne.');
       }
       return undefined;
     });
   }
 
-  protected async uploadImage(file: File): Promise<void> {
-    this.uploadProgress.set(0);
-    this.imageBusy.set(true);
-    await this.changeImage(
-      this.imageUploads.send<SiteContentResponse>(replaceAboutImage.PATH, file, (sent) => this.uploadProgress.set(sent)),
-      'Photo enregistrée.',
-    );
-    this.uploadProgress.set(null);
-  }
-
-  /** A photo of the gallery, or none (null): back to the photo bundled with the site. */
-  protected async chooseImage(imageId: string | null): Promise<void> {
-    this.imageBusy.set(true);
-    await this.changeImage(
-      this.api.invoke(chooseAboutImage, { body: { imageId: imageId ?? undefined } }),
-      imageId ? 'Photo enregistrée.' : "Photo retirée : la photo d'origine est de retour.",
-    );
-  }
-
-  /** Only the photo is taken from the answer. */
-  private async changeImage(call: Promise<SiteContentResponse>, successMessage: string): Promise<void> {
-    const changed = await attempt(call);
-    this.imageBusy.set(false);
-    if (changed.ok) {
-      this.siteData.setContent({ ...this.siteData.content(), aboutImageId: changed.value.aboutImageId });
-      this.toaster.success(successMessage);
+  private saveImage(image: PendingImage): Promise<SiteContentResponse> {
+    if ('file' in image) {
+      this.uploadProgress.set(0);
+      return this.imageUploads
+        .send<SiteContentResponse>(replaceAboutImage.PATH, image.file, (sent) => this.uploadProgress.set(sent))
+        .finally(() => this.uploadProgress.set(null));
     }
+    return this.api.invoke(chooseAboutImage, { body: { imageId: image.imageId ?? undefined } });
+  }
+
+  /** The local preview of a file is released once replaced. */
+  private choose(image: PendingImage | null): void {
+    const previous = this.pendingImage();
+    if (previous && 'file' in previous) {
+      URL.revokeObjectURL(previous.previewUrl);
+    }
+    this.pendingImage.set(image);
   }
 }

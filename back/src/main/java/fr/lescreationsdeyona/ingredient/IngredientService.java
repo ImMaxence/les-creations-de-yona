@@ -1,5 +1,6 @@
 package fr.lescreationsdeyona.ingredient;
 
+import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.util.Collection;
@@ -57,7 +58,7 @@ public class IngredientService {
 
 	@Transactional
 	public IngredientResponse create(IngredientForm form) {
-		String name = form.name().strip();
+		String name = normalized(form.name());
 		if (ingredientRepository.existsByName(name)) {
 			throw new ApiException(ErrorCode.INGREDIENT_ALREADY_EXISTS);
 		}
@@ -67,7 +68,7 @@ public class IngredientService {
 	@Transactional
 	public IngredientResponse rename(long id, IngredientForm form) {
 		Ingredient ingredient = find(id);
-		String name = form.name().strip();
+		String name = normalized(form.name());
 		boolean takenByAnother = ingredientRepository.findByName(name)
 			.filter(other -> !other.getId().equals(ingredient.getId()))
 			.isPresent();
@@ -138,9 +139,9 @@ public class IngredientService {
 	/** Used by the recipe form: the admin types a name, an existing ingredient is reused if any. */
 	@Transactional
 	public Ingredient findOrCreate(String name) {
-		String strippedName = name.strip();
-		return ingredientRepository.findByName(strippedName)
-			.orElseGet(() -> ingredientRepository.save(newIngredient(strippedName)));
+		String normalizedName = normalized(name);
+		return ingredientRepository.findByName(normalizedName)
+			.orElseGet(() -> ingredientRepository.save(newIngredient(normalizedName)));
 	}
 
 	/**
@@ -149,7 +150,7 @@ public class IngredientService {
 	 */
 	private Ingredient mergeTarget(Set<Long> ids, @Nullable Long keptId, @Nullable String newName) {
 		if (StringUtils.hasText(newName)) {
-			String name = newName.strip();
+			String name = normalized(newName);
 			Ingredient target = ingredientRepository.findByName(name)
 				.orElseGet(() -> ingredientRepository.save(newIngredient(name)));
 			target.setName(name);
@@ -177,6 +178,11 @@ public class IngredientService {
 
 	private static IngredientResponse toResponse(Ingredient ingredient, long recipeCount) {
 		return new IngredientResponse(ingredient.getId(), ingredient.getName(), recipeCount);
+	}
+
+	/** Like recipe titles and category names: "beurre" is saved as "Beurre", "🧈 beurre" as "🧈 Beurre". */
+	private static String normalized(String name) {
+		return Texts.capitalizeFirstLetter(name.strip());
 	}
 
 	private static Ingredient newIngredient(String name) {

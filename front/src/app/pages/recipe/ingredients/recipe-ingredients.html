@@ -4,7 +4,7 @@
     <div class="servings" role="group" aria-label="Nombre de portions">
       <button
         type="button"
-        class="servings__button"
+        class="servings__button no-print"
         aria-label="Une portion de moins"
         [disabled]="count === 1"
         (click)="changeServings(-1)"
@@ -16,7 +16,7 @@
       </span>
       <button
         type="button"
-        class="servings__button"
+        class="servings__button no-print"
         aria-label="Une portion de plus"
         [disabled]="count === maxServings"
         (click)="changeServings(1)"
@@ -36,7 +36,7 @@
 @if (wakeLockSupported()) {
   <button
     type="button"
-    class="screen-toggle"
+    class="screen-toggle no-print"
     [class.is-on]="screenKeptOn()"
     [attr.aria-pressed]="screenKeptOn()"
     (click)="toggleScreenOn()"

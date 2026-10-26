@@ -52,6 +52,43 @@
       }
       <yona-field-error [field]="recipeForm.categoryIds" />
     </div>
+    <div class="field">
+      <span class="field__label" id="tags-label">Tags (facultatif)</span>
+      @if (tags.value()?.length) {
+        <div class="category-picker" role="group" aria-labelledby="tags-label">
+          @for (tag of tags.value(); track tag.id) {
+            <button
+              type="button"
+              class="category-chip"
+              [class.is-chosen]="isTagChosen(tag.id)"
+              [attr.aria-pressed]="isTagChosen(tag.id)"
+              (click)="toggleTag(tag.id)"
+            >
+              <svg lucideCheck [size]="14" [strokeWidth]="3"></svg>
+              {{ tag.name }}
+            </button>
+          }
+        </div>
+      }
+      @if (creatingTag()) {
+        <div class="new-category">
+          <input
+            class="input"
+            placeholder="Nom du nouveau tag (végétarien, de saison…)"
+            aria-label="Nom du nouveau tag"
+            maxlength="40"
+            [value]="newTagName()"
+            (input)="newTagName.set($any($event.target).value)"
+            (keydown.enter)="$event.preventDefault(); addTag()"
+          />
+          <button type="button" class="icon-button" aria-label="Créer le tag" (click)="addTag()"><svg lucideCheck [size]="18"></svg></button>
+          <button type="button" class="icon-button" aria-label="Annuler" (click)="creatingTag.set(false)"><svg lucideX [size]="18"></svg></button>
+        </div>
+      } @else {
+        <button type="button" class="link-button" (click)="creatingTag.set(true)"><svg lucidePlus [size]="16"></svg>Nouveau tag</button>
+      }
+      <span class="field__hint">Les visiteurs peuvent filtrer les recettes par tag.</span>
+    </div>
     <div class="editor__grid">
       @if (draft().categoryIds.length > 1) {
         <div class="field">
@@ -126,6 +163,24 @@
       />
     </section>
   </div>
+
+  <section class="admin-panel" aria-labelledby="pinterest-title">
+    <h3 id="pinterest-title" class="editor__title">Photo Pinterest (facultative)</h3>
+    <p class="field__hint">
+      Une photo verticale, proposée par le bouton « Épingler » de la recette : Pinterest met en avant les épingles hautes.
+      Sans elle, c'est la photo de la recette qui est proposée. Elle n'apparaît pas sur le site.
+    </p>
+    <yona-image-upload
+      portrait
+      [imageId]="pinterestImageId()"
+      [previewUrl]="pinterestPreview()"
+      [busy]="pinterestUploading()"
+      [progress]="pinterestProgress()"
+      (fileChosen)="onImageChosen($event, 'pinterest')"
+      (galleryImageChosen)="onImageSelected($event, 'pinterest')"
+      (removed)="onImageSelected(null, 'pinterest')"
+    />
+  </section>
 
   @if (usesParts()) {
     @for (part of draft().parts; track $index; let p = $index, first = $first, last = $last) {

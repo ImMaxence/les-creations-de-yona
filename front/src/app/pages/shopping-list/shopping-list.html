@@ -1,0 +1,114 @@
+<section class="container list-page">
+  <header class="list-page__head">
+    <p class="eyebrow enter">Gardée dans ce navigateur</p>
+    <h1 class="list-page__title enter" style="--delay: 80ms">Ma liste de courses</h1>
+    <p class="list-page__hint enter" style="--delay: 140ms">
+      Ajoutez les ingrédients d'une recette depuis sa page, avec le nombre de portions voulu : les mêmes ingrédients
+      s'additionnent ici. Cochez au fur et à mesure dans le magasin.
+    </p>
+  </header>
+
+  @if (!shown()) {
+    <!-- The server knows nothing of this browser's list: shown once in the browser -->
+  } @else if (isEmpty()) {
+    <div class="empty">
+      <div class="empty__icon" aria-hidden="true"><svg lucideShoppingBasket [size]="40" [strokeWidth]="1.5"></svg></div>
+      <h2>Votre liste est vide</h2>
+      <p>Sur une recette, touchez « Ajouter à ma liste de courses » sous les ingrédients.</p>
+      <a yonaButton [routerLink]="recipesPath">Voir les recettes</a>
+    </div>
+  } @else {
+    <div class="list-page__layout">
+      <section class="panel" aria-labelledby="to-buy-title">
+        <div class="panel__head">
+          <h2 id="to-buy-title">À acheter</h2>
+          <span class="panel__count" aria-live="polite">
+            {{ remaining() === 0 ? 'Tout est dans le panier' : remaining() + ' restant' + (remaining() > 1 ? 's' : '') }}
+          </span>
+        </div>
+
+        <ul role="list" class="items">
+          @for (item of items(); track item.key) {
+            <li>
+              <label class="item" [class.is-done]="item.done">
+                <input type="checkbox" class="visually-hidden" [checked]="item.done" (change)="basket.toggle(item.key)" />
+                <span class="item__box" aria-hidden="true"><svg lucideCheck [size]="14" [strokeWidth]="3"></svg></span>
+                <span class="item__text">
+                  @if (item.amount) {
+                    <strong>{{ item.amount }}</strong>
+                  }
+                  {{ item.name }}
+                  @if (item.parts.length) {
+                    <span class="item__recipes">{{ item.parts.join(' · ') }}</span>
+                  }
+                </span>
+              </label>
+            </li>
+          }
+          @for (extra of extras(); track extra.index) {
+            <li class="extra">
+              <label class="item" [class.is-done]="extra.done">
+                <input type="checkbox" class="visually-hidden" [checked]="extra.done" (change)="toggleExtra(extra.text)" />
+                <span class="item__box" aria-hidden="true"><svg lucideCheck [size]="14" [strokeWidth]="3"></svg></span>
+                <span class="item__text">{{ extra.text }}</span>
+              </label>
+              <button type="button" class="icon-button" [attr.aria-label]="'Retirer ' + extra.text" (click)="basket.removeExtra(extra.index)">
+                <svg lucideX [size]="16"></svg>
+              </button>
+            </li>
+          }
+        </ul>
+
+        <form class="add-item" (submit)="addItem($event)">
+          <input
+            class="input"
+            placeholder="Autre chose à acheter (papier cuisson…)"
+            aria-label="Autre chose à acheter"
+            maxlength="100"
+            [value]="newItem()"
+            (input)="newItem.set($any($event.target).value)"
+          />
+          <button yonaButton variant="secondary" type="submit" aria-label="Ajouter à la liste"><svg lucidePlus></svg></button>
+        </form>
+
+        <div class="share">
+          <a yonaButton [href]="whatsappLink()" target="_blank" rel="noopener noreferrer">Envoyer par WhatsApp</a>
+          @if (canShare()) {
+            <button yonaButton variant="secondary" type="button" (click)="share()"><svg lucideShare2></svg>Partager</button>
+          }
+          <button yonaButton variant="secondary" type="button" (click)="copy()"><svg lucideClipboardCopy></svg>Copier</button>
+        </div>
+      </section>
+
+      <aside class="panel" aria-labelledby="recipes-title">
+        <h2 id="recipes-title">Pour ces recettes</h2>
+        @if (basket.recipes().length) {
+          <ul role="list" class="recipes">
+            @for (recipe of basket.recipes(); track recipe.slug) {
+              <li>
+                <a [routerLink]="recipeLink(recipe)">{{ recipe.title }}</a>
+                @if (recipe.servings) {
+                  <span class="recipes__servings">{{ recipe.servings }} portion{{ recipe.servings > 1 ? 's' : '' }}</span>
+                }
+                <button type="button" class="icon-button" [attr.aria-label]="'Retirer ' + recipe.title + ' de la liste'" (click)="basket.remove(recipe.slug)">
+                  <svg lucideTrash2 [size]="16"></svg>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="list-page__hint">Aucune recette : seulement les articles ajoutés à la main.</p>
+        }
+        @if (confirmingClear()) {
+          <div class="clear">
+            <span>Vider toute la liste ?</span>
+            <button yonaButton variant="danger" type="button" (click)="clear()">Vider</button>
+            <button yonaButton variant="ghost" type="button" (click)="confirmingClear.set(false)">Annuler</button>
+          </div>
+        } @else {
+          <button yonaButton variant="ghost" type="button" (click)="confirmingClear.set(true)"><svg lucideTrash2></svg>Vider la liste</button>
+        }
+      </aside>
+    </div>
+  }
+</section>

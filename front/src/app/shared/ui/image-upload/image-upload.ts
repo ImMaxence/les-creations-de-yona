@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { LucideImageOff, LucideImageUp, LucideImages, LucideLoaderCircle } from '@lucide/angular';
 import { Toaster } from '../../../core/notifications/toaster';
 import { CoverImage } from '../cover-image/cover-image';
@@ -9,7 +19,8 @@ import { PHOTO_ACCEPT, photoFileError } from './photo-file';
 /**
  * Photo of a recipe or a category in the back-office: current picture, or a local preview of the
  * chosen file, then three ways to change it: a new file, a photo already in the gallery, or none.
- * The parent does the API calls. A replaced or removed photo stays in the gallery.
+ * The parent does the API calls. A replaced or removed photo stays in the gallery. portrait: the
+ * vertical photo offered to Pinterest, chosen among the vertical photos only.
  */
 @Component({
   selector: 'yona-image-upload',
@@ -63,10 +74,17 @@ import { PHOTO_ACCEPT, photoFileError } from './photo-file';
         </button>
       }
     </div>
-    <p class="field__hint">JPEG ou PNG, 10 Mo maximum, format paysage (1200 × 800 px minimum).</p>
-    <yona-gallery-picker #picker (chosen)="galleryImageChosen.emit($event)" />
+    <p class="field__hint">
+      @if (portrait()) {
+        JPEG ou PNG, 10 Mo maximum, format vertical : 1000 × 1333 px minimum, 1000 × 1500 px (2:3) conseillé.
+      } @else {
+        JPEG ou PNG, 10 Mo maximum, format paysage (1200 × 800 px minimum).
+      }
+    </p>
+    <yona-gallery-picker #picker [portrait]="portrait()" (chosen)="galleryImageChosen.emit($event)" />
   `,
   styleUrl: './image-upload.scss',
+  host: { '[class.is-portrait]': 'portrait()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImageUpload {
@@ -76,6 +94,7 @@ export class ImageUpload {
   readonly busy = input(false);
   /** Share of the new photo sent, from 0 to 1, while it uploads; null otherwise. */
   readonly progress = input<number | null>(null);
+  readonly portrait = input(false, { transform: booleanAttribute });
   readonly fileChosen = output<File>();
   readonly galleryImageChosen = output<string>();
   /** "Retirer": back to the default visual. */

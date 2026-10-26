@@ -1,0 +1,84 @@
+<section class="admin-section" aria-labelledby="tags-title">
+  <div class="admin-section__head">
+    <h2 id="tags-title">Tags</h2>
+  </div>
+  <p class="field__hint">
+    Végétarien, sans gluten, de saison… Cochés sur chaque recette, ils permettent aux visiteurs de filtrer les recettes.
+  </p>
+
+  <form class="admin-toolbar" (submit)="create($event)">
+    <input
+      class="input"
+      placeholder="Nouveau tag"
+      aria-label="Nom du nouveau tag"
+      [maxLength]="maxNameLength"
+      [value]="newName()"
+      (input)="newName.set($any($event.target).value)"
+    />
+    <button yonaButton type="submit"><svg lucidePlus></svg>Ajouter</button>
+  </form>
+
+  @if (tags.value(); as list) {
+    @if (list.length) {
+      <yona-bulk-bar
+        [count]="selection.size()"
+        [allShown]="selection.hasAll(tagIds())"
+        [busy]="deleting()"
+        (toggleAll)="selection.toggleAll(tagIds())"
+        (cleared)="selection.clear()"
+        (deleted)="removeSelected()"
+      />
+      <ul role="list" class="admin-list">
+        @for (tag of list; track tag.id) {
+          <li class="admin-row" [class.is-selected]="selection.has(tag.id)">
+            <label class="select-box">
+              <input
+                type="checkbox"
+                [checked]="selection.has(tag.id)"
+                [attr.aria-label]="'Sélectionner ' + tag.name"
+                (change)="selection.toggle(tag.id)"
+              />
+            </label>
+            @if (editingId() === tag.id) {
+              <form class="admin-row__main admin-row__rename" (submit)="$event.preventDefault(); rename(tag)">
+                <input
+                  class="input"
+                  aria-label="Nouveau nom"
+                  [maxLength]="maxNameLength"
+                  [value]="editedName()"
+                  (input)="editedName.set($any($event.target).value)"
+                />
+                <button type="submit" class="icon-button" aria-label="Valider le nom"><svg lucideCheck [size]="18"></svg></button>
+                <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg lucideX [size]="18"></svg></button>
+              </form>
+            } @else {
+              <div class="admin-row__main">
+                <span class="admin-row__title">{{ tag.name }}</span>
+                <span class="admin-row__meta">
+                  {{ tag.recipeCount }} recette{{ tag.recipeCount > 1 ? 's' : '' }}
+                  @if (tag.recipeCount) {
+                    <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(tag)">
+                      <svg lucideList [size]="14"></svg>Voir les recettes
+                    </a>
+                  }
+                </span>
+              </div>
+              <div class="admin-row__actions">
+                <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + tag.name" (click)="startRename(tag)">
+                  <svg lucidePencil [size]="18"></svg>
+                </button>
+                <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + tag.name" (click)="remove(tag)">
+                  <svg lucideTrash2 [size]="18"></svg>
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="admin-empty">Aucun tag pour le moment : ajoutez-en un, comme « Végétarien » ou « De saison ».</p>
+    }
+  } @else if (tags.isLoading()) {
+    <p class="admin-empty">Chargement des tags…</p>
+  }
+</section>

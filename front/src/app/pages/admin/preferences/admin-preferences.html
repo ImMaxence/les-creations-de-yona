@@ -14,13 +14,17 @@
         <span class="field__label">Photo</span>
         <yona-image-upload
           [imageId]="aboutImageId()"
-          [busy]="imageBusy()"
+          [previewUrl]="previewUrl()"
+          [busy]="saving()"
           [progress]="uploadProgress()"
-          (fileChosen)="uploadImage($event)"
+          (fileChosen)="chooseFile($event)"
           (galleryImageChosen)="chooseImage($event)"
           (removed)="chooseImage(null)"
         />
-        <span class="field__hint">Sans photo choisie, l'accueil affiche la photo d'origine du site. Elle est recadrée en cercle.</span>
+        <span class="field__hint">
+          Sans photo choisie, l'accueil affiche la photo d'origine du site. Elle est recadrée en cercle. La nouvelle photo
+          n'apparaît sur le site qu'une fois enregistrée.
+        </span>
       </div>
       <div class="preferences__texts">
         <div class="field">
@@ -53,9 +57,10 @@
   <div class="preferences__bar">
     @if (unsaved()) {
       <span class="field__hint">Modifications pas encore enregistrées</span>
+      <button yonaButton variant="secondary" type="button" [disabled]="saving()" (click)="reset()">Annuler les changements</button>
     }
     <button yonaButton type="submit" [disabled]="saving() || !unsaved()">
-      {{ saving() ? 'Enregistrement…' : 'Enregistrer les textes' }}
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
     </button>
   </div>
 </form>

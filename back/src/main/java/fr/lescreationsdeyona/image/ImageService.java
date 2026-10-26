@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -47,14 +48,18 @@ public class ImageService {
 
 	private final SiteContentRepository siteContentRepository;
 
-	/** {@code used}: true for images shown somewhere, false for unused ones, null for all. */
-	public Page<GalleryImage> gallery(@Nullable ImageKind kind, @Nullable Boolean used, Pageable pageable) {
-		Page<Image> images = imageRepository.findGallery(kind, used,
+	/**
+	 * {@code used}: true for images shown somewhere, false for unused ones, null for all.
+	 * {@code portrait}: true for the vertical Pinterest photos, false for the landscape ones.
+	 */
+	public Page<GalleryImage> gallery(@Nullable ImageKind kind, @Nullable Boolean portrait, @Nullable Boolean used,
+			Pageable pageable) {
+		Page<Image> images = imageRepository.findGallery(kind, portrait, used,
 				Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES));
 		List<UUID> ids = images.map(Image::getId).getContent();
 		Map<UUID, List<GalleryImage.UsingRecipe>> recipes = ids.isEmpty() ? Map.of()
-				: imageRepository.findRecipeUsages(ids)
-					.stream()
+				: Stream.concat(imageRepository.findRecipeUsages(ids).stream(),
+						imageRepository.findPinterestUsages(ids).stream())
 					.collect(Collectors.groupingBy(GalleryImage.RecipeUsage::imageId, Collectors.mapping(
 							usage -> new GalleryImage.UsingRecipe(usage.id(), usage.title()), Collectors.toList())));
 		Map<UUID, List<GalleryImage.UsingCategory>> categories = ids.isEmpty() ? Map.of()
@@ -77,6 +82,24 @@ public class ImageService {
 	/** An image of the gallery, to show it on a recipe or a category. */
 	public Image get(UUID id) {
 		return imageRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.IMAGE_NOT_FOUND));
+	}
+
+	/** A landscape image of the gallery, to show it on a recipe, a category or the home page. */
+	public Image getLandscape(UUID id) {
+		Image image = get(id);
+		if (image.getKind() == ImageKind.PINTEREST) {
+			throw new ApiException(ErrorCode.IMAGE_NOT_LANDSCAPE);
+		}
+		return image;
+	}
+
+	/** A vertical image of the gallery, uploaded for Pinterest: the other photos are landscape. */
+	public Image getPortrait(UUID id) {
+		Image image = get(id);
+		if (image.getKind() != ImageKind.PINTEREST) {
+			throw new ApiException(ErrorCode.IMAGE_NOT_PORTRAIT);
+		}
+		return image;
 	}
 
 	/** Called by the recipe and category services, inside their transaction. */

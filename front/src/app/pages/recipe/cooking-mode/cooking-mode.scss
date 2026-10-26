@@ -1,0 +1,194 @@
+@use 'mixins' as m;
+
+// Large type and large buttons: read and tapped from arm's length, with floury fingers
+.cooking {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 44rem;
+  margin-inline: auto;
+  padding-block: var(--space-2) var(--space-6);
+  // Vertical scrolling stays the browser's; horizontal moves are swipes between steps
+  touch-action: pan-y;
+}
+
+.cooking__progress {
+  height: 0.35rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+.cooking__bar {
+  display: block;
+  height: 100%;
+  background-color: var(--color-accent);
+  transform-origin: left;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.cooking__where {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.cooking__part {
+  color: var(--color-accent);
+}
+
+.cooking__step {
+  font-size: clamp(1.35rem, 4.2vw, 2rem);
+  line-height: 1.5;
+  animation: step-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.75rem);
+  }
+}
+
+.timer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  justify-self: start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-accent);
+
+  &.is-done {
+    background-color: color-mix(in srgb, var(--color-accent) 16%, var(--color-surface));
+  }
+
+  &.is-ringing {
+    animation: ring 0.6s var(--ease-out) 3;
+  }
+}
+
+@keyframes ring {
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.timer__clock {
+  min-width: 5ch;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.timer__button {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  transition: transform var(--duration-fast) var(--ease-out);
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+
+.timer__button--quiet {
+  width: 2.75rem;
+  height: 2.75rem;
+  background-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.timer__done {
+  color: var(--color-text);
+}
+
+.cooking__timers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  &.is-done {
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+}
+
+.cooking__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: start;
+  min-height: 2.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.cooking__ingredients {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.cooking__nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 3.5rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  transition: transform var(--duration-fast) var(--ease-out);
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+  }
+}
+
+.nav-button--primary {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cooking__step,
+  .timer.is-ringing {
+    animation: none;
+  }
+}

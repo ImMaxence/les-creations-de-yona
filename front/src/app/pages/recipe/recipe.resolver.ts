@@ -68,6 +68,7 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
       datePublished: recipe.createdAt,
       dateModified: recipe.updatedAt,
       recipeCategory: recipe.categories.map((category) => category.name).join(', '),
+      keywords: recipe.tags.length ? recipe.tags.map((tag) => tag.name).join(', ') : undefined,
       recipeYield: recipe.servings ? `${recipe.servings} portions` : undefined,
       prepTime: recipe.prepMinutes ? isoDuration(recipe.prepMinutes) : undefined,
       cookTime: recipe.cookMinutes ? isoDuration(recipe.cookMinutes) : undefined,

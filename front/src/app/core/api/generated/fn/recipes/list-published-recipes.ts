@@ -22,9 +22,20 @@ export interface ListPublishedRecipes$Params {
   category?: string;
 
 /**
+ * Tag slug
+ */
+  tag?: string;
+
+/**
  * Name of one of its ingredients (GET /api/ingredients), case and accents ignored
  */
   ingredient?: string;
+
+/**
+ * Preparation and cooking together at most this long, in minutes
+ */
+  maxMinutes?: number;
+  difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
 
 /**
  * Zero-based page index (0..N)
@@ -47,7 +58,10 @@ export function listPublishedRecipes(http: HttpClient, rootUrl: string, params?:
   if (params) {
     rb.query('q', params.q, {});
     rb.query('category', params.category, {});
+    rb.query('tag', params.tag, {});
     rb.query('ingredient', params.ingredient, {});
+    rb.query('maxMinutes', params.maxMinutes, {});
+    rb.query('difficulty', params.difficulty, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});
     rb.query('sort', params.sort, {});

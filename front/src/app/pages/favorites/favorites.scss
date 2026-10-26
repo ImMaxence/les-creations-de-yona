@@ -1,0 +1,77 @@
+@use 'mixins' as m;
+
+.favorites {
+  display: grid;
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+
+  @include m.from(md) {
+    padding-top: var(--space-8);
+  }
+}
+
+.favorites__head {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 40rem;
+}
+
+.favorites__title {
+  font-size: var(--text-3xl);
+}
+
+.favorites__hint {
+  color: var(--color-text-muted);
+}
+
+// The removal sits over the card's photo, out of its link
+.favorite {
+  position: relative;
+}
+
+.favorite__remove {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: rgb(20 14 12 / 45%);
+  backdrop-filter: blur(8px);
+  color: var(--color-on-image);
+  transition: background-color var(--duration-base) var(--ease-out);
+
+  @include m.hover {
+    background-color: rgb(20 14 12 / 65%);
+  }
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  text-align: center;
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+
+  p {
+    color: var(--color-text-muted);
+  }
+}
+
+.empty__icon {
+  display: grid;
+  place-items: center;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background-color: var(--color-bg);
+  color: var(--color-accent);
+}

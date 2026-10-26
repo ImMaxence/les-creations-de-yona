@@ -22,6 +22,7 @@
       (valueChange)="changeIngredient($event)"
     />
     <yona-select label="Catégorie" [options]="categoryOptions()" [value]="category()" (valueChange)="changeCategory($event)" />
+    <yona-select label="Tag" [options]="tagOptions()" [value]="tagSlug()" (valueChange)="changeTag($event)" />
     <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="changeStatus($event)" />
   </div>
 

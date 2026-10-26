@@ -9,5 +9,6 @@ public enum SocialPlatform {
 	REDDIT,
 	X,
 	THREADS,
-	WHATSAPP
+	WHATSAPP,
+	PINTEREST
 }

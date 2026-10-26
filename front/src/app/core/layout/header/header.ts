@@ -6,6 +6,7 @@ import { INSTALL_PATH, RECIPES_PATH } from '../../../shared/routing/links';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { CategoryMenu } from '../category-menu/category-menu';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
+import { KitchenLinks } from '../kitchen-links/kitchen-links';
 import { MobileMenu } from '../mobile-menu/mobile-menu';
 
 /** Below this scroll position, the header always stays visible. */
@@ -15,7 +16,7 @@ const SCROLL_DIRECTION_THRESHOLD_PX = 6;
 
 @Component({
   selector: 'yona-header',
-  imports: [RouterLink, RouterLinkActive, BrandLogo, CategoryMenu, ColorSchemeSwitch, MobileMenu],
+  imports: [RouterLink, RouterLinkActive, BrandLogo, CategoryMenu, ColorSchemeSwitch, KitchenLinks, MobileMenu],
   templateUrl: './header.html',
   styleUrl: './header.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

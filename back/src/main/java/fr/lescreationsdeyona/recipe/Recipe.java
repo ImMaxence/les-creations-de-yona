@@ -2,6 +2,7 @@ package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.image.Image;
+import fr.lescreationsdeyona.tag.Tag;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,7 +23,9 @@ import jakarta.persistence.OrderColumn;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -65,6 +68,10 @@ public class Recipe {
 	@ManyToOne(fetch = FetchType.LAZY)
 	private Image image;
 
+	/** Vertical photo offered to Pinterest; without it, the main photo is. */
+	@ManyToOne(fetch = FetchType.LAZY)
+	private Image pinterestImage;
+
 	private boolean featured;
 
 	// Collections are modified in place: replacing them would break orphan removal.
@@ -76,6 +83,14 @@ public class Recipe {
 			inverseJoinColumns = @JoinColumn(name = "category_id"))
 	@OrderColumn(name = "position")
 	private List<Category> categories = new ArrayList<>();
+
+	/** Any number, none required; sorted by name when shown. */
+	@Setter(AccessLevel.NONE)
+	@ManyToMany
+	@JoinTable(name = "recipe_tag", joinColumns = @JoinColumn(name = "recipe_id"),
+			inverseJoinColumns = @JoinColumn(name = "tag_id"))
+	@OrderBy("name")
+	private Set<Tag> tags = new LinkedHashSet<>();
 
 	/** At least one: a recipe without parts has a single, untitled one. */
 	@Setter(AccessLevel.NONE)

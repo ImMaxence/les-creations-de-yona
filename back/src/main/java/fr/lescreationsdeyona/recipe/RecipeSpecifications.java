@@ -22,37 +22,59 @@ final class RecipeSpecifications {
 	private RecipeSpecifications() {
 	}
 
-	/**
-	 * @param ingredientName name of one of its ingredients, in any part (case and accents ignored by
-	 *     the column collation)
-	 * @param ingredientId one of its ingredients (back-office)
-	 * @param imageId its photo (back-office, from the gallery)
-	 */
-	static Specification<Recipe> matching(@Nullable String titleQuery, @Nullable String categorySlug,
-			@Nullable String ingredientName, @Nullable Long ingredientId, @Nullable UUID imageId,
-			@Nullable RecipeStatus status) {
+	static Specification<Recipe> matching(RecipeFilter filter) {
 		List<Specification<Recipe>> criteria = new ArrayList<>();
+		RecipeStatus status = filter.status();
 		if (status != null) {
 			criteria.add((recipe, query, cb) -> cb.equal(recipe.get("status"), status));
 		}
+		String categorySlug = filter.categorySlug();
 		if (StringUtils.hasText(categorySlug)) {
 			// One row per recipe: a recipe is in a category once at most.
 			criteria.add((recipe, query, cb) -> cb.equal(recipe.join("categories").get("slug"), categorySlug));
 		}
+		String tagSlug = filter.tagSlug();
+		if (StringUtils.hasText(tagSlug)) {
+			// One row per recipe: a recipe has a tag once at most.
+			criteria.add((recipe, query, cb) -> cb.equal(recipe.join("tags").get("slug"), tagSlug));
+		}
+		String titleQuery = filter.titleQuery();
 		if (StringUtils.hasText(titleQuery)) {
 			criteria.add(titleContains(titleQuery.strip()));
 		}
+		String ingredientName = filter.ingredientName();
 		if (StringUtils.hasText(ingredientName)) {
 			String name = ingredientName.strip();
 			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("name"), name)));
 		}
+		UUID imageId = filter.imageId();
 		if (imageId != null) {
-			criteria.add((recipe, query, cb) -> cb.equal(recipe.get("image").get("id"), imageId));
+			criteria.add((recipe, query, cb) -> cb.or(cb.equal(recipe.get("image").get("id"), imageId),
+					cb.equal(recipe.get("pinterestImage").get("id"), imageId)));
 		}
+		Long ingredientId = filter.ingredientId();
 		if (ingredientId != null) {
 			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("id"), ingredientId)));
 		}
+		Integer maxMinutes = filter.maxMinutes();
+		if (maxMinutes != null) {
+			criteria.add(takesAtMost(maxMinutes));
+		}
+		DifficultyLevel difficulty = filter.difficulty();
+		if (difficulty != null) {
+			criteria.add((recipe, query, cb) -> cb.between(recipe.get("difficulty"), difficulty.min(), difficulty.max()));
+		}
 		return Specification.allOf(criteria);
+	}
+
+	/** Preparation plus cooking, a missing one counting as 0; at least one of them is given. */
+	private static Specification<Recipe> takesAtMost(int minutes) {
+		return (recipe, query, cb) -> {
+			Expression<Integer> prep = recipe.get("prepMinutes");
+			Expression<Integer> cook = recipe.get("cookMinutes");
+			Expression<Integer> total = cb.sum(cb.coalesce(prep, 0), cb.coalesce(cook, 0));
+			return cb.and(cb.or(cb.isNotNull(prep), cb.isNotNull(cook)), cb.le(total, minutes));
+		};
 	}
 
 	/** Case- and accent-insensitive: "creme" finds "Crème brûlée". */

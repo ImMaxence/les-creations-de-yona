@@ -40,7 +40,11 @@ import { createCategory } from '../../../core/api/generated/fn/admin-categories/
 import { createRecipe } from '../../../core/api/generated/fn/admin-recipes/create-recipe';
 import { previewRecipe } from '../../../core/api/generated/fn/admin-recipes/preview-recipe';
 import { chooseRecipeImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-image';
+import { chooseRecipePinterestImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-pinterest-image';
 import { replaceRecipeImage } from '../../../core/api/generated/fn/admin-recipes/replace-recipe-image';
+import { replaceRecipePinterestImage } from '../../../core/api/generated/fn/admin-recipes/replace-recipe-pinterest-image';
+import { createTag } from '../../../core/api/generated/fn/admin-tags/create-tag';
+import { listAdminTags } from '../../../core/api/generated/fn/admin-tags/list-admin-tags';
 import { updateRecipe } from '../../../core/api/generated/fn/admin-recipes/update-recipe';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
 import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
@@ -62,6 +66,9 @@ import { UnsavedChanges } from './unsaved-changes.guard';
 type ListName = 'ingredients' | 'steps';
 
 type PendingImage = { file: File } | { imageId: string };
+
+/** The recipe's photo, or the vertical one offered to Pinterest. */
+type PhotoSlot = 'main' | 'pinterest';
 
 const DIFFICULTY_WORDS: Record<number, string> = {
   1: 'très facile',
@@ -150,6 +157,10 @@ export default class AdminRecipeEditor implements UnsavedChanges {
       label: this.categories().find((category) => category.id === id)?.name ?? '',
     })),
   );
+  /** Every tag, to tick those of the recipe. */
+  protected readonly tags = resource({ loader: () => this.api.invoke(listAdminTags) });
+  protected readonly creatingTag = signal(false);
+  protected readonly newTagName = signal('');
   /** Ingredients already known, the most used first, so that the same one is not created twice. */
   private readonly knownIngredients = resource({
     loader: () => this.api.invoke(searchIngredients, {}),
@@ -185,6 +196,12 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly uploading = signal(false);
   /** Share of a new photo sent (0 to 1) while it uploads. */
   protected readonly uploadProgress = signal<number | null>(null);
+  /** Same as the photo, for the vertical photo offered to Pinterest. */
+  protected readonly pinterestImageId = linkedSignal(() => this.recipe()?.pinterestImageId ?? null);
+  private readonly pendingPinterest = signal<PendingImage | null>(null);
+  protected readonly pinterestPreview = signal<string | null>(null);
+  protected readonly pinterestUploading = signal(false);
+  protected readonly pinterestProgress = signal<number | null>(null);
   protected readonly saving = signal(false);
   protected readonly creatingCategory = signal(false);
   /** The form as it would be saved, shown full screen by "Aperçu". */
@@ -199,7 +216,10 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly newCategoryName = signal('');
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.revokePreview());
+    inject(DestroyRef).onDestroy(() => {
+      this.revokePreview('main');
+      this.revokePreview('pinterest');
+    });
   }
 
   hasUnsavedChanges(): boolean {
@@ -277,6 +297,37 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     this.creatingCategory.set(false);
     this.newCategoryName.set('');
     this.toaster.success(`Catégorie « ${created.value.name} » créée et ajoutée à la recette.`);
+  }
+
+  // Tags
+
+  protected isTagChosen(tagId: number): boolean {
+    return this.draft().tagIds.includes(tagId);
+  }
+
+  protected toggleTag(tagId: number): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      tagIds: draft.tagIds.includes(tagId) ? draft.tagIds.filter((id) => id !== tagId) : [...draft.tagIds, tagId],
+    }));
+  }
+
+  /** Creates a tag without leaving the recipe, and ticks it. */
+  protected async addTag(): Promise<void> {
+    const name = this.newTagName().trim();
+    if (!name) {
+      this.toaster.error('Donnez un nom au tag.');
+      return;
+    }
+    const created = await attempt(this.api.invoke(createTag, { body: { name } }));
+    if (!created.ok) {
+      return;
+    }
+    this.tags.reload();
+    this.draft.update((draft) => ({ ...draft, tagIds: [...draft.tagIds, created.value.id] }));
+    this.creatingTag.set(false);
+    this.newTagName.set('');
+    this.toaster.success(`Tag « ${created.value.name} » créé et ajouté à la recette.`);
   }
 
   // Parts
@@ -382,28 +433,28 @@ export default class AdminRecipeEditor implements UnsavedChanges {
 
   // Photo
 
-  protected async onImageChosen(file: File): Promise<void> {
+  protected async onImageChosen(file: File, slot: PhotoSlot = 'main'): Promise<void> {
     const recipe = this.recipe();
     if (recipe) {
-      await this.uploadImage(recipe.id, file);
+      await this.uploadImage(recipe.id, file, slot);
       return;
     }
-    this.revokePreview();
-    this.imageId.set(null);
-    this.pendingImage.set({ file });
-    this.pendingPreview.set(URL.createObjectURL(file));
+    this.revokePreview(slot);
+    this.slotImageId(slot).set(null);
+    this.slotPending(slot).set({ file });
+    this.slotPreview(slot).set(URL.createObjectURL(file));
   }
 
   /** An image of the gallery, or none (null). The previous photo stays in the gallery. */
-  protected async onImageSelected(imageId: string | null): Promise<void> {
+  protected async onImageSelected(imageId: string | null, slot: PhotoSlot = 'main'): Promise<void> {
     const recipe = this.recipe();
     if (recipe) {
-      await this.chooseImage(recipe.id, imageId);
+      await this.chooseImage(recipe.id, imageId, slot);
       return;
     }
-    this.revokePreview();
-    this.imageId.set(imageId);
-    this.pendingImage.set(imageId ? { imageId } : null);
+    this.revokePreview(slot);
+    this.slotImageId(slot).set(imageId);
+    this.slotPending(slot).set(imageId ? { imageId } : null);
   }
 
   protected async save(): Promise<void> {
@@ -420,11 +471,13 @@ export default class AdminRecipeEditor implements UnsavedChanges {
         } else {
           const created = await this.api.invoke(createRecipe, { body });
           this.savedSnapshot.set(JSON.stringify(this.draft()));
-          const image = this.pendingImage();
-          if (image && 'file' in image) {
-            await this.uploadImage(created.id, image.file);
-          } else if (image) {
-            await this.chooseImage(created.id, image.imageId);
+          for (const slot of ['main', 'pinterest'] as const) {
+            const image = this.slotPending(slot)();
+            if (image && 'file' in image) {
+              await this.uploadImage(created.id, image.file, slot);
+            } else if (image) {
+              await this.chooseImage(created.id, image.imageId, slot);
+            }
           }
           this.toaster.success('Recette créée.');
           await this.router.navigate(['/admin/recettes', created.id], { replaceUrl: true });
@@ -438,48 +491,66 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     });
   }
 
-  private async uploadImage(recipeId: number, file: File): Promise<void> {
-    this.uploadProgress.set(0);
+  private async uploadImage(recipeId: number, file: File, slot: PhotoSlot): Promise<void> {
+    const progress = slot === 'main' ? this.uploadProgress : this.pinterestProgress;
+    const path = slot === 'main' ? replaceRecipeImage.PATH : replaceRecipePinterestImage.PATH;
+    progress.set(0);
     try {
       await this.changeImage(
         () =>
-          this.imageUploads.send<RecipeDetail>(
-            replaceRecipeImage.PATH.replace('{id}', String(recipeId)),
-            file,
-            (sent) => this.uploadProgress.set(sent),
-          ),
-        'Photo enregistrée.',
+          this.imageUploads.send<RecipeDetail>(path.replace('{id}', String(recipeId)), file, (sent) => progress.set(sent)),
+        slot,
+        slot === 'main' ? 'Photo enregistrée.' : 'Photo Pinterest enregistrée.',
       );
     } finally {
-      this.uploadProgress.set(null);
+      progress.set(null);
     }
   }
 
-  private async chooseImage(recipeId: number, imageId: string | null): Promise<void> {
+  private async chooseImage(recipeId: number, imageId: string | null, slot: PhotoSlot): Promise<void> {
+    const body = { imageId: imageId ?? undefined };
     await this.changeImage(
-      () => this.api.invoke(chooseRecipeImage, { id: recipeId, body: { imageId: imageId ?? undefined } }),
+      () =>
+        slot === 'main'
+          ? this.api.invoke(chooseRecipeImage, { id: recipeId, body })
+          : this.api.invoke(chooseRecipePinterestImage, { id: recipeId, body }),
+      slot,
       imageId ? 'Photo enregistrée.' : 'Photo retirée, elle reste dans la galerie.',
     );
   }
 
-  private async changeImage(call: () => Promise<RecipeDetail>, successMessage: string): Promise<void> {
-    this.uploading.set(true);
+  private async changeImage(call: () => Promise<RecipeDetail>, slot: PhotoSlot, successMessage: string): Promise<void> {
+    const busy = slot === 'main' ? this.uploading : this.pinterestUploading;
+    busy.set(true);
     try {
       const updated = await call();
       this.imageId.set(updated.imageId ?? null);
+      this.pinterestImageId.set(updated.pinterestImageId ?? null);
       this.toaster.success(successMessage);
     } catch {
       // The API error is already shown as a toast
     } finally {
-      this.uploading.set(false);
+      busy.set(false);
     }
   }
 
-  private revokePreview(): void {
-    const preview = this.pendingPreview();
+  private slotImageId(slot: PhotoSlot) {
+    return slot === 'main' ? this.imageId : this.pinterestImageId;
+  }
+
+  private slotPending(slot: PhotoSlot) {
+    return slot === 'main' ? this.pendingImage : this.pendingPinterest;
+  }
+
+  private slotPreview(slot: PhotoSlot) {
+    return slot === 'main' ? this.pendingPreview : this.pinterestPreview;
+  }
+
+  private revokePreview(slot: PhotoSlot): void {
+    const preview = this.slotPreview(slot)();
     if (preview) {
       URL.revokeObjectURL(preview);
-      this.pendingPreview.set(null);
+      this.slotPreview(slot).set(null);
     }
   }
 }

@@ -96,3 +96,8 @@
 .pages {
   margin-inline: auto;
 }
+
+// Vertical Pinterest photos: tall tiles
+.grid--portrait .tile__image {
+  aspect-ratio: 2 / 3;
+}

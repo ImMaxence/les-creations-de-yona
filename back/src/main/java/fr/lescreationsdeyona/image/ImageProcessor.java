@@ -28,7 +28,8 @@ import org.springframework.web.multipart.MultipartFile;
  * Turns an uploaded photo into the WebP files served by the site.
  * <ul>
  * <li>JPEG or PNG only, recognised from the file content, never from its name.</li>
- * <li>Landscape only, at least 1200 × 800 and 4:3, checked once the EXIF orientation is applied.</li>
+ * <li>Landscape, at least 1200 × 800 and 4:3; or portrait for Pinterest, at least 1000 × 1333 and 3:4.
+ * Checked once the EXIF orientation is applied.</li>
  * <li>Re-encoded from the pixels alone: EXIF metadata, GPS position included, is dropped.</li>
  * <li>Shrunk to 800 and 1600 px wide, never enlarged. The original is not kept.</li>
  * </ul>
@@ -41,6 +42,10 @@ public class ImageProcessor {
 	private static final int MIN_WIDTH = 1200;
 
 	private static final int MIN_HEIGHT = 800;
+
+	private static final int PORTRAIT_MIN_WIDTH = 1000;
+
+	private static final int PORTRAIT_MIN_HEIGHT = 1333;
 
 	/** Stops decompression bombs: a small file declaring a huge canvas. */
 	private static final long MAX_PIXELS = 100_000_000;
@@ -58,14 +63,24 @@ public class ImageProcessor {
 		ImageIO.setUseCache(false);
 	}
 
+	/** A photo shown on the site: landscape. */
 	public ProcessedImage process(MultipartFile file) {
+		return process(file, false);
+	}
+
+	/** The vertical photo of a recipe, offered to Pinterest. */
+	public ProcessedImage processPortrait(MultipartFile file) {
+		return process(file, true);
+	}
+
+	private ProcessedImage process(MultipartFile file, boolean portrait) {
 		if (file.isEmpty()) {
 			throw new ApiException(ErrorCode.IMAGE_REQUIRED);
 		}
 		byte[] content = readBytes(file);
 		String format = detectFormat(content);
 		ExifOrientation orientation = ExifOrientation.of(content);
-		BufferedImage upright = orientation.applyTo(toRgb(decode(content, format, orientation)));
+		BufferedImage upright = orientation.applyTo(toRgb(decode(content, format, orientation, portrait)));
 		return new ProcessedImage(WIDTHS.stream()
 			.map(width -> new ProcessedImage.Variant(width, encodeWebp(shrinkToWidth(upright, width))))
 			.toList());
@@ -97,7 +112,8 @@ public class ImageProcessor {
 	}
 
 	/** Checks the size from the file header, then decodes only the pixels the largest output needs. */
-	private static BufferedImage decode(byte[] content, String format, ExifOrientation orientation) {
+	private static BufferedImage decode(byte[] content, String format, ExifOrientation orientation,
+			boolean portrait) {
 		ImageReader reader = ImageIO.getImageReadersByFormatName(format).next();
 		try (ImageInputStream input = new MemoryCacheImageInputStream(new ByteArrayInputStream(content))) {
 			reader.setInput(input, true, true);
@@ -108,7 +124,12 @@ public class ImageProcessor {
 			}
 			int width = orientation.swapsAxes() ? storedHeight : storedWidth;
 			int height = orientation.swapsAxes() ? storedWidth : storedHeight;
-			checkDimensions(width, height);
+			if (portrait) {
+				checkPortraitDimensions(width, height);
+			}
+			else {
+				checkDimensions(width, height);
+			}
 
 			// Reading one pixel in n keeps memory low on large photos. Staying above twice the largest
 			// output leaves enough detail for a smooth final shrink.
@@ -135,6 +156,17 @@ public class ImageProcessor {
 		// width / height >= 4 / 3, without rounding.
 		if (3L * width < 4L * height) {
 			throw new ApiException(ErrorCode.IMAGE_NOT_LANDSCAPE);
+		}
+	}
+
+	/** Pinterest favors tall pins: 2:3 is advised, 3:4 is the widest accepted. */
+	private static void checkPortraitDimensions(int width, int height) {
+		if (width < PORTRAIT_MIN_WIDTH || height < PORTRAIT_MIN_HEIGHT) {
+			throw new ApiException(ErrorCode.PORTRAIT_IMAGE_TOO_SMALL);
+		}
+		// height / width >= 4 / 3, without rounding.
+		if (3L * height < 4L * width) {
+			throw new ApiException(ErrorCode.IMAGE_NOT_PORTRAIT);
 		}
 	}
 

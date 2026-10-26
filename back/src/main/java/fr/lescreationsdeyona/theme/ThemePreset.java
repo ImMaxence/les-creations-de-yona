@@ -19,5 +19,10 @@ public enum ThemePreset {
 	AMANDE,
 	BLEUET,
 	ABRICOT,
-	FIGUE
+	FIGUE,
+	NEON,
+	ART_DECO,
+	LAGON,
+	BONBON,
+	AURORE
 }

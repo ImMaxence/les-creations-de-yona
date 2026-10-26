@@ -10,7 +10,12 @@ import { RequestBuilder } from '../../request-builder';
 import { PageResponseGalleryImage } from '../../models/page-response-gallery-image';
 
 export interface ListImages$Params {
-  kind?: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE';
+  kind?: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE' | 'PINTEREST';
+
+/**
+ * true: the vertical Pinterest photos only; false: the landscape ones only
+ */
+  portrait?: boolean;
   used?: boolean;
 
 /**
@@ -33,6 +38,7 @@ export function listImages(http: HttpClient, rootUrl: string, params?: ListImage
   const rb = new RequestBuilder(rootUrl, listImages.PATH, 'get');
   if (params) {
     rb.query('kind', params.kind, {});
+    rb.query('portrait', params.portrait, {});
     rb.query('used', params.used, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});

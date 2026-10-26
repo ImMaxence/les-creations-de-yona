@@ -15,7 +15,8 @@ const EDGE_PX = 8;
  */
 @Component({
   selector: 'yona-tooltip-layer',
-  template: `<div #bubble class="tooltip" popover="manual" aria-hidden="true" [class.is-open]="text() !== null"></div>`,
+  // is-open is set by show() and hide() themselves: the bubble must be visible to be measured
+  template: `<div #bubble class="tooltip" popover="manual" aria-hidden="true"></div>`,
   styleUrl: './tooltip-layer.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -67,6 +68,7 @@ export class TooltipLayer {
     if (this.text() !== null) {
       this.text.set(null);
       const bubble = this.bubble().nativeElement;
+      bubble.classList.remove('is-open');
       if (bubble.matches(':popover-open')) {
         bubble.hidePopover();
       }
@@ -89,21 +91,38 @@ export class TooltipLayer {
     }
     const bubble = this.bubble().nativeElement;
     this.text.set(target.getAttribute('aria-label'));
-    // Written at once (not at the next change detection), to be measured right below
+    // Written and shown at once (not at the next change detection): a hidden bubble measures 0 × 0
     bubble.textContent = this.text();
+    bubble.classList.add('is-open');
     if ('showPopover' in bubble && !bubble.matches(':popover-open')) {
       bubble.showPopover();
     }
-    const anchor = target.getBoundingClientRect();
-    const { width, height } = bubble.getBoundingClientRect();
-    // Above the icon, or below it when there is no room; never past the sides of the screen
-    const above = anchor.top - height - GAP_PX;
-    const top = above >= EDGE_PX ? above : anchor.bottom + GAP_PX;
-    const left = Math.min(
-      Math.max(EDGE_PX, anchor.left + anchor.width / 2 - width / 2),
-      window.innerWidth - width - EDGE_PX,
-    );
+    const { top, left } = placeBeside(target.getBoundingClientRect(), bubble.getBoundingClientRect());
     bubble.style.top = `${top}px`;
     bubble.style.left = `${left}px`;
   }
+}
+
+/**
+ * Beside the icon, never over it: on its right, vertically centered; on its left when the right
+ * has no room; above it (or below) when neither side has. Never past the edges of the screen.
+ */
+function placeBeside(anchor: DOMRect, bubble: { width: number; height: number }): { top: number; left: number } {
+  const { width, height } = bubble;
+  const centeredTop = clamp(anchor.top + anchor.height / 2 - height / 2, EDGE_PX, window.innerHeight - height - EDGE_PX);
+  if (anchor.right + GAP_PX + width <= window.innerWidth - EDGE_PX) {
+    return { top: centeredTop, left: anchor.right + GAP_PX };
+  }
+  if (anchor.left - GAP_PX - width >= EDGE_PX) {
+    return { top: centeredTop, left: anchor.left - GAP_PX - width };
+  }
+  const above = anchor.top - height - GAP_PX;
+  return {
+    top: above >= EDGE_PX ? above : anchor.bottom + GAP_PX,
+    left: clamp(anchor.left + anchor.width / 2 - width / 2, EDGE_PX, window.innerWidth - width - EDGE_PX),
+  };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(min, value), max);
 }

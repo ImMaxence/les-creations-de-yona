@@ -3,6 +3,8 @@ package fr.lescreationsdeyona.image;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -28,7 +30,8 @@ public class ImageStorage {
 	public record StoredFile(String key, long size, InputStream content) {
 	}
 
-	void putWebp(String key, byte[] content) {
+	/** Also used by the restore of a backup, whose files keep their S3 key. */
+	public void putWebp(String key, byte[] content) {
 		s3.putObject(request -> request.bucket(properties.bucket()).key(key).contentType(WEBP),
 				RequestBody.fromBytes(content));
 	}
@@ -65,6 +68,19 @@ public class ImageStorage {
 			bytes += object.size();
 		}
 		return new Usage(files, bytes);
+	}
+
+	/** Size of every file of the bucket, by key. */
+	public Map<String, Long> sizes() {
+		Map<String, Long> sizes = new HashMap<>();
+		s3.listObjectsV2Paginator(request -> request.bucket(properties.bucket()))
+			.contents()
+			.forEach(object -> sizes.put(object.key(), object.size()));
+		return sizes;
+	}
+
+	public void delete(String key) {
+		s3.deleteObject(request -> request.bucket(properties.bucket()).key(key));
 	}
 
 	void deleteFolder(String prefix) {

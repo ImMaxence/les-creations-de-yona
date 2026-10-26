@@ -10,6 +10,8 @@ export interface RecipeDraft {
   featured: boolean;
   /** The first one is the main category, in the recipe URL. */
   categoryIds: number[];
+  /** Végétarien, sans gluten…: none required. */
+  tagIds: number[];
   servings: number | null;
   prepMinutes: number | null;
   cookMinutes: number | null;
@@ -60,6 +62,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       status: 'DRAFT',
       featured: false,
       categoryIds: [],
+      tagIds: [],
       servings: null,
       prepMinutes: null,
       cookMinutes: null,
@@ -74,6 +77,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
     status: recipe.status,
     featured: recipe.featured,
     categoryIds: recipe.categories.map((category) => category.id),
+    tagIds: recipe.tags.map((tag) => tag.id),
     servings: recipe.servings ?? null,
     prepMinutes: recipe.prepMinutes ?? null,
     cookMinutes: recipe.cookMinutes ?? null,
@@ -103,6 +107,7 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
     status: draft.status,
     featured: draft.featured && draft.status === 'PUBLISHED',
     categoryIds: draft.categoryIds,
+    tagIds: draft.tagIds,
     servings: draft.servings ?? undefined,
     prepMinutes: draft.prepMinutes ?? undefined,
     cookMinutes: draft.cookMinutes ?? undefined,

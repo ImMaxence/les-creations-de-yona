@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, Scroll } from '@angular/router';
-import { LucideSearchX } from '@lucide/angular';
+import { LucideSearchX, LucideSlidersHorizontal, LucideX } from '@lucide/angular';
 import { filter } from 'rxjs';
 import { RecipeSuggestion } from '../../core/api/generated/models/recipe-suggestion';
 import { SiteData } from '../../core/site/site-data';
@@ -12,11 +12,29 @@ import { Pagination } from '../../shared/ui/pagination/pagination';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
 import { SearchBox } from '../../shared/ui/search-box/search-box';
 import { Select, SelectOption } from '../../shared/ui/select/select';
-import { DEFAULT_PAGE_SIZE, PAGE_SIZES, RECIPES_QUERY, RecipesPageData } from './recipes.resolver';
+import {
+  DEFAULT_PAGE_SIZE,
+  DifficultyFilter,
+  PAGE_SIZES,
+  RECIPES_QUERY,
+  RecipesPageData,
+  TIME_FILTERS,
+} from './recipes.resolver';
 
 @Component({
   selector: 'yona-recipes',
-  imports: [RouterLink, LucideSearchX, Button, Pagination, RecipeCard, Reveal, SearchBox, Select],
+  imports: [
+    RouterLink,
+    LucideSearchX,
+    LucideSlidersHorizontal,
+    LucideX,
+    Button,
+    Pagination,
+    RecipeCard,
+    Reveal,
+    SearchBox,
+    Select,
+  ],
   templateUrl: './recipes.html',
   styleUrl: './recipes.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,9 +58,43 @@ export default class Recipes {
   protected readonly activeCategory = computed(
     () => this.categories().find((category) => category.slug === this.filters().category) ?? null,
   );
-  protected readonly hasFilters = computed(
-    () => this.filters().search !== '' || this.filters().category !== null || this.filters().ingredient !== '',
+  protected readonly activeTag = computed(() => this.data().tags.find((tag) => tag.slug === this.filters().tag) ?? null);
+  /** Tag, time and difficulty: shown on phones once asked for, or when one is in use. */
+  protected readonly moreFiltersCount = computed(
+    () =>
+      Number(this.filters().tag !== null) +
+      Number(this.filters().maxMinutes !== null) +
+      Number(this.filters().difficulty !== null),
   );
+  protected readonly showMoreFilters = signal(false);
+  protected readonly hasFilters = computed(
+    () =>
+      this.filters().search !== '' ||
+      this.filters().category !== null ||
+      this.filters().ingredient !== '' ||
+      this.moreFiltersCount() > 0,
+  );
+  /** "Effacer tous les filtres": every recipe again, keeping only the number per page chosen. */
+  protected readonly clearedQuery = computed(() => ({
+    [RECIPES_QUERY.pageSize]: this.filters().pageSize === DEFAULT_PAGE_SIZE ? null : this.filters().pageSize,
+  }));
+  protected readonly tagOptions = computed<SelectOption<string>[]>(() => [
+    { value: '', label: 'Tous les tags' },
+    ...this.data().tags.map((tag) => ({ value: tag.slug, label: tag.name })),
+  ]);
+  protected readonly timeOptions: SelectOption<number | null>[] = [
+    { value: null, label: 'Tous les temps' },
+    ...TIME_FILTERS.map((minutes) => ({
+      value: minutes,
+      label: minutes < 60 ? `Prêt en ${minutes} min max` : 'Prêt en 1 h max',
+    })),
+  ];
+  protected readonly difficultyOptions: SelectOption<DifficultyFilter | null>[] = [
+    { value: null, label: 'Toutes difficultés' },
+    { value: 'facile', label: 'Facile (1 à 2 étoiles)' },
+    { value: 'moyenne', label: 'Moyenne (2,5 à 3,5)' },
+    { value: 'difficile', label: 'Difficile (4 à 5)' },
+  ];
   /** A drop-down rather than a row of chips: the categories grow in number. */
   protected readonly categoryOptions = computed<SelectOption<string>[]>(() => [
     { value: '', label: 'Toutes les catégories' },
@@ -65,6 +117,18 @@ export default class Recipes {
 
   protected changeCategory(slug: string | undefined): void {
     this.updateQuery({ [RECIPES_QUERY.category]: slug || null, [RECIPES_QUERY.page]: null });
+  }
+
+  protected changeTag(slug: string | undefined): void {
+    this.updateQuery({ [RECIPES_QUERY.tag]: slug || null, [RECIPES_QUERY.page]: null });
+  }
+
+  protected changeTime(minutes: number | null | undefined): void {
+    this.updateQuery({ [RECIPES_QUERY.time]: minutes ?? null, [RECIPES_QUERY.page]: null });
+  }
+
+  protected changeDifficulty(difficulty: DifficultyFilter | null | undefined): void {
+    this.updateQuery({ [RECIPES_QUERY.difficulty]: difficulty ?? null, [RECIPES_QUERY.page]: null });
   }
 
   protected changeIngredient(name: string | undefined): void {

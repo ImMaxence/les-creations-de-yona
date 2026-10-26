@@ -24,6 +24,11 @@ export const DISPLAY_FONTS: Record<DisplayFontId, FontChoice> = {
   EB_GARAMOND: { label: 'EB Garamond', family: "'EB Garamond Variable', Garamond, Georgia, serif" },
   CAVEAT: { label: 'Caveat', family: "'Caveat Variable', 'Brush Script MT', cursive" },
   COMFORTAA: { label: 'Comfortaa', family: "'Comfortaa Variable', system-ui, sans-serif" },
+  UNBOUNDED: { label: 'Unbounded', family: "'Unbounded Variable', system-ui, sans-serif" },
+  SYNE: { label: 'Syne', family: "'Syne Variable', system-ui, sans-serif" },
+  FREDOKA: { label: 'Fredoka', family: "'Fredoka Variable', system-ui, sans-serif" },
+  JOSEFIN_SANS: { label: 'Josefin Sans', family: "'Josefin Sans Variable', 'Futura', system-ui, sans-serif" },
+  KALNIA: { label: 'Kalnia', family: "'Kalnia Variable', Didot, Georgia, serif" },
 };
 
 export const BODY_FONTS: Record<BodyFontId, FontChoice> = {

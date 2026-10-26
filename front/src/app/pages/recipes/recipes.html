@@ -12,6 +12,9 @@
       @if (filters().ingredient) {
         avec « {{ filters().ingredient }} »
       }
+      @if (activeTag(); as tag) {
+        · {{ tag.name }}
+      }
     </p>
   </header>
 
@@ -41,6 +44,56 @@
       [value]="filters().category ?? ''"
       (valueChange)="changeCategory($event)"
     />
+
+    <!-- Phones: tag, time and difficulty behind a button, unless one is in use -->
+    <button
+      type="button"
+      class="more-toggle"
+      aria-controls="more-filters"
+      [attr.aria-expanded]="showMoreFilters() || moreFiltersCount() > 0"
+      (click)="showMoreFilters.set(!showMoreFilters())"
+    >
+      <svg lucideSlidersHorizontal [size]="18"></svg>
+      Plus de filtres
+      @if (moreFiltersCount()) {
+        <span class="more-toggle__count">{{ moreFiltersCount() }}</span>
+      }
+    </button>
+    <div id="more-filters" class="more-filters" [class.is-open]="showMoreFilters() || moreFiltersCount() > 0">
+      @if (data().tags.length) {
+        <yona-select
+          class="tool-select"
+          label="Filtrer par tag"
+          size="large"
+          [options]="tagOptions()"
+          [value]="filters().tag ?? ''"
+          (valueChange)="changeTag($event)"
+        />
+      }
+      <yona-select
+        class="tool-select"
+        label="Filtrer par temps total"
+        size="large"
+        [options]="timeOptions"
+        [value]="filters().maxMinutes"
+        (valueChange)="changeTime($event)"
+      />
+      <yona-select
+        class="tool-select"
+        label="Filtrer par difficulté"
+        size="large"
+        [options]="difficultyOptions"
+        [value]="filters().difficulty"
+        (valueChange)="changeDifficulty($event)"
+      />
+    </div>
+
+    @if (hasFilters()) {
+      <a class="clear-filters" [routerLink]="recipesPath" [queryParams]="clearedQuery()">
+        <svg lucideX [size]="16"></svg>
+        Effacer tous les filtres
+      </a>
+    }
   </div>
 
   <div class="results">

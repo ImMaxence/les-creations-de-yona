@@ -49,14 +49,17 @@ class AdminRecipeController {
 			@RequestParam(required = false) @Size(max = 100) @Nullable String q,
 			@Parameter(description = "Category slug")
 			@RequestParam(required = false) @Nullable String category,
+			@Parameter(description = "Tag slug")
+			@RequestParam(required = false) @Nullable String tag,
 			@Parameter(description = "Id of one of its ingredients")
 			@RequestParam(required = false) @Nullable Long ingredientId,
-			@Parameter(description = "Id of its photo")
+			@Parameter(description = "Id of its photo or of its Pinterest photo")
 			@RequestParam(required = false) @Nullable UUID imageId,
 			@RequestParam(required = false) @Nullable RecipeStatus status,
 			@ParameterObject @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
-		return PageResponse.of(recipeService.searchAll(q, category, ingredientId, imageId, status, pageable));
+		return PageResponse.of(recipeService.searchAll(
+				new RecipeFilter(q, category, tag, null, ingredientId, imageId, status, null, null), pageable));
 	}
 
 	@Operation(summary = "A recipe, for the edit form")
@@ -109,10 +112,24 @@ class AdminRecipeController {
 		return recipeService.replaceImage(id, imageProcessor.process(file));
 	}
 
-	@Operation(summary = "Show an image of the gallery on a recipe, or none (default visual)")
+	@Operation(summary = "Show an image of the gallery on a recipe, or none (default visual)",
+			description = "Landscape images only: a Pinterest photo is refused.")
 	@PutMapping("/{id}/image-choice")
 	RecipeDetail chooseRecipeImage(@PathVariable long id, @RequestBody ImageChoice choice) {
 		return recipeService.chooseImage(id, choice.imageId());
+	}
+
+	@Operation(summary = "Upload the vertical photo offered to Pinterest; the previous one stays in the gallery",
+			description = "JPEG or PNG, 10 MB max, portrait: at least 1000 × 1333 px and 3:4 (2:3 advised).")
+	@PutMapping(path = "/{id}/pinterest-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	RecipeDetail replaceRecipePinterestImage(@PathVariable long id, @RequestPart MultipartFile file) {
+		return recipeService.replacePinterestImage(id, imageProcessor.processPortrait(file));
+	}
+
+	@Operation(summary = "Offer a Pinterest photo of the gallery, or none (the main photo is then offered)")
+	@PutMapping("/{id}/pinterest-image-choice")
+	RecipeDetail chooseRecipePinterestImage(@PathVariable long id, @RequestBody ImageChoice choice) {
+		return recipeService.choosePinterestImage(id, choice.imageId());
 	}
 
 }

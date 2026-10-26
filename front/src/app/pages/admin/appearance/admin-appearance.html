@@ -8,6 +8,88 @@
     du site.
   </p>
 
+  <section class="admin-panel appearance__group" aria-labelledby="looks-title">
+    <h3 id="looks-title" class="field__label">Mes préréglages</h3>
+    <p class="field__hint">
+      Un préréglage garde un thème de couleurs, deux polices et un arrondi sous le nom de votre choix. Cliquez dessus
+      pour remplir les choix plus bas (et les essayer), puis enregistrez pour les visiteurs.
+    </p>
+    @if (savedLooks.value(); as looks) {
+      @if (looks.length) {
+        <ul role="list" class="looks">
+          @for (look of looks; track look.id) {
+            <li class="look" [class.is-selected]="currentLookId() === look.id">
+              @if (renamingId() === look.id) {
+                <form class="look__rename" (submit)="$event.preventDefault(); rename(look)">
+                  <input
+                    class="input"
+                    aria-label="Nouveau nom du préréglage"
+                    [maxLength]="maxPresetNameLength"
+                    [value]="renamedName()"
+                    (input)="renamedName.set($any($event.target).value)"
+                  />
+                  <button type="submit" class="icon-button" aria-label="Valider le nom"><svg lucideCheck [size]="18"></svg></button>
+                  <button type="button" class="icon-button" aria-label="Annuler" (click)="renamingId.set(null)"><svg lucideX [size]="18"></svg></button>
+                </form>
+              } @else {
+                <button type="button" class="look__apply" [attr.aria-pressed]="currentLookId() === look.id" (click)="applyLook(look)">
+                  <span class="preset__swatches" aria-hidden="true">
+                    @for (palette of palettesOf(look); track $index) {
+                      <span class="preset__scheme" [style.background-color]="palette.bg">
+                        <span [style.background-color]="palette.surface"></span>
+                        <span [style.background-color]="palette.accent"></span>
+                        <span [style.background-color]="palette.decor"></span>
+                        <span [style.background-color]="palette.text"></span>
+                      </span>
+                    }
+                  </span>
+                  <span class="preset__name">
+                    {{ look.name }}
+                    @if (currentLookId() === look.id) {
+                      <svg lucideCheck [size]="16"></svg>
+                    }
+                  </span>
+                  <span class="look__details">
+                    <span>{{ presetLabel(look) }}</span>
+                    <span>{{ fontsOf(look) }}</span>
+                    <span>Arrondi {{ look.theme.radiusPx }} px</span>
+                  </span>
+                </button>
+                <div class="look__actions">
+                  <button type="button" class="icon-button" [attr.aria-label]="'Remplacer « ' + look.name + ' » par les choix actuels'" (click)="overwriteLook(look)">
+                    <svg lucideRefreshCw [size]="16"></svg>
+                  </button>
+                  <button type="button" class="icon-button" [attr.aria-label]="'Renommer « ' + look.name + ' »'" (click)="startRename(look)">
+                    <svg lucidePencil [size]="16"></svg>
+                  </button>
+                  <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer « ' + look.name + ' »'" (click)="removeLook(look)">
+                    <svg lucideTrash2 [size]="16"></svg>
+                  </button>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="admin-empty">Aucun préréglage pour le moment : composez une apparence plus bas, puis enregistrez-la ici.</p>
+      }
+    }
+    <div class="look__new">
+      <input
+        class="input"
+        placeholder="Nom du préréglage (ex. Couleur test Maxence)"
+        aria-label="Nom du nouveau préréglage"
+        [maxLength]="maxPresetNameLength"
+        [value]="newPresetName()"
+        (input)="newPresetName.set($any($event.target).value)"
+        (keydown.enter)="saveLook($event)"
+      />
+      <button yonaButton variant="secondary" type="button" (click)="saveLook($event)">
+        <svg lucideSave></svg>Enregistrer les choix actuels comme préréglage
+      </button>
+    </div>
+  </section>
+
   <fieldset class="admin-panel appearance__group">
     <legend class="field__label">Couleurs</legend>
     <div class="presets" role="radiogroup" aria-label="Thème de couleurs">

@@ -82,6 +82,15 @@
   }
 }
 
+// Phones: pushed to the right, next to the menu button (the links are in the menu)
+.kitchen-links {
+  margin-left: auto;
+
+  @include m.from(md) {
+    margin-left: 0;
+  }
+}
+
 .mobile-menu {
   display: block;
 
