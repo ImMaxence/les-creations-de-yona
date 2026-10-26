@@ -9,7 +9,6 @@ import {
   LucideCookingPot,
   LucideGauge,
   LucideHeart,
-  LucidePin,
   LucidePrinter,
   LucideShare2,
   LucideShoppingBasket,
@@ -31,6 +30,7 @@ import {
   recipeLink,
   tagQueryParams,
 } from '../../shared/routing/links';
+import { BrandIcon } from '../../shared/ui/brand-icon/brand-icon';
 import { Button } from '../../shared/ui/button/button';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { DifficultyStars } from '../../shared/ui/difficulty-stars/difficulty-stars';
@@ -45,6 +45,7 @@ import { RecipeSteps } from './steps/recipe-steps';
   selector: 'yona-recipe',
   imports: [
     RouterLink,
+    BrandIcon,
     Button,
     CookingMode,
     CoverImage,
@@ -62,7 +63,6 @@ import { RecipeSteps } from './steps/recipe-steps';
     LucideCookingPot,
     LucideGauge,
     LucideHeart,
-    LucidePin,
     LucidePrinter,
     LucideShare2,
     LucideShoppingBasket,

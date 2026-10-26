@@ -6,7 +6,9 @@
   gap: var(--space-5);
   max-width: 44rem;
   margin-inline: auto;
-  padding-block: var(--space-2) var(--space-6);
+  // Full-screen dialogs have no padding of their own (the recipe preview goes edge to edge):
+  // the same side margin as the dialog's head
+  padding: var(--space-2) var(--space-5) var(--space-6);
   // Vertical scrolling stays the browser's; horizontal moves are swipes between steps
   touch-action: pan-y;
 }
