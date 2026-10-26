@@ -36,14 +36,26 @@
         ></a>
       </li>
       <li class="stagger" style="--i: 1">
-        <a [routerLink]="favoritesPath" routerLinkActive="is-active"
-          >Mes favoris <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
-        ></a>
+        <a [routerLink]="favoritesPath" routerLinkActive="is-active">
+          <span class="menu__label">
+            Mes favoris
+            @if (favorites.count()) {
+              <span class="menu__count">{{ favorites.count() }}<span class="visually-hidden"> recette{{ favorites.count() > 1 ? 's' : '' }}</span></span>
+            }
+          </span>
+          <svg lucideChevronRight [size]="20" aria-hidden="true"></svg>
+        </a>
       </li>
       <li class="stagger" style="--i: 2">
-        <a [routerLink]="shoppingListPath" routerLinkActive="is-active"
-          >Ma liste de courses <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
-        ></a>
+        <a [routerLink]="shoppingListPath" routerLinkActive="is-active">
+          <span class="menu__label">
+            Ma liste de courses
+            @if (shoppingList.count()) {
+              <span class="menu__count">{{ shoppingList.count() }}<span class="visually-hidden"> élément{{ shoppingList.count() > 1 ? 's' : '' }}</span></span>
+            }
+          </span>
+          <svg lucideChevronRight [size]="20" aria-hidden="true"></svg>
+        </a>
       </li>
       <li class="stagger" style="--i: 2">
         <a [routerLink]="installPath" routerLinkActive="is-active"

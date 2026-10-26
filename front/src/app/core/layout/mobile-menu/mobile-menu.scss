@@ -157,3 +157,25 @@
     background-color: var(--color-surface);
   }
 }
+
+// Favorites and shopping list: how many each holds, next to the label
+.menu__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.menu__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1;
+}

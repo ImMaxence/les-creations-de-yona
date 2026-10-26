@@ -19,6 +19,8 @@ import {
 import { LucideChevronRight, LucideMenu, LucideX } from '@lucide/angular';
 import { filter } from 'rxjs';
 import { AdminSession } from '../../auth/admin-session';
+import { Favorites } from '../../kitchen/favorites';
+import { ShoppingList } from '../../kitchen/shopping-list';
 import { SiteData } from '../../site/site-data';
 import {
   FAVORITES_PATH,
@@ -59,6 +61,9 @@ import { NavigationProgress } from '../navigation-progress/navigation-progress';
 export class MobileMenu {
   protected readonly siteData = inject(SiteData);
   protected readonly adminSession = inject(AdminSession);
+  /** Counts shown next to their link: phones have no header icons for them. */
+  protected readonly favorites = inject(Favorites);
+  protected readonly shoppingList = inject(ShoppingList);
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly installPath = INSTALL_PATH;
   protected readonly favoritesPath = FAVORITES_PATH;
