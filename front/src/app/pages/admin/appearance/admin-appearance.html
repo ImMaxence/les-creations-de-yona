@@ -28,8 +28,8 @@
                     [value]="renamedName()"
                     (input)="renamedName.set($any($event.target).value)"
                   />
-                  <button type="submit" class="icon-button" aria-label="Valider le nom"><svg lucideCheck [size]="18"></svg></button>
-                  <button type="button" class="icon-button" aria-label="Annuler" (click)="renamingId.set(null)"><svg lucideX [size]="18"></svg></button>
+                  <button type="submit" class="icon-button" aria-label="Valider le nom"><svg yonaIcon="check" [size]="18"></svg></button>
+                  <button type="button" class="icon-button" aria-label="Annuler" (click)="renamingId.set(null)"><svg yonaIcon="x" [size]="18"></svg></button>
                 </form>
               } @else {
                 <button type="button" class="look__apply" [attr.aria-pressed]="currentLookId() === look.id" (click)="applyLook(look)">
@@ -46,7 +46,7 @@
                   <span class="preset__name">
                     {{ look.name }}
                     @if (currentLookId() === look.id) {
-                      <svg lucideCheck [size]="16"></svg>
+                      <svg yonaIcon="check" [size]="16"></svg>
                     }
                   </span>
                   <span class="look__details">
@@ -57,13 +57,13 @@
                 </button>
                 <div class="look__actions">
                   <button type="button" class="icon-button" [attr.aria-label]="'Remplacer « ' + look.name + ' » par les choix actuels'" (click)="overwriteLook(look)">
-                    <svg lucideRefreshCw [size]="16"></svg>
+                    <svg yonaIcon="refresh-cw" [size]="16"></svg>
                   </button>
                   <button type="button" class="icon-button" [attr.aria-label]="'Renommer « ' + look.name + ' »'" (click)="startRename(look)">
-                    <svg lucidePencil [size]="16"></svg>
+                    <svg yonaIcon="pencil" [size]="16"></svg>
                   </button>
                   <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer « ' + look.name + ' »'" (click)="removeLook(look)">
-                    <svg lucideTrash2 [size]="16"></svg>
+                    <svg yonaIcon="trash" [size]="16"></svg>
                   </button>
                 </div>
               }
@@ -85,7 +85,7 @@
         (keydown.enter)="saveLook($event)"
       />
       <button yonaButton variant="secondary" type="button" (click)="saveLook($event)">
-        <svg lucideSave></svg>Enregistrer les choix actuels comme préréglage
+        <svg yonaIcon="save"></svg>Enregistrer les choix actuels comme préréglage
       </button>
     </div>
   </section>
@@ -115,7 +115,7 @@
           <span class="preset__name">
             {{ preset.label }}
             @if (draft().preset === preset.id) {
-              <svg lucideCheck [size]="16"></svg>
+              <svg yonaIcon="check" [size]="16"></svg>
             }
           </span>
         </button>

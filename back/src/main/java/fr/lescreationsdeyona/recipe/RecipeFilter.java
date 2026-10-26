@@ -10,8 +10,8 @@ import org.jspecify.annotations.Nullable;
  *     the column collation)
  * @param ingredientId one of its ingredients (back-office)
  * @param imageId its photo or its Pinterest photo (back-office, from the gallery)
- * @param maxMinutes preparation and cooking together at most this long; a recipe giving neither
- *     time is left out
+ * @param maxMinutes preparation, rest and cooking together at most this long; a recipe giving
+ *     neither preparation nor cooking time is left out
  */
 record RecipeFilter(@Nullable String titleQuery, @Nullable String categorySlug, @Nullable String tagSlug,
 		@Nullable String ingredientName, @Nullable Long ingredientId, @Nullable UUID imageId,

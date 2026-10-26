@@ -3,7 +3,7 @@
     <h2 id="ingredients-title">Ingrédients</h2>
     <div class="detect">
       <button yonaButton variant="secondary" type="button" aria-describedby="detect-help" [disabled]="detecting()" (click)="detectSimilar()">
-        <svg lucideCopy></svg>{{ detecting() ? 'Recherche…' : 'Détecter les doublons' }}
+        <svg yonaIcon="copy"></svg>{{ detecting() ? 'Recherche…' : 'Détecter les doublons' }}
       </button>
       <!-- Tooltip: on hover or keyboard focus, and on a tap of the "i" (phones have no hover) -->
       <button
@@ -14,7 +14,7 @@
         [attr.aria-expanded]="helpOpen()"
         (click)="helpOpen.set(!helpOpen())"
       >
-        <svg lucideInfo [size]="18"></svg>
+        <svg yonaIcon="info" [size]="18"></svg>
       </button>
       <div id="detect-help" role="tooltip" class="detect__tip" [class.is-open]="helpOpen()">
         <p>Repère les ingrédients sans doute écrits de plusieurs façons :</p>
@@ -37,7 +37,7 @@
       <section class="admin-panel duplicates" aria-labelledby="duplicates-title">
         <div class="duplicates__head">
           <h3 id="duplicates-title">Ingrédients écrits de plusieurs façons</h3>
-          <button type="button" class="icon-button" aria-label="Fermer les doublons" (click)="similarGroups.set(null)"><svg lucideX [size]="18"></svg></button>
+          <button type="button" class="icon-button" aria-label="Fermer les doublons" (click)="similarGroups.set(null)"><svg yonaIcon="x" [size]="18"></svg></button>
         </div>
         <p class="field__hint">
           Pour chaque groupe, gardez l'un d'eux (le plus utilisé est proposé), ou remplacez-les tous par un nouveau nom.
@@ -116,8 +116,8 @@
             @if (editingId() === ingredient.id) {
               <form class="admin-row__main admin-toolbar" (submit)="$event.preventDefault(); rename(ingredient)">
                 <input class="input" aria-label="Nouveau nom" [maxLength]="maxNameLength" [value]="editedName()" (input)="readEditedName($event)" />
-                <button type="submit" class="icon-button" aria-label="Valider le nom"><svg lucideCheck [size]="18"></svg></button>
-                <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg lucideX [size]="18"></svg></button>
+                <button type="submit" class="icon-button" aria-label="Valider le nom"><svg yonaIcon="check" [size]="18"></svg></button>
+                <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg yonaIcon="x" [size]="18"></svg></button>
               </form>
             } @else {
               <span class="admin-row__main">
@@ -126,7 +126,7 @@
                   @if (ingredient.recipeCount) {
                     <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(ingredient)">
                       Voir {{ ingredient.recipeCount > 1 ? 'les ' + ingredient.recipeCount + ' recettes' : 'la recette' }}
-                      <svg lucideArrowRight [size]="14"></svg>
+                      <svg yonaIcon="arrow-right" [size]="14"></svg>
                     </a>
                   } @else {
                     Utilisé dans aucune recette
@@ -135,10 +135,10 @@
               </span>
               <div class="admin-row__actions">
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + ingredient.name" (click)="startRename(ingredient)">
-                  <svg lucidePencil [size]="18"></svg>
+                  <svg yonaIcon="pencil" [size]="18"></svg>
                 </button>
                 <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + ingredient.name" (click)="remove(ingredient)">
-                  <svg lucideTrash2 [size]="18"></svg>
+                  <svg yonaIcon="trash" [size]="18"></svg>
                 </button>
               </div>
             }

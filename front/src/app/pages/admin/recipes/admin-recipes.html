@@ -1,7 +1,10 @@
 <section class="admin-section" aria-labelledby="recipes-title">
   <div class="admin-section__head">
     <h2 id="recipes-title">Recettes</h2>
-    <a yonaButton routerLink="nouvelle"><svg lucidePlus></svg>Nouvelle recette</a>
+    <div class="admin-section__actions">
+      <a yonaButton variant="ghost" routerLink="/admin/corbeille"><svg yonaIcon="trash"></svg>Corbeille</a>
+      <a yonaButton routerLink="nouvelle"><svg yonaIcon="plus"></svg>Nouvelle recette</a>
+    </div>
   </div>
 
   <div class="admin-toolbar">
@@ -37,6 +40,7 @@
         [count]="selection.size()"
         [allShown]="selection.hasAll(shownIds())"
         [busy]="deleting()"
+        deleteLabel="Mettre à la corbeille"
         (toggleAll)="selection.toggleAll(shownIds())"
         (cleared)="selection.clear()"
         (deleted)="removeSelected()"
@@ -65,8 +69,11 @@
                 <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'">
                   {{ recipe.status === 'PUBLISHED' ? 'Publiée' : 'Brouillon' }}
                 </span>
+                @if (recipe.scheduledAt; as scheduledAt) {
+                  <span class="badge badge--scheduled"><svg yonaIcon="calendar-clock" [size]="12"></svg>Publiée {{ parisDateTime(scheduledAt) }}</span>
+                }
                 @if (recipe.featured) {
-                  <span class="badge badge--featured"><svg lucideStar [size]="12"></svg>À la une</span>
+                  <span class="badge badge--featured"><svg yonaIcon="star" [size]="12"></svg>À la une</span>
                 }
                 <span>{{ categoryNames(recipe.categories) }}</span>
                 <span>· modifiée le {{ recipe.updatedAt | parisDate }}</span>
@@ -75,18 +82,21 @@
             <div class="admin-row__actions">
               @if (recipe.status === 'PUBLISHED') {
                 <a class="icon-button" target="_blank" [routerLink]="publicLink(recipe)" [attr.aria-label]="'Voir « ' + recipe.title + ' » sur le site'">
-                  <svg lucideExternalLink [size]="18"></svg>
+                  <svg yonaIcon="external-link" [size]="18"></svg>
                 </a>
               } @else {
                 <a class="icon-button" target="_blank" [routerLink]="['/admin/apercu', recipe.id]" [attr.aria-label]="'Aperçu de « ' + recipe.title + ' »'">
-                  <svg lucideEye [size]="18"></svg>
+                  <svg yonaIcon="eye" [size]="18"></svg>
                 </a>
               }
               <a class="icon-button" [routerLink]="[recipe.id]" [attr.aria-label]="'Modifier « ' + recipe.title + ' »'">
-                <svg lucidePencil [size]="18"></svg>
+                <svg yonaIcon="pencil" [size]="18"></svg>
               </a>
-              <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer « ' + recipe.title + ' »'" (click)="remove(recipe)">
-                <svg lucideTrash2 [size]="18"></svg>
+              <button type="button" class="icon-button" [attr.aria-label]="'Dupliquer « ' + recipe.title + ' »'" (click)="duplicate(recipe)">
+                <svg yonaIcon="copy-plus" [size]="18"></svg>
+              </button>
+              <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Mettre « ' + recipe.title + ' » à la corbeille'" (click)="remove(recipe)">
+                <svg yonaIcon="trash" [size]="18"></svg>
               </button>
             </div>
           </li>

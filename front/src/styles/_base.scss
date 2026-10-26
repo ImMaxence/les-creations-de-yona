@@ -109,6 +109,24 @@ a {
   a {
     color: var(--color-accent);
   }
+
+  // A glossary word (shared/format/glossary.ts): its definition at a tap
+  .glossary-term {
+    font-style: normal;
+    text-decoration: underline dotted var(--color-accent) 2px;
+    text-underline-offset: 0.22em;
+    cursor: help;
+    -webkit-tap-highlight-color: transparent;
+
+    &:focus-visible {
+      @include m.focus-ring;
+      border-radius: 2px;
+    }
+
+    @media print {
+      text-decoration: none;
+    }
+  }
 }
 
 // Small label above a title ("À la une", "Catégories", ...)

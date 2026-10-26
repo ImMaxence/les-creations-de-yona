@@ -21,6 +21,8 @@ export class RecipeCard {
 
   protected readonly link = computed(() => recipeLink(this.recipe()));
   protected readonly categories = computed(() => categoryNames(this.recipe().categories));
+  /** Its publication; favorites kept before it existed have their creation only. */
+  protected readonly date = computed(() => this.recipe().publishedAt ?? this.recipe().createdAt);
   protected readonly imageTransitionName = signal<string | null>(null);
 
   protected onClick(event: MouseEvent): void {

@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal } from '@angular/core';
-import { LucideCheck, LucideMoon, LucideSun, LucideSunMoon } from '@lucide/angular';
 import { ColorScheme, ColorSchemePreference } from '../../theme/color-scheme';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 interface SchemeOption {
   readonly value: ColorSchemePreference;
@@ -20,7 +20,7 @@ const OPTIONS: SchemeOption[] = [
  */
 @Component({
   selector: 'yona-color-scheme-switch',
-  imports: [NgTemplateOutlet, LucideSun, LucideSunMoon, LucideMoon, LucideCheck],
+  imports: [Icon, NgTemplateOutlet],
   templateUrl: './color-scheme-switch.html',
   styleUrl: './color-scheme-switch.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

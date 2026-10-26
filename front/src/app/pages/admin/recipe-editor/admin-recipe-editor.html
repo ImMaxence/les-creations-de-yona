@@ -2,12 +2,34 @@
   <div class="admin-section__head">
     <h2>{{ isNew() ? 'Nouvelle recette' : draft().title || 'Recette sans titre' }}</h2>
     <div class="editor__head-actions">
-      <button yonaButton variant="secondary" type="button" [disabled]="previewing()" (click)="openPreview()"><svg lucideEye></svg>Aperçu</button>
+      <button yonaButton variant="secondary" type="button" [disabled]="previewing()" (click)="openPreview()"><svg yonaIcon="eye"></svg>Aperçu</button>
+      @if (!isNew()) {
+        <button yonaButton variant="ghost" type="button" [disabled]="duplicating()" (click)="duplicate()"><svg yonaIcon="copy-plus"></svg>Dupliquer</button>
+      }
       @if (publicLink(); as link) {
-        <a yonaButton variant="ghost" target="_blank" [routerLink]="link"><svg lucideExternalLink></svg>Voir sur le site</a>
+        <a yonaButton variant="ghost" target="_blank" [routerLink]="link"><svg yonaIcon="external-link"></svg>Voir sur le site</a>
       }
     </div>
   </div>
+
+  @if (recovered()) {
+    <div class="admin-panel recovered" role="status">
+      <svg yonaIcon="rotate-ccw" [size]="22" [strokeWidth]="1.75"></svg>
+      <div>
+        <p class="recovered__title">Des modifications non enregistrées ont été retrouvées</p>
+        <p class="field__hint">
+          Saisies le {{ recoveredAt() }}, avant que la page soit fermée.
+          @if (recoveredIsOutdated()) {
+            La recette a été enregistrée depuis : les reprendre remplacera cette version.
+          }
+        </p>
+      </div>
+      <div class="recovered__actions">
+        <button yonaButton type="button" (click)="resumeRecovered()">Reprendre</button>
+        <button yonaButton variant="ghost" type="button" (click)="discardRecovered()">Ignorer</button>
+      </div>
+    </div>
+  }
 
   <section class="admin-panel" aria-labelledby="info-title">
     <h3 id="info-title" class="editor__title">Informations</h3>
@@ -28,7 +50,7 @@
             [attr.aria-pressed]="isChosen(category.id)"
             (click)="toggleCategory(category.id)"
           >
-            <svg lucideCheck [size]="14" [strokeWidth]="3"></svg>
+            <svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg>
             {{ category.name }}
           </button>
         }
@@ -44,11 +66,11 @@
             (input)="newCategoryName.set($any($event.target).value)"
             (keydown.enter)="$event.preventDefault(); addCategory()"
           />
-          <button type="button" class="icon-button" aria-label="Créer la catégorie" (click)="addCategory()"><svg lucideCheck [size]="18"></svg></button>
-          <button type="button" class="icon-button" aria-label="Annuler" (click)="creatingCategory.set(false)"><svg lucideX [size]="18"></svg></button>
+          <button type="button" class="icon-button" aria-label="Créer la catégorie" (click)="addCategory()"><svg yonaIcon="check" [size]="18"></svg></button>
+          <button type="button" class="icon-button" aria-label="Annuler" (click)="creatingCategory.set(false)"><svg yonaIcon="x" [size]="18"></svg></button>
         </div>
       } @else {
-        <button type="button" class="link-button" (click)="creatingCategory.set(true)"><svg lucidePlus [size]="16"></svg>Nouvelle catégorie</button>
+        <button type="button" class="link-button" (click)="creatingCategory.set(true)"><svg yonaIcon="plus" [size]="16"></svg>Nouvelle catégorie</button>
       }
       <yona-field-error [field]="recipeForm.categoryIds" />
     </div>
@@ -64,7 +86,7 @@
               [attr.aria-pressed]="isTagChosen(tag.id)"
               (click)="toggleTag(tag.id)"
             >
-              <svg lucideCheck [size]="14" [strokeWidth]="3"></svg>
+              <svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg>
               {{ tag.name }}
             </button>
           }
@@ -81,11 +103,11 @@
             (input)="newTagName.set($any($event.target).value)"
             (keydown.enter)="$event.preventDefault(); addTag()"
           />
-          <button type="button" class="icon-button" aria-label="Créer le tag" (click)="addTag()"><svg lucideCheck [size]="18"></svg></button>
-          <button type="button" class="icon-button" aria-label="Annuler" (click)="creatingTag.set(false)"><svg lucideX [size]="18"></svg></button>
+          <button type="button" class="icon-button" aria-label="Créer le tag" (click)="addTag()"><svg yonaIcon="check" [size]="18"></svg></button>
+          <button type="button" class="icon-button" aria-label="Annuler" (click)="creatingTag.set(false)"><svg yonaIcon="x" [size]="18"></svg></button>
         </div>
       } @else {
-        <button type="button" class="link-button" (click)="creatingTag.set(true)"><svg lucidePlus [size]="16"></svg>Nouveau tag</button>
+        <button type="button" class="link-button" (click)="creatingTag.set(true)"><svg yonaIcon="plus" [size]="16"></svg>Nouveau tag</button>
       }
       <span class="field__hint">Les visiteurs peuvent filtrer les recettes par tag.</span>
     </div>
@@ -102,6 +124,24 @@
         <yona-select label="Statut" [options]="statusOptions" [formField]="recipeForm.status" />
       </div>
     </div>
+    @if (draft().status === 'DRAFT') {
+      <div class="field">
+        <label class="field__label" for="scheduled-at">Publication programmée (facultatif)</label>
+        <div class="schedule">
+          <input id="scheduled-at" type="datetime-local" class="input" [formField]="recipeForm.scheduledAt" [attr.aria-invalid]="isInvalid(recipeForm.scheduledAt)" />
+          @if (draft().scheduledAt) {
+            <button type="button" class="icon-button" aria-label="Ne plus programmer" (click)="clearSchedule()"><svg yonaIcon="x" [size]="18"></svg></button>
+          }
+        </div>
+        <span class="field__hint">
+          Heure de Paris. Le brouillon est publié tout seul à ce moment-là (à la minute près), puis les abonnés sont prévenus.
+          @if (scheduledLabel(); as label) {
+            <strong>Programmée : {{ label }}.</strong>
+          }
+        </span>
+        <yona-field-error [field]="recipeForm.scheduledAt" />
+      </div>
+    }
     <div class="field">
       <label class="checkbox-field">
         <input type="checkbox" [formField]="recipeForm.featured" />
@@ -127,7 +167,7 @@
   <div class="editor__columns">
     <section class="admin-panel" aria-labelledby="times-title">
       <h3 id="times-title" class="editor__title">Portions, temps et difficulté</h3>
-      <div class="editor__grid editor__grid--three">
+      <div class="editor__grid editor__grid--four">
         <div class="field">
           <label class="field__label" for="servings">Portions</label>
           <input id="servings" type="number" inputmode="numeric" class="input" [formField]="recipeForm.servings" />
@@ -143,10 +183,39 @@
           <input id="cook" type="number" inputmode="numeric" class="input" [formField]="recipeForm.cookMinutes" />
           <yona-field-error [field]="recipeForm.cookMinutes" />
         </div>
+        <div class="field">
+          <label class="field__label" for="rest">Repos (min)</label>
+          <input id="rest" type="number" inputmode="numeric" class="input" [formField]="recipeForm.restMinutes" />
+          <yona-field-error [field]="recipeForm.restMinutes" />
+        </div>
       </div>
+      <span class="field__hint">Repos, pousse, prise au froid… : compté dans le temps total et dans l'organisation proposée aux visiteurs.</span>
       <div class="field">
         <span class="field__label">Difficulté</span>
         <yona-select label="Difficulté" [options]="difficultyOptions" [formField]="recipeForm.difficulty" />
+      </div>
+      <div class="field">
+        <span class="field__label">Moule (facultatif)</span>
+        <div class="mold">
+          <yona-select label="Forme du moule" [options]="moldOptions" [formField]="recipeForm.moldShape" />
+          @if (draft().moldShape !== 'NONE') {
+            <label class="mold__size">
+              {{ draft().moldShape === 'ROUND' ? 'Diamètre' : draft().moldShape === 'SQUARE' ? 'Côté' : 'Longueur' }}
+              <input type="number" inputmode="decimal" step="0.5" class="input" [formField]="recipeForm.moldLengthCm" [attr.aria-invalid]="isInvalid(recipeForm.moldLengthCm)" />
+              cm
+            </label>
+          }
+          @if (draft().moldShape === 'RECTANGLE') {
+            <label class="mold__size">
+              Largeur
+              <input type="number" inputmode="decimal" step="0.5" class="input" [formField]="recipeForm.moldWidthCm" [attr.aria-invalid]="isInvalid(recipeForm.moldWidthCm)" />
+              cm
+            </label>
+          }
+        </div>
+        <span class="field__hint">Le moule des quantités indiquées : les visiteurs peuvent les adapter au leur (24 cm au lieu de 20, rectangulaire…).</span>
+        <yona-field-error [field]="recipeForm.moldLengthCm" />
+        <yona-field-error [field]="recipeForm.moldWidthCm" />
       </div>
     </section>
 
@@ -188,9 +257,9 @@
         <div class="part__head">
           <h3 class="editor__title" [id]="'part-title-' + p">Partie {{ p + 1 }}{{ part.title.trim() ? ' · ' + part.title.trim() : '' }}</h3>
           <div class="part__actions">
-            <button type="button" class="icon-button" aria-label="Monter la partie" [disabled]="first" (click)="movePart(p, p - 1)"><svg lucideArrowUp [size]="16"></svg></button>
-            <button type="button" class="icon-button" aria-label="Descendre la partie" [disabled]="last" (click)="movePart(p, p + 1)"><svg lucideArrowDown [size]="16"></svg></button>
-            <button type="button" class="icon-button icon-button--danger" aria-label="Supprimer la partie" [disabled]="draft().parts.length === 1" (click)="removePart(p)"><svg lucideTrash2 [size]="16"></svg></button>
+            <button type="button" class="icon-button" aria-label="Monter la partie" [disabled]="first" (click)="movePart(p, p - 1)"><svg yonaIcon="arrow-up" [size]="16"></svg></button>
+            <button type="button" class="icon-button" aria-label="Descendre la partie" [disabled]="last" (click)="movePart(p, p + 1)"><svg yonaIcon="arrow-down" [size]="16"></svg></button>
+            <button type="button" class="icon-button icon-button--danger" aria-label="Supprimer la partie" [disabled]="draft().parts.length === 1" (click)="removePart(p)"><svg yonaIcon="trash" [size]="16"></svg></button>
           </div>
         </div>
         <div class="field">
@@ -206,7 +275,7 @@
       </section>
     }
     <div class="parts-bar">
-      <button yonaButton variant="secondary" type="button" (click)="addPart()"><svg lucidePlus></svg>Ajouter une partie</button>
+      <button yonaButton variant="secondary" type="button" (click)="addPart()"><svg yonaIcon="plus"></svg>Ajouter une partie</button>
       @if (draft().parts.length === 1) {
         <button type="button" class="link-button" (click)="stopUsingParts()">Revenir à une recette sans parties</button>
       }
@@ -224,7 +293,7 @@
     </section>
 
     <section class="admin-panel parts-offer" aria-labelledby="parts-offer-title">
-      <svg lucideLayers [size]="22" [strokeWidth]="1.75"></svg>
+      <svg yonaIcon="layers" [size]="22" [strokeWidth]="1.75"></svg>
       <div>
         <h3 id="parts-offer-title" class="parts-offer__title">Recette en plusieurs parties ?</h3>
         <p class="field__hint">La pâte, puis la garniture : chaque partie a ses propres ingrédients et ses étapes. Les ingrédients et étapes déjà saisis deviennent la première partie.</p>
@@ -234,13 +303,23 @@
   }
   <yona-field-error [field]="recipeForm.parts" />
 
+  <section class="admin-panel" aria-labelledby="tip-title">
+    <h3 id="tip-title" class="editor__title">Le conseil de Yona (facultatif)</h3>
+    <div class="field">
+      <label class="field__label" for="tip">Astuce, conservation, variante…</label>
+      <textarea id="tip" class="input" rows="4" placeholder="Se conserve 3 jours au frais. Version sans gluten : remplacer la farine par…" [formField]="recipeForm.tip"></textarea>
+      <span class="field__hint">Affiché dans un encadré après les étapes. Markdown accepté : **gras**, listes avec « - ».</span>
+      <yona-field-error [field]="recipeForm.tip" />
+    </div>
+  </section>
+
   <div class="editor__bar">
     <!-- Phones: "Retour" and the preview's icon, so that the three actions hold on one line -->
     <a yonaButton variant="ghost" class="editor__back" routerLink="/admin/recettes">
-      <svg lucideArrowLeft></svg><span class="editor__narrow">Retour</span><span class="editor__wide">Retour à la liste</span>
+      <svg yonaIcon="arrow-left"></svg><span class="editor__narrow">Retour</span><span class="editor__wide">Retour à la liste</span>
     </a>
     <button yonaButton variant="secondary" type="button" class="editor__preview" aria-label="Aperçu" [disabled]="previewing()" (click)="openPreview()">
-      <svg lucideEye></svg><span class="editor__wide">Aperçu</span>
+      <svg yonaIcon="eye"></svg><span class="editor__wide">Aperçu</span>
     </button>
     <button yonaButton type="submit" [disabled]="saving()">
       {{ saving() ? 'Enregistrement…' : isNew() ? 'Créer la recette' : 'Enregistrer' }}
@@ -267,7 +346,7 @@
     @for (line of draft().parts[p]?.ingredients; track $index; let i = $index, last = $last) {
       <li class="line" cdkDrag cdkDragLockAxis="y">
         <button type="button" class="icon-button line__handle" cdkDragHandle aria-label="Glisser pour déplacer">
-          <svg lucideGripVertical [size]="18"></svg>
+          <svg yonaIcon="grip-vertical" [size]="18"></svg>
         </button>
         <div class="line__fields line__fields--ingredient">
           <input type="number" inputmode="decimal" step="any" class="input" placeholder="Qté" aria-label="Quantité" [formField]="recipeForm.parts[p].ingredients[i].quantity" />
@@ -278,15 +357,15 @@
           <yona-field-error [field]="recipeForm.parts[p].ingredients[i].quantity" />
         </div>
         <div class="line__actions">
-          <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="move('ingredients', p, i, i - 1)"><svg lucideArrowUp [size]="16"></svg></button>
-          <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="move('ingredients', p, i, i + 1)"><svg lucideArrowDown [size]="16"></svg></button>
-          <button type="button" class="icon-button icon-button--danger" aria-label="Retirer l'ingrédient" (click)="remove('ingredients', p, i)"><svg lucideTrash2 [size]="16"></svg></button>
+          <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="move('ingredients', p, i, i - 1)"><svg yonaIcon="arrow-up" [size]="16"></svg></button>
+          <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="move('ingredients', p, i, i + 1)"><svg yonaIcon="arrow-down" [size]="16"></svg></button>
+          <button type="button" class="icon-button icon-button--danger" aria-label="Retirer l'ingrédient" (click)="remove('ingredients', p, i)"><svg yonaIcon="trash" [size]="16"></svg></button>
         </div>
       </li>
     }
   </ol>
   <yona-field-error [field]="recipeForm.parts[p].ingredients" />
-  <button yonaButton variant="secondary" type="button" class="lines__add" (click)="add('ingredients', p)"><svg lucidePlus></svg>Ajouter un ingrédient</button>
+  <button yonaButton variant="secondary" type="button" class="lines__add" (click)="add('ingredients', p)"><svg yonaIcon="plus"></svg>Ajouter un ingrédient</button>
 </ng-template>
 
 <!-- Steps of a part (the only part of a recipe without parts) -->
@@ -303,7 +382,7 @@
     @for (step of draft().parts[p]?.steps; track $index; let i = $index, last = $last) {
       <li class="line" cdkDrag cdkDragLockAxis="y">
         <button type="button" class="icon-button line__handle" cdkDragHandle aria-label="Glisser pour déplacer">
-          <svg lucideGripVertical [size]="18"></svg>
+          <svg yonaIcon="grip-vertical" [size]="18"></svg>
         </button>
         <div class="line__fields">
           <span class="line__number">Étape {{ i + 1 }}</span>
@@ -313,16 +392,37 @@
             <input type="number" inputmode="numeric" class="input" placeholder="—" [formField]="recipeForm.parts[p].steps[i].durationMinutes" />
             min <span class="field__hint">(facultatif)</span>
           </label>
+          @if (stepIngredientChoices(p); as choices) {
+            @if (choices.length) {
+              <div class="step-ingredients" role="group" [attr.aria-label]="'Ingrédients de l\'étape ' + (i + 1)">
+                <span class="step-ingredients__label">Ingrédients de l'étape <span class="field__hint">(mode cuisine, facultatif)</span></span>
+                <div class="category-picker">
+                  @for (choice of choices; track choice.key) {
+                    <button
+                      type="button"
+                      class="category-chip category-chip--small"
+                      [class.is-chosen]="step.ingredientKeys.includes(choice.key)"
+                      [attr.aria-pressed]="step.ingredientKeys.includes(choice.key)"
+                      (click)="toggleStepIngredient(p, i, choice.key)"
+                    >
+                      <svg yonaIcon="check" [size]="12" [strokeWidth]="3"></svg>
+                      {{ choice.name }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          }
           <yona-field-error [field]="recipeForm.parts[p].steps[i].description" />
           <yona-field-error [field]="recipeForm.parts[p].steps[i].durationMinutes" />
         </div>
         <div class="line__actions">
-          <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="move('steps', p, i, i - 1)"><svg lucideArrowUp [size]="16"></svg></button>
-          <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="move('steps', p, i, i + 1)"><svg lucideArrowDown [size]="16"></svg></button>
-          <button type="button" class="icon-button icon-button--danger" aria-label="Retirer l'étape" (click)="remove('steps', p, i)"><svg lucideTrash2 [size]="16"></svg></button>
+          <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="move('steps', p, i, i - 1)"><svg yonaIcon="arrow-up" [size]="16"></svg></button>
+          <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="move('steps', p, i, i + 1)"><svg yonaIcon="arrow-down" [size]="16"></svg></button>
+          <button type="button" class="icon-button icon-button--danger" aria-label="Retirer l'étape" (click)="remove('steps', p, i)"><svg yonaIcon="trash" [size]="16"></svg></button>
         </div>
       </li>
     }
   </ol>
-  <button yonaButton variant="secondary" type="button" class="lines__add" (click)="add('steps', p)"><svg lucidePlus></svg>Ajouter une étape</button>
+  <button yonaButton variant="secondary" type="button" class="lines__add" (click)="add('steps', p)"><svg yonaIcon="plus"></svg>Ajouter une étape</button>
 </ng-template>

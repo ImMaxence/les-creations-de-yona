@@ -45,7 +45,13 @@ public class StatsService {
 		return new SiteStats(recipes(), jdbc.sql("select count(*) from category").query(Long.class).single(),
 				ingredients(), images(), recipesPerCategory(), topIngredients(), recipesPerMonth(), storage(),
 				incompleteRecipes(), datedRecipes("DRAFT", "30 days"), datedRecipes("PUBLISHED", "12 months"),
-				searchMissService.top(SEARCH_MISSES), Instant.now());
+				searchMissService.top(SEARCH_MISSES), count("push_subscription"), count("recipe_trash"),
+				count("glossary_term"), Instant.now());
+	}
+
+	/** {@code table}: a constant of this class, never user input. */
+	private long count(String table) {
+		return jdbc.sql("select count(*) from " + table).query(Long.class).single();
 	}
 
 	/**
@@ -114,13 +120,15 @@ public class StatsService {
 					count(*) filter (where id in (select recipe_id from recipe_part
 						group by recipe_id having count(*) > 1 or bool_or(title is not null))) as in_parts,
 					count(*) filter (where created_at >= now() - interval '30 days') as created_last_30_days,
+					count(*) filter (where scheduled_at is not null) as scheduled,
 					max(updated_at) as last_update
 				from recipe""")
 			.query((row, index) -> {
 				OffsetDateTime lastUpdate = row.getObject("last_update", OffsetDateTime.class);
 				return new SiteStats.Recipes(row.getLong("total"), row.getLong("published"), row.getLong("drafts"),
 						row.getLong("without_photo"), row.getLong("with_video"), row.getLong("in_parts"),
-						row.getLong("created_last_30_days"), lastUpdate == null ? null : lastUpdate.toInstant());
+						row.getLong("created_last_30_days"), row.getLong("scheduled"),
+						lastUpdate == null ? null : lastUpdate.toInstant());
 			})
 			.single();
 	}

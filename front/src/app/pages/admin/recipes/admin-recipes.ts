@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, resource, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { LucideExternalLink, LucideEye, LucidePencil, LucidePlus, LucideStar, LucideTrash2 } from '@lucide/angular';
 import { debounceTime } from 'rxjs';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { deleteRecipe } from '../../../core/api/generated/fn/admin-recipes/delete-recipe';
 import { deleteRecipes } from '../../../core/api/generated/fn/admin-recipes/delete-recipes';
+import { duplicateRecipe } from '../../../core/api/generated/fn/admin-recipes/duplicate-recipe';
 import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
 import { listAdminTags } from '../../../core/api/generated/fn/admin-tags/list-admin-tags';
@@ -16,6 +16,7 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
 import { categoryNames } from '../../../shared/format/categories';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
+import { parisDateTime } from '../../../shared/format/paris-time';
 import { recipeLink } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
@@ -25,6 +26,7 @@ import { BulkBar } from '../bulk-bar/bulk-bar';
 import { FilterChip } from '../filter-chip/filter-chip';
 import { Selection } from '../selection';
 import { ADMIN_RECIPES_QUERY } from './admin-recipes-query';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 type StatusFilter = 'ALL' | 'DRAFT' | 'PUBLISHED';
 
@@ -41,6 +43,7 @@ const ALL_TAGS = '';
 @Component({
   selector: 'yona-admin-recipes',
   imports: [
+    Icon,
     RouterLink,
     BulkBar,
     FilterChip,
@@ -49,12 +52,6 @@ const ALL_TAGS = '';
     Select,
     Pagination,
     ParisDatePipe,
-    LucideExternalLink,
-    LucideEye,
-    LucidePencil,
-    LucidePlus,
-    LucideStar,
-    LucideTrash2,
   ],
   templateUrl: './admin-recipes.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,6 +73,7 @@ export default class AdminRecipes {
   private readonly toaster = inject(Toaster);
 
   protected readonly categoryNames = categoryNames;
+  protected readonly parisDateTime = parisDateTime;
   protected readonly statusOptions: SelectOption<StatusFilter>[] = [
     { value: 'ALL', label: 'Tous les statuts' },
     { value: 'PUBLISHED', label: 'Publiées' },
@@ -206,16 +204,25 @@ export default class AdminRecipes {
     void this.router.navigate([], { relativeTo: this.route, replaceUrl: true });
   }
 
+  /** A new draft with the same content, opened in the editor. */
+  protected async duplicate(recipe: RecipeAdminSummary): Promise<void> {
+    const copy = await attempt(this.api.invoke(duplicateRecipe, { id: recipe.id }));
+    if (copy.ok) {
+      this.toaster.success(`Copie créée en brouillon : « ${copy.value.title} ».`);
+      await this.router.navigate([copy.value.id], { relativeTo: this.route });
+    }
+  }
+
   protected async remove(recipe: RecipeAdminSummary): Promise<void> {
     const confirmed = await this.confirm.ask({
-      title: 'Supprimer la recette ?',
-      message: `« ${recipe.title} » sera supprimée définitivement. Sa photo restera dans la galerie.`,
-      confirmLabel: 'Supprimer',
+      title: 'Mettre la recette à la corbeille ?',
+      message: `« ${recipe.title} » quitte le site et reste 30 jours dans la corbeille, d'où elle peut être restaurée. Sa photo reste dans la galerie.`,
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed || !(await attempt(this.api.invoke(deleteRecipe, { id: recipe.id }))).ok) {
       return;
     }
-    this.toaster.success('Recette supprimée.');
+    this.toaster.success('Recette mise à la corbeille.');
     if (this.selection.has(recipe.id)) {
       this.selection.toggle(recipe.id);
     }
@@ -225,12 +232,12 @@ export default class AdminRecipes {
   protected async removeSelected(): Promise<void> {
     const count = this.selection.size();
     const confirmed = await this.confirm.ask({
-      title: count > 1 ? `Supprimer ${count} recettes ?` : 'Supprimer la recette ?',
+      title: count > 1 ? `Mettre ${count} recettes à la corbeille ?` : 'Mettre la recette à la corbeille ?',
       message:
         count > 1
-          ? `Les ${count} recettes sélectionnées seront supprimées définitivement. Leurs photos resteront dans la galerie.`
-          : 'La recette sélectionnée sera supprimée définitivement. Sa photo restera dans la galerie.',
-      confirmLabel: 'Supprimer',
+          ? `Les ${count} recettes sélectionnées quittent le site et restent 30 jours dans la corbeille. Leurs photos restent dans la galerie.`
+          : 'La recette sélectionnée quitte le site et reste 30 jours dans la corbeille. Sa photo reste dans la galerie.',
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed) {
       return;
@@ -239,7 +246,7 @@ export default class AdminRecipes {
     const deletion = await attempt(this.api.invoke(deleteRecipes, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} recettes supprimées.` : 'Recette supprimée.');
+      this.toaster.success(count > 1 ? `${count} recettes mises à la corbeille.` : 'Recette mise à la corbeille.');
       this.selection.clear();
       this.recipes.reload();
     }

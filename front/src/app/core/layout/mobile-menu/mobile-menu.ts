@@ -16,7 +16,6 @@ import {
   RouterLink,
   RouterLinkActive,
 } from '@angular/router';
-import { LucideChevronRight, LucideMenu, LucideX } from '@lucide/angular';
 import { filter } from 'rxjs';
 import { AdminSession } from '../../auth/admin-session';
 import { Favorites } from '../../kitchen/favorites';
@@ -24,6 +23,7 @@ import { ShoppingList } from '../../kitchen/shopping-list';
 import { SiteData } from '../../site/site-data';
 import {
   FAVORITES_PATH,
+  GLOSSARY_PATH,
   INSTALL_PATH,
   RECIPES_PATH,
   SHOPPING_LIST_PATH,
@@ -33,6 +33,7 @@ import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/br
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
 import { NavigationProgress } from '../navigation-progress/navigation-progress';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 /**
  * Phone menu: a full screen native <dialog>. showModal() brings focus trapping, Escape to close
@@ -44,11 +45,9 @@ import { NavigationProgress } from '../navigation-progress/navigation-progress';
 @Component({
   selector: 'yona-mobile-menu',
   imports: [
+    Icon,
     RouterLink,
     RouterLinkActive,
-    LucideMenu,
-    LucideX,
-    LucideChevronRight,
     BrandIcon,
     BrandLogo,
     ColorSchemeSwitch,
@@ -66,6 +65,7 @@ export class MobileMenu {
   protected readonly shoppingList = inject(ShoppingList);
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly installPath = INSTALL_PATH;
+  protected readonly glossaryPath = GLOSSARY_PATH;
   protected readonly favoritesPath = FAVORITES_PATH;
   protected readonly shoppingListPath = SHOPPING_LIST_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;

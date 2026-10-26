@@ -1,6 +1,6 @@
 import { IMAGE_LOADER, ImageLoaderConfig, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@angular/core';
-import { LucideCookingPot } from '@lucide/angular';
+import { Icon } from '../icon/icon';
 
 /** The API serves every image in two WebP widths: /api/images/{id}/800.webp and /1600.webp. */
 function apiImageLoader({ src, width }: ImageLoaderConfig): string {
@@ -13,7 +13,7 @@ function apiImageLoader({ src, width }: ImageLoaderConfig): string {
  */
 @Component({
   selector: 'yona-cover-image',
-  imports: [NgOptimizedImage, LucideCookingPot],
+  imports: [Icon, NgOptimizedImage],
   templateUrl: './cover-image.html',
   styleUrl: './cover-image.scss',
   providers: [{ provide: IMAGE_LOADER, useValue: apiImageLoader }],

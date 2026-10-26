@@ -11,6 +11,11 @@ export interface RecipeAdminSummary {
   featured: boolean;
   id: number;
   imageId?: string;
+
+  /**
+   * A draft to be published at that time
+   */
+  scheduledAt?: string;
   slug: string;
   status: 'DRAFT' | 'PUBLISHED';
   title: string;

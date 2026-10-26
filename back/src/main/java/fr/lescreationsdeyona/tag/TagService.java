@@ -72,6 +72,11 @@ public class TagService {
 		tagRepository.deleteAll(tags);
 	}
 
+	/** Those still existing, e.g. for a recipe taken out of the trash. */
+	public List<Long> existingIds(Collection<Long> ids) {
+		return tagRepository.findAllById(ids).stream().map(Tag::getId).toList();
+	}
+
 	/** In the order given, each once: the tags chosen in the recipe form. */
 	public List<Tag> findAll(Collection<Long> ids) {
 		Map<Long, Tag> tagsById = tagRepository.findAllById(ids)

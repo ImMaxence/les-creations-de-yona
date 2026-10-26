@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { LucideArrowRight, LucideCheck, LucideCopy, LucideInfo, LucidePencil, LucideTrash2, LucideX } from '@lucide/angular';
 import { debounceTime } from 'rxjs';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
@@ -20,6 +19,7 @@ import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
 import { Selection } from '../selection';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 const MAX_NAME_LENGTH = 100;
 
@@ -34,7 +34,7 @@ type MergeChoice = { keptId: number } | { newName: string };
  */
 @Component({
   selector: 'yona-admin-ingredients',
-  imports: [RouterLink, BulkBar, Button, Select, LucideArrowRight, LucideCheck, LucideCopy, LucideInfo, LucidePencil, LucideTrash2, LucideX],
+  imports: [Icon, RouterLink, BulkBar, Button, Select],
   templateUrl: './admin-ingredients.html',
   styleUrl: './admin-ingredients.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

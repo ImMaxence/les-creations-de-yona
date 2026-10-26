@@ -160,6 +160,16 @@
   letter-spacing: 0.08em;
 }
 
+.drive__facts {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+
+  dt {
+    font-weight: 700;
+  }
+}
+
 .report {
   display: grid;
   gap: var(--space-2);

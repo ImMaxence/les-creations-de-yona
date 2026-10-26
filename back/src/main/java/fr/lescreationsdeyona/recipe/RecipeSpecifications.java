@@ -67,12 +67,13 @@ final class RecipeSpecifications {
 		return Specification.allOf(criteria);
 	}
 
-	/** Preparation plus cooking, a missing one counting as 0; at least one of them is given. */
+	/** Preparation, rest and cooking, a missing one counting as 0; preparation or cooking is given. */
 	private static Specification<Recipe> takesAtMost(int minutes) {
 		return (recipe, query, cb) -> {
 			Expression<Integer> prep = recipe.get("prepMinutes");
 			Expression<Integer> cook = recipe.get("cookMinutes");
-			Expression<Integer> total = cb.sum(cb.coalesce(prep, 0), cb.coalesce(cook, 0));
+			Expression<Integer> rest = recipe.get("restMinutes");
+			Expression<Integer> total = cb.sum(cb.sum(cb.coalesce(prep, 0), cb.coalesce(cook, 0)), cb.coalesce(rest, 0));
 			return cb.and(cb.or(cb.isNotNull(prep), cb.isNotNull(cook)), cb.le(total, minutes));
 		};
 	}

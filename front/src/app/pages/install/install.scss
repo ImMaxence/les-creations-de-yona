@@ -85,6 +85,34 @@
   }
 }
 
+// Notifications of new recipes, next to the installation they need on iPhone
+.notify-section {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+
+  > svg {
+    color: var(--color-accent);
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+}
+
+.notify-section__text {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+
+  p {
+    color: var(--color-text-muted);
+  }
+}
+
 .guide {
   display: grid;
   gap: var(--space-4);

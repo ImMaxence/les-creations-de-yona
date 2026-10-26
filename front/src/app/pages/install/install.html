@@ -11,12 +11,12 @@
 
     @if (installed()) {
       <p class="install__status" animate.enter="install__status--enter">
-        <svg lucideCircleCheck [size]="20"></svg>
+        <svg yonaIcon="circle-check" [size]="20"></svg>
         L'application est installée sur cet appareil.
       </p>
     } @else if (canPrompt()) {
       <button yonaButton type="button" class="install__button" animate.enter="install__status--enter" (click)="install()">
-        <svg lucideDownload></svg>
+        <svg yonaIcon="download"></svg>
         Installer maintenant
       </button>
     }
@@ -24,21 +24,34 @@
 
   <ul role="list" class="benefits enter" style="--delay: 240ms">
     <li>
-      <svg lucideZap [size]="22" [strokeWidth]="1.75"></svg>
+      <svg yonaIcon="zap" [size]="22" [strokeWidth]="1.75"></svg>
       <strong>Rapide</strong>
       <span>Un appui sur l'icône, et la recette s'affiche.</span>
     </li>
     <li>
-      <svg lucideWifiOff [size]="22" [strokeWidth]="1.75"></svg>
+      <svg yonaIcon="wifi-off" [size]="22" [strokeWidth]="1.75"></svg>
       <strong>Hors connexion</strong>
       <span>Les recettes déjà ouvertes restent lisibles en cuisine, même sans réseau.</span>
     </li>
     <li>
-      <svg lucideSmartphone [size]="22" [strokeWidth]="1.75"></svg>
+      <svg yonaIcon="smartphone" [size]="22" [strokeWidth]="1.75"></svg>
       <strong>Plein écran</strong>
       <span>Sans barre d'adresse, toute la place pour la recette.</span>
     </li>
   </ul>
+
+  <section class="notify-section" aria-labelledby="notify-title">
+    <svg yonaIcon="bell-ring" [size]="28" [strokeWidth]="1.75"></svg>
+    <div class="notify-section__text">
+      <h2 id="notify-title">Être prévenu·e des nouvelles recettes</h2>
+      <p>
+        Une notification à chaque nouvelle recette, même l'application fermée. Sans compte ni adresse e-mail, et elle
+        s'arrête d'un appui. Sur iPhone et iPad (iOS 16.4 ou plus récent), installez d'abord l'application, puis activez
+        les notifications depuis l'application.
+      </p>
+      <yona-notify-button [showInstallHint]="true" />
+    </div>
+  </section>
 
   <section class="guide" aria-labelledby="guide-title">
     <h2 id="guide-title">Comment faire ?</h2>
@@ -72,12 +85,12 @@
             <li>Ouvrez ce site dans <strong>Safari</strong> (Chrome et Edge fonctionnent aussi depuis iOS 16.4).</li>
             <li>
               Touchez le bouton <strong>Partager</strong>
-              <span class="key"><svg lucideShare [size]="16"></svg></span>, en bas de l'écran sur iPhone,
+              <span class="key"><svg yonaIcon="share" [size]="16"></svg></span>, en bas de l'écran sur iPhone,
               en haut à droite sur iPad.
             </li>
             <li>
               Faites défiler la liste et touchez <strong>Sur l'écran d'accueil</strong>
-              <span class="key"><svg lucideSquarePlus [size]="16"></svg></span>.
+              <span class="key"><svg yonaIcon="square-plus" [size]="16"></svg></span>.
             </li>
             <li>Touchez <strong>Ajouter</strong> : l'icône apparaît sur votre écran d'accueil.</li>
           </ol>
@@ -86,7 +99,7 @@
           <ol role="list" class="steps" animate.enter="steps--enter">
             <li>Ouvrez ce site dans <strong>Chrome</strong> (ou Samsung Internet, Edge).</li>
             <li>
-              Touchez le menu <span class="key"><svg lucideEllipsisVertical [size]="16"></svg></span> en
+              Touchez le menu <span class="key"><svg yonaIcon="ellipsis-vertical" [size]="16"></svg></span> en
               haut à droite.
             </li>
             <li>Touchez <strong>Installer l'application</strong> (ou <strong>Ajouter à l'écran d'accueil</strong>).</li>
@@ -98,11 +111,11 @@
           <ol role="list" class="steps" animate.enter="steps--enter">
             <li>
               Avec <strong>Chrome</strong> ou <strong>Edge</strong>, cliquez sur l'icône d'installation
-              <span class="key"><svg lucideMonitorDown [size]="16"></svg></span> à droite de la barre
+              <span class="key"><svg yonaIcon="monitor-down" [size]="16"></svg></span> à droite de la barre
               d'adresse.
             </li>
             <li>
-              Pas d'icône ? Ouvrez le menu <span class="key"><svg lucideEllipsisVertical [size]="16"></svg></span>
+              Pas d'icône ? Ouvrez le menu <span class="key"><svg yonaIcon="ellipsis-vertical" [size]="16"></svg></span>
               et cherchez <strong>Installer</strong>.
             </li>
             <li>Sur Mac avec <strong>Safari</strong> : menu <strong>Fichier</strong>, puis <strong>Ajouter au Dock</strong>.</li>

@@ -1,0 +1,111 @@
+<section class="admin-section" aria-labelledby="glossary-title">
+  <div class="admin-section__head">
+    <h2 id="glossary-title">Glossaire</h2>
+    <a yonaButton variant="ghost" target="_blank" [routerLink]="glossaryPath"><svg yonaIcon="external-link"></svg>Voir sur le site</a>
+  </div>
+  <p class="field__hint">
+    Les mots de pâtisserie (émulsionner, chemiser, blanchir…) sont soulignés dans les étapes des recettes : un appui affiche
+    leur définition. Ils ont aussi leur page, « Glossaire », que Google peut afficher.
+  </p>
+
+  <form class="admin-panel glossary-form" (submit)="save($event)">
+    <h3 class="glossary-form__title">{{ editing() ? 'Modifier « ' + editing()!.name + ' »' : 'Ajouter un mot' }}</h3>
+    <div class="field">
+      <label class="field__label" for="term-name">Mot</label>
+      <input
+        id="term-name"
+        class="input"
+        placeholder="Chemiser"
+        [maxLength]="maxNameLength"
+        [value]="name()"
+        (input)="name.set($any($event.target).value)"
+      />
+    </div>
+    <div class="field">
+      <label class="field__label" for="term-definition">Définition</label>
+      <textarea
+        id="term-definition"
+        class="input"
+        rows="3"
+        placeholder="Garnir l'intérieur d'un moule de papier cuisson, ou de beurre et de farine, pour que la préparation n'attache pas."
+        [maxLength]="maxDefinitionLength"
+        [value]="definition()"
+        (input)="definition.set($any($event.target).value)"
+      ></textarea>
+      <span class="field__hint">{{ definition().length }} / {{ maxDefinitionLength }} caractères.</span>
+    </div>
+    <div class="field">
+      <label class="field__label" for="term-forms">Autres formes dans les étapes (facultatif)</label>
+      <input
+        id="term-forms"
+        class="input"
+        placeholder="chemisez, chemisé, chemisée"
+        [value]="forms()"
+        (input)="forms.set($any($event.target).value)"
+      />
+      <span class="field__hint">
+        Séparées par des virgules : verbe conjugué, pluriel… Majuscules et accents ne comptent pas.
+        <button type="button" class="link-button" (click)="suggestForms()"><svg yonaIcon="sparkles" [size]="14"></svg>Proposer les formes courantes</button>
+      </span>
+    </div>
+    <div class="glossary-form__actions">
+      <button yonaButton type="submit" [disabled]="saving()">
+        @if (editing()) {
+          <svg yonaIcon="save"></svg>Enregistrer
+        } @else {
+          <svg yonaIcon="plus"></svg>Ajouter au glossaire
+        }
+      </button>
+      @if (editing()) {
+        <button yonaButton variant="ghost" type="button" (click)="cancel()">Annuler</button>
+      }
+    </div>
+  </form>
+
+  @if (terms.value(); as list) {
+    @if (list.length) {
+      <yona-bulk-bar
+        [count]="selection.size()"
+        [allShown]="selection.hasAll(termIds())"
+        [busy]="deleting()"
+        (toggleAll)="selection.toggleAll(termIds())"
+        (cleared)="selection.clear()"
+        (deleted)="removeSelected()"
+      />
+      <p class="admin-row__meta">{{ list.length }} mot{{ list.length > 1 ? 's' : '' }}</p>
+      <ul role="list" class="admin-list">
+        @for (term of list; track term.id) {
+          <li class="admin-row" [class.is-selected]="selection.has(term.id)">
+            <label class="select-box">
+              <input
+                type="checkbox"
+                [checked]="selection.has(term.id)"
+                [attr.aria-label]="'Sélectionner ' + term.name"
+                (change)="selection.toggle(term.id)"
+              />
+            </label>
+            <div class="admin-row__main">
+              <span class="admin-row__title">{{ term.name }}</span>
+              <span class="term__definition">{{ term.definition }}</span>
+              @if (term.forms.length) {
+                <span class="admin-row__meta">Aussi : {{ term.forms.join(', ') }}</span>
+              }
+            </div>
+            <div class="admin-row__actions">
+              <button type="button" class="icon-button" [attr.aria-label]="'Modifier ' + term.name" (click)="edit(term)">
+                <svg yonaIcon="pencil" [size]="18"></svg>
+              </button>
+              <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Retirer ' + term.name" (click)="remove(term)">
+                <svg yonaIcon="trash" [size]="18"></svg>
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="admin-empty">Le glossaire est vide : ajoutez un premier mot, comme « Chemiser » ou « Blanchir ».</p>
+    }
+  } @else if (terms.isLoading()) {
+    <p class="admin-empty">Chargement du glossaire…</p>
+  }
+</section>

@@ -1,15 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import {
-  LucideCircleCheck,
-  LucideDatabaseZap,
-  LucideDownload,
-  LucideLoaderCircle,
-  LucideTriangleAlert,
-  LucideUpload,
-} from '@lucide/angular';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, resource, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { ImageUploads } from '../../../core/api/image-uploads';
+import { backUpToDriveNow } from '../../../core/api/generated/fn/admin-google-drive/back-up-to-drive-now';
+import { disconnectDrive } from '../../../core/api/generated/fn/admin-google-drive/disconnect-drive';
+import { getDriveStatus } from '../../../core/api/generated/fn/admin-google-drive/get-drive-status';
 import { applyRestore } from '../../../core/api/generated/fn/admin-restore/apply-restore';
 import { cancelRestore } from '../../../core/api/generated/fn/admin-restore/cancel-restore';
 import { getRestore } from '../../../core/api/generated/fn/admin-restore/get-restore';
@@ -23,8 +19,10 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
 import { SiteTheme } from '../../../core/theme/site-theme';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
+import { parisDateTime } from '../../../shared/format/paris-time';
 import { formatBytes } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 /** Same size as the server expects (RestoreService.CHUNK_BYTES): under Cloudflare's 100 MB per request. */
 const CHUNK_BYTES = 32 * 1024 * 1024;
@@ -32,6 +30,10 @@ const POLL_MS = 1500;
 /** The restore in progress survives a reload of the page. */
 const STORAGE_KEY = 'yona-restore-id';
 const REPLACE_WORD = 'REMPLACER';
+/** While a Google Drive backup runs. */
+const DRIVE_POLL_MS = 3000;
+/** Google sends the admin back here: GET /api/admin/drive/connect, then /api/admin/drive/callback. */
+const DRIVE_CONNECT_URL = '/api/admin/drive/connect';
 
 /** Rows of the comparison table, in the order shown. */
 const COUNT_ROWS: { key: keyof Counts; label: string }[] = [
@@ -42,6 +44,7 @@ const COUNT_ROWS: { key: keyof Counts; label: string }[] = [
   { key: 'images', label: 'Photos' },
   { key: 'socialLinks', label: 'Réseaux sociaux' },
   { key: 'appearancePresets', label: "Préréglages d'apparence" },
+  { key: 'glossaryTerms', label: 'Mots du glossaire' },
 ];
 
 /**
@@ -54,14 +57,9 @@ const COUNT_ROWS: { key: keyof Counts; label: string }[] = [
 @Component({
   selector: 'yona-admin-backup',
   imports: [
+    Icon,
     Button,
     ParisDatePipe,
-    LucideCircleCheck,
-    LucideDatabaseZap,
-    LucideDownload,
-    LucideLoaderCircle,
-    LucideTriangleAlert,
-    LucideUpload,
   ],
   templateUrl: './admin-backup.html',
   styleUrl: './admin-backup.scss',
@@ -74,6 +72,16 @@ export default class AdminBackup {
   private readonly toaster = inject(Toaster);
   private readonly siteData = inject(SiteData);
   private readonly siteTheme = inject(SiteTheme);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  // Google Drive
+
+  protected readonly drive = resource({ loader: () => this.api.invoke(getDriveStatus) });
+  protected readonly driveConnectUrl = DRIVE_CONNECT_URL;
+  protected readonly parisDateTime = parisDateTime;
+  protected readonly driveBusy = signal(false);
+  private driveTimer: ReturnType<typeof setTimeout> | undefined;
 
   protected readonly status = signal<RestoreStatus | null>(null);
   protected readonly fileName = signal<string | null>(null);
@@ -93,7 +101,7 @@ export default class AdminBackup {
     return (
       !!missing &&
       missing.recipes + missing.categories + missing.tags + missing.ingredients + missing.images + missing.socialLinks +
-        missing.appearancePresets ===
+        missing.appearancePresets + missing.glossaryTerms ===
         0 &&
       this.analysis()!.imageFilesMissing === 0
     );
@@ -109,11 +117,76 @@ export default class AdminBackup {
     inject(DestroyRef).onDestroy(() => {
       this.destroyed = true;
       clearTimeout(this.timer);
+      clearTimeout(this.driveTimer);
     });
+    this.reportDriveConnection();
     const id = readStoredId();
     if (id) {
       void this.refresh(id);
     }
+  }
+
+  /** "Sauvegarder maintenant": runs on the server, followed here until it ends. */
+  protected async backUpToDrive(): Promise<void> {
+    this.driveBusy.set(true);
+    const started = await attempt(this.api.invoke(backUpToDriveNow));
+    this.driveBusy.set(false);
+    if (started.ok) {
+      this.drive.set(started.value);
+      this.toaster.success('Sauvegarde vers Google Drive lancée : elle peut prendre quelques minutes.');
+      this.pollDrive();
+    }
+  }
+
+  protected async disconnectFromDrive(): Promise<void> {
+    const confirmed = await this.confirm.ask({
+      title: 'Déconnecter Google Drive ?',
+      message:
+        "Les sauvegardes de chaque nuit s'arrêtent. Celles déjà sur le Drive y restent : supprimez-les depuis Google Drive si besoin.",
+      confirmLabel: 'Déconnecter',
+    });
+    if (confirmed && (await attempt(this.api.invoke(disconnectDrive))).ok) {
+      this.toaster.success('Google Drive déconnecté.');
+      this.drive.reload();
+    }
+  }
+
+  private pollDrive(): void {
+    clearTimeout(this.driveTimer);
+    this.driveTimer = setTimeout(async () => {
+      if (this.destroyed) {
+        return;
+      }
+      const status = await attempt(this.api.invoke(getDriveStatus));
+      if (!status.ok) {
+        return;
+      }
+      this.drive.set(status.value);
+      if (status.value.running) {
+        this.pollDrive();
+      } else if (status.value.lastBackupOk) {
+        this.toaster.success('Sauvegarde envoyée sur Google Drive.');
+      } else {
+        this.toaster.error(status.value.lastBackupError ?? "La sauvegarde vers Google Drive n'a pas abouti.");
+      }
+    }, DRIVE_POLL_MS);
+  }
+
+  /** Back from Google's consent page: ?drive=connecte, refuse or erreur (&message=…). */
+  private reportDriveConnection(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const outcome = params.get('drive');
+    if (!outcome) {
+      return;
+    }
+    if (outcome === 'connecte') {
+      this.toaster.success('Google Drive connecté : une sauvegarde y sera envoyée chaque nuit.');
+    } else if (outcome === 'refuse') {
+      this.toaster.error("Connexion à Google Drive annulée : rien n'a été changé.");
+    } else {
+      this.toaster.error(params.get('message') ?? 'La connexion à Google Drive a échoué.');
+    }
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
   }
 
   protected onDragOver(event: DragEvent): void {

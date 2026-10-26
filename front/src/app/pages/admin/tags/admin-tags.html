@@ -15,7 +15,7 @@
       [value]="newName()"
       (input)="newName.set($any($event.target).value)"
     />
-    <button yonaButton type="submit"><svg lucidePlus></svg>Ajouter</button>
+    <button yonaButton type="submit"><svg yonaIcon="plus"></svg>Ajouter</button>
   </form>
 
   @if (tags.value(); as list) {
@@ -48,8 +48,8 @@
                   [value]="editedName()"
                   (input)="editedName.set($any($event.target).value)"
                 />
-                <button type="submit" class="icon-button" aria-label="Valider le nom"><svg lucideCheck [size]="18"></svg></button>
-                <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg lucideX [size]="18"></svg></button>
+                <button type="submit" class="icon-button" aria-label="Valider le nom"><svg yonaIcon="check" [size]="18"></svg></button>
+                <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg yonaIcon="x" [size]="18"></svg></button>
               </form>
             } @else {
               <div class="admin-row__main">
@@ -58,17 +58,17 @@
                   {{ tag.recipeCount }} recette{{ tag.recipeCount > 1 ? 's' : '' }}
                   @if (tag.recipeCount) {
                     <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(tag)">
-                      <svg lucideList [size]="14"></svg>Voir les recettes
+                      <svg yonaIcon="list" [size]="14"></svg>Voir les recettes
                     </a>
                   }
                 </span>
               </div>
               <div class="admin-row__actions">
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + tag.name" (click)="startRename(tag)">
-                  <svg lucidePencil [size]="18"></svg>
+                  <svg yonaIcon="pencil" [size]="18"></svg>
                 </button>
                 <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + tag.name" (click)="remove(tag)">
-                  <svg lucideTrash2 [size]="18"></svg>
+                  <svg yonaIcon="trash" [size]="18"></svg>
                 </button>
               </div>
             }

@@ -2,6 +2,7 @@ import { Params } from '@angular/router';
 
 export const RECIPES_PATH = '/recettes';
 export const INSTALL_PATH = '/installer';
+export const GLOSSARY_PATH = '/glossaire';
 export const FAVORITES_PATH = '/favoris';
 export const SHOPPING_LIST_PATH = '/liste-de-courses';
 export const LEGAL_NOTICE_PATH = '/mentions-legales';

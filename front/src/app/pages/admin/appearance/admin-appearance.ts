@@ -9,7 +9,6 @@ import {
   resource,
   signal,
 } from '@angular/core';
-import { LucideCheck, LucidePencil, LucideRefreshCw, LucideSave, LucideTrash2, LucideX } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { createAppearancePreset } from '../../../core/api/generated/fn/admin-appearance-presets/create-appearance-preset';
@@ -25,6 +24,7 @@ import { BODY_FONTS, BodyFontId, DISPLAY_FONTS, DisplayFontId } from '../../../c
 import { THEME_PRESETS, ThemePresetId } from '../../../core/theme/theme-presets';
 import { Button } from '../../../shared/ui/button/button';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 const MAX_RADIUS_PX = 999;
 /** The slider covers the useful range; the field beside it goes up to 999. */
@@ -45,7 +45,7 @@ function sameTheme(a: ThemeResponse, b: ThemeResponse): boolean {
  */
 @Component({
   selector: 'yona-admin-appearance',
-  imports: [Button, Select, LucideCheck, LucidePencil, LucideRefreshCw, LucideSave, LucideTrash2, LucideX],
+  imports: [Icon, Button, Select],
   templateUrl: './admin-appearance.html',
   styleUrl: './admin-appearance.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

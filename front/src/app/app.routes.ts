@@ -2,8 +2,9 @@ import { Routes } from '@angular/router';
 import { RouteSeo, SEO_DATA_KEY } from './core/seo/page-seo';
 import { homeResolver } from './pages/home/home.resolver';
 import { homeSeo } from './pages/home/home.seo';
-import { recipeResolver, recipeSeo } from './pages/recipe/recipe.resolver';
+import { glossaryResolver, recipeResolver, recipeSeo, relatedRecipesResolver } from './pages/recipe/recipe.resolver';
 import { recipesResolver, recipesSeo } from './pages/recipes/recipes.resolver';
+import { glossarySeo } from './pages/glossary/glossary.seo';
 
 const NO_INDEX: RouteSeo = { noIndex: true };
 
@@ -25,8 +26,14 @@ export const routes: Routes = [
   {
     path: 'recettes/:categorySlug/:recipeSlug',
     loadComponent: () => import('./pages/recipe/recipe'),
-    resolve: { recipe: recipeResolver },
+    resolve: { recipe: recipeResolver, related: relatedRecipesResolver, glossary: glossaryResolver },
     data: { [SEO_DATA_KEY]: recipeSeo satisfies RouteSeo },
+  },
+  {
+    path: 'glossaire',
+    loadComponent: () => import('./pages/glossary/glossary'),
+    resolve: { terms: glossaryResolver },
+    data: { [SEO_DATA_KEY]: glossarySeo satisfies RouteSeo },
   },
   {
     path: 'installer',

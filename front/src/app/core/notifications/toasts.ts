@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { LucideCircleAlert, LucideCircleCheck, LucideX } from '@lucide/angular';
 import { Toaster } from './toaster';
+import { Icon } from '../../shared/ui/icon/icon';
 
 @Component({
   selector: 'yona-toasts',
-  imports: [LucideCircleAlert, LucideCircleCheck, LucideX],
+  imports: [Icon],
   template: `
     <ul role="list" class="toasts" aria-live="polite">
       @for (toast of toaster.toasts(); track toast.id) {
@@ -16,13 +16,13 @@ import { Toaster } from './toaster';
           animate.leave="toast--leave"
         >
           @if (toast.kind === 'error') {
-            <svg lucideCircleAlert [size]="20"></svg>
+            <svg yonaIcon="circle-alert" [size]="20"></svg>
           } @else {
-            <svg lucideCircleCheck [size]="20"></svg>
+            <svg yonaIcon="circle-check" [size]="20"></svg>
           }
           <span class="toast__message">{{ toast.message }}</span>
           <button type="button" class="toast__close" aria-label="Fermer" (click)="toaster.dismiss(toast.id)">
-            <svg lucideX [size]="16"></svg>
+            <svg yonaIcon="x" [size]="16"></svg>
           </button>
         </li>
       }

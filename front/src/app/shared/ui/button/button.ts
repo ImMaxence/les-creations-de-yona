@@ -5,7 +5,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 /**
  * Site button, on a native <a> or <button> so that links stay links (SEO, middle click) and
- * buttons stay buttons. Icons go inside: <a yonaButton routerLink="/recettes">Voir plus <svg lucideArrowRight /></a>
+ * buttons stay buttons. Icons go inside: <a yonaButton routerLink="/recettes">Voir plus <svg yonaIcon="arrow-right" /></a>
  */
 @Component({
   selector: 'a[yonaButton], button[yonaButton]',

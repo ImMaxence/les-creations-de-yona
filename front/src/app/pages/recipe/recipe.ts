@@ -1,23 +1,16 @@
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import {
-  LucideArrowLeft,
-  LucideArrowRight,
-  LucideChefHat,
-  LucideClock,
-  LucideCookingPot,
-  LucideGauge,
-  LucideHeart,
-  LucidePrinter,
-  LucideShare2,
-  LucideShoppingBasket,
-} from '@lucide/angular';
+import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
+import { Mold } from '../../core/api/generated/models/mold';
+import { RecipeCard as RecipeCardModel } from '../../core/api/generated/models/recipe-card';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Favorites } from '../../core/kitchen/favorites';
 import { ShoppingList } from '../../core/kitchen/shopping-list';
 import { Toaster } from '../../core/notifications/toaster';
 import { absoluteUrl } from '../../core/seo/page-seo';
+import { glossaryMatcher } from '../../shared/format/glossary';
+import { MarkdownPipe } from '../../shared/format/markdown.pipe';
 import { ParisDatePipe } from '../../shared/format/paris-date.pipe';
 import { formatMinutes, roundForKitchen } from '../../shared/format/units';
 import { Reveal } from '../../shared/motion/reveal';
@@ -34,16 +27,20 @@ import { BrandIcon } from '../../shared/ui/brand-icon/brand-icon';
 import { Button } from '../../shared/ui/button/button';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { DifficultyStars } from '../../shared/ui/difficulty-stars/difficulty-stars';
+import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
 import { YoutubeVideo } from '../../shared/ui/youtube-video/youtube-video';
 import { CookingMode } from './cooking-mode/cooking-mode';
 import { IngredientList } from './ingredient-list/ingredient-list';
 import { RecipeIngredients } from './ingredients/recipe-ingredients';
-import { hasParts, shownIngredients, totalIngredients } from './recipe-parts';
+import { RecipePlanner } from './planner/recipe-planner';
+import { hasParts, moldArea, shownIngredients, totalIngredients } from './recipe-parts';
 import { RecipeSteps } from './steps/recipe-steps';
+import { Icon } from '../../shared/ui/icon/icon';
 
 @Component({
   selector: 'yona-recipe',
   imports: [
+    Icon,
     RouterLink,
     BrandIcon,
     Button,
@@ -53,19 +50,12 @@ import { RecipeSteps } from './steps/recipe-steps';
     YoutubeVideo,
     ParisDatePipe,
     IngredientList,
+    MarkdownPipe,
+    RecipeCard,
     RecipeIngredients,
+    RecipePlanner,
     RecipeSteps,
     Reveal,
-    LucideArrowLeft,
-    LucideArrowRight,
-    LucideChefHat,
-    LucideClock,
-    LucideCookingPot,
-    LucideGauge,
-    LucideHeart,
-    LucidePrinter,
-    LucideShare2,
-    LucideShoppingBasket,
   ],
   templateUrl: './recipe.html',
   styleUrl: './recipe.scss',
@@ -74,6 +64,10 @@ import { RecipeSteps } from './steps/recipe-steps';
 export default class Recipe {
   /** From recipeResolver. */
   readonly recipe = input.required<RecipeDetail>();
+  /** From relatedRecipesResolver: "Vous aimerez aussi". */
+  readonly related = input<RecipeCardModel[]>([]);
+  /** From glossaryResolver: the words underlined in the steps. */
+  readonly glossary = input<GlossaryTermResponse[]>([]);
 
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly shoppingListPath = SHOPPING_LIST_PATH;
@@ -83,14 +77,29 @@ export default class Recipe {
   protected readonly imageTransition = RECIPE_IMAGE_TRANSITION;
 
   protected readonly totalMinutes = computed(
-    () => (this.recipe().prepMinutes ?? 0) + (this.recipe().cookMinutes ?? 0),
+    () => (this.recipe().prepMinutes ?? 0) + (this.recipe().restMinutes ?? 0) + (this.recipe().cookMinutes ?? 0),
   );
+  /** "Total" is worth showing once two times at least are given. */
+  protected readonly showTotal = computed(
+    () => [this.recipe().prepMinutes, this.recipe().restMinutes, this.recipe().cookMinutes].filter(Boolean).length > 1,
+  );
+  protected readonly glossaryMatcher = computed(() => glossaryMatcher(this.glossary()));
   protected readonly mainCategory = computed(() => mainCategory(this.recipe()));
 
   /** Servings chosen by the visitor; back to the recipe's own when the recipe changes. */
   protected readonly servings = linkedSignal(() => this.recipe().servings ?? null);
+  /** The visitor's mold, instead of the recipe's: quantities follow its area. */
+  protected readonly chosenMold = linkedSignal<RecipeDetail, Mold | null>({
+    source: this.recipe,
+    computation: () => null,
+  });
   /** Applied to every quantity, in the total and in the parts. */
   private readonly ratio = computed(() => {
+    const mold = this.recipe().mold;
+    const chosenMold = this.chosenMold();
+    if (mold && chosenMold) {
+      return moldArea(chosenMold) / moldArea(mold);
+    }
     const base = this.recipe().servings;
     const chosen = this.servings();
     return base && chosen ? chosen / base : 1;
@@ -147,7 +156,8 @@ export default class Recipe {
       slug: recipe.slug,
       title: recipe.title,
       categorySlug: mainCategory(recipe).slug,
-      servings: this.servings(),
+      // With the visitor's mold: the servings it makes, roughly
+      servings: this.chosenMold() && recipe.servings ? Math.max(1, Math.round(recipe.servings * ratio)) : this.servings(),
       lines: recipe.parts.flatMap((part) =>
         part.ingredients.map((line) => ({
           name: line.name,

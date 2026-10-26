@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
-import { LucideCheck } from '@lucide/angular';
 import { ShownIngredient } from '../recipe-parts';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 /** Ingredients to tick off while cooking: the whole recipe, or a single part. */
 @Component({
   selector: 'yona-ingredient-list',
-  imports: [LucideCheck],
+  imports: [Icon],
   templateUrl: './ingredient-list.html',
   styleUrl: './ingredient-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

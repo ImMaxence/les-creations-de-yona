@@ -11,11 +11,11 @@ import {
   viewChild,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { LucideSearch, LucideX } from '@lucide/angular';
 import { catchError, debounceTime, distinctUntilChanged, from, map, of, switchMap } from 'rxjs';
 import { Api } from '../../../core/api/generated/api';
 import { suggestRecipeTitles } from '../../../core/api/generated/fn/recipes/suggest-recipe-titles';
 import { RecipeSuggestion } from '../../../core/api/generated/models/recipe-suggestion';
+import { Icon } from '../icon/icon';
 
 const MIN_QUERY_LENGTH = 2;
 const SUGGESTION_DELAY_MS = 200;
@@ -33,7 +33,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'yona-search-box',
-  imports: [LucideSearch, LucideX],
+  imports: [Icon],
   templateUrl: './search-box.html',
   styleUrl: './search-box.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideArrowRight } from '@lucide/angular';
 import { SiteData } from '../../core/site/site-data';
 import { categoryNames } from '../../shared/format/categories';
 import { Reveal } from '../../shared/motion/reveal';
@@ -10,10 +9,11 @@ import { Button } from '../../shared/ui/button/button';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
 import { HomeData } from './home.resolver';
+import { Icon } from '../../shared/ui/icon/icon';
 
 @Component({
   selector: 'yona-home',
-  imports: [RouterLink, LucideArrowRight, Button, CoverImage, RecipeCard, Reveal],
+  imports: [Icon, RouterLink, Button, CoverImage, RecipeCard, Reveal],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

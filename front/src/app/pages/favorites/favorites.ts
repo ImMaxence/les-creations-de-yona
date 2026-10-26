@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, afterNextRender, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideHeart, LucideX } from '@lucide/angular';
 import { Favorites as FavoriteRecipes } from '../../core/kitchen/favorites';
 import { RECIPES_PATH } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
+import { Icon } from '../../shared/ui/icon/icon';
 
 /**
  * "Mes favoris": the recipes marked with the heart, kept in this browser only. Shown from what was
@@ -12,7 +12,7 @@ import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
  */
 @Component({
   selector: 'yona-favorites',
-  imports: [RouterLink, Button, RecipeCard, LucideHeart, LucideX],
+  imports: [Icon, RouterLink, Button, RecipeCard],
   template: `
     <section class="container favorites">
       <header class="favorites__head">
@@ -37,14 +37,14 @@ import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
                 [attr.aria-label]="'Retirer « ' + recipe.title + ' » des favoris'"
                 (click)="favorites.remove(recipe.slug)"
               >
-                <svg lucideX [size]="18"></svg>
+                <svg yonaIcon="x" [size]="18"></svg>
               </button>
             </li>
           }
         </ul>
       } @else {
         <div class="empty">
-          <div class="empty__icon" aria-hidden="true"><svg lucideHeart [size]="40" [strokeWidth]="1.5"></svg></div>
+          <div class="empty__icon" aria-hidden="true"><svg yonaIcon="heart" [size]="40" [strokeWidth]="1.5"></svg></div>
           <h2>Aucun favori pour le moment</h2>
           <p>Sur une recette, touchez le cœur en haut de la photo.</p>
           <a yonaButton [routerLink]="recipesPath">Voir les recettes</a>

@@ -60,10 +60,26 @@ public class Recipe {
 
 	private Integer cookMinutes;
 
+	/** Resting, rising…: counted in the total time with preparation and cooking. */
+	private Integer restMinutes;
+
 	/** 1 to 5, by half points. */
 	private BigDecimal difficulty;
 
 	private String youtubeVideoId;
+
+	/** "Le conseil de Yona", in Markdown. */
+	private String tip;
+
+	/** Mold the quantities are written for: visitors can adapt them to theirs. */
+	@Enumerated(EnumType.STRING)
+	private MoldShape moldShape;
+
+	/** Diameter (round), side (square) or length (rectangle). */
+	private BigDecimal moldLengthCm;
+
+	/** Rectangle only. */
+	private BigDecimal moldWidthCm;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	private Image image;
@@ -73,6 +89,12 @@ public class Recipe {
 	private Image pinterestImage;
 
 	private boolean featured;
+
+	/** First publication, kept if the recipe goes back to draft; null for a recipe never published. */
+	private Instant publishedAt;
+
+	/** A draft published by the backend at that time (see ScheduledPublication). */
+	private Instant scheduledAt;
 
 	// Collections are modified in place: replacing them would break orphan removal.
 

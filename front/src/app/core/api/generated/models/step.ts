@@ -4,4 +4,9 @@
 export interface Step {
   description: string;
   durationMinutes?: number;
+
+  /**
+   * Ingredients the step needs, by position in its part's list (from 0); empty when it does not say
+   */
+  ingredientPositions: Array<number>;
 }

@@ -1,0 +1,68 @@
+@use 'mixins' as m;
+
+:host {
+  display: contents;
+}
+
+.notify {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  background-color: var(--color-bg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: var(--color-accent);
+    box-shadow: none;
+    color: var(--color-on-accent);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+
+  &.is-on {
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+    color: var(--color-accent-strong);
+
+    @include m.hover {
+      color: var(--color-on-accent);
+    }
+  }
+}
+
+.notify__hint {
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.notify__note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 40rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+
+  svg {
+    flex: none;
+    margin-top: 0.1em;
+  }
+}

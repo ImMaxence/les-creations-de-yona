@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideHeart, LucideShoppingBasket } from '@lucide/angular';
 import { Favorites } from '../../kitchen/favorites';
 import { ShoppingList } from '../../kitchen/shopping-list';
 import { FAVORITES_PATH, SHOPPING_LIST_PATH } from '../../../shared/routing/links';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 /**
  * Favorites and shopping list, one tap away in the header, with how many each holds. The counts
@@ -11,7 +11,7 @@ import { FAVORITES_PATH, SHOPPING_LIST_PATH } from '../../../shared/routing/link
  */
 @Component({
   selector: 'yona-kitchen-links',
-  imports: [RouterLink, RouterLinkActive, LucideHeart, LucideShoppingBasket],
+  imports: [Icon, RouterLink, RouterLinkActive],
   template: `
     <a
       class="link"
@@ -19,7 +19,7 @@ import { FAVORITES_PATH, SHOPPING_LIST_PATH } from '../../../shared/routing/link
       [routerLink]="favoritesPath"
       [attr.aria-label]="favorites.count() ? 'Mes favoris (' + favorites.count() + ')' : 'Mes favoris'"
     >
-      <svg lucideHeart [size]="20"></svg>
+      <svg yonaIcon="heart" [size]="20"></svg>
       @if (favorites.count()) {
         <span class="count" aria-hidden="true">{{ favorites.count() }}</span>
       }
@@ -30,7 +30,7 @@ import { FAVORITES_PATH, SHOPPING_LIST_PATH } from '../../../shared/routing/link
       [routerLink]="shoppingListPath"
       [attr.aria-label]="shoppingList.count() ? 'Ma liste de courses (' + shoppingList.count() + ')' : 'Ma liste de courses'"
     >
-      <svg lucideShoppingBasket [size]="20"></svg>
+      <svg yonaIcon="shopping-basket" [size]="20"></svg>
       @if (shoppingList.count()) {
         <span class="count" aria-hidden="true">{{ shoppingList.count() }}</span>
       }

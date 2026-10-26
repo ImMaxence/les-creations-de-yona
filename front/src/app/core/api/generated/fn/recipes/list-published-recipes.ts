@@ -32,7 +32,7 @@ export interface ListPublishedRecipes$Params {
   ingredient?: string;
 
 /**
- * Preparation and cooking together at most this long, in minutes
+ * Preparation, rest and cooking together at most this long, in minutes
  */
   maxMinutes?: number;
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD';

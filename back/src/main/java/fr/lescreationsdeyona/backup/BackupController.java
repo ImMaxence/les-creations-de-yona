@@ -5,9 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
@@ -27,10 +25,6 @@ class BackupController {
 
 	private static final String ZIP = "application/zip";
 
-	private static final DateTimeFormatter FILE_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
-
-	private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
-
 	private final BackupService backupService;
 
 	@Operation(summary = "Download a ZIP of the database and of every image",
@@ -41,7 +35,7 @@ class BackupController {
 	@GetMapping
 	ResponseEntity<StreamingResponseBody> downloadBackup() {
 		StreamingResponseBody archive = backupService.start();
-		String fileName = "les-creations-de-yona-" + FILE_DATE.format(ZonedDateTime.now(PARIS)) + ".zip";
+		String fileName = BackupService.fileName(Instant.now());
 		return ResponseEntity.ok()
 			.header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(fileName).build().toString())
 			.cacheControl(CacheControl.noStore())

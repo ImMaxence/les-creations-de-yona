@@ -1,18 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, resource } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import {
-  LucideBookOpen,
-  LucideCarrot,
-  LucideChartColumn,
-  LucideDatabaseBackup,
-  LucideImages,
-  LucideLogOut,
-  LucidePalette,
-  LucideShare2,
-  LucideSlidersHorizontal,
-  LucideTag,
-  LucideTags,
-} from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { getVersion } from '../../../core/api/generated/fn/admin-version/get-version';
 import { AdminSession } from '../../../core/auth/admin-session';
@@ -21,6 +8,7 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { FRONT_VERSION } from '../../../core/version';
 import { Button } from '../../../shared/ui/button/button';
 import { TooltipLayer } from '../../../shared/ui/tooltip/tooltip-layer';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 /**
  * Frame of the back-office: greeting, sign-out and section tabs. Its stylesheet holds the
@@ -30,23 +18,13 @@ import { TooltipLayer } from '../../../shared/ui/tooltip/tooltip-layer';
 @Component({
   selector: 'yona-admin-layout',
   imports: [
+    Icon,
     ConfirmDialog,
     TooltipLayer,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
     Button,
-    LucideBookOpen,
-    LucideChartColumn,
-    LucideCarrot,
-    LucideDatabaseBackup,
-    LucideImages,
-    LucideLogOut,
-    LucidePalette,
-    LucideShare2,
-    LucideSlidersHorizontal,
-    LucideTag,
-    LucideTags,
   ],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.scss',

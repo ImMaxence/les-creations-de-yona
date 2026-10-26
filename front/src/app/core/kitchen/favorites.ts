@@ -40,8 +40,10 @@ export class Favorites {
       this.remove(recipe.slug);
       return false;
     }
-    const { title, slug, imageId, createdAt, categories } = recipe;
-    this.cards.update((cards) => [{ title, slug, imageId, createdAt, categories }, ...cards].slice(0, MAX_FAVORITES));
+    const { title, slug, imageId, createdAt, publishedAt, categories } = recipe;
+    this.cards.update((cards) =>
+      [{ title, slug, imageId, createdAt, publishedAt, categories }, ...cards].slice(0, MAX_FAVORITES),
+    );
     return true;
   }
 

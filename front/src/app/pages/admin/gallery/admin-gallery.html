@@ -4,7 +4,7 @@
     <!-- Hidden from assistive technologies: the button is the way to reach it -->
     <input #file type="file" class="visually-hidden" tabindex="-1" aria-hidden="true" [accept]="accept" (change)="onFileChosen($event)" />
     <button yonaButton type="button" [disabled]="uploadProgress() !== null" (click)="file.click()">
-      <svg lucideImageUp></svg>Ajouter une photo
+      <svg yonaIcon="image-up"></svg>Ajouter une photo
     </button>
   </div>
   @if (uploadProgress() !== null) {
@@ -54,19 +54,19 @@
                 <div class="tile__links">
                   @if (image.recipes.length) {
                     <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(image)">
-                      <svg lucideList [size]="14"></svg>
+                      <svg yonaIcon="list" [size]="14"></svg>
                       Voir les recettes ({{ image.recipes.length }})
                     </a>
                   }
                   @if (image.aboutPage) {
                     <a class="link-button" routerLink="/admin/preferences">
-                      <svg lucideSlidersHorizontal [size]="14"></svg>
+                      <svg yonaIcon="sliders-horizontal" [size]="14"></svg>
                       Voir « À propos »
                     </a>
                   }
                   @if (image.categories.length) {
                     <a class="link-button" routerLink="/admin/categories" [queryParams]="categoriesLink(image)">
-                      <svg lucideLayoutGrid [size]="14"></svg>
+                      <svg yonaIcon="layout-grid" [size]="14"></svg>
                       Voir les catégories ({{ image.categories.length }})
                     </a>
                   }
@@ -77,7 +77,7 @@
               <span class="admin-row__meta">{{ image.createdAt | parisDate }}</span>
             </div>
             <button type="button" class="icon-button icon-button--danger tile__delete" aria-label="Supprimer l'image" (click)="remove(image)">
-              <svg lucideTrash2 [size]="18"></svg>
+              <svg yonaIcon="trash" [size]="18"></svg>
             </button>
           </li>
         }

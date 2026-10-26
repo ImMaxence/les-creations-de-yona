@@ -71,6 +71,9 @@ app:
     secret-key: ${S3_SECRET_KEY}
   backup:
     pg-dump: ${PG_DUMP_PATH:pg_dump}
+  push:
+    # Contact given to the push services with each notification (VAPID "sub"): an https URL or mailto:.
+    subject: ${PUSH_SUBJECT:https://les-creations-de-yona.fr}
 
 springdoc:
   # Without it, responses are documented as */* and the generated front client reads them as Blob.

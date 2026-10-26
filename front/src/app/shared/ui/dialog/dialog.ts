@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, booleanAttribute, effect, input, model, output, viewChild } from '@angular/core';
-import { LucideX } from '@lucide/angular';
+import { Icon } from '../icon/icon';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'full';
 
@@ -17,7 +17,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'yona-dialog',
-  imports: [LucideX],
+  imports: [Icon],
   templateUrl: './dialog.html',
   styleUrl: './dialog.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

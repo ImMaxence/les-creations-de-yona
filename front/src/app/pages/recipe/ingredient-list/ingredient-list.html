@@ -4,7 +4,7 @@
       <label class="ingredient" [class.is-checked]="checked().has(i)">
         <input type="checkbox" class="visually-hidden" [checked]="checked().has(i)" (change)="toggle(i)" />
         <span class="checkbox" aria-hidden="true">
-          <svg lucideCheck [size]="14" [strokeWidth]="3"></svg>
+          <svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg>
         </span>
         <span class="ingredient__text">
           @if (line.amount) {

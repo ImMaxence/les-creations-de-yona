@@ -1,13 +1,13 @@
 <ng-template #icon let-value>
   @switch (value) {
     @case ('light') {
-      <svg lucideSun [size]="18"></svg>
+      <svg yonaIcon="sun" [size]="18"></svg>
     }
     @case ('dark') {
-      <svg lucideMoon [size]="18"></svg>
+      <svg yonaIcon="moon" [size]="18"></svg>
     }
     @default {
-      <svg lucideSunMoon [size]="18"></svg>
+      <svg yonaIcon="sun-moon" [size]="18"></svg>
     }
   }
 </ng-template>
@@ -53,7 +53,7 @@
             <ng-container *ngTemplateOutlet="icon; context: { $implicit: option.value }" />
             {{ option.label }}
             @if (option.value === colorScheme.preference()) {
-              <svg lucideCheck class="panel__check" [size]="16"></svg>
+              <svg yonaIcon="check" class="panel__check" [size]="16"></svg>
             }
           </button>
         </li>

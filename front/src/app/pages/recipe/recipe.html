@@ -12,7 +12,7 @@
          within the site, goes back in the history, to the exact list and scroll position left -->
     <div class="container hero__top">
       <a class="pill enter" [routerLink]="recipesPath" [queryParams]="categoryQueryParams(mainCategory())" (click)="goBack($event)">
-        <svg lucideArrowLeft [size]="18"></svg>
+        <svg yonaIcon="arrow-left" [size]="18"></svg>
         Retour
       </a>
       <div class="hero__actions">
@@ -24,10 +24,10 @@
           [attr.aria-label]="isFavorite() ? 'Retirer des favoris' : 'Ajouter aux favoris'"
           (click)="toggleFavorite()"
         >
-          <svg lucideHeart [size]="18"></svg>
+          <svg yonaIcon="heart" [size]="18"></svg>
         </button>
         <button type="button" class="pill enter" (click)="share()">
-          <svg lucideShare2 [size]="18"></svg>
+          <svg yonaIcon="share-2" [size]="18"></svg>
           Partager
         </button>
       </div>
@@ -48,37 +48,54 @@
   </header>
 
   <div class="container body">
-    @if (recipe().prepMinutes || recipe().cookMinutes || recipe().difficulty) {
+    @if (recipe().prepMinutes || recipe().cookMinutes || recipe().restMinutes || recipe().difficulty) {
       <dl class="facts enter" style="--delay: 200ms">
         @if (recipe().prepMinutes; as prep) {
           <div class="fact">
-            <svg lucideChefHat [size]="22" [strokeWidth]="1.75"></svg>
+            <svg yonaIcon="chef-hat" [size]="22" [strokeWidth]="1.75"></svg>
             <dt>Préparation</dt>
             <dd>{{ formatMinutes(prep) }}</dd>
           </div>
         }
+        @if (recipe().restMinutes; as rest) {
+          <div class="fact">
+            <svg yonaIcon="hourglass" [size]="22" [strokeWidth]="1.75"></svg>
+            <dt>Repos</dt>
+            <dd>{{ formatMinutes(rest) }}</dd>
+          </div>
+        }
         @if (recipe().cookMinutes; as cook) {
           <div class="fact">
-            <svg lucideCookingPot [size]="22" [strokeWidth]="1.75"></svg>
+            <svg yonaIcon="cooking-pot" [size]="22" [strokeWidth]="1.75"></svg>
             <dt>Cuisson</dt>
             <dd>{{ formatMinutes(cook) }}</dd>
           </div>
         }
-        @if (recipe().prepMinutes && recipe().cookMinutes) {
+        @if (showTotal()) {
           <div class="fact">
-            <svg lucideClock [size]="22" [strokeWidth]="1.75"></svg>
+            <svg yonaIcon="clock" [size]="22" [strokeWidth]="1.75"></svg>
             <dt>Total</dt>
             <dd>{{ formatMinutes(totalMinutes()) }}</dd>
           </div>
         }
         @if (recipe().difficulty; as difficulty) {
           <div class="fact">
-            <svg lucideGauge [size]="22" [strokeWidth]="1.75"></svg>
+            <svg yonaIcon="gauge" [size]="22" [strokeWidth]="1.75"></svg>
             <dt>Difficulté</dt>
             <dd><yona-difficulty-stars [value]="difficulty" /></dd>
           </div>
         }
       </dl>
+    }
+
+    @if (totalMinutes()) {
+      <yona-recipe-planner
+        class="enter no-print"
+        style="--delay: 240ms"
+        [prepMinutes]="recipe().prepMinutes"
+        [restMinutes]="recipe().restMinutes"
+        [cookMinutes]="recipe().cookMinutes"
+      />
     }
 
     @if (recipe().intro) {
@@ -95,20 +112,26 @@
 
     <div class="tools enter no-print" style="--delay: 300ms">
       @if (hasSteps()) {
-        <button yonaButton type="button" (click)="startCooking()"><svg lucideChefHat></svg>Mode cuisine</button>
+        <button yonaButton type="button" (click)="startCooking()"><svg yonaIcon="chef-hat"></svg>Mode cuisine</button>
       }
       <a yonaButton variant="secondary" target="_blank" rel="noopener noreferrer" [href]="pinterestLink()">
         <yona-brand-icon platform="PINTEREST" [size]="18" />Épingler
       </a>
-      <button yonaButton variant="secondary" type="button" (click)="print()"><svg lucidePrinter></svg>Imprimer</button>
+      <button yonaButton variant="secondary" type="button" (click)="print()"><svg yonaIcon="printer"></svg>Imprimer</button>
     </div>
 
     <div class="layout">
       <section class="layout__ingredients" yonaReveal aria-labelledby="ingredients-title">
-        <yona-recipe-ingredients [lines]="ingredients()" [(servings)]="servings" [partCount]="parts().length" />
+        <yona-recipe-ingredients
+          [lines]="ingredients()"
+          [(servings)]="servings"
+          [partCount]="parts().length"
+          [mold]="recipe().mold ?? null"
+          [(chosenMold)]="chosenMold"
+        />
         <div class="basket no-print">
           <button yonaButton variant="secondary" type="button" (click)="addToShoppingList()">
-            <svg lucideShoppingBasket></svg>
+            <svg yonaIcon="shopping-basket"></svg>
             {{ inShoppingList() ? 'Mettre à jour ma liste de courses' : 'Ajouter à ma liste de courses' }}
           </button>
           @if (inShoppingList()) {
@@ -143,22 +166,40 @@
                 </div>
               }
               @if (part.steps.length) {
-                <yona-recipe-steps [steps]="part.steps" />
+                <yona-recipe-steps [steps]="part.steps" [glossary]="glossaryMatcher()" />
               }
             </section>
           }
         } @else {
           @for (part of parts(); track $index) {
-            <yona-recipe-steps [steps]="part.steps" />
+            <yona-recipe-steps [steps]="part.steps" [glossary]="glossaryMatcher()" />
           }
         }
       </section>
     </div>
 
+    @if (recipe().tip; as tip) {
+      <aside class="tip" yonaReveal aria-labelledby="tip-title">
+        <h2 id="tip-title" class="tip__title"><svg yonaIcon="lightbulb" [size]="22" [strokeWidth]="1.75"></svg>Le conseil de Yona</h2>
+        <div class="prose" [innerHTML]="tip | markdown"></div>
+      </aside>
+    }
+
     @if (recipe().youtubeVideoId; as videoId) {
       <section class="video" yonaReveal aria-labelledby="video-title">
         <h2 id="video-title">La recette en vidéo</h2>
         <yona-youtube-video [videoId]="videoId" [title]="recipe().title" [imageId]="recipe().imageId" />
+      </section>
+    }
+
+    @if (related().length) {
+      <section class="related no-print" aria-labelledby="related-title">
+        <h2 id="related-title" class="related__title" yonaReveal>Vous aimerez aussi</h2>
+        <ul role="list" class="related__grid">
+          @for (card of related(); track card.slug) {
+            <li yonaReveal><yona-recipe-card [recipe]="card" /></li>
+          }
+        </ul>
       </section>
     }
 
@@ -174,10 +215,16 @@
         [queryParams]="categoryQueryParams(mainCategory())"
       >
         Plus de recettes : {{ mainCategory().name }}
-        <svg lucideArrowRight></svg>
+        <svg yonaIcon="arrow-right"></svg>
       </a>
     </footer>
   </div>
 </article>
 
-<yona-cooking-mode [title]="recipe().title" [parts]="parts()" [ingredients]="ingredients()" />
+<yona-cooking-mode
+  [title]="recipe().title"
+  [parts]="parts()"
+  [ingredients]="ingredients()"
+  [totalMinutes]="totalMinutes()"
+  [glossary]="glossaryMatcher()"
+/>

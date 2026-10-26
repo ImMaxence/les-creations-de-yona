@@ -1,13 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  LucideChartLine,
-  LucideFileDown,
-  LucideHardDrive,
-  LucideRefreshCw,
-  LucideSearchX,
-  LucideTrash2,
-} from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { getStats } from '../../../core/api/generated/fn/admin-stats/get-stats';
@@ -19,6 +11,7 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { formatBytes } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 const MONTH = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' });
 const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -53,15 +46,10 @@ interface Bar {
 @Component({
   selector: 'yona-admin-stats',
   imports: [
+    Icon,
     RouterLink,
     Button,
     ParisDatePipe,
-    LucideChartLine,
-    LucideFileDown,
-    LucideHardDrive,
-    LucideRefreshCw,
-    LucideSearchX,
-    LucideTrash2,
   ],
   templateUrl: './admin-stats.html',
   styleUrl: './admin-stats.scss',

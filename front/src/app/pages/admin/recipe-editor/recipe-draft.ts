@@ -1,6 +1,9 @@
-import { applyEach, maxLength, min, required, schema, validate } from '@angular/forms/signals';
+import { applyEach, max, maxLength, min, required, schema, validate } from '@angular/forms/signals';
 import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
 import { RecipeForm } from '../../../core/api/generated/models/recipe-form';
+import { fromParisInput, toParisInput } from '../../../shared/format/paris-time';
+
+export type MoldShapeChoice = 'NONE' | 'ROUND' | 'SQUARE' | 'RECTANGLE';
 
 /** Editable copy of a recipe: every field exists, empty ones as "" or null. */
 export interface RecipeDraft {
@@ -8,6 +11,8 @@ export interface RecipeDraft {
   intro: string;
   status: 'DRAFT' | 'PUBLISHED';
   featured: boolean;
+  /** Drafts only: Paris time, as the datetime-local field shows it ("2026-10-31T10:00"); "" for none. */
+  scheduledAt: string;
   /** The first one is the main category, in the recipe URL. */
   categoryIds: number[];
   /** Végétarien, sans gluten…: none required. */
@@ -15,10 +20,20 @@ export interface RecipeDraft {
   servings: number | null;
   prepMinutes: number | null;
   cookMinutes: number | null;
+  /** Resting, rising…: counted in the total time. */
+  restMinutes: number | null;
   /** 1 to 5, by half points. */
   difficulty: number | null;
   /** YouTube link as pasted by the admin. */
   videoUrl: string;
+  /** "Le conseil de Yona", Markdown. */
+  tip: string;
+  /** Mold the quantities are written for, so that visitors can adapt them to theirs. */
+  moldShape: MoldShapeChoice;
+  /** Diameter, side or length, in cm. */
+  moldLengthCm: number | null;
+  /** Rectangle only. */
+  moldWidthCm: number | null;
   /** A recipe without parts has a single one, untitled. */
   parts: PartDraft[];
 }
@@ -31,6 +46,8 @@ export interface PartDraft {
 }
 
 export interface IngredientDraft {
+  /** Names the line for the steps that use it, whatever its position or name. */
+  key: string;
   name: string;
   quantity: number | null;
   unit: string;
@@ -40,6 +57,8 @@ export interface IngredientDraft {
 export interface StepDraft {
   description: string;
   durationMinutes: number | null;
+  /** Ingredients of its part the step needs (IngredientDraft.key), shown alone in the cooking mode. */
+  ingredientKeys: string[];
 }
 
 export function emptyPart(): PartDraft {
@@ -47,11 +66,19 @@ export function emptyPart(): PartDraft {
 }
 
 export function emptyIngredient(): IngredientDraft {
-  return { name: '', quantity: null, unit: '', note: '' };
+  return { key: newKey(), name: '', quantity: null, unit: '', note: '' };
 }
 
 export function emptyStep(): StepDraft {
-  return { description: '', durationMinutes: null };
+  return { description: '', durationMinutes: null, ingredientKeys: [] };
+}
+
+/**
+ * Keys of saved lines follow their place, so that the same recipe always gives the same draft
+ * (the unsaved-changes check compares them); new lines get a random one.
+ */
+function newKey(): string {
+  return `new-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
@@ -61,14 +88,21 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       intro: '',
       status: 'DRAFT',
       featured: false,
+      scheduledAt: '',
       categoryIds: [],
       tagIds: [],
       servings: null,
       prepMinutes: null,
       cookMinutes: null,
+      restMinutes: null,
       difficulty: null,
       videoUrl: '',
-      parts: [emptyPart()],
+      tip: '',
+      moldShape: 'NONE',
+      moldLengthCm: null,
+      moldWidthCm: null,
+      // A fixed key, like those of a saved recipe: an untouched new recipe has nothing to save
+      parts: [{ ...emptyPart(), ingredients: [{ ...emptyIngredient(), key: '0-0' }] }],
     };
   }
   return {
@@ -76,16 +110,23 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
     intro: recipe.intro ?? '',
     status: recipe.status,
     featured: recipe.featured,
+    scheduledAt: recipe.scheduledAt ? toParisInput(recipe.scheduledAt) : '',
     categoryIds: recipe.categories.map((category) => category.id),
     tagIds: recipe.tags.map((tag) => tag.id),
     servings: recipe.servings ?? null,
     prepMinutes: recipe.prepMinutes ?? null,
     cookMinutes: recipe.cookMinutes ?? null,
+    restMinutes: recipe.restMinutes ?? null,
     difficulty: recipe.difficulty ?? null,
     videoUrl: recipe.youtubeVideoId ? youtubeUrl(recipe.youtubeVideoId) : '',
-    parts: recipe.parts.map((part) => ({
+    tip: recipe.tip ?? '',
+    moldShape: recipe.mold?.shape ?? 'NONE',
+    moldLengthCm: recipe.mold?.lengthCm ?? null,
+    moldWidthCm: recipe.mold?.widthCm ?? null,
+    parts: recipe.parts.map((part, p) => ({
       title: part.title ?? '',
-      ingredients: part.ingredients.map((line) => ({
+      ingredients: part.ingredients.map((line, i) => ({
+        key: `${p}-${i}`,
         name: line.name,
         quantity: line.quantity ?? null,
         unit: line.unit ?? '',
@@ -94,6 +135,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       steps: part.steps.map((step) => ({
         description: step.description,
         durationMinutes: step.durationMinutes ?? null,
+        ingredientKeys: step.ingredientPositions.map((position) => `${p}-${position}`),
       })),
     })),
   };
@@ -106,13 +148,24 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
     intro: blankToUndefined(draft.intro),
     status: draft.status,
     featured: draft.featured && draft.status === 'PUBLISHED',
+    scheduledAt: draft.status === 'DRAFT' ? (fromParisInput(draft.scheduledAt) ?? undefined) : undefined,
     categoryIds: draft.categoryIds,
     tagIds: draft.tagIds,
     servings: draft.servings ?? undefined,
     prepMinutes: draft.prepMinutes ?? undefined,
     cookMinutes: draft.cookMinutes ?? undefined,
+    restMinutes: draft.restMinutes ?? undefined,
     difficulty: draft.difficulty ?? undefined,
     videoUrl: blankToUndefined(draft.videoUrl),
+    tip: blankToUndefined(draft.tip),
+    mold:
+      draft.moldShape === 'NONE' || draft.moldLengthCm == null
+        ? undefined
+        : {
+            shape: draft.moldShape,
+            lengthCm: draft.moldLengthCm,
+            widthCm: draft.moldShape === 'RECTANGLE' ? (draft.moldWidthCm ?? undefined) : undefined,
+          },
     parts: draft.parts.map((part) => ({
       title: blankToUndefined(part.title),
       ingredients: part.ingredients.map((line) => ({
@@ -124,6 +177,11 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
       steps: part.steps.map((step) => ({
         description: step.description.trim(),
         durationMinutes: step.durationMinutes ?? undefined,
+        // An ingredient moved to another part or removed is no longer the step's
+        ingredientPositions: step.ingredientKeys
+          .map((key) => part.ingredients.findIndex((line) => line.key === key))
+          .filter((position) => position >= 0)
+          .sort((a, b) => a - b),
       })),
     })),
   };
@@ -151,12 +209,14 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
   required(recipe.title, { message: 'Donnez un titre à la recette.' });
   maxLength(recipe.title, 150, { message: '150 caractères au maximum.' });
   maxLength(recipe.intro, 1000, { message: '1 000 caractères au maximum.' });
+  maxLength(recipe.tip, 2000, { message: '2 000 caractères au maximum.' });
   validate(recipe.categoryIds, ({ value }) =>
     value().length === 0 ? { kind: 'noCategory', message: 'Choisissez au moins une catégorie.' } : undefined,
   );
   min(recipe.servings, 1, { message: 'Au moins 1 portion.' });
   min(recipe.prepMinutes, 0, { message: 'Durée positive.' });
   min(recipe.cookMinutes, 0, { message: 'Durée positive.' });
+  min(recipe.restMinutes, 0, { message: 'Durée positive.' });
   validate(recipe.videoUrl, ({ value }) =>
     value().trim() && !YOUTUBE_URL.test(value().trim())
       ? {
@@ -170,6 +230,31 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
       ? { kind: 'featuredDraft', message: 'Seule une recette publiée peut être à la une.' }
       : undefined,
   );
+  validate(recipe.scheduledAt, ({ value, valueOf }) => {
+    if (valueOf(recipe.status) !== 'DRAFT' || !value()) {
+      return undefined;
+    }
+    const instant = fromParisInput(value());
+    return !instant || new Date(instant).getTime() <= Date.now()
+      ? { kind: 'scheduledPast', message: 'Choisissez une date et une heure à venir.' }
+      : undefined;
+  });
+
+  // Mold: its size in cm, a width for a rectangle only
+  validate(recipe.moldLengthCm, ({ value, valueOf }) =>
+    valueOf(recipe.moldShape) !== 'NONE' && value() == null
+      ? { kind: 'moldLength', message: 'Indiquez la taille du moule.' }
+      : undefined,
+  );
+  validate(recipe.moldWidthCm, ({ value, valueOf }) =>
+    valueOf(recipe.moldShape) === 'RECTANGLE' && value() == null
+      ? { kind: 'moldWidth', message: 'Indiquez la largeur du moule.' }
+      : undefined,
+  );
+  min(recipe.moldLengthCm, 1, { message: 'Au moins 1 cm.' });
+  max(recipe.moldLengthCm, 200, { message: '200 cm au plus.' });
+  min(recipe.moldWidthCm, 1, { message: 'Au moins 1 cm.' });
+  max(recipe.moldWidthCm, 200, { message: '200 cm au plus.' });
 
   // At least one ingredient and one step in the whole recipe, whatever the part
   validate(recipe.parts, ({ value }) => {

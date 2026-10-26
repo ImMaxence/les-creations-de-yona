@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideLock } from '@lucide/angular';
 import { AdminSession } from '../../../core/auth/admin-session';
 import { Button } from '../../../shared/ui/button/button';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 /** Where the backend sends a Google account that is not on the admin list. */
 @Component({
   selector: 'yona-access-denied',
-  imports: [RouterLink, Button, LucideLock],
+  imports: [Icon, RouterLink, Button],
   template: `
     <section class="container error-page">
       <div class="error-page__icon enter" aria-hidden="true">
-        <svg lucideLock [size]="48" [strokeWidth]="1.25"></svg>
+        <svg yonaIcon="lock" [size]="48" [strokeWidth]="1.25"></svg>
       </div>
       <p class="eyebrow enter" style="--delay: 80ms">Back-office</p>
       <h1 class="enter" style="--delay: 140ms">Accès refusé</h1>

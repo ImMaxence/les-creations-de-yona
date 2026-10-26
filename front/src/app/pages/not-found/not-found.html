@@ -1,6 +1,6 @@
 <section class="container error-page">
   <div class="error-page__icon enter" aria-hidden="true">
-    <svg lucideCookingPot [size]="56" [strokeWidth]="1.25"></svg>
+    <svg yonaIcon="cooking-pot" [size]="56" [strokeWidth]="1.25"></svg>
   </div>
   <p class="eyebrow enter" style="--delay: 80ms">Erreur 404</p>
   <h1 class="enter" style="--delay: 140ms">Cette page n'est pas au menu</h1>
@@ -8,7 +8,7 @@
     La page que vous cherchez n'existe pas, ou la recette a été retirée.
   </p>
   <div class="error-page__actions enter" style="--delay: 260ms">
-    <a yonaButton [routerLink]="recipesPath">Voir les recettes <svg lucideArrowRight></svg></a>
+    <a yonaButton [routerLink]="recipesPath">Voir les recettes <svg yonaIcon="arrow-right"></svg></a>
     <a yonaButton variant="secondary" routerLink="/">Retour à l'accueil</a>
   </div>
 </section>

@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -82,6 +83,11 @@ public class ImageService {
 	/** An image of the gallery, to show it on a recipe or a category. */
 	public Image get(UUID id) {
 		return imageRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.IMAGE_NOT_FOUND));
+	}
+
+	/** Still in the gallery, e.g. the photo of a recipe taken out of the trash. */
+	public Optional<Image> find(UUID id) {
+		return imageRepository.findById(id);
 	}
 
 	/** A landscape image of the gallery, to show it on a recipe, a category or the home page. */

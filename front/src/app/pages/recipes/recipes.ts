@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, Scroll } from '@angular/router';
-import { LucideSearchX, LucideSlidersHorizontal, LucideX } from '@lucide/angular';
 import { filter } from 'rxjs';
 import { RecipeSuggestion } from '../../core/api/generated/models/recipe-suggestion';
 import { SiteData } from '../../core/site/site-data';
@@ -20,14 +19,13 @@ import {
   RecipesPageData,
   TIME_FILTERS,
 } from './recipes.resolver';
+import { Icon } from '../../shared/ui/icon/icon';
 
 @Component({
   selector: 'yona-recipes',
   imports: [
+    Icon,
     RouterLink,
-    LucideSearchX,
-    LucideSlidersHorizontal,
-    LucideX,
     Button,
     Pagination,
     RecipeCard,

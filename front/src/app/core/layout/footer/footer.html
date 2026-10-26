@@ -3,6 +3,10 @@
     <div class="footer__brand">
       <p class="footer__name">Les créations <em>de Yona</em></p>
       <p class="footer__tagline">{{ siteData.content().footerText }}</p>
+      <div class="footer__extras">
+        <yona-notify-button />
+        <a class="footer__glossary" [routerLink]="glossaryPath"><svg yonaIcon="book-a" [size]="18"></svg>Glossaire de pâtisserie</a>
+      </div>
     </div>
 
     @if (siteData.socialLinks().length) {

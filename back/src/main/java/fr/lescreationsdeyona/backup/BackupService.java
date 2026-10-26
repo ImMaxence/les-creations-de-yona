@@ -9,6 +9,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +36,26 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  * </ul>
  * Once the download has started, an error can no longer be reported as JSON: the connection is
  * cut, the browser marks the download as failed, and the cause is logged.
+ * <p>
+ * The tables tied to this server only ({@link #SITE_ONLY_TABLES}) are saved empty: their rows hold
+ * keys and tokens, and restoring a backup leaves them as they are.
  */
 @Service
 @RequiredArgsConstructor
 public class BackupService {
 
 	private static final Logger log = LoggerFactory.getLogger(BackupService.class);
+
+	/**
+	 * Notification subscriptions, the site's notification keys and the Google Drive link: what
+	 * belongs to this server rather than to the site's content.
+	 */
+	public static final List<String> SITE_ONLY_TABLES = List.of("push_subscription", "web_push_key",
+			"google_drive_link");
+
+	private static final DateTimeFormatter FILE_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
+
+	private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
 
 	private final BackupProperties properties;
 
@@ -61,11 +78,29 @@ public class BackupService {
 		};
 	}
 
+	/** The whole archive into {@code output}, e.g. a file sent to Google Drive afterwards. */
+	public void writeTo(OutputStream output) throws IOException {
+		Process pgDump = startPgDump();
+		try {
+			writeArchive(pgDump, output);
+		}
+		finally {
+			pgDump.destroy();
+		}
+	}
+
+	/** "les-creations-de-yona-2026-10-26-0300.zip", Paris time. */
+	public static String fileName(Instant date) {
+		return "les-creations-de-yona-" + FILE_DATE.format(date.atZone(PARIS)) + ".zip";
+	}
+
 	private Process startPgDump() {
 		// A libpq URL is the JDBC one without its "jdbc:" prefix.
 		String databaseUrl = dataSource.getUrl().replaceFirst("^jdbc:", "");
-		ProcessBuilder builder = new ProcessBuilder(List.of(properties.pgDump(), "--format=custom", "--no-password",
-				"--dbname=" + databaseUrl))
+		List<String> command = new ArrayList<>(List.of(properties.pgDump(), "--format=custom", "--no-password",
+				"--dbname=" + databaseUrl));
+		SITE_ONLY_TABLES.forEach(table -> command.add("--exclude-table-data=public." + table));
+		ProcessBuilder builder = new ProcessBuilder(command)
 			// pg_dump error messages go to the backend logs.
 			.redirectError(ProcessBuilder.Redirect.INHERIT);
 		// Passed through the environment, which other users cannot read, unlike the command line.

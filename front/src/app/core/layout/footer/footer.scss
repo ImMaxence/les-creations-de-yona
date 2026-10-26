@@ -33,6 +33,30 @@
   color: var(--color-text-muted);
 }
 
+.footer__extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.footer__glossary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.15em;
+  transition: text-decoration-color var(--duration-base) var(--ease-out);
+
+  @include m.hover {
+    text-decoration-color: currentcolor;
+  }
+}
+
 .footer__socials {
   display: flex;
   gap: var(--space-3);

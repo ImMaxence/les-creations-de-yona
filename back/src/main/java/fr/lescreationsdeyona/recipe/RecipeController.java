@@ -36,7 +36,8 @@ class RecipeController {
 	private final SearchMissService searchMissService;
 
 	@Operation(summary = "Published recipes, filtered by title, category, tag, ingredient, time and difficulty",
-			description = "Sort on title, createdAt or updatedAt. The home page asks for size=3. A search by title "
+			description = "Sort on title, createdAt, updatedAt or publishedAt (default: the last published first). "
+					+ "The home page asks for size=3. A search by title "
 					+ "that finds nothing is noted, anonymously, for the back-office statistics.")
 	@GetMapping("/recipes")
 	PageResponse<RecipeCard> listPublishedRecipes(
@@ -48,10 +49,10 @@ class RecipeController {
 			@RequestParam(required = false) @Nullable String tag,
 			@Parameter(description = "Name of one of its ingredients (GET /api/ingredients), case and accents ignored")
 			@RequestParam(required = false) @Size(max = 100) @Nullable String ingredient,
-			@Parameter(description = "Preparation and cooking together at most this long, in minutes")
+			@Parameter(description = "Preparation, rest and cooking together at most this long, in minutes")
 			@RequestParam(required = false) @Min(1) @Max(1440) @Nullable Integer maxMinutes,
 			@RequestParam(required = false) @Nullable DifficultyLevel difficulty,
-			@ParameterObject @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC)
+			@ParameterObject @PageableDefault(size = 12, sort = "publishedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		Page<RecipeCard> recipes = recipeService.searchPublished(
 				new RecipeFilter(q, category, tag, ingredient, null, null, null, maxMinutes, difficulty), pageable);
@@ -65,6 +66,12 @@ class RecipeController {
 	@GetMapping("/recipes/{slug}")
 	RecipeDetail getPublishedRecipe(@PathVariable String slug) {
 		return recipeService.getPublished(slug);
+	}
+
+	@Operation(summary = "\"Vous aimerez aussi\": 3 published recipes sharing its tags or categories, else the latest")
+	@GetMapping("/recipes/{slug}/related")
+	List<RecipeCard> listRelatedRecipes(@PathVariable String slug) {
+		return recipeService.related(slug);
 	}
 
 	// Kept out of /recipes/{...} so that no recipe slug can ever shadow these routes.

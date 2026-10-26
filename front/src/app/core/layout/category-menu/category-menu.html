@@ -7,7 +7,7 @@
   (click)="toggle()"
 >
   Catégories
-  <svg lucideChevronDown class="trigger__chevron" [size]="16"></svg>
+  <svg yonaIcon="chevron-down" class="trigger__chevron" [size]="16"></svg>
 </button>
 
 @if (open()) {
@@ -30,7 +30,7 @@
     </ul>
     <a class="panel__all" [routerLink]="recipesPath" (click)="close()">
       Toutes les recettes
-      <svg lucideArrowRight [size]="16"></svg>
+      <svg yonaIcon="arrow-right" [size]="16"></svg>
     </a>
   </div>
 }

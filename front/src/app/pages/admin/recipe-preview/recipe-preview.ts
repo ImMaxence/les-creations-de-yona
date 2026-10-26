@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, ElementRef, booleanAttribute, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideEye, LucidePencil } from '@lucide/angular';
 import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
 import RecipePage from '../../recipe/recipe';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 /**
  * A recipe exactly as visitors see it, drafts included. Admins only: the page /admin/apercu/{id}
@@ -11,7 +11,7 @@ import RecipePage from '../../recipe/recipe';
  */
 @Component({
   selector: 'yona-recipe-preview',
-  imports: [RouterLink, RecipePage, LucideEye, LucidePencil],
+  imports: [Icon, RouterLink, RecipePage],
   templateUrl: './recipe-preview.html',
   styleUrl: './recipe-preview.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

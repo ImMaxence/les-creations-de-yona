@@ -9,19 +9,10 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import {
-  LucideCircleCheck,
-  LucideDownload,
-  LucideEllipsisVertical,
-  LucideMonitorDown,
-  LucideShare,
-  LucideSmartphone,
-  LucideSquarePlus,
-  LucideWifiOff,
-  LucideZap,
-} from '@lucide/angular';
 import { DevicePlatform, InstallPrompt } from '../../core/pwa/install-prompt';
 import { Button } from '../../shared/ui/button/button';
+import { NotifyButton } from '../../shared/ui/notify-button/notify-button';
+import { Icon } from '../../shared/ui/icon/icon';
 
 interface PlatformTab {
   id: DevicePlatform;
@@ -30,18 +21,7 @@ interface PlatformTab {
 
 @Component({
   selector: 'yona-install',
-  imports: [
-    Button,
-    LucideCircleCheck,
-    LucideDownload,
-    LucideEllipsisVertical,
-    LucideMonitorDown,
-    LucideShare,
-    LucideSmartphone,
-    LucideSquarePlus,
-    LucideWifiOff,
-    LucideZap,
-  ],
+  imports: [Icon, Button, NotifyButton],
   templateUrl: './install.html',
   styleUrl: './install.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

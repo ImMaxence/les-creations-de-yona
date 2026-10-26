@@ -13,6 +13,11 @@ import { Storage } from '../models/storage';
 export interface SiteStats {
   categories: number;
   computedAt: string;
+
+  /**
+   * Words of the glossary
+   */
+  glossaryTerms: number;
   images: Images;
 
   /**
@@ -20,6 +25,11 @@ export interface SiteStats {
    */
   incompleteRecipes: Array<IncompleteRecipe>;
   ingredients: Ingredients;
+
+  /**
+   * Browsers notified of new recipes
+   */
+  notificationSubscribers: number;
 
   /**
    * Published recipes not changed for 12 months, the oldest first (50 at most)
@@ -52,4 +62,9 @@ export interface SiteStats {
    * The 8 ingredients in the most recipes
    */
   topIngredients: Array<NamedCount>;
+
+  /**
+   * Recipes in the trash, erased 30 days after their deletion
+   */
+  trashedRecipes: number;
 }

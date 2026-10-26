@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
+import { Icon } from '../icon/icon';
 
 type PageItem = { kind: 'page'; page: number } | { kind: 'gap'; key: string };
 
@@ -12,7 +12,7 @@ type PageItem = { kind: 'page'; page: number } | { kind: 'gap'; key: string };
  */
 @Component({
   selector: 'yona-pagination',
-  imports: [RouterLink, LucideChevronLeft, LucideChevronRight],
+  imports: [Icon, RouterLink],
   templateUrl: './pagination.html',
   styleUrl: './pagination.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

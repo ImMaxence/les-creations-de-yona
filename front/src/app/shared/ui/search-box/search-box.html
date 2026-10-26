@@ -1,5 +1,5 @@
 <form class="search" role="search" (submit)="submit($event)">
-  <svg lucideSearch class="search__icon" [size]="20"></svg>
+  <svg yonaIcon="search" class="search__icon" [size]="20"></svg>
   <input
     #input
     type="search"
@@ -22,7 +22,7 @@
   />
   @if (query()) {
     <button type="button" class="search__clear" aria-label="Effacer la recherche" (click)="clear()">
-      <svg lucideX [size]="18"></svg>
+      <svg yonaIcon="x" [size]="18"></svg>
     </button>
   }
 

@@ -10,6 +10,11 @@ export interface RecipeCard {
   categories: Array<CategoryResponse>;
   createdAt: string;
   imageId?: string;
+
+  /**
+   * First publication: the date shown; absent only for cards kept in a browser before 3.1
+   */
+  publishedAt?: string;
   slug: string;
   title: string;
 }

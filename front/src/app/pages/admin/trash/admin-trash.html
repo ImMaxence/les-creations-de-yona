@@ -1,0 +1,69 @@
+<section class="admin-section" aria-labelledby="trash-title">
+  <div class="admin-section__head">
+    <h2 id="trash-title">Corbeille</h2>
+    @if (recipes.value()?.length) {
+      <button yonaButton variant="secondary" type="button" (click)="emptyTrash()"><svg yonaIcon="trash"></svg>Vider la corbeille</button>
+    }
+  </div>
+  <p class="field__hint">
+    Une recette supprimée quitte le site et reste ici 30 jours, puis elle est effacée. Restaurée, elle revient telle
+    qu'elle était : même adresse si elle est libre, mêmes dates, ses photos si elles sont encore dans la galerie.
+  </p>
+
+  @if (recipes.value(); as list) {
+    @if (list.length) {
+      <ul role="list" class="admin-list">
+        @for (recipe of list; track recipe.id) {
+          <li class="admin-row">
+            <yona-cover-image class="admin-thumb" [imageId]="recipe.imageId" [alt]="''" sizes="4rem" />
+            <div class="admin-row__main">
+              <span class="admin-row__title">{{ recipe.title }}</span>
+              <span class="admin-row__meta">
+                <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'">
+                  {{ recipe.status === 'PUBLISHED' ? 'Était publiée' : 'Brouillon' }}
+                </span>
+                <span>Supprimée le {{ recipe.deletedAt | parisDate }}{{ recipe.deletedBy ? ' par ' + recipe.deletedBy : '' }}</span>
+                <span>· {{ daysLeft(recipe) }}</span>
+              </span>
+            </div>
+            <div class="admin-row__actions">
+              <button
+                type="button"
+                class="icon-button"
+                [disabled]="busyId() === recipe.id"
+                [attr.aria-label]="'Restaurer « ' + recipe.title + ' »'"
+                (click)="restore(recipe)"
+              >
+                <svg yonaIcon="undo-2" [size]="18"></svg>
+              </button>
+              <button
+                type="button"
+                class="icon-button"
+                [disabled]="busyId() === recipe.id"
+                [attr.aria-label]="'Restaurer et modifier « ' + recipe.title + ' »'"
+                (click)="restoreAndOpen(recipe)"
+              >
+                <svg yonaIcon="pencil" [size]="18"></svg>
+              </button>
+              <button
+                type="button"
+                class="icon-button icon-button--danger"
+                [attr.aria-label]="'Effacer définitivement « ' + recipe.title + ' »'"
+                (click)="erase(recipe)"
+              >
+                <svg yonaIcon="x" [size]="18"></svg>
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="admin-empty">
+        <p>La corbeille est vide.</p>
+        <a class="link-button" routerLink="/admin/recettes">Retour aux recettes</a>
+      </div>
+    }
+  } @else if (recipes.isLoading()) {
+    <p class="admin-empty">Chargement de la corbeille…</p>
+  }
+</section>

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { ImageUploads } from '../../../core/api/image-uploads';
@@ -21,13 +20,14 @@ import { FilterChip } from '../filter-chip/filter-chip';
 import { ADMIN_CATEGORIES_QUERY } from './admin-categories-query';
 import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
 import { Selection } from '../selection';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 const MAX_NAME_LENGTH = 60;
 
 /** Categories also feed the navbar and the home page: SiteData is reloaded after each change. */
 @Component({
   selector: 'yona-admin-categories',
-  imports: [RouterLink, BulkBar, Button, FilterChip, ImageUpload, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX],
+  imports: [Icon, RouterLink, BulkBar, Button, FilterChip, ImageUpload],
   templateUrl: './admin-categories.html',
   styleUrl: './admin-categories.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

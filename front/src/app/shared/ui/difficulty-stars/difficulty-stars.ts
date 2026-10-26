@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { LucideStar } from '@lucide/angular';
+import { Icon } from '../icon/icon';
 
 type StarFill = 'full' | 'half' | 'empty';
 
@@ -11,14 +11,14 @@ const MAX_STARS = 5;
  */
 @Component({
   selector: 'yona-difficulty-stars',
-  imports: [LucideStar],
+  imports: [Icon],
   template: `
     <span class="visually-hidden">{{ label() }}</span>
     <span class="stars" aria-hidden="true">
       @for (fill of stars(); track $index) {
         <span class="star" [class]="'star--' + fill">
-          <svg lucideStar class="star__outline" [size]="size()"></svg>
-          <svg lucideStar class="star__fill" [size]="size()" fill="currentColor"></svg>
+          <svg yonaIcon="star" class="star__outline" [size]="size()"></svg>
+          <svg yonaIcon="star" class="star__fill" [size]="size()" fill="currentColor"></svg>
         </span>
       }
     </span>

@@ -27,6 +27,7 @@
         "/api/recipes",
         "/api/recipes/**",
         "/api/featured-recipe",
+        "/api/glossary",
         "/api/categories",
         "/api/ingredients",
         "/api/site-content",

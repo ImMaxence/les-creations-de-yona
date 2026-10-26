@@ -23,6 +23,9 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 		List<DatedRecipe> outdatedRecipes,
 		@Schema(description = "What visitors searched for without finding any recipe, the most searched first (30 at most)")
 		List<SearchMissService.SearchMiss> searchMisses,
+		@Schema(description = "Browsers notified of new recipes") long notificationSubscribers,
+		@Schema(description = "Recipes in the trash, erased 30 days after their deletion") long trashedRecipes,
+		@Schema(description = "Words of the glossary") long glossaryTerms,
 		Instant computedAt) {
 
 	public enum MissingField {
@@ -37,6 +40,7 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 
 	public record Recipes(long total, long published, long drafts, long withoutPhoto, long withVideo,
 			@Schema(description = "With several parts, or a titled one") long inParts, long createdLast30Days,
+			@Schema(description = "Drafts with a scheduled publication") long scheduled,
 			@Nullable Instant lastUpdate) {
 	}
 

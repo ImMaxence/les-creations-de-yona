@@ -16,7 +16,7 @@
         <h2 class="hero__title enter" style="--delay: 230ms">{{ featured.title }}</h2>
         <div class="hero__meta enter" style="--delay: 310ms">
           <span class="chip hero__chip">{{ categoryNames(featured.categories) }}</span>
-          <span class="hero__cta">Voir la recette <svg lucideArrowRight [size]="18"></svg></span>
+          <span class="hero__cta">Voir la recette <svg yonaIcon="arrow-right" [size]="18"></svg></span>
         </div>
       </div>
     </a>
@@ -80,7 +80,7 @@
       }
     </ul>
     <div class="latest__more" yonaReveal>
-      <a yonaButton [routerLink]="recipesPath">Voir plus de recettes <svg lucideArrowRight></svg></a>
+      <a yonaButton [routerLink]="recipesPath">Voir plus de recettes <svg yonaIcon="arrow-right"></svg></a>
     </div>
   } @else {
     <p class="empty">Aucune recette publiée pour le moment.</p>

@@ -1,6 +1,8 @@
 <div class="head">
   <h2 id="ingredients-title">Ingrédients</h2>
-  @if (servings(); as count) {
+  @if (moldServings(); as count) {
+    <span class="servings servings--approx">≈ <strong>{{ count }}</strong> {{ count === 1 ? 'portion' : 'portions' }}</span>
+  } @else if (servings(); as count) {
     <div class="servings" role="group" aria-label="Nombre de portions">
       <button
         type="button"
@@ -9,7 +11,7 @@
         [disabled]="count === 1"
         (click)="changeServings(-1)"
       >
-        <svg lucideMinus [size]="16"></svg>
+        <svg yonaIcon="minus" [size]="16"></svg>
       </button>
       <span class="servings__count" aria-live="polite">
         <strong>{{ count }}</strong> {{ count === 1 ? 'portion' : 'portions' }}
@@ -21,7 +23,7 @@
         [disabled]="count === maxServings"
         (click)="changeServings(1)"
       >
-        <svg lucidePlus [size]="16"></svg>
+        <svg yonaIcon="plus" [size]="16"></svg>
       </button>
     </div>
   }
@@ -29,6 +31,78 @@
 
 @if (partCount() > 1) {
   <p class="total-hint">Total pour les {{ partCount() }} parties, détaillées dans la préparation.</p>
+}
+
+@if (mold(); as base) {
+  <div class="mold" aria-live="polite">
+    @if (chosenMold(); as chosen) {
+      <p class="mold__line mold__line--chosen">
+        <svg yonaIcon="ruler" [size]="18"></svg>
+        <span>Pour votre moule {{ describeMold(chosen) }} : quantités × {{ moldFactor() }}</span>
+      </p>
+      <button type="button" class="mold__link no-print" (click)="resetMold()">
+        Revenir au moule de la recette ({{ describeMold(base) }})
+      </button>
+    } @else if (editingMold()) {
+      <form class="mold__form no-print" (submit)="applyMold($event)">
+        <div class="mold__shapes" role="radiogroup" aria-label="Forme de votre moule">
+          @for (choice of shapes; track choice.shape) {
+            <button
+              type="button"
+              role="radio"
+              class="mold__shape"
+              [class.is-on]="draftShape() === choice.shape"
+              [attr.aria-checked]="draftShape() === choice.shape"
+              (click)="draftShape.set(choice.shape)"
+            >
+              {{ choice.label }}
+            </button>
+          }
+        </div>
+        <div class="mold__sizes">
+          <label>
+            {{ draftShape() === 'ROUND' ? 'Diamètre' : draftShape() === 'SQUARE' ? 'Côté' : 'Longueur' }}
+            <input
+              type="number"
+              inputmode="decimal"
+              step="0.5"
+              [min]="minCm"
+              [max]="maxCm"
+              [value]="draftLength() ?? ''"
+              (input)="draftLength.set(readSize($event))"
+            />
+            cm
+          </label>
+          @if (draftShape() === 'RECTANGLE') {
+            <label>
+              Largeur
+              <input
+                type="number"
+                inputmode="decimal"
+                step="0.5"
+                [min]="minCm"
+                [max]="maxCm"
+                [value]="draftWidth() ?? ''"
+                (input)="draftWidth.set(readSize($event))"
+              />
+              cm
+            </label>
+          }
+        </div>
+        <p class="mold__hint">Les quantités suivent la surface du moule, pour une préparation de même hauteur.</p>
+        <div class="mold__actions">
+          <button type="submit" class="mold__apply" [disabled]="!canApplyMold()">Adapter les quantités</button>
+          <button type="button" class="mold__link" (click)="editingMold.set(false)">Annuler</button>
+        </div>
+      </form>
+    } @else {
+      <p class="mold__line">
+        <svg yonaIcon="ruler" [size]="18"></svg>
+        <span>Pour un moule {{ describeMold(base) }}</span>
+      </p>
+      <button type="button" class="mold__link no-print" (click)="editMold()">Adapter à mon moule</button>
+    }
+  </div>
 }
 
 <yona-ingredient-list class="list" [lines]="lines()" />
@@ -41,7 +115,7 @@
     [attr.aria-pressed]="screenKeptOn()"
     (click)="toggleScreenOn()"
   >
-    <svg lucideSun [size]="18"></svg>
+    <svg yonaIcon="sun" [size]="18"></svg>
     {{ screenKeptOn() ? "L'écran reste allumé" : "Garder l'écran allumé" }}
   </button>
 }

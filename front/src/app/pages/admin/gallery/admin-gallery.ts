@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideImageUp, LucideLayoutGrid, LucideList, LucideSlidersHorizontal, LucideTrash2 } from '@lucide/angular';
 import { attempt } from '../../../core/api/attempt';
 import { ImageUploads } from '../../../core/api/image-uploads';
 import { uploadImage } from '../../../core/api/generated/fn/admin-images/upload-image';
@@ -22,6 +21,7 @@ import { BulkBar } from '../bulk-bar/bulk-bar';
 import { ADMIN_CATEGORIES_QUERY } from '../categories/admin-categories-query';
 import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
 import { Selection } from '../selection';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 type KindFilter = 'ALL' | GalleryImage['kind'];
 type UsageFilter = 'ALL' | 'USED' | 'UNUSED';
@@ -35,6 +35,7 @@ const PAGE_SIZE = 24;
 @Component({
   selector: 'yona-admin-gallery',
   imports: [
+    Icon,
     RouterLink,
     BulkBar,
     Button,
@@ -42,11 +43,6 @@ const PAGE_SIZE = 24;
     Pagination,
     Select,
     ParisDatePipe,
-    LucideImageUp,
-    LucideLayoutGrid,
-    LucideList,
-    LucideSlidersHorizontal,
-    LucideTrash2,
   ],
   templateUrl: './admin-gallery.html',
   styleUrl: './admin-gallery.scss',

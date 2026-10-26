@@ -1,0 +1,45 @@
+<details class="planner">
+  <summary class="planner__summary">
+    <svg yonaIcon="calendar-clock" [size]="20" [strokeWidth]="1.75"></svg>
+    Organiser mon temps
+    <svg class="planner__chevron" yonaIcon="chevron-down" [size]="18"></svg>
+  </summary>
+  <div class="planner__body">
+    <div class="planner__modes" role="radiogroup" aria-label="Je choisis">
+      <button
+        type="button"
+        role="radio"
+        class="planner__mode"
+        [class.is-on]="mode() === 'start'"
+        [attr.aria-checked]="mode() === 'start'"
+        (click)="setMode('start')"
+      >
+        Je commence à…
+      </button>
+      <button
+        type="button"
+        role="radio"
+        class="planner__mode"
+        [class.is-on]="mode() === 'serve'"
+        [attr.aria-checked]="mode() === 'serve'"
+        (click)="setMode('serve')"
+      >
+        Je veux servir à…
+      </button>
+    </div>
+    <label class="planner__time">
+      {{ mode() === 'start' ? 'Je commence à' : 'Je veux servir à' }}
+      <input type="time" step="300" [value]="time()" (input)="onTime($event)" />
+    </label>
+    @if (result(); as end) {
+      <p class="planner__result" aria-live="polite">
+        @if (mode() === 'start') {
+          Prête vers <strong>{{ end.clock }}</strong>{{ end.day ? ' ' + end.day : '' }}
+        } @else {
+          Commencez vers <strong>{{ end.clock }}</strong>{{ end.day ? ' ' + end.day : '' }}
+        }
+      </p>
+    }
+    <p class="planner__detail">{{ parts() }} : {{ formatTotal() }} en tout.</p>
+  </div>
+</details>

@@ -324,3 +324,98 @@ yona-select {
     }
   }
 }
+
+// Servings and the three times: two by two on phones, in a row beyond
+.editor__grid--four {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @include m.from(md) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+// A form typed earlier and never saved, offered back
+.recovered {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+
+  > svg {
+    color: var(--color-accent);
+  }
+
+  @include m.from(md) {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+}
+
+.recovered__title {
+  font-weight: 700;
+}
+
+.recovered__actions {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: var(--space-2);
+
+  @include m.from(md) {
+    grid-column: auto;
+  }
+}
+
+.schedule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  .input {
+    max-width: 16rem;
+  }
+}
+
+// Shape, then its size(s) in cm
+.mold {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+
+  yona-select {
+    min-width: 12rem;
+  }
+}
+
+.mold__size {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+
+  .input {
+    width: 5.5rem;
+  }
+}
+
+// Ingredients a step needs, ticked among those of its part
+.step-ingredients {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.step-ingredients__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.category-chip--small {
+  padding: 2px var(--space-2);
+  font-size: var(--text-xs);
+
+  &.is-chosen svg {
+    width: 12px;
+  }
+}

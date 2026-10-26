@@ -6,6 +6,8 @@ export interface Missing {
   appearancePresets: number;
   categories: number;
   categoryNames: Array<string>;
+  glossaryTermNames: Array<string>;
+  glossaryTerms: number;
   images: number;
   ingredients: number;
   recipeTitles: Array<string>;

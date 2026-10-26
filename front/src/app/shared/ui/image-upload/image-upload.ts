@@ -9,11 +9,11 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { LucideImageOff, LucideImageUp, LucideImages, LucideLoaderCircle } from '@lucide/angular';
 import { Toaster } from '../../../core/notifications/toaster';
 import { CoverImage } from '../cover-image/cover-image';
 import { GalleryPicker } from '../gallery-picker/gallery-picker';
 import { PHOTO_ACCEPT, photoFileError } from './photo-file';
+import { Icon } from '../icon/icon';
 
 
 /**
@@ -24,7 +24,7 @@ import { PHOTO_ACCEPT, photoFileError } from './photo-file';
  */
 @Component({
   selector: 'yona-image-upload',
-  imports: [CoverImage, GalleryPicker, LucideImageUp, LucideImages, LucideImageOff, LucideLoaderCircle],
+  imports: [Icon, CoverImage, GalleryPicker],
   template: `
     <div class="preview">
       @if (previewUrl(); as url) {
@@ -51,7 +51,7 @@ import { PHOTO_ACCEPT, photoFileError } from './photo-file';
         </div>
       } @else if (busy()) {
         <div class="preview__busy" aria-live="polite">
-          <svg lucideLoaderCircle class="spin" [size]="28"></svg>
+          <svg yonaIcon="loader-circle" class="spin" [size]="28"></svg>
           <span class="visually-hidden">Enregistrement de la photo…</span>
         </div>
       }
@@ -60,16 +60,16 @@ import { PHOTO_ACCEPT, photoFileError } from './photo-file';
     <input #file type="file" class="visually-hidden" tabindex="-1" aria-hidden="true" [accept]="accept" (change)="onFileChosen($event)" />
     <div class="actions">
       <button type="button" class="pick" [disabled]="busy()" (click)="file.click()">
-        <svg lucideImageUp [size]="18"></svg>
+        <svg yonaIcon="image-up" [size]="18"></svg>
         {{ hasPhoto() ? 'Nouvelle photo' : 'Ajouter une photo' }}
       </button>
       <button type="button" class="pick" [disabled]="busy()" (click)="picker.open()">
-        <svg lucideImages [size]="18"></svg>
+        <svg yonaIcon="images" [size]="18"></svg>
         Choisir dans la galerie
       </button>
       @if (hasPhoto()) {
         <button type="button" class="pick pick--quiet" [disabled]="busy()" (click)="removed.emit()">
-          <svg lucideImageOff [size]="18"></svg>
+          <svg yonaIcon="image-off" [size]="18"></svg>
           Retirer
         </button>
       }

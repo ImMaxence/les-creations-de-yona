@@ -64,6 +64,16 @@ export const adminRoutes: Routes = [
         title: 'Tags · Back-office',
       },
       {
+        path: 'glossaire',
+        loadComponent: () => import('./glossary/admin-glossary'),
+        title: 'Glossaire · Back-office',
+      },
+      {
+        path: 'corbeille',
+        loadComponent: () => import('./trash/admin-trash'),
+        title: 'Corbeille · Back-office',
+      },
+      {
         path: 'ingredients',
         loadComponent: () => import('./ingredients/admin-ingredients'),
         title: 'Ingrédients · Back-office',

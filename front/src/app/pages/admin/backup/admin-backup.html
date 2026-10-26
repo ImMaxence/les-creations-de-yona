@@ -14,11 +14,88 @@
     </p>
     <div>
       <a yonaButton href="/api/admin/backup" download>
-        <svg lucideDownload></svg>
+        <svg yonaIcon="download"></svg>
         Sauvegarder mes données
       </a>
     </div>
   </div>
+</section>
+
+<section class="admin-section" aria-labelledby="drive-title">
+  <div class="admin-section__head">
+    <h2 id="drive-title">Sauvegarde automatique sur Google Drive</h2>
+  </div>
+  @if (drive.value(); as status) {
+    @if (status.connected) {
+      <div class="admin-panel drive">
+        <div class="restore__head">
+          @if (status.running) {
+            <svg yonaIcon="loader-circle" class="restore__icon spin" [size]="24"></svg>
+          } @else if (status.lastBackupOk === false) {
+            <svg yonaIcon="triangle-alert" class="restore__icon restore__icon--failed" [size]="24"></svg>
+          } @else {
+            <svg yonaIcon="cloud-upload" class="restore__icon restore__icon--done" [size]="24"></svg>
+          }
+          <div>
+            <h3 class="restore__title">Connecté à {{ status.accountEmail }}</h3>
+            <p class="field__hint">
+              Une sauvegarde chaque nuit vers 3 h, les {{ status.keptBackups }} plus récentes gardées.
+              @if (status.folderUrl; as url) {
+                <a [href]="url" target="_blank" rel="noopener noreferrer">Ouvrir le dossier sur Google Drive</a>
+              }
+            </p>
+          </div>
+        </div>
+        <dl class="drive__facts">
+          <div>
+            <dt>Dernière sauvegarde</dt>
+            <dd>
+              @if (status.running) {
+                En cours…
+              } @else if (status.lastBackupAt; as at) {
+                {{ parisDateTime(at) }} :
+                @if (status.lastBackupOk) {
+                  réussie ({{ formatBytes(status.lastBackupBytes ?? 0) }})
+                } @else {
+                  <span class="restore__error">échec. {{ status.lastBackupError }}</span>
+                }
+              } @else {
+                Aucune pour le moment
+              }
+            </dd>
+          </div>
+          @if (status.nextBackupAt; as next) {
+            <div>
+              <dt>Prochaine</dt>
+              <dd>{{ parisDateTime(next) }}</dd>
+            </div>
+          }
+        </dl>
+        <div class="restore__actions">
+          <button yonaButton type="button" [disabled]="status.running || driveBusy()" (click)="backUpToDrive()">
+            <svg yonaIcon="cloud-upload"></svg>Sauvegarder maintenant
+          </button>
+          <button yonaButton variant="ghost" type="button" (click)="disconnectFromDrive()"><svg yonaIcon="unplug"></svg>Déconnecter</button>
+        </div>
+      </div>
+    } @else {
+      <div class="admin-panel">
+        <p>
+          Chaque nuit, la même archive que « Sauvegarder mes données » est envoyée dans un dossier de votre Google Drive ; les
+          {{ status.keptBackups }} plus récentes sont gardées, les plus anciennes supprimées. Rien à faire ensuite.
+        </p>
+        <p class="field__hint">
+          Google vous demande d'autoriser le site : il ne voit que les fichiers qu'il crée lui-même (le dossier des
+          sauvegardes), rien d'autre de votre Drive. Comptez la place des photos sur les 15 Go gratuits du compte.
+        </p>
+        <div>
+          <a yonaButton [href]="driveConnectUrl"><svg yonaIcon="cloud-upload"></svg>Connecter Google Drive</a>
+        </div>
+      </div>
+    }
+  } @else if (drive.isLoading()) {
+    <p class="admin-empty">Chargement…</p>
+  }
 </section>
 
 <section class="admin-section" aria-labelledby="restore-title">
@@ -30,13 +107,13 @@
     <div class="admin-panel restore">
       <div class="restore__head">
         @if (current.state === 'DONE') {
-          <svg lucideCircleCheck class="restore__icon restore__icon--done" [size]="24"></svg>
+          <svg yonaIcon="circle-check" class="restore__icon restore__icon--done" [size]="24"></svg>
         } @else if (current.state === 'FAILED') {
-          <svg lucideTriangleAlert class="restore__icon restore__icon--failed" [size]="24"></svg>
+          <svg yonaIcon="triangle-alert" class="restore__icon restore__icon--failed" [size]="24"></svg>
         } @else if (current.state !== 'READY') {
-          <svg lucideLoaderCircle class="restore__icon spin" [size]="24"></svg>
+          <svg yonaIcon="loader-circle" class="restore__icon spin" [size]="24"></svg>
         } @else {
-          <svg lucideDatabaseZap class="restore__icon" [size]="24"></svg>
+          <svg yonaIcon="database-zap" class="restore__icon" [size]="24"></svg>
         }
         <div>
           <h3 class="restore__title">{{ label(current.state) }}</h3>
@@ -142,6 +219,9 @@
                 @if (found.missing.appearancePresets) {
                   <li>Préréglages : {{ found.missing.appearancePresetNames.join(', ') }}</li>
                 }
+                @if (found.missing.glossaryTerms) {
+                  <li>Glossaire : {{ found.missing.glossaryTermNames.join(', ') }}</li>
+                }
               </ul>
               <div>
                 <button yonaButton type="button" [disabled]="busy()" (click)="merge()">Ajouter ce qui manque</button>
@@ -154,7 +234,7 @@
             <summary>Zone danger : tout remplacer par la sauvegarde</summary>
             <div class="danger__body">
               <p class="danger__warning">
-                <svg lucideTriangleAlert [size]="20"></svg>
+                <svg yonaIcon="triangle-alert" [size]="20"></svg>
                 <strong>
                   Toute la base de données du site est effacée puis remplacée par celle de la sauvegarde. C'est définitif.
                 </strong>
@@ -207,7 +287,8 @@
               {{ plural(report.added.categories, 'catégorie', 'catégories') }}, {{ plural(report.added.tags, 'tag', 'tags') }},
               {{ plural(report.added.ingredients, 'ingrédient', 'ingrédients') }}, {{ plural(report.added.images, 'photo', 'photos') }},
               {{ plural(report.added.socialLinks, 'réseau social', 'réseaux sociaux') }},
-              {{ plural(report.added.appearancePresets, 'préréglage', 'préréglages') }}.
+              {{ plural(report.added.appearancePresets, 'préréglage', 'préréglages') }},
+              {{ plural(report.added.glossaryTerms, 'mot du glossaire', 'mots du glossaire') }}.
             </p>
           } @else {
             <p>
@@ -245,7 +326,7 @@
         (dragleave)="dragging.set(false)"
         (drop)="onDrop($event)"
       >
-        <svg lucideUpload [size]="28" [strokeWidth]="1.75"></svg>
+        <svg yonaIcon="upload" [size]="28" [strokeWidth]="1.75"></svg>
         <span class="dropzone__title">Glissez le fichier .zip ici</span>
         <span class="field__hint">ou cliquez pour le choisir</span>
         <input type="file" class="visually-hidden" accept=".zip,application/zip" (change)="onFileChosen($event)" />

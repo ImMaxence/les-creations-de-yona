@@ -1,5 +1,7 @@
 package fr.lescreationsdeyona.recipe;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +15,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 
 	Optional<Recipe> findFirstByFeaturedTrue();
 
-	Optional<Recipe> findFirstByStatusOrderByCreatedAtDesc(RecipeStatus status);
+	Optional<Recipe> findFirstByStatusOrderByPublishedAtDesc(RecipeStatus status);
 
 	boolean existsBySlug(String slug);
 
@@ -23,5 +25,34 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 	@Modifying(flushAutomatically = true)
 	@Query("update Recipe r set r.featured = false where r.featured = true and (:keptId is null or r.id <> :keptId)")
 	void unfeatureAllExcept(@Nullable Long keptId);
+
+	@Query("select r.id from Recipe r where r.status = RecipeStatus.DRAFT and r.scheduledAt <= :now order by r.scheduledAt")
+	List<Long> findScheduledBefore(Instant now);
+
+	/**
+	 * Published recipes closest to {@code id}: a shared tag counts twice, a shared category once,
+	 * the same main category once more; the latest first among equals, so that a recipe sharing
+	 * nothing still gets suggestions.
+	 */
+	@Query(value = """
+			select r.id from recipe r
+			where r.status = 'PUBLISHED' and r.id <> :id
+			order by
+				2 * (select count(*) from recipe_tag t where t.recipe_id = r.id
+					and t.tag_id in (select tag_id from recipe_tag where recipe_id = :id))
+				+ (select count(*) from recipe_category c where c.recipe_id = r.id
+					and c.category_id in (select category_id from recipe_category where recipe_id = :id))
+				+ (select count(*) from recipe_category c where c.recipe_id = r.id and c.position = 0
+					and c.category_id = (select category_id from recipe_category where recipe_id = :id and position = 0))
+				desc,
+				r.published_at desc
+			limit :limit""", nativeQuery = true)
+	List<Long> findRelatedIds(long id, int limit);
+
+	/** Written without the auditing of the entity, which would date the restored recipe of today. */
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update recipe set created_at = :createdAt, published_at = :publishedAt where id = :id",
+			nativeQuery = true)
+	void restoreDates(long id, Instant createdAt, @Nullable Instant publishedAt);
 
 }

@@ -96,3 +96,127 @@
     }
   }
 }
+
+.servings--approx {
+  padding-inline: var(--space-4);
+  min-height: 2.75rem;
+  font-size: var(--text-sm);
+}
+
+// The mold the quantities are for, and the visitor's own
+.mold {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  margin-top: var(--space-3);
+}
+
+.mold__line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+
+  svg {
+    flex: none;
+    margin-top: 0.1em;
+    color: var(--color-accent);
+  }
+}
+
+.mold__line--chosen {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.mold__link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.mold__form {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+}
+
+.mold__shapes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.mold__shape {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+
+  &.is-on {
+    background-color: var(--color-accent);
+    box-shadow: none;
+    color: var(--color-on-accent);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.mold__sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  input {
+    width: 5rem;
+    padding: var(--space-2);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.mold__hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.mold__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.mold__apply {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--text-sm);
+  font-weight: 700;
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}

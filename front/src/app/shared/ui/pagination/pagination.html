@@ -2,7 +2,7 @@
   @if (page() > 1) {
     @if (buttons()) {
       <button type="button" class="pagination__step" aria-label="Page précédente" (click)="pageChange.emit(page() - 1)">
-        <svg lucideChevronLeft [size]="18"></svg>
+        <svg yonaIcon="chevron-left" [size]="18"></svg>
       </button>
     } @else {
       <a
@@ -12,7 +12,7 @@
         queryParamsHandling="merge"
         [queryParams]="queryParams(page() - 1)"
       >
-        <svg lucideChevronLeft [size]="18"></svg>
+        <svg yonaIcon="chevron-left" [size]="18"></svg>
       </a>
     }
   }
@@ -45,7 +45,7 @@
   @if (page() < totalPages()) {
     @if (buttons()) {
       <button type="button" class="pagination__step" aria-label="Page suivante" (click)="pageChange.emit(page() + 1)">
-        <svg lucideChevronRight [size]="18"></svg>
+        <svg yonaIcon="chevron-right" [size]="18"></svg>
       </button>
     } @else {
       <a
@@ -55,7 +55,7 @@
         queryParamsHandling="merge"
         [queryParams]="queryParams(page() + 1)"
       >
-        <svg lucideChevronRight [size]="18"></svg>
+        <svg yonaIcon="chevron-right" [size]="18"></svg>
       </a>
     }
   }

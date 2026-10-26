@@ -1,0 +1,109 @@
+@use 'mixins' as m;
+
+.glossary {
+  display: grid;
+  gap: var(--space-7);
+  max-width: 52rem;
+  padding-top: var(--space-7);
+}
+
+.glossary__head {
+  display: grid;
+  gap: var(--space-3);
+
+  h1 {
+    font-size: var(--text-3xl);
+  }
+}
+
+.glossary__lead {
+  max-width: 40rem;
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+}
+
+// A, B, C…: shortcuts to each letter
+.letters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.letters__link {
+  display: grid;
+  place-items: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface);
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out);
+
+  @include m.hover {
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+}
+
+.letter {
+  display: grid;
+  gap: var(--space-4);
+  scroll-margin-top: var(--space-8);
+}
+
+.letter__title {
+  font-size: var(--text-2xl);
+  color: var(--color-accent);
+}
+
+.terms {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.term {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  scroll-margin-top: var(--space-8);
+
+  // Reached from a recipe (/glossaire#chemiser): the word stands out a moment
+  &:target {
+    animation: target 2s var(--ease-out);
+  }
+}
+
+@keyframes target {
+  from {
+    box-shadow: 0 0 0 3px var(--color-accent);
+  }
+}
+
+.term__name {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+
+  dfn {
+    font-style: normal;
+  }
+}
+
+.term__definition {
+  line-height: 1.7;
+}
+
+.glossary__empty {
+  color: var(--color-text-muted);
+}
+
+.glossary__more a {
+  font-weight: 600;
+  color: var(--color-accent);
+}

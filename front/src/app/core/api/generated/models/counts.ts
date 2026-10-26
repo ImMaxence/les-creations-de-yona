@@ -4,6 +4,7 @@
 export interface Counts {
   appearancePresets: number;
   categories: number;
+  glossaryTerms: number;
   images: number;
   ingredients: number;
   recipes: number;

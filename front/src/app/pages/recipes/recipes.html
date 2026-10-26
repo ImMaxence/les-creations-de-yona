@@ -53,7 +53,7 @@
       [attr.aria-expanded]="showMoreFilters() || moreFiltersCount() > 0"
       (click)="showMoreFilters.set(!showMoreFilters())"
     >
-      <svg lucideSlidersHorizontal [size]="18"></svg>
+      <svg yonaIcon="sliders-horizontal" [size]="18"></svg>
       Plus de filtres
       @if (moreFiltersCount()) {
         <span class="more-toggle__count">{{ moreFiltersCount() }}</span>
@@ -90,7 +90,7 @@
 
     @if (hasFilters()) {
       <a class="clear-filters" [routerLink]="recipesPath" [queryParams]="clearedQuery()">
-        <svg lucideX [size]="16"></svg>
+        <svg yonaIcon="x" [size]="16"></svg>
         Effacer tous les filtres
       </a>
     }
@@ -109,7 +109,7 @@
     } @else {
       <div class="empty" animate.enter="card-enter">
         <div class="empty__icon" aria-hidden="true">
-          <svg lucideSearchX [size]="40" [strokeWidth]="1.5"></svg>
+          <svg yonaIcon="search-x" [size]="40" [strokeWidth]="1.5"></svg>
         </div>
         @if (result().totalElements > 0) {
           <h2>Cette page est vide</h2>

@@ -12,7 +12,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { LucideCheck, LucideChevronDown } from '@lucide/angular';
+import { Icon } from '../icon/icon';
 
 export interface SelectOption<T> {
   value: T;
@@ -30,7 +30,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'yona-select',
-  imports: [LucideCheck, LucideChevronDown],
+  imports: [Icon],
   templateUrl: './select.html',
   styleUrl: './select.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

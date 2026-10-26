@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, RESPONSE_INIT, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideArrowRight, LucideCookingPot } from '@lucide/angular';
 import { RECIPES_PATH } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
+import { Icon } from '../../shared/ui/icon/icon';
 
 @Component({
   selector: 'yona-not-found',
-  imports: [RouterLink, Button, LucideCookingPot, LucideArrowRight],
+  imports: [Icon, RouterLink, Button],
   templateUrl: './not-found.html',
   styleUrl: '../error-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

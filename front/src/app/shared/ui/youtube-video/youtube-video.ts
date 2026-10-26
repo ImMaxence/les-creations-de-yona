@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { LucidePlay } from '@lucide/angular';
 import { CoverImage } from '../cover-image/cover-image';
+import { Icon } from '../icon/icon';
 
 /** YouTube ids are 11 characters; anything else is refused rather than put in an iframe URL. */
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -13,7 +13,7 @@ const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
  */
 @Component({
   selector: 'yona-youtube-video',
-  imports: [CoverImage, LucidePlay],
+  imports: [Icon, CoverImage],
   template: `
     @if (playerUrl(); as url) {
       <iframe
@@ -28,7 +28,7 @@ const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
       <button type="button" class="facade" (click)="playing.set(true)">
         <yona-cover-image class="facade__image" [imageId]="imageId()" sizes="(width >= 48rem) 48rem, 100vw" />
         <span class="facade__play" aria-hidden="true">
-          <svg lucidePlay [size]="30" fill="currentColor"></svg>
+          <svg yonaIcon="play" [size]="30" fill="currentColor"></svg>
         </span>
         <span class="facade__label">Lire la vidéo</span>
       </button>

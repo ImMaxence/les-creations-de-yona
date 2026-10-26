@@ -34,6 +34,12 @@ public enum ErrorCode {
 	RECIPE_PART_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "Quand la recette a plusieurs parties, chacune doit avoir un titre."),
 	RECIPE_PART_EMPTY(HttpStatus.BAD_REQUEST, "Chaque partie doit avoir au moins un ingrédient ou une étape."),
 	DIFFICULTY_NOT_HALF_POINT(HttpStatus.BAD_REQUEST, "La difficulté va de 1 à 5, par demi-points (2,5 par exemple)."),
+	STEP_INGREDIENT_INVALID(HttpStatus.BAD_REQUEST, "Une étape indique un ingrédient absent de sa partie : enregistrez de nouveau la recette."),
+	MOLD_INVALID(HttpStatus.BAD_REQUEST, "Indiquez le diamètre d'un moule rond, le côté d'un moule carré, ou la longueur et la largeur d'un moule rectangulaire."),
+	SCHEDULED_RECIPE_MUST_BE_DRAFT(HttpStatus.BAD_REQUEST, "Seul un brouillon peut être programmé : la recette est déjà publiée."),
+	SCHEDULED_AT_PAST(HttpStatus.BAD_REQUEST, "La date de publication programmée est déjà passée."),
+	TRASHED_RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette recette n'est plus dans la corbeille."),
+	TRASHED_RECIPE_CATEGORIES_GONE(HttpStatus.CONFLICT, "Les catégories de cette recette ont toutes été supprimées : recréez-en une avant de la restaurer."),
 	VIDEO_URL_INVALID(HttpStatus.BAD_REQUEST, "Ce lien n'est pas une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…)."),
 
 	// Categories
@@ -43,6 +49,14 @@ public enum ErrorCode {
 	// Tags
 	TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "Tag introuvable."),
 	TAG_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce tag existe déjà."),
+
+	// Glossary
+	GLOSSARY_TERM_NOT_FOUND(HttpStatus.NOT_FOUND, "Mot du glossaire introuvable."),
+	GLOSSARY_TERM_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce mot est déjà dans le glossaire."),
+
+	// Notifications of new recipes
+	PUSH_SUBSCRIPTION_INVALID(HttpStatus.BAD_REQUEST, "Cet abonnement aux notifications n'est pas valide."),
+	PUSH_SUBSCRIPTIONS_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les abonnements aux notifications sont complets pour le moment."),
 
 	// Ingredients
 	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable."),
@@ -69,6 +83,8 @@ public enum ErrorCode {
 
 	// Backup
 	BACKUP_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La sauvegarde n'est pas disponible sur ce serveur."),
+	DRIVE_NOT_CONNECTED(HttpStatus.CONFLICT, "Aucun compte Google Drive n'est connecté."),
+	DRIVE_BACKUP_RUNNING(HttpStatus.CONFLICT, "Une sauvegarde vers Google Drive est déjà en cours."),
 
 	// Restore
 	RESTORE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La restauration n'est pas disponible sur ce serveur."),

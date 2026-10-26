@@ -90,14 +90,21 @@ class AdminRecipeController {
 		return recipeService.preview(id, form);
 	}
 
-	@Operation(summary = "Delete several recipes, all or none; their photos stay in the gallery")
+	@Operation(summary = "Duplicate a recipe: a draft titled \"… (copie)\", same content, photos, categories and tags")
+	@PostMapping("/{id}/duplicate")
+	@ResponseStatus(HttpStatus.CREATED)
+	RecipeDetail duplicateRecipe(@PathVariable long id) {
+		return recipeService.duplicate(id);
+	}
+
+	@Operation(summary = "Move several recipes to the trash, all or none; their photos stay in the gallery")
 	@DeleteMapping
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteRecipes(@RequestParam @NotEmpty @Size(max = 100) List<Long> ids) {
 		recipeService.deleteAll(ids);
 	}
 
-	@Operation(summary = "Delete a recipe with its ingredients and steps; its photo stays in the gallery")
+	@Operation(summary = "Move a recipe to the trash, kept 30 days; its photo stays in the gallery")
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteRecipe(@PathVariable long id) {

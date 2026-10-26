@@ -1,4 +1,5 @@
 import { IngredientLine } from '../../core/api/generated/models/ingredient-line';
+import { Mold } from '../../core/api/generated/models/mold';
 import { Part } from '../../core/api/generated/models/part';
 import { formatQuantity, roundForKitchen } from '../../shared/format/units';
 
@@ -90,4 +91,31 @@ function scale(quantity: number, ratio: number): number {
 
 function amount(quantity: number, unit: string | null | undefined): string {
   return unit ? `${formatQuantity(quantity)} ${unit}` : formatQuantity(quantity);
+}
+
+const CENTIMETERS = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
+
+/** In cm²: what the quantities follow, the preparation keeping the same height. */
+export function moldArea(mold: Mold): number {
+  switch (mold.shape) {
+    case 'ROUND':
+      return Math.PI * (mold.lengthCm / 2) ** 2;
+    case 'SQUARE':
+      return mold.lengthCm ** 2;
+    case 'RECTANGLE':
+      return mold.lengthCm * (mold.widthCm ?? mold.lengthCm);
+  }
+}
+
+/** "rond de 20 cm", "carré de 22 cm", "rectangulaire de 30 × 20 cm". */
+export function describeMold(mold: Mold): string {
+  const length = CENTIMETERS.format(mold.lengthCm);
+  switch (mold.shape) {
+    case 'ROUND':
+      return `rond de ${length} cm`;
+    case 'SQUARE':
+      return `carré de ${length} cm`;
+    case 'RECTANGLE':
+      return `rectangulaire de ${length} × ${CENTIMETERS.format(mold.widthCm ?? mold.lengthCm)} cm`;
+  }
 }

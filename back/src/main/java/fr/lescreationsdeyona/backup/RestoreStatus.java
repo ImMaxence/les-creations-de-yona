@@ -24,7 +24,7 @@ public record RestoreStatus(String id, State state,
 
 	/** Recipes, categories… of a database, by count. */
 	public record Counts(long recipes, long categories, long tags, long ingredients, long images, long socialLinks,
-			long appearancePresets) {
+			long appearancePresets, long glossaryTerms) {
 	}
 
 	/**
@@ -41,7 +41,8 @@ public record RestoreStatus(String id, State state,
 	/** Names are given for the first 50 of each kind. */
 	public record Missing(long recipes, List<String> recipeTitles, long categories, List<String> categoryNames,
 			long tags, List<String> tagNames, long ingredients, long images, long socialLinks,
-			List<String> socialPlatforms, long appearancePresets, List<String> appearancePresetNames) {
+			List<String> socialPlatforms, long appearancePresets, List<String> appearancePresetNames,
+			long glossaryTerms, List<String> glossaryTermNames) {
 	}
 
 	/** @param added by "Fusionner"; the site's new counts after "Tout remplacer" */

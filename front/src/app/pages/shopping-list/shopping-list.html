@@ -12,7 +12,7 @@
     <!-- The server knows nothing of this browser's list: shown once in the browser -->
   } @else if (isEmpty()) {
     <div class="empty">
-      <div class="empty__icon" aria-hidden="true"><svg lucideShoppingBasket [size]="40" [strokeWidth]="1.5"></svg></div>
+      <div class="empty__icon" aria-hidden="true"><svg yonaIcon="shopping-basket" [size]="40" [strokeWidth]="1.5"></svg></div>
       <h2>Votre liste est vide</h2>
       <p>Sur une recette, touchez « Ajouter à ma liste de courses » sous les ingrédients.</p>
       <a yonaButton [routerLink]="recipesPath">Voir les recettes</a>
@@ -32,7 +32,7 @@
             <li>
               <label class="item" [class.is-done]="item.done">
                 <input type="checkbox" class="visually-hidden" [checked]="item.done" (change)="basket.toggle(item.key)" />
-                <span class="item__box" aria-hidden="true"><svg lucideCheck [size]="14" [strokeWidth]="3"></svg></span>
+                <span class="item__box" aria-hidden="true"><svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg></span>
                 <span class="item__text">
                   @if (item.amount) {
                     <strong>{{ item.amount }}</strong>
@@ -49,11 +49,11 @@
             <li class="extra">
               <label class="item" [class.is-done]="extra.done">
                 <input type="checkbox" class="visually-hidden" [checked]="extra.done" (change)="toggleExtra(extra.text)" />
-                <span class="item__box" aria-hidden="true"><svg lucideCheck [size]="14" [strokeWidth]="3"></svg></span>
+                <span class="item__box" aria-hidden="true"><svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg></span>
                 <span class="item__text">{{ extra.text }}</span>
               </label>
               <button type="button" class="icon-button" [attr.aria-label]="'Retirer ' + extra.text" (click)="basket.removeExtra(extra.index)">
-                <svg lucideX [size]="16"></svg>
+                <svg yonaIcon="x" [size]="16"></svg>
               </button>
             </li>
           }
@@ -68,15 +68,15 @@
             [value]="newItem()"
             (input)="newItem.set($any($event.target).value)"
           />
-          <button yonaButton variant="secondary" type="submit" aria-label="Ajouter à la liste"><svg lucidePlus></svg></button>
+          <button yonaButton variant="secondary" type="submit" aria-label="Ajouter à la liste"><svg yonaIcon="plus"></svg></button>
         </form>
 
         <div class="share">
           <a yonaButton [href]="whatsappLink()" target="_blank" rel="noopener noreferrer">Envoyer par WhatsApp</a>
           @if (canShare()) {
-            <button yonaButton variant="secondary" type="button" (click)="share()"><svg lucideShare2></svg>Partager</button>
+            <button yonaButton variant="secondary" type="button" (click)="share()"><svg yonaIcon="share-2"></svg>Partager</button>
           }
-          <button yonaButton variant="secondary" type="button" (click)="copy()"><svg lucideClipboardCopy></svg>Copier</button>
+          <button yonaButton variant="secondary" type="button" (click)="copy()"><svg yonaIcon="clipboard-copy"></svg>Copier</button>
         </div>
       </section>
 
@@ -91,7 +91,7 @@
                   <span class="recipes__servings">{{ recipe.servings }} portion{{ recipe.servings > 1 ? 's' : '' }}</span>
                 }
                 <button type="button" class="icon-button" [attr.aria-label]="'Retirer ' + recipe.title + ' de la liste'" (click)="basket.remove(recipe.slug)">
-                  <svg lucideTrash2 [size]="16"></svg>
+                  <svg yonaIcon="trash" [size]="16"></svg>
                 </button>
               </li>
             }
@@ -106,7 +106,7 @@
             <button yonaButton variant="ghost" type="button" (click)="confirmingClear.set(false)">Annuler</button>
           </div>
         } @else {
-          <button yonaButton variant="ghost" type="button" (click)="confirmingClear.set(true)"><svg lucideTrash2></svg>Vider la liste</button>
+          <button yonaButton variant="ghost" type="button" (click)="confirmingClear.set(true)"><svg yonaIcon="trash"></svg>Vider la liste</button>
         }
       </aside>
     </div>

@@ -11,6 +11,11 @@ export interface Recipes {
   inParts: number;
   lastUpdate?: string;
   published: number;
+
+  /**
+   * Drafts with a scheduled publication
+   */
+  scheduled: number;
   total: number;
   withVideo: number;
   withoutPhoto: number;

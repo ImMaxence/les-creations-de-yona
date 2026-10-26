@@ -3,6 +3,7 @@ import type { PageResponseRecipeCard } from '../app/core/api/generated/models/pa
 import type { RecipeCard } from '../app/core/api/generated/models/recipe-card';
 import { SITE_URL } from '../app/core/seo/page-seo';
 import {
+  GLOSSARY_PATH,
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
   PRIVACY_POLICY_PATH,
@@ -42,11 +43,25 @@ async function fetchPublishedRecipes(origin: string): Promise<RecipeCard[]> {
   return recipes;
 }
 
-/** Indexable pages only: no search results, no empty category (both are noindex). */
-function sitemapPaths(recipes: RecipeCard[]): string[] {
+/** The glossary page is indexed once it has words; a failure only leaves it out. */
+async function hasGlossary(origin: string): Promise<boolean> {
+  try {
+    const response = await fetch(new URL('/api/glossary', origin), {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    });
+    return response.ok && ((await response.json()) as unknown[]).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Indexable pages only: no search results, no empty category nor glossary (all noindex). */
+function sitemapPaths(recipes: RecipeCard[], glossary: boolean): string[] {
   const categories = new Set(recipes.flatMap((recipe) => recipe.categories.map((category) => category.slug)));
   return [
     ...STATIC_PATHS,
+    ...(glossary ? [GLOSSARY_PATH] : []),
     ...[...categories].map(
       (slug) => `${RECIPES_PATH}?${new URLSearchParams(categoryQueryParams({ slug }))}`,
     ),
@@ -78,11 +93,14 @@ function toXml(paths: string[]): string {
  */
 export const sitemap: RequestHandler = async (req, res) => {
   try {
-    const recipes = await fetchPublishedRecipes(apiOrigin(req));
+    const [recipes, glossary] = await Promise.all([
+      fetchPublishedRecipes(apiOrigin(req)),
+      hasGlossary(apiOrigin(req)),
+    ]);
     res
       .type('application/xml')
       .set('Cache-Control', 'public, max-age=3600')
-      .send(toXml(sitemapPaths(recipes)));
+      .send(toXml(sitemapPaths(recipes, glossary)));
   } catch (error) {
     console.error('Sitemap unavailable', error);
     res

@@ -8,13 +8,13 @@
     </div>
     <div class="stats__actions no-print">
       <a yonaButton variant="ghost" target="_blank" rel="noopener" [href]="analyticsUrl">
-        <svg lucideChartLine></svg>Visites (Google Analytics)
+        <svg yonaIcon="chart-line"></svg>Visites (Google Analytics)
       </a>
       <button yonaButton variant="secondary" type="button" [disabled]="!stats.value()" (click)="exportPdf()">
-        <svg lucideFileDown></svg>Exporter en PDF
+        <svg yonaIcon="file-down"></svg>Exporter en PDF
       </button>
       <button yonaButton variant="secondary" type="button" [disabled]="stats.isLoading()" (click)="stats.reload()">
-        <svg lucideRefreshCw></svg>Actualiser
+        <svg yonaIcon="refresh-cw"></svg>Actualiser
       </button>
     </div>
   </div>
@@ -51,6 +51,10 @@
       <div><dt>Recettes sans photo</dt><dd>{{ data.recipes.withoutPhoto }}</dd></div>
       <div><dt>Avec une vidéo</dt><dd>{{ data.recipes.withVideo }}</dd></div>
       <div><dt>En plusieurs parties</dt><dd>{{ data.recipes.inParts }}</dd></div>
+      <div><dt>Publications programmées</dt><dd>{{ data.recipes.scheduled }}</dd></div>
+      <div><dt>Dans la corbeille</dt><dd>{{ data.trashedRecipes }}</dd></div>
+      <div><dt>Mots du glossaire</dt><dd>{{ data.glossaryTerms }}</dd></div>
+      <div><dt>Abonnés aux nouvelles recettes</dt><dd>{{ data.notificationSubscribers }}</dd></div>
       <div>
         <dt>Dernière modification</dt>
         <dd>{{ data.recipes.lastUpdate ? (data.recipes.lastUpdate | parisDate) : '—' }}</dd>
@@ -61,7 +65,7 @@
     @if (storage(); as disk) {
       <section class="admin-panel storage" aria-labelledby="storage-title">
         <div class="storage__head">
-          <svg lucideHardDrive [size]="22" [strokeWidth]="1.75"></svg>
+          <svg yonaIcon="hard-drive" [size]="22" [strokeWidth]="1.75"></svg>
           <h3 id="storage-title">Stockage</h3>
         </div>
         <div class="storage__figures">
@@ -263,7 +267,7 @@
         </div>
         @if (data.searchMisses.length) {
           <button yonaButton variant="ghost" type="button" class="no-print" (click)="forgetSearch()">
-            <svg lucideTrash2></svg>Tout effacer
+            <svg yonaIcon="trash"></svg>Tout effacer
           </button>
         }
       </div>
@@ -285,7 +289,7 @@
                 <td>{{ miss.lastSearchedAt | parisDate }}</td>
                 <td class="no-print">
                   <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Effacer « ' + miss.term + ' »'" (click)="forgetSearch(miss.term)">
-                    <svg lucideTrash2 [size]="16"></svg>
+                    <svg yonaIcon="trash" [size]="16"></svg>
                   </button>
                 </td>
               </tr>
@@ -294,7 +298,7 @@
         </table>
       } @else {
         <p class="admin-empty">
-          <svg lucideSearchX [size]="20"></svg>
+          <svg yonaIcon="search-x" [size]="20"></svg>
           Aucune recherche sans résultat pour le moment.
         </p>
       }

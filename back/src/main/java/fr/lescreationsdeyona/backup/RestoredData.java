@@ -38,7 +38,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * <p>
  * Things are matched by what identifies them for the admin: a recipe, a category or a tag by its
  * slug (its URL), an ingredient, a tag or a saved look by its name (case and accents ignored), a
- * social link by its platform, an image by its id. Ids of rows created here are new.
+ * social link by its platform, an image by its id, a glossary word by its name. Ids of rows created
+ * here are new. The trash is not merged: a recipe deleted on the site stays deleted.
  */
 @Component
 @RequiredArgsConstructor
@@ -76,7 +77,8 @@ class RestoredData {
 
 	RestoreStatus.Counts counts(JdbcClient db) {
 		return new RestoreStatus.Counts(count(db, "recipe"), count(db, "category"), count(db, "tag"),
-				count(db, "ingredient"), count(db, "image"), count(db, "social_link"), count(db, "appearance_preset"));
+				count(db, "ingredient"), count(db, "image"), count(db, "social_link"), count(db, "appearance_preset"),
+				count(db, "glossary_term"));
 	}
 
 	RestoreStatus.Missing missing(JdbcClient scratch) {
@@ -107,8 +109,12 @@ class RestoredData {
 		Set<String> sitePresets = folded(strings(site, "select name from appearance_preset"));
 		List<String> presets = scratch.sql("select name from appearance_preset order by name").query(String.class).list()
 			.stream().filter(name -> !sitePresets.contains(Texts.foldCaseAndAccents(name))).toList();
+		Set<String> siteTerms = folded(strings(site, "select name from glossary_term"));
+		List<String> terms = scratch.sql("select name from glossary_term order by name").query(String.class).list()
+			.stream().filter(name -> !siteTerms.contains(Texts.foldCaseAndAccents(name))).toList();
 		return new RestoreStatus.Missing(recipes.size(), first(recipes), categories.size(), first(categories), tags.size(),
-				first(tags), ingredients, images, platforms.size(), platforms, presets.size(), first(presets));
+				first(tags), ingredients, images, platforms.size(), platforms, presets.size(), first(presets), terms.size(),
+				first(terms));
 	}
 
 	/**
@@ -127,8 +133,9 @@ class RestoredData {
 			added.recipes = mergeRecipes(scratch, site, categories, tags, ingredients);
 			added.socialLinks = mergeSocialLinks(scratch, site);
 			added.presets = mergePresets(scratch, site);
+			long glossaryTerms = mergeGlossary(scratch, site);
 			return new RestoreStatus.Counts(added.recipes, added.categories, added.tags, added.ingredients,
-					added.images, added.socialLinks, added.presets);
+					added.images, added.socialLinks, added.presets, glossaryTerms);
 		});
 	}
 
@@ -242,6 +249,8 @@ class RestoredData {
 			boolean featured = Boolean.TRUE.equals(values.get("featured")) && !featuredTaken;
 			featuredTaken |= featured;
 			values.put("featured", featured);
+			// A publication scheduled in the backup is never done by surprise: the admin schedules it again
+			values.put("scheduled_at", null);
 			long siteId = insertReturningId(site, "recipe", values);
 			for (Map<String, Object> link : scratch.sql("select category_id, position from recipe_category where recipe_id = :id")
 				.param("id", backupId).query().listOfRows()) {
@@ -281,12 +290,14 @@ class RestoredData {
 						.param("position", line.get("position"))
 						.update();
 				}
+				// Positions in the part's ingredient list: the same in the backup and on the site
 				for (Map<String, Object> step : scratch.sql("""
-						select position, description, duration_minutes from recipe_step where part_id = :part""")
+						select position, description, duration_minutes, ingredient_positions::text as ingredient_positions
+						from recipe_step where part_id = :part""")
 					.param("part", backupPartId).query().listOfRows()) {
 					site.sql("""
-							insert into recipe_step (part_id, position, description, duration_minutes)
-							values (:part, :position, :description, :duration_minutes)""")
+							insert into recipe_step (part_id, position, description, duration_minutes, ingredient_positions)
+							values (:part, :position, :description, :duration_minutes, cast(:ingredient_positions as integer[]))""")
 						.param("part", partId)
 						.params(step)
 						.update();
@@ -329,9 +340,26 @@ class RestoredData {
 		return added;
 	}
 
+	/** A word whose name or anchor the site already has is left out. */
+	private long mergeGlossary(JdbcClient scratch, JdbcClient site) {
+		long added = 0;
+		for (Map<String, Object> row : scratch.sql("""
+				select name, slug, definition, forms::text as forms, updated_at, updated_by from glossary_term""")
+			.query().listOfRows()) {
+			added += site.sql("""
+					insert into glossary_term (name, slug, definition, forms, updated_at, updated_by)
+					values (:name, :slug, :definition, cast(:forms as text[]), :updated_at, :updated_by)
+					on conflict do nothing""")
+				.params(row)
+				.update();
+		}
+		return added;
+	}
+
 	/**
-	 * Every table of the site (but Flyway's history) emptied, then filled with the backup's rows,
-	 * parents before children; identity sequences then continue after the restored ids.
+	 * Every table of the site (but Flyway's history and the tables tied to this server, saved empty)
+	 * emptied, then filled with the backup's rows, parents before children; identity sequences then
+	 * continue after the restored ids.
 	 */
 	RestoreStatus.Counts replace(DataSource scratch) {
 		return transactions.execute(status -> {
@@ -362,6 +390,8 @@ class RestoredData {
 			finally {
 				DataSourceUtils.releaseConnection(siteConnection, dataSource);
 			}
+			// A publication scheduled in the past would happen within a minute, notification included
+			site.sql("update recipe set scheduled_at = null where scheduled_at < now()").update();
 			for (Map<String, Object> identity : site.sql("""
 					select table_name, column_name from information_schema.columns
 					where table_schema = 'public' and is_identity = 'YES'""").query().listOfRows()) {
@@ -383,7 +413,10 @@ class RestoredData {
 		List<String> tables = site.sql("""
 				select table_name from information_schema.tables
 				where table_schema = 'public' and table_type = 'BASE TABLE' and table_name <> 'flyway_schema_history'
-				order by table_name""").query(String.class).list();
+				order by table_name""").query(String.class).list()
+			.stream()
+			.filter(table -> !BackupService.SITE_ONLY_TABLES.contains(table))
+			.toList();
 		Map<String, Set<String>> parents = new HashMap<>();
 		for (Map<String, Object> key : site.sql("""
 				select child.relname as child, parent.relname as parent from pg_constraint c

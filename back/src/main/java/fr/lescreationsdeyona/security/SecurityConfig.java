@@ -17,13 +17,16 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.savedrequest.NullRequestCache;
 
 /**
- * Public read-only API, back-office API restricted to the admins, everything else denied.
+ * Public read-only API, back-office API restricted to the admins, everything else denied. The
+ * only public writes are the subscriptions to notifications, which need no account.
  * <p>
  * Login flow: the Angular back-office sends the browser to {@code /api/oauth2/authorization/google};
  * after Google, the admin lands on {@code /admin}, or on {@code /admin/acces-refuse} if refused.
  */
 @Configuration(proxyBeanMethods = false)
 class SecurityConfig {
+
+	private static final String NOTIFICATION_SUBSCRIPTIONS = "/api/notifications/subscriptions";
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http, AdminOidcUserService adminOidcUserService,
@@ -33,8 +36,10 @@ class SecurityConfig {
 			requests.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
 				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/recipe-suggestions",
 						"/api/ingredients", "/api/site-content", "/api/categories/**", "/api/tags", "/api/social-links/**",
-						"/api/images/**", "/api/theme")
+						"/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key")
 				.permitAll()
+				.requestMatchers(HttpMethod.POST, NOTIFICATION_SUBSCRIPTIONS).permitAll()
+				.requestMatchers(HttpMethod.DELETE, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll();
 			// Local runs only: in production the documentation is off and its URLs are denied like any other.
 			if (apiDocsEnabled) {
@@ -54,7 +59,10 @@ class SecurityConfig {
 				.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
 			// XSRF-TOKEN cookie, sent back by Angular's HttpClient in the X-XSRF-TOKEN header. The token is
 			// deferred: only the back-office creates it (GET /api/admin/me), public visitors never get it.
+			// Visitors have no CSRF token. Forging a request could only subscribe a push service address or
+			// remove one, which grants nothing.
 			.csrf(csrf -> csrf
+				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS)
 				.csrfTokenRepository(csrfTokenRepository())
 				.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
 			// Login always lands on /admin: no need to remember the request, nor to open a session for it.

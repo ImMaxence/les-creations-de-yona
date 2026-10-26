@@ -1,0 +1,38 @@
+<section class="container glossary">
+  <header class="glossary__head">
+    <p class="eyebrow enter">Apprendre</p>
+    <h1 class="enter" style="--delay: 60ms">Glossaire de pâtisserie</h1>
+    <p class="glossary__lead enter" style="--delay: 120ms">
+      Émulsionner, chemiser, blanchir, sabler… Les gestes et les mots du métier, expliqués simplement. Dans les recettes,
+      ils sont soulignés : un appui affiche leur définition.
+    </p>
+  </header>
+
+  @if (letters().length) {
+    <nav class="letters enter" style="--delay: 180ms" aria-label="Lettres du glossaire">
+      @for (group of letters(); track group.letter) {
+        <a class="letters__link" [routerLink]="[]" [fragment]="'lettre-' + group.letter" replaceUrl>{{ group.letter }}</a>
+      }
+    </nav>
+
+    @for (group of letters(); track group.letter) {
+      <section class="letter" [id]="'lettre-' + group.letter" [attr.aria-labelledby]="'titre-' + group.letter">
+        <h2 class="letter__title" [id]="'titre-' + group.letter" yonaReveal>{{ group.letter }}</h2>
+        <dl class="terms">
+          @for (term of group.terms; track term.id) {
+            <div class="term" [id]="term.slug" yonaReveal>
+              <dt class="term__name"><dfn>{{ term.name }}</dfn></dt>
+              <dd class="term__definition">{{ term.definition }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+    }
+  } @else {
+    <p class="glossary__empty">Le glossaire se prépare : les premiers mots arrivent bientôt.</p>
+  }
+
+  <p class="glossary__more">
+    <a [routerLink]="recipesPath">Voir les recettes</a>
+  </p>
+</section>

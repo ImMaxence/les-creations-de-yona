@@ -12,7 +12,7 @@
       [value]="newName()"
       (input)="readNewName($event)"
     />
-    <button yonaButton type="submit"><svg lucidePlus></svg>Ajouter</button>
+    <button yonaButton type="submit"><svg yonaIcon="plus"></svg>Ajouter</button>
   </form>
 
   @if (photo(); as image) {
@@ -40,7 +40,7 @@
             (removed)="chooseImage(category, null)"
           />
           <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(category)">
-            <svg lucideList [size]="16"></svg>
+            <svg yonaIcon="list" [size]="16"></svg>
             Voir ses recettes
           </a>
           @if (editingId() === category.id) {
@@ -52,8 +52,8 @@
                 [value]="editedName()"
                 (input)="readEditedName($event)"
               />
-              <button type="submit" class="icon-button" aria-label="Valider le nom"><svg lucideCheck [size]="18"></svg></button>
-              <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg lucideX [size]="18"></svg></button>
+              <button type="submit" class="icon-button" aria-label="Valider le nom"><svg yonaIcon="check" [size]="18"></svg></button>
+              <button type="button" class="icon-button" aria-label="Annuler" (click)="editingId.set(null)"><svg yonaIcon="x" [size]="18"></svg></button>
             </form>
           } @else {
             <div class="card__name">
@@ -68,10 +68,10 @@
               <strong>{{ category.name }}</strong>
               <div class="admin-row__actions">
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + category.name" (click)="startRename(category)">
-                  <svg lucidePencil [size]="18"></svg>
+                  <svg yonaIcon="pencil" [size]="18"></svg>
                 </button>
                 <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + category.name" (click)="remove(category)">
-                  <svg lucideTrash2 [size]="18"></svg>
+                  <svg yonaIcon="trash" [size]="18"></svg>
                 </button>
               </div>
             </div>

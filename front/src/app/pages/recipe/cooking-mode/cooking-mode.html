@@ -15,15 +15,34 @@
         }
         Étape {{ index() + 1 }} sur {{ steps().length }}
       </p>
+      @if (schedule(); as times) {
+        <p class="cooking__schedule">
+          <svg yonaIcon="clock" [size]="16"></svg>
+          Commencé à {{ times.startedAt }} · prête vers {{ times.readyAt }}
+        </p>
+      }
+
+      @if (ringing() !== null) {
+        <div class="ringing" role="alert">
+          <svg yonaIcon="bell-ring" [size]="22"></svg>
+          <span>Étape {{ ringing()! + 1 }} : c'est prêt !</span>
+          <button type="button" class="ringing__stop" (click)="stopRinging()">Arrêter la sonnerie</button>
+        </div>
+      }
 
       <!-- Created anew for each step, so that it slides in -->
       @for (key of [index()]; track key) {
-        <div class="cooking__step prose" [innerHTML]="shown.step.description | markdown"></div>
+        <div
+          class="cooking__step prose"
+          [innerHTML]="shown.step.description | markdown | glossary: glossary()"
+          (click)="popover.handle($event, glossary())"
+          (keydown)="popover.handle($event, glossary())"
+        ></div>
       }
 
       @if (shown.step.durationMinutes; as minutes) {
         <div class="timer" [class.is-ringing]="ringing() === index()" [class.is-done]="timerOf(index())?.remainingMs === 0">
-          <svg lucideTimer [size]="28" [strokeWidth]="1.75"></svg>
+          <svg yonaIcon="timer" [size]="28" [strokeWidth]="1.75"></svg>
           <span class="timer__clock" role="timer" aria-live="off">{{ clock(remainingMs(index())) }}</span>
           <button
             type="button"
@@ -32,14 +51,14 @@
             (click)="toggleTimer(index())"
           >
             @if (timerOf(index())?.endsAt) {
-              <svg lucidePause [size]="22"></svg>
+              <svg yonaIcon="pause" [size]="22"></svg>
             } @else {
-              <svg lucidePlay [size]="22"></svg>
+              <svg yonaIcon="play" [size]="22"></svg>
             }
           </button>
           @if (timerOf(index())) {
             <button type="button" class="timer__button timer__button--quiet" aria-label="Remettre le minuteur à zéro" (click)="resetTimer(index())">
-              <svg lucideRotateCcw [size]="20"></svg>
+              <svg yonaIcon="rotate-ccw" [size]="20"></svg>
             </button>
           }
           @if (timerOf(index())?.remainingMs === 0) {
@@ -53,7 +72,7 @@
           @for (other of otherTimers(); track other.stepIndex) {
             <li>
               <button type="button" class="chip-timer" [class.is-done]="other.remaining === 0" (click)="goTo(other.stepIndex)">
-                <svg lucideTimer [size]="14"></svg>
+                <svg yonaIcon="timer" [size]="14"></svg>
                 Étape {{ other.stepIndex + 1 }} : {{ other.remaining === 0 ? 'terminé' : clock(other.remaining) }}
               </button>
             </li>
@@ -62,27 +81,36 @@
       }
 
       @if (stepIngredients().length) {
+        <section class="cooking__needed" aria-labelledby="needed-title">
+          <h3 id="needed-title" class="cooking__needed-title">Pour cette étape</h3>
+          <yona-ingredient-list class="cooking__ingredients" [lines]="stepIngredients()" />
+        </section>
+      }
+
+      @if (allIngredients().length) {
         <button type="button" class="cooking__toggle" [attr.aria-expanded]="showIngredients()" (click)="showIngredients.set(!showIngredients())">
-          <svg lucideListChecks [size]="18"></svg>
-          {{ showIngredients() ? 'Masquer les ingrédients' : hasParts() ? 'Ingrédients de cette partie' : 'Ingrédients' }}
+          <svg yonaIcon="list-checks" [size]="18"></svg>
+          {{ showIngredients() ? 'Masquer les ingrédients' : hasParts() ? 'Tous les ingrédients de cette partie' : 'Tous les ingrédients' }}
         </button>
         @if (showIngredients()) {
-          <yona-ingredient-list class="cooking__ingredients" [lines]="stepIngredients()" />
+          <yona-ingredient-list class="cooking__ingredients" [lines]="allIngredients()" />
         }
       }
     </div>
   }
 
+  <yona-glossary-popover #popover />
+
   <ng-container dialogActions>
     <div class="cooking__nav">
       <button type="button" class="nav-button" [disabled]="index() === 0" (click)="go(-1)">
-        <svg lucideChevronLeft [size]="22"></svg>
+        <svg yonaIcon="chevron-left" [size]="22"></svg>
         Précédente
       </button>
       @if (index() < steps().length - 1) {
         <button type="button" class="nav-button nav-button--primary" (click)="go(1)">
           Suivante
-          <svg lucideChevronRight [size]="22"></svg>
+          <svg yonaIcon="chevron-right" [size]="22"></svg>
         </button>
       } @else {
         <button type="button" class="nav-button nav-button--primary" (click)="open.set(false)">Terminer</button>

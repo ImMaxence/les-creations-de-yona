@@ -1,19 +1,15 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, model, signal } from '@angular/core';
-import {
-  LucideChevronLeft,
-  LucideChevronRight,
-  LucideListChecks,
-  LucidePause,
-  LucidePlay,
-  LucideRotateCcw,
-  LucideTimer,
-} from '@lucide/angular';
 import { Step } from '../../../core/api/generated/models/step';
+import { GlossaryMatcher, GlossaryPipe, NO_GLOSSARY } from '../../../shared/format/glossary';
 import { MarkdownPipe } from '../../../shared/format/markdown.pipe';
+import { parisClock } from '../../../shared/format/paris-time';
 import { formatMinutes } from '../../../shared/format/units';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
+import { GlossaryPopover } from '../../../shared/ui/glossary-popover/glossary-popover';
+import { Icon } from '../../../shared/ui/icon/icon';
 import { IngredientList } from '../ingredient-list/ingredient-list';
 import { ShownIngredient } from '../recipe-parts';
+import { KitchenAlarm } from './kitchen-alarm';
 
 /** A part of the recipe as the page shows it: its ingredients already adjusted to the servings. */
 export interface CookingPart {
@@ -42,24 +38,14 @@ const SWIPE_PX = 60;
 
 /**
  * Cooking mode: one step per screen in large type, to follow the recipe with a phone on the
- * counter. Steps with a duration get a timer, which keeps running while moving to another step,
- * and rings (sound and vibration) at the end. The screen is kept on while the mode is open, where
- * the browser allows it. Arrow keys and swipes move between steps.
+ * counter. The ingredients the step needs are shown with it, when the recipe says which. Steps
+ * with a duration get a timer, which keeps running while moving to another step, and rings (sound
+ * and vibration) at the end until stopped. The screen is kept on while the mode is open, where the
+ * browser allows it. Arrow keys and swipes move between steps.
  */
 @Component({
   selector: 'yona-cooking-mode',
-  imports: [
-    Dialog,
-    IngredientList,
-    MarkdownPipe,
-    LucideChevronLeft,
-    LucideChevronRight,
-    LucideListChecks,
-    LucidePause,
-    LucidePlay,
-    LucideRotateCcw,
-    LucideTimer,
-  ],
+  imports: [Icon, Dialog, GlossaryPipe, GlossaryPopover, IngredientList, MarkdownPipe],
   templateUrl: './cooking-mode.html',
   styleUrl: './cooking-mode.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,6 +56,9 @@ export class CookingMode {
   readonly parts = input.required<CookingPart[]>();
   /** The ingredients of the whole recipe, shown when it has a single part. */
   readonly ingredients = input.required<ShownIngredient[]>();
+  /** Preparation, rest and cooking: "prête vers…" from the moment the mode starts. */
+  readonly totalMinutes = input(0);
+  readonly glossary = input<GlossaryMatcher>(NO_GLOSSARY);
   readonly open = model(false);
 
   protected readonly formatMinutes = formatMinutes;
@@ -82,10 +71,22 @@ export class CookingMode {
   protected readonly current = computed(() => this.steps()[this.index()] ?? null);
   protected readonly showIngredients = signal(false);
   protected readonly hasParts = computed(() => this.parts().length > 1 || !!this.parts()[0]?.title);
-  /** The ingredients for the step shown: those of its part, or all of them. */
-  protected readonly stepIngredients = computed(() =>
+  /** The ingredients of the step's part, or of the whole recipe. */
+  protected readonly allIngredients = computed(() =>
     this.hasParts() ? (this.current()?.part.ingredients ?? []) : this.ingredients(),
   );
+  /** Those the step needs, when the recipe says which: shown with the step, without a tap. */
+  protected readonly stepIngredients = computed(() => {
+    const shown = this.current();
+    return (
+      shown?.step.ingredientPositions
+        .map((position) => shown.part.ingredients[position])
+        .filter((line): line is ShownIngredient => !!line) ?? []
+    );
+  });
+
+  /** "Commencé à 14:02 · prête vers 15:32": set when the mode starts. */
+  protected readonly schedule = signal<{ startedAt: string; readyAt: string } | null>(null);
 
   private readonly now = signal(Date.now());
   private readonly timers = signal<ReadonlyMap<number, StepTimer>>(new Map());
@@ -99,7 +100,7 @@ export class CookingMode {
 
   private ticker: ReturnType<typeof setInterval> | undefined;
   private wakeLock: WakeLockSentinel | null = null;
-  private audio: AudioContext | null = null;
+  private readonly alarm = new KitchenAlarm();
   private swipeStartX: number | null = null;
 
   constructor() {
@@ -114,7 +115,7 @@ export class CookingMode {
     inject(DestroyRef).onDestroy(() => {
       clearInterval(this.ticker);
       void this.wakeLock?.release();
-      void this.audio?.close();
+      this.alarm.close();
     });
   }
 
@@ -122,6 +123,13 @@ export class CookingMode {
   start(stepIndex = 0): void {
     this.index.set(Math.min(stepIndex, Math.max(0, this.steps().length - 1)));
     this.showIngredients.set(false);
+    // Opened by a tap: the moment to let the timers ring later
+    this.alarm.unlock();
+    const total = this.totalMinutes();
+    const now = new Date();
+    this.schedule.set(
+      total > 0 ? { startedAt: parisClock(now), readyAt: parisClock(new Date(now.getTime() + total * 60_000)) } : null,
+    );
     this.open.set(true);
   }
 
@@ -135,7 +143,16 @@ export class CookingMode {
 
   protected goTo(stepIndex: number): void {
     this.index.set(stepIndex);
-    this.ringing.set(null);
+    this.stopRinging();
+  }
+
+  /** "Arrêter la sonnerie": the timer stays at 0, shown as done. */
+  protected stopRinging(): void {
+    const ringing = this.ringing();
+    if (ringing !== null) {
+      this.alarm.cancel(ringing);
+      this.ringing.set(null);
+    }
   }
 
   protected onKeydown(event: KeyboardEvent): void {
@@ -187,13 +204,21 @@ export class CookingMode {
   }
 
   protected toggleTimer(stepIndex: number): void {
-    // Created on a tap: browsers only let a page play sound after the visitor acted
-    this.audio ??= typeof AudioContext === 'undefined' ? null : new AudioContext();
+    // A tap: browsers only let a page play sound after the visitor acted
+    this.alarm.unlock();
     const minutes = this.steps()[stepIndex]?.step.durationMinutes ?? 0;
     const timer = this.timers().get(stepIndex) ?? { totalMs: minutes * 60_000, remainingMs: minutes * 60_000, endsAt: null };
     const running = timer.endsAt !== null;
     const remainingMs = running ? Math.max(0, timer.endsAt! - Date.now()) : timer.remainingMs || timer.totalMs;
     this.setTimer(stepIndex, { ...timer, remainingMs, endsAt: running ? null : Date.now() + remainingMs });
+    if (running) {
+      this.alarm.cancel(stepIndex);
+    } else {
+      this.alarm.schedule(stepIndex, remainingMs);
+      if (this.ringing() === stepIndex) {
+        this.ringing.set(null);
+      }
+    }
     this.tick();
   }
 
@@ -201,6 +226,7 @@ export class CookingMode {
     const timers = new Map(this.timers());
     timers.delete(stepIndex);
     this.timers.set(timers);
+    this.alarm.cancel(stepIndex);
     if (this.ringing() === stepIndex) {
       this.ringing.set(null);
     }
@@ -210,7 +236,7 @@ export class CookingMode {
     this.timers.set(new Map(this.timers()).set(stepIndex, timer));
   }
 
-  /** Runs while a timer does; rings each one once, at its end. */
+  /** Runs while a timer does; shows each one as ringing once, at its end. */
   private tick(): void {
     if (this.ticker !== undefined) {
       return;
@@ -237,26 +263,11 @@ export class CookingMode {
     }, TICK_MS);
   }
 
+  /** The sound was scheduled when the timer started: only played here if it fell behind. */
   private ring(stepIndex: number): void {
     this.ringing.set(stepIndex);
     navigator.vibrate?.([300, 150, 300, 150, 300]);
-    const audio = this.audio;
-    if (!audio) {
-      return;
-    }
-    // Three short beeps
-    for (let beep = 0; beep < 3; beep++) {
-      const oscillator = audio.createOscillator();
-      const gain = audio.createGain();
-      const start = audio.currentTime + beep * 0.35;
-      oscillator.frequency.value = 880;
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.4, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.25);
-      oscillator.connect(gain).connect(audio.destination);
-      oscillator.start(start);
-      oscillator.stop(start + 0.3);
-    }
+    this.alarm.ringNow(stepIndex);
   }
 
   private async keepScreenOn(): Promise<void> {

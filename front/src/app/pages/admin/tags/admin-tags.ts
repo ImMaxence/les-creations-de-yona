@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX } from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { createTag } from '../../../core/api/generated/fn/admin-tags/create-tag';
@@ -14,6 +13,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
 import { Selection } from '../selection';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 const MAX_NAME_LENGTH = 40;
 
@@ -23,7 +23,7 @@ const MAX_NAME_LENGTH = 40;
  */
 @Component({
   selector: 'yona-admin-tags',
-  imports: [RouterLink, BulkBar, Button, LucideCheck, LucideList, LucidePencil, LucidePlus, LucideTrash2, LucideX],
+  imports: [Icon, RouterLink, BulkBar, Button],
   templateUrl: './admin-tags.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -6,7 +6,7 @@
   [attr.aria-expanded]="isOpen()"
   (click)="open()"
 >
-  <svg lucideMenu [size]="24"></svg>
+  <svg yonaIcon="menu" [size]="24"></svg>
 </button>
 
 <!-- Focusable (tabindex -1) so that opening it focuses the dialog itself, not its first link or button -->
@@ -16,7 +16,7 @@
   <div class="menu__top">
     <yona-brand-logo />
     <button type="button" class="toggle" aria-label="Fermer le menu" (click)="close()">
-      <svg lucideX [size]="24"></svg>
+      <svg yonaIcon="x" [size]="24"></svg>
     </button>
   </div>
 
@@ -27,12 +27,12 @@
           routerLink="/"
           routerLinkActive="is-active"
           [routerLinkActiveOptions]="{ exact: true }"
-          >Accueil <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+          >Accueil <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
         ></a>
       </li>
       <li class="stagger" style="--i: 1">
         <a [routerLink]="recipesPath" routerLinkActive="is-active"
-          >Recettes <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+          >Recettes <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
         ></a>
       </li>
       <li class="stagger" style="--i: 1">
@@ -43,7 +43,7 @@
               <span class="menu__count">{{ favorites.count() }}<span class="visually-hidden"> recette{{ favorites.count() > 1 ? 's' : '' }}</span></span>
             }
           </span>
-          <svg lucideChevronRight [size]="20" aria-hidden="true"></svg>
+          <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg>
         </a>
       </li>
       <li class="stagger" style="--i: 2">
@@ -54,18 +54,23 @@
               <span class="menu__count">{{ shoppingList.count() }}<span class="visually-hidden"> élément{{ shoppingList.count() > 1 ? 's' : '' }}</span></span>
             }
           </span>
-          <svg lucideChevronRight [size]="20" aria-hidden="true"></svg>
+          <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg>
         </a>
       </li>
       <li class="stagger" style="--i: 2">
+        <a [routerLink]="glossaryPath" routerLinkActive="is-active"
+          >Glossaire <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
+        ></a>
+      </li>
+      <li class="stagger" style="--i: 2">
         <a [routerLink]="installPath" routerLinkActive="is-active"
-          >Installer l'application <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+          >Installer l'application <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
         ></a>
       </li>
       @if (adminSession.isAdmin()) {
         <li class="stagger" style="--i: 2">
           <a routerLink="/admin" routerLinkActive="is-active"
-            >Administration <svg lucideChevronRight [size]="20" aria-hidden="true"></svg
+            >Administration <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
           ></a>
         </li>
       }

@@ -1,19 +1,11 @@
 import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  LucideCheck,
-  LucideClipboardCopy,
-  LucidePlus,
-  LucideShare2,
-  LucideShoppingBasket,
-  LucideTrash2,
-  LucideX,
-} from '@lucide/angular';
 import { ShoppingList as Basket, ingredientKey } from '../../core/kitchen/shopping-list';
 import { Toaster } from '../../core/notifications/toaster';
 import { RECIPES_PATH } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { totalIngredients } from '../recipe/recipe-parts';
+import { Icon } from '../../shared/ui/icon/icon';
 
 /** Checked items are kept apart from the ingredients: their key cannot be an ingredient name. */
 const EXTRA_PREFIX = '+';
@@ -26,15 +18,9 @@ const EXTRA_PREFIX = '+';
 @Component({
   selector: 'yona-shopping-list',
   imports: [
+    Icon,
     RouterLink,
     Button,
-    LucideCheck,
-    LucideClipboardCopy,
-    LucidePlus,
-    LucideShare2,
-    LucideShoppingBasket,
-    LucideTrash2,
-    LucideX,
   ],
   templateUrl: './shopping-list.html',
   styleUrl: './shopping-list.scss',

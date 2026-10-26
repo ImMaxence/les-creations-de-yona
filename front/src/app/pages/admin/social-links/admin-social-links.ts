@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { FormField, applyEach, form, pattern, required, schema, submit, validate } from '@angular/forms/signals';
-import { LucideArrowDown, LucideArrowUp, LucidePlus, LucideTrash2 } from '@lucide/angular';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { replaceSocialLinks } from '../../../core/api/generated/fn/admin-social-links/replace-social-links';
@@ -11,6 +10,7 @@ import { BrandIcon, SOCIAL_PLATFORMS, SocialPlatform, socialPlatformLabel } from
 import { Button } from '../../../shared/ui/button/button';
 import { FieldError } from '../../../shared/ui/field-error/field-error';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 const PLATFORMS = SOCIAL_PLATFORMS;
 
@@ -47,7 +47,7 @@ const socialLinksSchema = schema<SocialLinksDraft>((draft) => {
 /** The whole list is replaced on save, in the order shown (footer and phone menu). */
 @Component({
   selector: 'yona-admin-social-links',
-  imports: [FormField, Button, BrandIcon, FieldError, Select, LucideArrowDown, LucideArrowUp, LucidePlus, LucideTrash2],
+  imports: [Icon, FormField, Button, BrandIcon, FieldError, Select],
   templateUrl: './admin-social-links.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

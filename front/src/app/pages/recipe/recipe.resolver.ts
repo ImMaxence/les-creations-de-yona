@@ -2,7 +2,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RESPONSE_INIT, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, RedirectCommand, ResolveFn, Router } from '@angular/router';
 import { Api } from '../../core/api/generated/api';
+import { listGlossary } from '../../core/api/generated/fn/glossary/list-glossary';
 import { getPublishedRecipe } from '../../core/api/generated/fn/recipes/get-published-recipe';
+import { listRelatedRecipes } from '../../core/api/generated/fn/recipes/list-related-recipes';
+import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
+import { RecipeCard } from '../../core/api/generated/models/recipe-card';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Step } from '../../core/api/generated/models/step';
 import { PageSeo, SITE_URL, absoluteUrl, excerpt } from '../../core/seo/page-seo';
@@ -41,6 +45,18 @@ export const recipeResolver: ResolveFn<RecipeDetail> = async (route) => {
   return recipe;
 };
 
+/** "Vous aimerez aussi": an extra, so the recipe still shows if it cannot be loaded. */
+export const relatedRecipesResolver: ResolveFn<RecipeCard[]> = (route) =>
+  inject(Api)
+    .invoke(listRelatedRecipes, { slug: route.paramMap.get('recipeSlug')! })
+    .catch(() => []);
+
+/** The words explained in the steps; the steps show as plain text without them. */
+export const glossaryResolver: ResolveFn<GlossaryTermResponse[]> = () =>
+  inject(Api)
+    .invoke(listGlossary)
+    .catch(() => []);
+
 export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
   const recipe = route.data['recipe'] as RecipeDetail;
   const path = recipeLink(recipe).join('/');
@@ -48,7 +64,8 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
   const description = excerpt(
     recipe.intro || `Recette ${recipe.title}, dans la catégorie ${mainCategory(recipe).name}.`,
   );
-  const totalMinutes = (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0);
+  // Resting and rising count: Google's totalTime is the whole time until ready
+  const totalMinutes = (recipe.prepMinutes ?? 0) + (recipe.restMinutes ?? 0) + (recipe.cookMinutes ?? 0);
 
   return {
     title: recipe.title,
@@ -65,7 +82,7 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
       image: image ? [absoluteUrl(image)] : undefined,
       url: absoluteUrl(path),
       author: { '@type': 'Person', name: 'Yona', url: SITE_URL },
-      datePublished: recipe.createdAt,
+      datePublished: recipe.publishedAt ?? recipe.createdAt,
       dateModified: recipe.updatedAt,
       recipeCategory: recipe.categories.map((category) => category.name).join(', '),
       keywords: recipe.tags.length ? recipe.tags.map((tag) => tag.name).join(', ') : undefined,

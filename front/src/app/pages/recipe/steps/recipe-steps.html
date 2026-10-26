@@ -9,16 +9,21 @@
         (click)="toggle(i)"
       >
         @if (done().has(i)) {
-          <svg lucideCheck [size]="20" [strokeWidth]="2.5"></svg>
+          <svg yonaIcon="check" [size]="20" [strokeWidth]="2.5"></svg>
         } @else {
           {{ i + 1 }}
         }
       </button>
       <div class="step__body">
-        <div class="prose" [innerHTML]="step.description | markdown"></div>
+        <div
+          class="prose"
+          [innerHTML]="step.description | markdown | glossary: glossary()"
+          (click)="popover.handle($event, glossary())"
+          (keydown)="popover.handle($event, glossary())"
+        ></div>
         @if (step.durationMinutes; as minutes) {
           <span class="step__duration">
-            <svg lucideTimer [size]="14"></svg>
+            <svg yonaIcon="timer" [size]="14"></svg>
             {{ formatMinutes(minutes) }}
           </span>
         }
@@ -26,3 +31,5 @@
     </li>
   }
 </ol>
+
+<yona-glossary-popover #popover />

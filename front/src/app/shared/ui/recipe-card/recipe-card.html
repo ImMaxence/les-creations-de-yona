@@ -10,6 +10,6 @@
   <div class="card__body">
     <span class="card__category">{{ categories() }}</span>
     <h3 class="card__title">{{ recipe().title }}</h3>
-    <time class="card__date" [attr.datetime]="recipe().createdAt">{{ recipe().createdAt | parisDate }}</time>
+    <time class="card__date" [attr.datetime]="date()">{{ date() | parisDate }}</time>
   </div>
 </a>

@@ -22,9 +22,9 @@
             <yona-field-error [field]="linksForm.links[i].url" />
           </div>
           <div class="admin-row__actions">
-            <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="move(i, i - 1)"><svg lucideArrowUp [size]="16"></svg></button>
-            <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="move(i, i + 1)"><svg lucideArrowDown [size]="16"></svg></button>
-            <button type="button" class="icon-button icon-button--danger" aria-label="Retirer ce réseau" (click)="remove(i)"><svg lucideTrash2 [size]="16"></svg></button>
+            <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="move(i, i - 1)"><svg yonaIcon="arrow-up" [size]="16"></svg></button>
+            <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="move(i, i + 1)"><svg yonaIcon="arrow-down" [size]="16"></svg></button>
+            <button type="button" class="icon-button icon-button--danger" aria-label="Retirer ce réseau" (click)="remove(i)"><svg yonaIcon="trash" [size]="16"></svg></button>
           </div>
         </li>
       }
@@ -36,7 +36,7 @@
 
   <div class="admin-toolbar">
     @if (canAdd()) {
-      <button yonaButton variant="secondary" type="button" (click)="add()"><svg lucidePlus></svg>Ajouter un réseau</button>
+      <button yonaButton variant="secondary" type="button" (click)="add()"><svg yonaIcon="plus"></svg>Ajouter un réseau</button>
     }
     <button yonaButton type="submit" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
   </div>

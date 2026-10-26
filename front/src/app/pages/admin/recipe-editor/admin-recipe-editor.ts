@@ -12,32 +12,22 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
   resource,
   signal,
+  untracked,
 } from '@angular/core';
 import { FieldTree, FormField, form, submit } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
-import {
-  LucideArrowDown,
-  LucideArrowLeft,
-  LucideArrowUp,
-  LucideCheck,
-  LucideExternalLink,
-  LucideEye,
-  LucideGripVertical,
-  LucideLayers,
-  LucidePlus,
-  LucideTrash2,
-  LucideX,
-} from '@lucide/angular';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { ImageUploads } from '../../../core/api/image-uploads';
 import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
 import { createRecipe } from '../../../core/api/generated/fn/admin-recipes/create-recipe';
+import { duplicateRecipe } from '../../../core/api/generated/fn/admin-recipes/duplicate-recipe';
 import { previewRecipe } from '../../../core/api/generated/fn/admin-recipes/preview-recipe';
 import { chooseRecipeImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-image';
 import { chooseRecipePinterestImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-pinterest-image';
@@ -60,8 +50,20 @@ import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { SuggestInput, Suggestion } from '../../../shared/ui/suggest-input/suggest-input';
 import { hasParts } from '../../recipe/recipe-parts';
 import RecipePreview from '../recipe-preview/recipe-preview';
-import { PartDraft, emptyIngredient, emptyPart, emptyStep, recipeSchema, toDraft, toRecipeForm } from './recipe-draft';
+import { parisDateTime } from '../../../shared/format/paris-time';
+import {
+  MoldShapeChoice,
+  PartDraft,
+  RecipeDraft,
+  emptyIngredient,
+  emptyPart,
+  emptyStep,
+  recipeSchema,
+  toDraft,
+  toRecipeForm,
+} from './recipe-draft';
 import { UnsavedChanges } from './unsaved-changes.guard';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 type ListName = 'ingredients' | 'steps';
 
@@ -69,6 +71,25 @@ type PendingImage = { file: File } | { imageId: string };
 
 /** The recipe's photo, or the vertical one offered to Pinterest. */
 type PhotoSlot = 'main' | 'pinterest';
+
+/** The form being typed, kept in this browser until saved: a closed tab or a sleeping phone loses nothing. */
+interface StoredDraft {
+  savedAt: string;
+  /** updatedAt of the recipe it was typed on; null for a new recipe. */
+  basedOn: string | null;
+  usesParts: boolean;
+  draft: RecipeDraft;
+}
+
+const STORED_DRAFT_PREFIX = 'yona-recipe-draft-';
+const STORE_DELAY_MS = 800;
+
+const MOLD_OPTIONS: SelectOption<MoldShapeChoice>[] = [
+  { value: 'NONE', label: 'Pas de moule' },
+  { value: 'ROUND', label: 'Rond' },
+  { value: 'SQUARE', label: 'Carré' },
+  { value: 'RECTANGLE', label: 'Rectangulaire' },
+];
 
 const DIFFICULTY_WORDS: Record<number, string> = {
   1: 'très facile',
@@ -91,6 +112,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
 @Component({
   selector: 'yona-admin-recipe-editor',
   imports: [
+    Icon,
     NgTemplateOutlet,
     RouterLink,
     FormField,
@@ -104,17 +126,6 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     RecipePreview,
     Select,
     SuggestInput,
-    LucideArrowDown,
-    LucideArrowLeft,
-    LucideArrowUp,
-    LucideCheck,
-    LucideExternalLink,
-    LucideEye,
-    LucideGripVertical,
-    LucideLayers,
-    LucidePlus,
-    LucideTrash2,
-    LucideX,
   ],
   templateUrl: './admin-recipe-editor.html',
   styleUrl: './admin-recipe-editor.scss',
@@ -149,6 +160,26 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     { value: 'PUBLISHED', label: 'Publiée' },
   ];
   protected readonly difficultyOptions = DIFFICULTY_OPTIONS;
+  protected readonly moldOptions = MOLD_OPTIONS;
+  /** Under the scheduling field: "samedi 31 octobre à 10:00". */
+  protected readonly scheduledLabel = computed(() => {
+    const recipe = this.recipe();
+    return recipe?.scheduledAt && recipe.status === 'DRAFT' ? parisDateTime(recipe.scheduledAt) : null;
+  });
+  protected readonly duplicating = signal(false);
+  /** A form typed earlier and never saved, offered back when the editor opens. */
+  protected readonly recovered = signal<StoredDraft | null>(null);
+  protected readonly recoveredAt = computed(() => {
+    const stored = this.recovered();
+    return stored ? parisDateTime(stored.savedAt) : '';
+  });
+  /** The recipe was saved again since that form was typed (another tab, another admin). */
+  protected readonly recoveredIsOutdated = computed(() => {
+    const stored = this.recovered();
+    return !!stored && stored.basedOn !== (this.recipe()?.updatedAt ?? null);
+  });
+  private readonly storageKey = computed(() => STORED_DRAFT_PREFIX + (this.recipe()?.id ?? 'nouvelle'));
+  private storeTimer: ReturnType<typeof setTimeout> | undefined;
   protected readonly categories = this.siteData.categories;
   /** Among the chosen ones: the main category, in the recipe URL. */
   protected readonly mainCategoryOptions = computed<SelectOption<number>[]>(() =>
@@ -216,10 +247,136 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly newCategoryName = signal('');
 
   constructor() {
+    // On opening (and on moving to another recipe): a form typed earlier and never saved
+    effect(() => {
+      const key = this.storageKey();
+      untracked(() => {
+        const stored = readStoredDraft(key);
+        if (stored && JSON.stringify(stored.draft) !== JSON.stringify(this.draft())) {
+          this.recovered.set(stored);
+        } else {
+          removeStoredDraft(key);
+          this.recovered.set(null);
+        }
+      });
+    });
+    // Each change kept shortly after typing, until saved; nothing written while the offer is open
+    effect(() => {
+      const draft = this.draft();
+      const unsaved = this.unsaved();
+      if (this.recovered()) {
+        return;
+      }
+      clearTimeout(this.storeTimer);
+      this.storeTimer = setTimeout(() => this.storeDraft(draft, unsaved), STORE_DELAY_MS);
+    });
+    // Leaving the tab or locking the phone: written at once
+    const flush = () => {
+      if (document.visibilityState === 'hidden' && !this.recovered()) {
+        clearTimeout(this.storeTimer);
+        this.storeDraft(this.draft(), this.unsaved());
+      }
+    };
+    document.addEventListener('visibilitychange', flush);
     inject(DestroyRef).onDestroy(() => {
+      document.removeEventListener('visibilitychange', flush);
+      clearTimeout(this.storeTimer);
       this.revokePreview('main');
       this.revokePreview('pinterest');
     });
+  }
+
+  /** "Reprendre": the form as it was left. */
+  protected resumeRecovered(): void {
+    const stored = this.recovered();
+    if (stored) {
+      this.draft.set(stored.draft);
+      this.usesParts.set(stored.usesParts);
+      this.recovered.set(null);
+    }
+  }
+
+  /** "Ignorer": the saved recipe stays, the typed form is forgotten. */
+  protected discardRecovered(): void {
+    removeStoredDraft(this.storageKey());
+    this.recovered.set(null);
+  }
+
+  private storeDraft(draft: RecipeDraft, unsaved: boolean): void {
+    if (!unsaved) {
+      removeStoredDraft(this.storageKey());
+      return;
+    }
+    const stored: StoredDraft = {
+      savedAt: new Date().toISOString(),
+      basedOn: this.recipe()?.updatedAt ?? null,
+      usesParts: this.usesParts(),
+      draft,
+    };
+    try {
+      localStorage.setItem(this.storageKey(), JSON.stringify(stored));
+    } catch {
+      // Storage blocked or full: the form still works, it just isn't kept
+    }
+  }
+
+  /**
+   * A new draft with the same content, photos, categories and tags, opened right away. Made from
+   * the saved recipe: unsaved changes are not copied.
+   */
+  protected async duplicate(): Promise<void> {
+    const recipe = this.recipe();
+    if (!recipe) {
+      return;
+    }
+    if (
+      this.unsaved() &&
+      !(await this.confirm.ask({
+        title: 'Dupliquer la version enregistrée ?',
+        message: 'Les modifications pas encore enregistrées ne seront pas dans la copie.',
+        confirmLabel: 'Dupliquer',
+      }))
+    ) {
+      return;
+    }
+    this.duplicating.set(true);
+    const copy = await attempt(this.api.invoke(duplicateRecipe, { id: recipe.id }));
+    this.duplicating.set(false);
+    if (copy.ok) {
+      // Already asked: leaving does not ask again
+      this.savedSnapshot.set(JSON.stringify(this.draft()));
+      this.toaster.success(`Copie créée en brouillon : « ${copy.value.title} ».`);
+      await this.router.navigate(['/admin/recettes', copy.value.id]);
+    }
+  }
+
+  protected clearSchedule(): void {
+    this.draft.update((draft) => ({ ...draft, scheduledAt: '' }));
+  }
+
+  // Ingredients a step needs, for the cooking mode
+
+  /** The named ingredients of the part, to tick those of each step. */
+  protected stepIngredientChoices(partIndex: number): { key: string; name: string }[] {
+    return (this.draft().parts[partIndex]?.ingredients ?? [])
+      .filter((line) => line.name.trim())
+      .map((line) => ({ key: line.key, name: line.name.trim() }));
+  }
+
+  protected toggleStepIngredient(partIndex: number, stepIndex: number, key: string): void {
+    this.updatePart(partIndex, (part) => ({
+      ...part,
+      steps: part.steps.map((step, index) =>
+        index !== stepIndex
+          ? step
+          : {
+              ...step,
+              ingredientKeys: step.ingredientKeys.includes(key)
+                ? step.ingredientKeys.filter((chosen) => chosen !== key)
+                : [...step.ingredientKeys, key],
+            },
+      ),
+    }));
   }
 
   hasUnsavedChanges(): boolean {
@@ -467,10 +624,12 @@ export default class AdminRecipeEditor implements UnsavedChanges {
           const updated = await this.api.invoke(updateRecipe, { id: existing.id, body });
           this.draft.set(toDraft(updated));
           this.savedSnapshot.set(JSON.stringify(this.draft()));
+          removeStoredDraft(this.storageKey());
           this.toaster.success('Recette enregistrée.');
         } else {
           const created = await this.api.invoke(createRecipe, { body });
           this.savedSnapshot.set(JSON.stringify(this.draft()));
+          removeStoredDraft(this.storageKey());
           for (const slot of ['main', 'pinterest'] as const) {
             const image = this.slotPending(slot)();
             if (image && 'file' in image) {
@@ -552,5 +711,22 @@ export default class AdminRecipeEditor implements UnsavedChanges {
       URL.revokeObjectURL(preview);
       this.slotPreview(slot).set(null);
     }
+  }
+}
+
+function readStoredDraft(key: string): StoredDraft | null {
+  try {
+    const stored = JSON.parse(localStorage.getItem(key) ?? 'null') as StoredDraft | null;
+    return stored?.draft && Array.isArray(stored.draft.parts) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function removeStoredDraft(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Storage blocked: nothing was kept
   }
 }
