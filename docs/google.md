@@ -25,9 +25,18 @@ Menu **Google Auth Platform** (anciennement « API et services → Identifiants 
 
 ### Branding
 
-- Nom de l'application : « Les créations de Yona », affiché sur la page de connexion de Google.
-- Adresse e-mail d'assistance et du développeur : une adresse des admins.
-- Domaine autorisé : `les-creations-de-yona.fr`.
+Fiche affichée sur la page de connexion de Google. Elle doit être complète pour pouvoir publier l'application (Audience) : sinon le bouton « Publier l'application » reste grisé.
+
+| Champ | Valeur |
+| --- | --- |
+| Nom de l'application | `Les créations de Yona` |
+| Adresse e-mail d'assistance utilisateur | une adresse des admins |
+| Logo de l'application | **aucun** : un logo impose une validation de la marque par Google (plusieurs jours) |
+| Page d'accueil de l'application | `https://les-creations-de-yona.fr` |
+| Lien vers les règles de confidentialité | `https://les-creations-de-yona.fr/politique-de-confidentialite` |
+| Lien vers les conditions d'utilisation | vide (facultatif, le site n'en a pas) |
+| Domaines autorisés | `les-creations-de-yona.fr` (sans `https://`) |
+| Coordonnées du développeur | une adresse des admins, pour les messages de Google sur le projet |
 
 ### Clients
 
@@ -97,7 +106,7 @@ Rien à faire chez Google : c'est la variable `APP_ADMIN_EMAILS` (adresses sépa
 1. **API et services → Bibliothèque** : chercher **Google Drive API** → **Activer**.
 2. **Google Auth Platform → Clients** : vérifier les URI `…/api/admin/drive/callback` (voir plus haut).
 3. **Google Auth Platform → Accès aux données** : « Ajouter ou supprimer des niveaux d'accès », chercher `drive.file`, cocher `.../auth/drive.file`, **Mettre à jour**, puis **Enregistrer**.
-4. **Google Auth Platform → Audience** : **Publier l'application** (passage « En production »).
+4. **Google Auth Platform → Audience** : **Publier l'application** (passage « En production »). Bouton grisé : compléter d'abord la fiche **Branding** (voir plus haut).
 5. Back-office → **Sauvegarde** → **Connecter Google Drive** → choisir le compte → laisser **cochée** la case Google Drive → Continuer. Retour sur la page avec « Google Drive connecté ».
 6. **Sauvegarder maintenant**, attendre quelques minutes, vérifier le dossier dans Google Drive.
 
