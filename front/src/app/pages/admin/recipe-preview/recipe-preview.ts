@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, ElementRef, booleanAttribute, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, booleanAttribute, inject, input, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Api } from '../../../core/api/generated/api';
+import { listGlossary } from '../../../core/api/generated/fn/glossary/list-glossary';
 import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
 import RecipePage from '../../recipe/recipe';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -21,6 +23,13 @@ export default class RecipePreview {
   readonly recipe = input.required<RecipeDetail>();
   /** In the editor's dialog: no banner, and the recipe's links are inactive. */
   readonly embedded = input(false, { transform: booleanAttribute });
+
+  private readonly api = inject(Api);
+  /**
+   * The words underlined in the steps: the recipe route loads them for visitors, the preview
+   * itself here. Without them, the steps simply show as plain text.
+   */
+  protected readonly glossary = resource({ loader: () => this.api.invoke(listGlossary).catch(() => []) });
 
   constructor() {
     // Caught before the links themselves: in the editor, following one would leave the form
