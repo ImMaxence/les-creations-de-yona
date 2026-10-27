@@ -54,7 +54,7 @@ export const routes: Routes = [
       [SEO_DATA_KEY]: {
         title: "Installer l'application",
         description:
-          "Installez Les créations de Yona sur votre téléphone ou votre ordinateur : gratuit, sans store, et les recettes restent lisibles hors connexion.",
+          "Installez Les créations de Yona sur votre téléphone ou votre ordinateur : gratuit, sans store, et les recettes restent lisibles hors connexion",
       } satisfies RouteSeo,
     },
   },

@@ -142,7 +142,7 @@ export default class AdminIngredients {
     }
     if ((await attempt(this.api.invoke(renameIngredient, { id: ingredient.id, body: { name } }))).ok) {
       this.editingId.set(null);
-      this.toaster.success('Ingrédient renommé dans toutes les recettes.');
+      this.toaster.success('Ingrédient renommé dans toutes les recettes');
       this.ingredients.reload();
     }
   }
@@ -150,11 +150,11 @@ export default class AdminIngredients {
   protected async remove(ingredient: IngredientResponse): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: "Supprimer l'ingrédient ?",
-      message: `« ${ingredient.name} » sera supprimé. Impossible tant qu'une recette l'utilise.`,
+      message: `« ${ingredient.name} » sera supprimé. Impossible tant qu'une recette l'utilise`,
       confirmLabel: 'Supprimer',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteIngredient, { id: ingredient.id }))).ok) {
-      this.toaster.success('Ingrédient supprimé.');
+      this.toaster.success('Ingrédient supprimé');
       if (this.selection.has(ingredient.id)) {
         this.selection.toggle(ingredient.id);
       }
@@ -178,7 +178,7 @@ export default class AdminIngredients {
     this.shelving.set(false);
     if (saved.ok) {
       if (ids.length > 1) {
-        this.toaster.success(`${ids.length} ingrédients rangés.`);
+        this.toaster.success(`${ids.length} ingrédients rangés`);
         this.selection.clear();
       }
       this.ingredients.reload();
@@ -190,7 +190,7 @@ export default class AdminIngredients {
     const count = this.selection.size();
     const confirmed = await this.confirm.ask({
       title: count > 1 ? `Supprimer ${count} ingrédients ?` : "Supprimer l'ingrédient ?",
-      message: "Impossible si l'un d'eux est encore dans une recette : rien n'est alors supprimé.",
+      message: "Impossible si l'un d'eux est encore dans une recette : rien n'est alors supprimé",
       confirmLabel: 'Supprimer',
     });
     if (!confirmed) {
@@ -200,7 +200,7 @@ export default class AdminIngredients {
     const deletion = await attempt(this.api.invoke(deleteIngredients, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} ingrédients supprimés.` : 'Ingrédient supprimé.');
+      this.toaster.success(count > 1 ? `${count} ingrédients supprimés` : 'Ingrédient supprimé');
       this.selection.clear();
       this.ingredients.reload();
     }
@@ -216,7 +216,7 @@ export default class AdminIngredients {
       this.similarGroups.set(found.value);
       this.choices.set(new Map());
       if (!found.value.length) {
-        this.toaster.success("Aucun doublon trouvé : chaque ingrédient n'est écrit que d'une façon.");
+        this.toaster.success("Aucun doublon trouvé : chaque ingrédient n'est écrit que d'une façon");
       }
     }
   }
@@ -257,7 +257,7 @@ export default class AdminIngredients {
   protected async merge(group: SimilarIngredients): Promise<void> {
     const choice = this.choiceOf(group);
     if ('newName' in choice && !choice.newName.trim()) {
-      this.toaster.error('Donnez le nom du nouvel ingrédient.');
+      this.toaster.error('Donnez le nom du nouvel ingrédient');
       return;
     }
     const target = 'keptId' in choice
@@ -266,7 +266,7 @@ export default class AdminIngredients {
     const others = group.ingredients.filter((ingredient) => !('keptId' in choice) || ingredient.id !== choice.keptId);
     const confirmed = await this.confirm.ask({
       title: 'Fusionner ces ingrédients ?',
-      message: `Les recettes utilisant ${others.map((ingredient) => `« ${ingredient.name} »`).join(', ')} utiliseront « ${target} ». ${others.length > 1 ? 'Ces ingrédients seront supprimés' : 'Cet ingrédient sera supprimé'}.`,
+      message: `Les recettes utilisant ${others.map((ingredient) => `« ${ingredient.name} »`).join(', ')} utiliseront « ${target} ». ${others.length > 1 ? 'Ces ingrédients seront supprimés' : 'Cet ingrédient sera supprimé'}`,
       confirmLabel: 'Fusionner',
     });
     if (!confirmed) {
@@ -283,7 +283,7 @@ export default class AdminIngredients {
     );
     this.merging.set(null);
     if (merged.ok) {
-      this.toaster.success(`Ingrédients fusionnés en « ${merged.value.name} ».`);
+      this.toaster.success(`Ingrédients fusionnés en « ${merged.value.name} »`);
       this.ignore(group);
       this.selection.clear();
       this.ingredients.reload();

@@ -29,7 +29,7 @@ const DATE = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', y
         <h2 id="changelog-title">Nouveautés</h2>
       </div>
       <p class="field__hint">
-        Ce qui a changé sur le site à chaque version, la plus récente en premier. Version en ligne : {{ version }}.
+        Ce qui a changé sur le site à chaque version, la plus récente en premier. Version en ligne : {{ version }}
       </p>
       <div class="changelog">
         @for (entry of versions; track entry.version; let i = $index) {

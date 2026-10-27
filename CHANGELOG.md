@@ -2,6 +2,18 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste. Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.5.1 - 2026-10-27
+
+Front 3.5.1, backend 3.5.1. Pas de migration de base.
+
+### Modifié
+
+- **Plus de point à la fin des textes**, sur tout le site et dans le back-office : paragraphes, aides, messages, confirmations, erreurs (y compris celles envoyées par le serveur), notification d'une nouvelle recette, descriptions pour Google. Les points entre deux phrases restent. Les mentions légales et la politique de confidentialité ne changent pas.
+
+### Technique
+
+- La règle est écrite dans la documentation ([architecture](docs/architecture.md), « Général »), à suivre pour chaque nouveau texte.
+
 ## 3.5.0 - 2026-10-27
 
 Front 3.5.0, backend 3.5.0. Migration de base : V12.

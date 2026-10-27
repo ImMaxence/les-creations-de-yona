@@ -333,7 +333,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
       this.unsaved() &&
       !(await this.confirm.ask({
         title: 'Dupliquer la version enregistrée ?',
-        message: 'Les modifications pas encore enregistrées ne seront pas dans la copie.',
+        message: 'Les modifications pas encore enregistrées ne seront pas dans la copie',
         confirmLabel: 'Dupliquer',
       }))
     ) {
@@ -345,7 +345,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     if (copy.ok) {
       // Already asked: leaving does not ask again
       this.savedSnapshot.set(JSON.stringify(this.draft()));
-      this.toaster.success(`Copie créée en brouillon : « ${copy.value.title} ».`);
+      this.toaster.success(`Copie créée en brouillon : « ${copy.value.title} »`);
       await this.router.navigate(['/admin/recettes', copy.value.id]);
     }
   }
@@ -442,7 +442,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected async addCategory(): Promise<void> {
     const name = this.newCategoryName().trim();
     if (!name) {
-      this.toaster.error('Donnez un nom à la catégorie.');
+      this.toaster.error('Donnez un nom à la catégorie');
       return;
     }
     const created = await attempt(this.api.invoke(createCategory, { body: { name } }));
@@ -453,7 +453,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     this.draft.update((draft) => ({ ...draft, categoryIds: [...draft.categoryIds, created.value.id] }));
     this.creatingCategory.set(false);
     this.newCategoryName.set('');
-    this.toaster.success(`Catégorie « ${created.value.name} » créée et ajoutée à la recette.`);
+    this.toaster.success(`Catégorie « ${created.value.name} » créée et ajoutée à la recette`);
   }
 
   // Tags
@@ -473,7 +473,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected async addTag(): Promise<void> {
     const name = this.newTagName().trim();
     if (!name) {
-      this.toaster.error('Donnez un nom au tag.');
+      this.toaster.error('Donnez un nom au tag');
       return;
     }
     const created = await attempt(this.api.invoke(createTag, { body: { name } }));
@@ -484,7 +484,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     this.draft.update((draft) => ({ ...draft, tagIds: [...draft.tagIds, created.value.id] }));
     this.creatingTag.set(false);
     this.newTagName.set('');
-    this.toaster.success(`Tag « ${created.value.name} » créé et ajouté à la recette.`);
+    this.toaster.success(`Tag « ${created.value.name} » créé et ajouté à la recette`);
   }
 
   // Parts
@@ -516,7 +516,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
       hasContent &&
       !(await this.confirm.ask({
         title: 'Supprimer cette partie ?',
-        message: `« ${part.title.trim() || `Partie ${index + 1}`} » sera retirée avec ses ingrédients et ses étapes.`,
+        message: `« ${part.title.trim() || `Partie ${index + 1}`} » sera retirée avec ses ingrédients et ses étapes`,
         confirmLabel: 'Supprimer',
       }))
     ) {
@@ -625,7 +625,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
           this.draft.set(toDraft(updated));
           this.savedSnapshot.set(JSON.stringify(this.draft()));
           removeStoredDraft(this.storageKey());
-          this.toaster.success('Recette enregistrée.');
+          this.toaster.success('Recette enregistrée');
         } else {
           const created = await this.api.invoke(createRecipe, { body });
           this.savedSnapshot.set(JSON.stringify(this.draft()));
@@ -638,7 +638,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
               await this.chooseImage(created.id, image.imageId, slot);
             }
           }
-          this.toaster.success('Recette créée.');
+          this.toaster.success('Recette créée');
           await this.router.navigate(['/admin/recettes', created.id], { replaceUrl: true });
         }
       } catch {
@@ -659,7 +659,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
         () =>
           this.imageUploads.send<RecipeDetail>(path.replace('{id}', String(recipeId)), file, (sent) => progress.set(sent)),
         slot,
-        slot === 'main' ? 'Photo enregistrée.' : 'Photo Pinterest enregistrée.',
+        slot === 'main' ? 'Photo enregistrée' : 'Photo Pinterest enregistrée',
       );
     } finally {
       progress.set(null);
@@ -674,7 +674,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
           ? this.api.invoke(chooseRecipeImage, { id: recipeId, body })
           : this.api.invoke(chooseRecipePinterestImage, { id: recipeId, body }),
       slot,
-      imageId ? 'Photo enregistrée.' : 'Photo retirée, elle reste dans la galerie.',
+      imageId ? 'Photo enregistrée' : 'Photo retirée, elle reste dans la galerie',
     );
   }
 

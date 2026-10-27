@@ -115,7 +115,7 @@ export default class AdminGallery {
     );
     this.uploadProgress.set(null);
     if (upload.ok) {
-      this.toaster.success('Photo ajoutée à la galerie.');
+      this.toaster.success('Photo ajoutée à la galerie');
       if (this.kind() !== 'ALL' && this.kind() !== 'GALLERY') {
         this.kind.set('ALL');
       }
@@ -150,12 +150,12 @@ export default class AdminGallery {
     const confirmed = await this.confirm.ask({
       title: "Mettre l'image à la corbeille ?",
       message: usedBy.length
-        ? `Elle disparaîtra de ${usedBy.map((name) => `« ${name} »`).join(', ')}, qui afficheront le visuel par défaut. Elle reste 30 jours dans la corbeille : restaurée, elle y revient.`
-        : "Elle n'est utilisée nulle part. Elle reste 30 jours dans la corbeille, d'où elle peut être restaurée.",
+        ? `Elle disparaîtra de ${usedBy.map((name) => `« ${name} »`).join(', ')}, qui afficheront le visuel par défaut. Elle reste 30 jours dans la corbeille : restaurée, elle y revient`
+        : "Elle n'est utilisée nulle part. Elle reste 30 jours dans la corbeille, d'où elle peut être restaurée",
       confirmLabel: 'Mettre à la corbeille',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteImage, { id: image.id }))).ok) {
-      this.toaster.success('Image mise à la corbeille.');
+      this.toaster.success('Image mise à la corbeille');
       if (this.selection.has(image.id)) {
         this.selection.toggle(image.id);
       }
@@ -170,7 +170,7 @@ export default class AdminGallery {
     const confirmed = await this.confirm.ask({
       title: count > 1 ? `Mettre ${count} images à la corbeille ?` : "Mettre l'image à la corbeille ?",
       message:
-        'Les recettes et catégories qui en affichent une passeront au visuel par défaut. Elles restent 30 jours dans la corbeille, d\'où elles peuvent être restaurées.',
+        'Les recettes et catégories qui en affichent une passeront au visuel par défaut. Elles restent 30 jours dans la corbeille, d\'où elles peuvent être restaurées',
       confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed) {
@@ -180,7 +180,7 @@ export default class AdminGallery {
     const deletion = await attempt(this.api.invoke(deleteImages, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} images mises à la corbeille.` : 'Image mise à la corbeille.');
+      this.toaster.success(count > 1 ? `${count} images mises à la corbeille` : 'Image mise à la corbeille');
       this.selection.clear();
       this.images.reload();
       await this.siteData.load();

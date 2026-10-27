@@ -32,7 +32,7 @@ const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
         </span>
         <span class="facade__label">Lire la vidéo</span>
       </button>
-      <p class="note">La vidéo est hébergée par YouTube (Google) : elle ne se charge qu'après votre clic.</p>
+      <p class="note">La vidéo est hébergée par YouTube (Google) : elle ne se charge qu'après votre clic</p>
     }
   `,
   styleUrl: './youtube-video.scss',

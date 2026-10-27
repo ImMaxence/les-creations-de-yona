@@ -24,7 +24,7 @@ class ApiExceptionHandlerTest {
 		ProblemDetail problem = (ProblemDetail) response.getBody();
 		assertThat(problem).isNotNull();
 		assertThat(problem.getProperties()).containsEntry("code", "BAD_REQUEST");
-		assertThat(problem.getDetail()).isEqualTo("La requête est invalide.");
+		assertThat(problem.getDetail()).isEqualTo("La requête est invalide");
 	}
 
 }

@@ -62,7 +62,7 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
   const path = recipeLink(recipe).join('/');
   const image = recipe.imageId ? `/api/images/${recipe.imageId}/1600.webp` : undefined;
   const description = excerpt(
-    recipe.intro || `Recette ${recipe.title}, dans la catégorie ${mainCategory(recipe).name}.`,
+    recipe.intro || `Recette ${recipe.title}, dans la catégorie ${mainCategory(recipe).name}`,
   );
   // Resting and rising count: Google's totalTime is the whole time until ready
   const totalMinutes = (recipe.prepMinutes ?? 0) + (recipe.restMinutes ?? 0) + (recipe.cookMinutes ?? 0);

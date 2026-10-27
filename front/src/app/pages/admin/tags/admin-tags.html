@@ -3,7 +3,7 @@
     <h2 id="tags-title">Tags</h2>
   </div>
   <p class="field__hint">
-    Végétarien, sans gluten, de saison… Cochés sur chaque recette, ils permettent aux visiteurs de filtrer les recettes.
+    Végétarien, sans gluten, de saison… Cochés sur chaque recette, ils permettent aux visiteurs de filtrer les recettes
   </p>
 
   <form class="admin-toolbar" (submit)="create($event)">
@@ -76,7 +76,7 @@
         }
       </ul>
     } @else {
-      <p class="admin-empty">Aucun tag pour le moment : ajoutez-en un, comme « Végétarien » ou « De saison ».</p>
+      <p class="admin-empty">Aucun tag pour le moment : ajoutez-en un, comme « Végétarien » ou « De saison »</p>
     }
   } @else if (tags.isLoading()) {
     <p class="admin-empty">Chargement des tags…</p>

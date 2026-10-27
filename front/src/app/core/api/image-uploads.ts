@@ -26,7 +26,7 @@ export class ImageUploads {
   send<T>(path: string, file: File, onProgress: (sent: number) => void, method: 'PUT' | 'POST' = 'PUT'): Promise<T> {
     const body = new FormData();
     body.append('file', file);
-    return this.request(method, path, body, onProgress, "L'envoi de la photo a échoué. Vérifiez la connexion et réessayez.");
+    return this.request(method, path, body, onProgress, "L'envoi de la photo a échoué. Vérifiez la connexion et réessayez");
   }
 
   /** Raw bytes (application/octet-stream) with PUT: a chunk of a backup archive, for instance. */
@@ -36,7 +36,7 @@ export class ImageUploads {
       path,
       new Blob([bytes], { type: 'application/octet-stream' }),
       onProgress,
-      "L'envoi du fichier a échoué. Vérifiez la connexion et réessayez.",
+      "L'envoi du fichier a échoué. Vérifiez la connexion et réessayez",
     );
   }
 

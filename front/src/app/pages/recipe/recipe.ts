@@ -177,7 +177,7 @@ export default class Recipe {
 
   protected toggleFavorite(): void {
     const added = this.favorites.toggle(this.recipe());
-    this.toaster.success(added ? 'Ajoutée à vos favoris.' : 'Retirée de vos favoris.');
+    this.toaster.success(added ? 'Ajoutée à vos favoris' : 'Retirée de vos favoris');
   }
 
   /** With the servings chosen: the quantities are those shown. Added again, it is updated. */
@@ -188,7 +188,7 @@ export default class Recipe {
     const servings =
       this.chosenMold() && recipe.servings ? Math.max(1, Math.round(recipe.servings * ratio)) : this.servings();
     this.shoppingList.add(shoppingRecipeOf(recipe, ratio, servings));
-    this.toaster.success('Ingrédients ajoutés à votre liste de courses.');
+    this.toaster.success('Ingrédients ajoutés à votre liste de courses');
   }
 
   protected startCooking(): void {
@@ -216,7 +216,7 @@ export default class Recipe {
     }
     try {
       await navigator.clipboard.writeText(url);
-      this.toaster.success('Lien de la recette copié : collez-le où vous voulez le partager.');
+      this.toaster.success('Lien de la recette copié : collez-le où vous voulez le partager');
     } catch {
       this.toaster.error(`Copie impossible. Voici le lien : ${url}`);
     }

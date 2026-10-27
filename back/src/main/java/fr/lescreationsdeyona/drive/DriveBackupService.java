@@ -91,7 +91,7 @@ public class DriveBackupService {
 		Object expected = session.getAttribute(STATE_ATTRIBUTE);
 		session.removeAttribute(STATE_ATTRIBUTE);
 		if (!state.equals(expected)) {
-			throw new GoogleDrive.DriveException("La connexion à Google Drive a expiré : recommencez.");
+			throw new GoogleDrive.DriveException("La connexion à Google Drive a expiré : recommencez");
 		}
 		GoogleDrive.Tokens tokens = drive.exchange(code, redirectUri);
 		String folderId = drive.createFolder(tokens.accessToken(), FOLDER_NAME);
@@ -173,7 +173,7 @@ public class DriveBackupService {
 		}
 		catch (IOException | RuntimeException ex) {
 			log.error("Google Drive backup failed", ex);
-			store.recordFailure("La sauvegarde n'a pas pu être préparée sur le serveur (espace disque, base de données…).");
+			store.recordFailure("La sauvegarde n'a pas pu être préparée sur le serveur (espace disque, base de données…)");
 		}
 		finally {
 			if (file != null) {

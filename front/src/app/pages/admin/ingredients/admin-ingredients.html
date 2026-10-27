@@ -21,15 +21,15 @@
         <ul>
           <li>majuscules et accents (« Crème », « creme ») ;</li>
           <li>pluriels et ponctuation (« pomme », « pommes ») ;</li>
-          <li>une faute de frappe (« échalote », « échalotte »), deux pour les noms longs.</li>
+          <li>une faute de frappe (« échalote », « échalotte »), deux pour les noms longs</li>
         </ul>
-        <p>« Sucre » et « Sucre glace » restent distincts. Rien n'est modifié tout de suite : pour chaque groupe, vous choisissez de fusionner ou d'ignorer.</p>
+        <p>« Sucre » et « Sucre glace » restent distincts. Rien n'est modifié tout de suite : pour chaque groupe, vous choisissez de fusionner ou d'ignorer</p>
       </div>
     </div>
   </div>
   <p class="field__hint">
     Les ingrédients sont créés depuis les recettes. Un renommage s'applique à toutes les recettes qui
-    l'utilisent.
+    l'utilisent
   </p>
 
   @if (similarGroups(); as groups) {
@@ -41,7 +41,7 @@
         </div>
         <p class="field__hint">
           Pour chaque groupe, gardez l'un d'eux (le plus utilisé est proposé), ou remplacez-les tous par un nouveau nom.
-          Les recettes sont mises à jour, les autres ingrédients supprimés.
+          Les recettes sont mises à jour, les autres ingrédients supprimés
         </p>
         <ul role="list" class="duplicates__list">
           @for (group of groups; track groupKey(group)) {
@@ -173,7 +173,7 @@
         }
       </ul>
     } @else {
-      <p class="admin-empty">Aucun ingrédient ne correspond.</p>
+      <p class="admin-empty">Aucun ingrédient ne correspond</p>
     }
   } @else if (ingredients.isLoading()) {
     <p class="admin-empty">Chargement…</p>

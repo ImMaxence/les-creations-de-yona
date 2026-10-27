@@ -6,11 +6,11 @@
     <p>
       Télécharge une archive ZIP avec toute la base de données (recettes, catégories, tags, ingrédients, réseaux sociaux,
       apparence) et toutes les photos. Gardez-la en lieu sûr, hors du serveur : sur votre ordinateur, un disque externe
-      ou un stockage en ligne.
+      ou un stockage en ligne
     </p>
     <p class="field__hint">
       La préparation commence aussitôt : le téléchargement peut durer quelques minutes selon le nombre de photos. Pensez
-      à en faire une régulièrement, par exemple une fois par mois.
+      à en faire une régulièrement, par exemple une fois par mois
     </p>
     <div>
       <a yonaButton href="/api/admin/backup" download>
@@ -82,11 +82,11 @@
       <div class="admin-panel">
         <p>
           Chaque nuit, la même archive que « Sauvegarder mes données » est envoyée dans un dossier de votre Google Drive ; les
-          {{ status.keptBackups }} plus récentes sont gardées, les plus anciennes supprimées. Rien à faire ensuite.
+          {{ status.keptBackups }} plus récentes sont gardées, les plus anciennes supprimées. Rien à faire ensuite
         </p>
         <p class="field__hint">
           Google vous demande d'autoriser le site : il ne voit que les fichiers qu'il crée lui-même (le dossier des
-          sauvegardes), rien d'autre de votre Drive. Comptez la place des photos sur les 15 Go gratuits du compte.
+          sauvegardes), rien d'autre de votre Drive. Comptez la place des photos sur les 15 Go gratuits du compte
         </p>
         <div>
           <a yonaButton [href]="driveConnectUrl"><svg yonaIcon="cloud-upload"></svg>Connecter Google Drive</a>
@@ -135,15 +135,15 @@
           <div class="progress__bar" [style.transform]="'scaleX(' + (sent() ?? current.received / current.size) + ')'"></div>
         </div>
         @if (sent() === null) {
-          <p class="field__hint">L'envoi a été interrompu : choisissez de nouveau le fichier pour recommencer.</p>
+          <p class="field__hint">L'envoi a été interrompu : choisissez de nouveau le fichier pour recommencer</p>
         }
       } @else if (current.state === 'ANALYZING') {
         <p class="field__hint">
           Le serveur ouvre la sauvegarde dans une base à part, sans toucher au site, puis la compare avec les données en
-          ligne. Cela prend de quelques secondes à quelques minutes.
+          ligne. Cela prend de quelques secondes à quelques minutes
         </p>
       } @else if (current.state === 'APPLYING') {
-        <p class="field__hint">Ne fermez pas cette page tant que ce n'est pas terminé.</p>
+        <p class="field__hint">Ne fermez pas cette page tant que ce n'est pas terminé</p>
       } @else if (current.state === 'FAILED') {
         <p class="restore__error">{{ current.error }}</p>
       }
@@ -158,7 +158,7 @@
             @if (found.backupVersion) {
               (site v{{ found.backupVersion }})
             }
-            : {{ plural(found.imageFiles, 'fichier photo', 'fichiers photo') }}.
+            : {{ plural(found.imageFiles, 'fichier photo', 'fichiers photo') }}
           </p>
           <table class="admin-table admin-table--numbers">
             <thead>
@@ -186,10 +186,10 @@
             <h4 class="choice__title">Ajouter ce qui manque (conseillé)</h4>
             <p class="field__hint">
               Seul ce que le site n'a pas est ajouté : rien n'est modifié ni supprimé. Une recette, une catégorie ou un tag
-              est reconnu à son adresse, un ingrédient à son nom.
+              est reconnu à son adresse, un ingrédient à son nom
             </p>
             @if (nothingToMerge()) {
-              <p class="admin-empty">Rien à ajouter : le site contient déjà tout ce que cette sauvegarde contient.</p>
+              <p class="admin-empty">Rien à ajouter : le site contient déjà tout ce que cette sauvegarde contient</p>
             } @else {
               <ul class="choice__list">
                 @if (found.missing.recipes) {
@@ -236,27 +236,27 @@
               <p class="danger__warning">
                 <svg yonaIcon="triangle-alert" [size]="20"></svg>
                 <strong>
-                  Toute la base de données du site est effacée puis remplacée par celle de la sauvegarde. C'est définitif.
+                  Toute la base de données du site est effacée puis remplacée par celle de la sauvegarde. C'est définitif
                 </strong>
               </p>
               <ul class="choice__list">
                 <li>
                   Les {{ plural(found.current.recipes, 'recette', 'recettes') }} du site sont supprimées, remplacées par les
                   {{ plural(found.backup.recipes, 'recette', 'recettes') }} de la sauvegarde. Tout ce qui a été créé ou modifié
-                  depuis la sauvegarde est perdu.
+                  depuis la sauvegarde est perdu
                 </li>
                 <li>
                   {{ plural(found.imageFilesExtra, 'fichier photo absent', 'fichiers photo absents') }} de la sauvegarde
-                  {{ found.imageFilesExtra > 1 ? 'sont supprimés' : 'est supprimé' }} du stockage.
+                  {{ found.imageFilesExtra > 1 ? 'sont supprimés' : 'est supprimé' }} du stockage
                 </li>
-                <li>L'apparence, les textes et les réseaux sociaux reprennent ceux de la sauvegarde.</li>
+                <li>L'apparence, les textes et les réseaux sociaux reprennent ceux de la sauvegarde</li>
               </ul>
               <p class="field__hint">
-                Par précaution, téléchargez d'abord une sauvegarde de l'état actuel avec « Sauvegarder mes données » plus haut.
+                Par précaution, téléchargez d'abord une sauvegarde de l'état actuel avec « Sauvegarder mes données » plus haut
               </p>
               <label class="checkbox-field">
                 <input type="checkbox" [checked]="understood()" (change)="understood.set($any($event.target).checked)" />
-                J'ai compris que les données actuelles seront supprimées.
+                J'ai compris que les données actuelles seront supprimées
               </label>
               <div class="field">
                 <label class="field__label" for="replace-word">Tapez {{ replaceWordExpected }} pour confirmer</label>
@@ -288,13 +288,13 @@
               {{ plural(report.added.ingredients, 'ingrédient', 'ingrédients') }}, {{ plural(report.added.images, 'photo', 'photos') }},
               {{ plural(report.added.socialLinks, 'réseau social', 'réseaux sociaux') }},
               {{ plural(report.added.appearancePresets, 'préréglage', 'préréglages') }},
-              {{ plural(report.added.glossaryTerms, 'mot du glossaire', 'mots du glossaire') }}.
+              {{ plural(report.added.glossaryTerms, 'mot du glossaire', 'mots du glossaire') }}
             </p>
           } @else {
             <p>
               Le site contient maintenant {{ plural(report.added.recipes, 'recette', 'recettes') }},
               {{ plural(report.added.categories, 'catégorie', 'catégories') }} et
-              {{ plural(report.added.images, 'photo', 'photos') }}.
+              {{ plural(report.added.images, 'photo', 'photos') }}
             </p>
           }
           <p class="field__hint">{{ filesLine(report) }}</p>
@@ -317,7 +317,7 @@
       <p>
         Envoyez une archive téléchargée avec « Sauvegarder mes données » : le serveur l'analyse sans rien changer au site,
         puis vous montre ce qu'elle contient et ce qui manque en ligne. Vous choisissez ensuite d'ajouter ce qui manque, ou
-        (plus loin, en zone danger) de tout remplacer.
+        (plus loin, en zone danger) de tout remplacer
       </p>
       <label
         class="dropzone"

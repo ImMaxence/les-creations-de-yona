@@ -3,7 +3,7 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 export const SITE_NAME = 'Les créations de Yona';
 export const SITE_URL = 'https://les-creations-de-yona.fr';
 export const DEFAULT_DESCRIPTION =
-  'Recettes maison, simples et gourmandes : plats, desserts et pâtisseries à refaire chez soi.';
+  'Recettes maison, simples et gourmandes : plats, desserts et pâtisseries à refaire chez soi';
 
 /** What a page tells search engines and social networks. Every field has a site-wide default. */
 export interface PageSeo {

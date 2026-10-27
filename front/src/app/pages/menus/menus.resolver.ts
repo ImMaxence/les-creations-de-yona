@@ -28,7 +28,7 @@ export function menuSeo(route: ActivatedRouteSnapshot): PageSeo {
   return {
     title: `${menu.title} · Menus`,
     description: excerpt(
-      menu.intro || `${menu.title} : ${menu.recipes.map((recipe) => recipe.title).join(', ')}. Des recettes maison.`,
+      menu.intro || `${menu.title} : ${menu.recipes.map((recipe) => recipe.title).join(', ')}. Des recettes maison`,
     ),
     canonicalPath: path,
     jsonLd: {
@@ -49,7 +49,7 @@ export function menuSeo(route: ActivatedRouteSnapshot): PageSeo {
 export const MENUS_SEO: PageSeo = {
   title: 'Menus',
   description: excerpt(
-    'Des menus composés par Yona pour chaque occasion : fêtes, goûters, repas entre amis. Toutes les recettes à la liste de courses en un geste.',
+    'Des menus composés par Yona pour chaque occasion : fêtes, goûters, repas entre amis. Toutes les recettes à la liste de courses en un geste',
   ),
   canonicalPath: MENUS_PATH,
 };

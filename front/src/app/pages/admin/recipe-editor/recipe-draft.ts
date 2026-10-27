@@ -221,37 +221,37 @@ function ingredientKey(name: string): string {
 
 /** Same rules as the API (RecipeForm and RecipeService on the backend), checked before sending. */
 export const recipeSchema = schema<RecipeDraft>((recipe) => {
-  required(recipe.title, { message: 'Donnez un titre à la recette.' });
-  maxLength(recipe.title, 150, { message: '150 caractères au maximum.' });
-  maxLength(recipe.intro, 1000, { message: '1 000 caractères au maximum.' });
-  maxLength(recipe.tip, 2000, { message: '2 000 caractères au maximum.' });
+  required(recipe.title, { message: 'Donnez un titre à la recette' });
+  maxLength(recipe.title, 150, { message: '150 caractères au maximum' });
+  maxLength(recipe.intro, 1000, { message: '1 000 caractères au maximum' });
+  maxLength(recipe.tip, 2000, { message: '2 000 caractères au maximum' });
   validate(recipe.equipment, ({ value }) => {
     const lines = equipmentLines(value());
     if (lines.length > MAX_EQUIPMENT) {
-      return { kind: 'tooMuchEquipment', message: `${MAX_EQUIPMENT} lignes au maximum.` };
+      return { kind: 'tooMuchEquipment', message: `${MAX_EQUIPMENT} lignes au maximum` };
     }
     return lines.some((line) => line.length > 100)
-      ? { kind: 'equipmentTooLong', message: '100 caractères au maximum par ligne.' }
+      ? { kind: 'equipmentTooLong', message: '100 caractères au maximum par ligne' }
       : undefined;
   });
   validate(recipe.categoryIds, ({ value }) =>
-    value().length === 0 ? { kind: 'noCategory', message: 'Choisissez au moins une catégorie.' } : undefined,
+    value().length === 0 ? { kind: 'noCategory', message: 'Choisissez au moins une catégorie' } : undefined,
   );
-  min(recipe.servings, 1, { message: 'Au moins 1 portion.' });
-  min(recipe.prepMinutes, 0, { message: 'Durée positive.' });
-  min(recipe.cookMinutes, 0, { message: 'Durée positive.' });
-  min(recipe.restMinutes, 0, { message: 'Durée positive.' });
+  min(recipe.servings, 1, { message: 'Au moins 1 portion' });
+  min(recipe.prepMinutes, 0, { message: 'Durée positive' });
+  min(recipe.cookMinutes, 0, { message: 'Durée positive' });
+  min(recipe.restMinutes, 0, { message: 'Durée positive' });
   validate(recipe.videoUrl, ({ value }) =>
     value().trim() && !YOUTUBE_URL.test(value().trim())
       ? {
           kind: 'videoUrl',
-          message: "Collez le lien d'une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…).",
+          message: "Collez le lien d'une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…)",
         }
       : undefined,
   );
   validate(recipe.featured, ({ value, valueOf }) =>
     value() && valueOf(recipe.status) !== 'PUBLISHED'
-      ? { kind: 'featuredDraft', message: 'Seule une recette publiée peut être à la une.' }
+      ? { kind: 'featuredDraft', message: 'Seule une recette publiée peut être à la une' }
       : undefined,
   );
   validate(recipe.scheduledAt, ({ value, valueOf }) => {
@@ -260,46 +260,46 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
     }
     const instant = fromParisInput(value());
     return !instant || new Date(instant).getTime() <= Date.now()
-      ? { kind: 'scheduledPast', message: 'Choisissez une date et une heure à venir.' }
+      ? { kind: 'scheduledPast', message: 'Choisissez une date et une heure à venir' }
       : undefined;
   });
 
   // Mold: its size in cm, a width for a rectangle only
   validate(recipe.moldLengthCm, ({ value, valueOf }) =>
     valueOf(recipe.moldShape) !== 'NONE' && value() == null
-      ? { kind: 'moldLength', message: 'Indiquez la taille du moule.' }
+      ? { kind: 'moldLength', message: 'Indiquez la taille du moule' }
       : undefined,
   );
   validate(recipe.moldWidthCm, ({ value, valueOf }) =>
     valueOf(recipe.moldShape) === 'RECTANGLE' && value() == null
-      ? { kind: 'moldWidth', message: 'Indiquez la largeur du moule.' }
+      ? { kind: 'moldWidth', message: 'Indiquez la largeur du moule' }
       : undefined,
   );
-  min(recipe.moldLengthCm, 1, { message: 'Au moins 1 cm.' });
-  max(recipe.moldLengthCm, 200, { message: '200 cm au plus.' });
-  min(recipe.moldWidthCm, 1, { message: 'Au moins 1 cm.' });
-  max(recipe.moldWidthCm, 200, { message: '200 cm au plus.' });
+  min(recipe.moldLengthCm, 1, { message: 'Au moins 1 cm' });
+  max(recipe.moldLengthCm, 200, { message: '200 cm au plus' });
+  min(recipe.moldWidthCm, 1, { message: 'Au moins 1 cm' });
+  max(recipe.moldWidthCm, 200, { message: '200 cm au plus' });
 
   // At least one ingredient and one step in the whole recipe, whatever the part
   validate(recipe.parts, ({ value }) => {
     if (value().every((part) => part.ingredients.length === 0)) {
-      return { kind: 'noIngredient', message: 'Ajoutez au moins un ingrédient.' };
+      return { kind: 'noIngredient', message: 'Ajoutez au moins un ingrédient' };
     }
     if (value().every((part) => part.steps.length === 0)) {
-      return { kind: 'noStep', message: 'Ajoutez au moins une étape.' };
+      return { kind: 'noStep', message: 'Ajoutez au moins une étape' };
     }
     return undefined;
   });
   applyEach(recipe.parts, (part) => {
     validate(part.title, ({ value, valueOf }) =>
       valueOf(recipe.parts).length > 1 && !value().trim()
-        ? { kind: 'partTitle', message: 'Donnez un titre à cette partie (la pâte, la garniture…).' }
+        ? { kind: 'partTitle', message: 'Donnez un titre à cette partie (la pâte, la garniture…)' }
         : undefined,
     );
-    maxLength(part.title, 100, { message: '100 caractères au maximum.' });
+    maxLength(part.title, 100, { message: '100 caractères au maximum' });
     validate(part, ({ value }) =>
       value().ingredients.length === 0 && value().steps.length === 0
-        ? { kind: 'emptyPart', message: 'Ajoutez un ingrédient ou une étape à cette partie.' }
+        ? { kind: 'emptyPart', message: 'Ajoutez un ingrédient ou une étape à cette partie' }
         : undefined,
     );
 
@@ -311,21 +311,21 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
         return key !== '' && (seen.has(key) || !seen.add(key));
       });
       return repeated
-        ? { kind: 'duplicateIngredient', message: `« ${repeated.name.trim()} » apparaît deux fois dans cette partie.` }
+        ? { kind: 'duplicateIngredient', message: `« ${repeated.name.trim()} » apparaît deux fois dans cette partie` }
         : undefined;
     });
     applyEach(part.ingredients, (line) => {
-      required(line.name, { message: "Nom de l'ingrédient obligatoire." });
-      maxLength(line.name, 100, { message: '100 caractères au maximum.' });
-      min(line.quantity, 0.01, { message: 'Quantité positive.' });
-      maxLength(line.unit, 30, { message: '30 caractères au maximum.' });
-      maxLength(line.note, 200, { message: '200 caractères au maximum.' });
+      required(line.name, { message: "Nom de l'ingrédient obligatoire" });
+      maxLength(line.name, 100, { message: '100 caractères au maximum' });
+      min(line.quantity, 0.01, { message: 'Quantité positive' });
+      maxLength(line.unit, 30, { message: '30 caractères au maximum' });
+      maxLength(line.note, 200, { message: '200 caractères au maximum' });
     });
 
     applyEach(part.steps, (step) => {
-      required(step.description, { message: "Décrivez l'étape." });
-      maxLength(step.description, 5000, { message: '5 000 caractères au maximum.' });
-      min(step.durationMinutes, 1, { message: 'Au moins 1 minute.' });
+      required(step.description, { message: "Décrivez l'étape" });
+      maxLength(step.description, 5000, { message: '5 000 caractères au maximum' });
+      min(step.durationMinutes, 1, { message: 'Au moins 1 minute' });
     });
   });
 });

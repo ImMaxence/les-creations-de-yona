@@ -17,7 +17,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
       <h1 class="enter" style="--delay: 140ms">Accès refusé</h1>
       <p class="error-page__text enter" style="--delay: 200ms">
         Ce compte Google n'est pas autorisé à administrer le site. Connectez-vous avec un compte
-        administrateur.
+        administrateur
       </p>
       <div class="error-page__actions enter" style="--delay: 260ms">
         <button yonaButton type="button" (click)="session.signIn()">Utiliser un autre compte</button>

@@ -250,7 +250,7 @@ export default class AdminRecipes {
   protected async duplicate(recipe: RecipeAdminSummary): Promise<void> {
     const copy = await attempt(this.api.invoke(duplicateRecipe, { id: recipe.id }));
     if (copy.ok) {
-      this.toaster.success(`Copie créée en brouillon : « ${copy.value.title} ».`);
+      this.toaster.success(`Copie créée en brouillon : « ${copy.value.title} »`);
       await this.router.navigate([copy.value.id], { relativeTo: this.route });
     }
   }
@@ -258,13 +258,13 @@ export default class AdminRecipes {
   protected async remove(recipe: RecipeAdminSummary): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Mettre la recette à la corbeille ?',
-      message: `« ${recipe.title} » quitte le site et reste 30 jours dans la corbeille, d'où elle peut être restaurée. Sa photo reste dans la galerie.`,
+      message: `« ${recipe.title} » quitte le site et reste 30 jours dans la corbeille, d'où elle peut être restaurée. Sa photo reste dans la galerie`,
       confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed || !(await attempt(this.api.invoke(deleteRecipe, { id: recipe.id }))).ok) {
       return;
     }
-    this.toaster.success('Recette mise à la corbeille.');
+    this.toaster.success('Recette mise à la corbeille');
     if (this.selection.has(recipe.id)) {
       this.selection.toggle(recipe.id);
     }
@@ -277,8 +277,8 @@ export default class AdminRecipes {
       title: count > 1 ? `Mettre ${count} recettes à la corbeille ?` : 'Mettre la recette à la corbeille ?',
       message:
         count > 1
-          ? `Les ${count} recettes sélectionnées quittent le site et restent 30 jours dans la corbeille. Leurs photos restent dans la galerie.`
-          : 'La recette sélectionnée quitte le site et reste 30 jours dans la corbeille. Sa photo reste dans la galerie.',
+          ? `Les ${count} recettes sélectionnées quittent le site et restent 30 jours dans la corbeille. Leurs photos restent dans la galerie`
+          : 'La recette sélectionnée quitte le site et reste 30 jours dans la corbeille. Sa photo reste dans la galerie',
       confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed) {
@@ -288,7 +288,7 @@ export default class AdminRecipes {
     const deletion = await attempt(this.api.invoke(deleteRecipes, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} recettes mises à la corbeille.` : 'Recette mise à la corbeille.');
+      this.toaster.success(count > 1 ? `${count} recettes mises à la corbeille` : 'Recette mise à la corbeille');
       this.selection.clear();
       this.recipes.reload();
     }

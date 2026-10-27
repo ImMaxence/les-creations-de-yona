@@ -33,13 +33,13 @@ interface SocialLinksDraft {
 
 const socialLinksSchema = schema<SocialLinksDraft>((draft) => {
   applyEach(draft.links, (link) => {
-    required(link.url, { message: "Collez l'adresse de la page." });
+    required(link.url, { message: "Collez l'adresse de la page" });
     pattern(link.url, /^https:\/\/\S+$/, { message: 'Une adresse complète, commençant par https://' });
   });
   validate(draft.links, ({ value }) => {
     const platforms = value().map((link) => link.platform);
     return new Set(platforms).size !== platforms.length
-      ? { kind: 'duplicatePlatform', message: 'Chaque réseau ne peut apparaître qu’une fois.' }
+      ? { kind: 'duplicatePlatform', message: 'Chaque réseau ne peut apparaître qu’une fois' }
       : undefined;
   });
 });
@@ -94,7 +94,7 @@ export default class AdminSocialLinks {
       const saved = await attempt(this.api.invoke(replaceSocialLinks, { body: { links } }));
       this.saving.set(false);
       if (saved.ok) {
-        this.toaster.success('Réseaux sociaux enregistrés.');
+        this.toaster.success('Réseaux sociaux enregistrés');
         await this.siteData.load();
       }
       return undefined;

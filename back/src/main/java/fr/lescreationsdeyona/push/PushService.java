@@ -168,7 +168,7 @@ public class PushService {
 		String intro = recipe.intro() == null ? "" : recipe.intro().strip();
 		Map<String, Object> notification = new LinkedHashMap<>();
 		notification.put("title", "Nouvelle recette : " + recipe.title());
-		notification.put("body", intro.isEmpty() ? "Elle vous attend sur Les créations de Yona."
+		notification.put("body", intro.isEmpty() ? "Elle vous attend sur Les créations de Yona"
 				: intro.length() <= MAX_BODY_LENGTH ? intro : intro.substring(0, MAX_BODY_LENGTH - 1).strip() + "…");
 		notification.put("icon", "/icons/icon-192.png");
 		if (recipe.imageId() != null) {

@@ -151,9 +151,9 @@ export default class ShoppingList {
   protected async copy(): Promise<void> {
     try {
       await navigator.clipboard.writeText(this.text());
-      this.toaster.success('Liste copiée : collez-la où vous voulez.');
+      this.toaster.success('Liste copiée : collez-la où vous voulez');
     } catch {
-      this.toaster.error('Copie impossible sur ce navigateur.');
+      this.toaster.error('Copie impossible sur ce navigateur');
     }
   }
 }

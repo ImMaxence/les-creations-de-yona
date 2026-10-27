@@ -15,7 +15,7 @@ import { MenuCard } from './menu-card';
         <p class="eyebrow enter">Pour chaque occasion</p>
         <h1 class="enter" style="--delay: 60ms">Menus</h1>
         <p class="menus__lead enter" style="--delay: 120ms">
-          Des recettes réunies pour une fête, un goûter ou un repas entre amis : toutes à la liste de courses en un geste.
+          Des recettes réunies pour une fête, un goûter ou un repas entre amis : toutes à la liste de courses en un geste
         </p>
       </header>
 
@@ -27,7 +27,7 @@ import { MenuCard } from './menu-card';
         </ul>
       } @else {
         <p class="menus__empty">
-          Les premiers menus arrivent bientôt. En attendant, <a [routerLink]="recipesPath">toutes les recettes</a>.
+          Les premiers menus arrivent bientôt. En attendant, <a [routerLink]="recipesPath">toutes les recettes</a>
         </p>
       }
     </section>

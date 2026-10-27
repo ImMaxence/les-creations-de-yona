@@ -13,7 +13,7 @@ export function glossarySeo(route: ActivatedRouteSnapshot): PageSeo {
   return {
     title: 'Glossaire de pâtisserie',
     description:
-      'Émulsionner, chemiser, blanchir, sabler… Les mots de la pâtisserie expliqués simplement, pour réussir les recettes.',
+      'Émulsionner, chemiser, blanchir, sabler… Les mots de la pâtisserie expliqués simplement, pour réussir les recettes',
     noIndex: terms.length === 0,
     jsonLd: {
       '@context': 'https://schema.org',

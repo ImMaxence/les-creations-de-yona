@@ -105,7 +105,7 @@ public class IngredientService {
 		List<String> collisions = ingredientRepository.findRecipesListingTwiceAny(involved);
 		if (!collisions.isEmpty()) {
 			throw new ApiException(ErrorCode.INGREDIENT_MERGE_CONFLICT, "Fusion impossible : ces ingrédients figurent "
-					+ "ensemble dans une même partie de " + quoted(collisions) + ". Corrigez d'abord la recette.");
+					+ "ensemble dans une même partie de " + quoted(collisions) + ". Corrigez d'abord la recette");
 		}
 		Set<Long> sourceIds = new HashSet<>(ids);
 		sourceIds.remove(target.getId());
@@ -146,7 +146,7 @@ public class IngredientService {
 			.toList();
 		if (!inUse.isEmpty()) {
 			throw new ApiException(ErrorCode.INGREDIENT_IN_USE, "Suppression annulée : " + quoted(inUse)
-					+ (inUse.size() > 1 ? " sont utilisés" : " est utilisé") + " dans au moins une recette.");
+					+ (inUse.size() > 1 ? " sont utilisés" : " est utilisé") + " dans au moins une recette");
 		}
 		ingredientRepository.deleteAll(ingredients);
 	}

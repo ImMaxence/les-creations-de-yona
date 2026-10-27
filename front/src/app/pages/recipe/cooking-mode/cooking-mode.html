@@ -40,7 +40,7 @@
       <!-- Hidden rather than removed: the ingredients ticked stay ticked when coming back to it -->
       <section class="mise-en-place" [hidden]="!miseEnPlace()" aria-labelledby="mise-en-place-title">
         <h3 id="mise-en-place-title" class="mise-en-place__title">Mise en place</h3>
-        <p class="mise-en-place__hint">Sortez et pesez tout avant de commencer, en cochant au fur et à mesure.</p>
+        <p class="mise-en-place__hint">Sortez et pesez tout avant de commencer, en cochant au fur et à mesure</p>
         @if (ingredients().length) {
           <yona-ingredient-list class="cooking__ingredients" [lines]="ingredients()" />
         }

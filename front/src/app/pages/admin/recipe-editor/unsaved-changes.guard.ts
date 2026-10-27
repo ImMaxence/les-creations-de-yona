@@ -11,6 +11,6 @@ export const unsavedChangesGuard: CanDeactivateFn<UnsavedChanges> = (page) =>
   !page.hasUnsavedChanges() ||
   inject(Confirm).ask({
     title: 'Quitter sans enregistrer ?',
-    message: 'Les modifications de cette recette seront perdues.',
+    message: 'Les modifications de cette recette seront perdues',
     confirmLabel: 'Quitter',
   });

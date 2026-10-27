@@ -5,7 +5,7 @@
   </div>
   <p class="field__hint">
     Les mots de pâtisserie (émulsionner, chemiser, blanchir…) sont soulignés dans les étapes des recettes : un appui affiche
-    leur définition. Ils ont aussi leur page, « Glossaire », que Google peut afficher.
+    leur définition. Ils ont aussi leur page, « Glossaire », que Google peut afficher
   </p>
 
   <form class="admin-panel glossary-form" (submit)="save($event)">
@@ -27,12 +27,12 @@
         id="term-definition"
         class="input"
         rows="3"
-        placeholder="Garnir l'intérieur d'un moule de papier cuisson, ou de beurre et de farine, pour que la préparation n'attache pas."
+        placeholder="Garnir l'intérieur d'un moule de papier cuisson, ou de beurre et de farine, pour que la préparation n'attache pas"
         [maxLength]="maxDefinitionLength"
         [value]="definition()"
         (input)="definition.set($any($event.target).value)"
       ></textarea>
-      <span class="field__hint">{{ definition().length }} / {{ maxDefinitionLength }} caractères.</span>
+      <span class="field__hint">{{ definition().length }} / {{ maxDefinitionLength }} caractères</span>
     </div>
     <div class="field">
       <label class="field__label" for="term-forms">Autres formes dans les étapes (facultatif)</label>
@@ -44,7 +44,7 @@
         (input)="forms.set($any($event.target).value)"
       />
       <span class="field__hint">
-        Séparées par des virgules : verbe conjugué, pluriel… Majuscules et accents ne comptent pas.
+        Séparées par des virgules : verbe conjugué, pluriel… Majuscules et accents ne comptent pas
         <button type="button" class="link-button" (click)="suggestForms()"><svg yonaIcon="sparkles" [size]="14"></svg>Proposer les formes courantes</button>
       </span>
     </div>
@@ -103,7 +103,7 @@
         }
       </ul>
     } @else {
-      <p class="admin-empty">Le glossaire est vide : ajoutez un premier mot, comme « Chemiser » ou « Blanchir ».</p>
+      <p class="admin-empty">Le glossaire est vide : ajoutez un premier mot, comme « Chemiser » ou « Blanchir »</p>
     }
   } @else if (terms.isLoading()) {
     <p class="admin-empty">Chargement du glossaire…</p>

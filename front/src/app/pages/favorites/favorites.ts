@@ -20,7 +20,7 @@ import { Icon } from '../../shared/ui/icon/icon';
         <h1 class="favorites__title enter" style="--delay: 80ms">Mes favoris</h1>
         <p class="favorites__hint enter" style="--delay: 140ms">
           Touchez le cœur d'une recette pour la retrouver ici, même hors connexion avec l'application installée. Rien
-          n'est envoyé au site : vos favoris restent sur cet appareil.
+          n'est envoyé au site : vos favoris restent sur cet appareil
         </p>
       </header>
 
@@ -46,7 +46,7 @@ import { Icon } from '../../shared/ui/icon/icon';
         <div class="empty">
           <div class="empty__icon" aria-hidden="true"><svg yonaIcon="heart" [size]="40" [strokeWidth]="1.5"></svg></div>
           <h2>Aucun favori pour le moment</h2>
-          <p>Sur une recette, touchez le cœur en haut de la photo.</p>
+          <p>Sur une recette, touchez le cœur en haut de la photo</p>
           <a yonaButton [routerLink]="recipesPath">Voir les recettes</a>
         </div>
       }

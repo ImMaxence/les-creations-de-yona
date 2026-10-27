@@ -108,7 +108,7 @@ export default class AdminMenus {
       return;
     }
     if (!draft.title.trim() || !draft.recipes.length) {
-      this.toaster.error('Donnez un titre au menu et choisissez au moins une recette.');
+      this.toaster.error('Donnez un titre au menu et choisissez au moins une recette');
       return;
     }
     const body = {
@@ -125,7 +125,7 @@ export default class AdminMenus {
     );
     this.saving.set(false);
     if (saved.ok) {
-      this.toaster.success(draft.published ? 'Menu enregistré et visible sur le site.' : 'Menu enregistré, pas encore publié.');
+      this.toaster.success(draft.published ? 'Menu enregistré et visible sur le site' : 'Menu enregistré, pas encore publié');
       this.draft.set(null);
       this.reload();
     }
@@ -134,11 +134,11 @@ export default class AdminMenus {
   protected async remove(menu: MenuSummary): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Mettre le menu à la corbeille ?',
-      message: `« ${menu.title} » disparaît du site et reste 30 jours dans la corbeille, d'où il peut être restauré. Ses recettes restent.`,
+      message: `« ${menu.title} » disparaît du site et reste 30 jours dans la corbeille, d'où il peut être restauré. Ses recettes restent`,
       confirmLabel: 'Mettre à la corbeille',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteMenu, { id: menu.id }))).ok) {
-      this.toaster.success('Menu mis à la corbeille.');
+      this.toaster.success('Menu mis à la corbeille');
       if (this.draft()?.id === menu.id) {
         this.draft.set(null);
       }

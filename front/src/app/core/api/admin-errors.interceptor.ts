@@ -7,7 +7,7 @@ import { Toaster } from '../notifications/toaster';
 const ADMIN_API = '/api/admin/';
 /** Session probe, answered 401 for public visitors: never an error to report. */
 const SESSION_PROBE = '/api/admin/me';
-const DEFAULT_MESSAGE = "L'opération n'a pas abouti. Réessayez dans un instant.";
+const DEFAULT_MESSAGE = "L'opération n'a pas abouti. Réessayez dans un instant";
 
 /** ProblemDetail sent by the API: "detail" is already a French message meant for the user. */
 interface ProblemDetail {

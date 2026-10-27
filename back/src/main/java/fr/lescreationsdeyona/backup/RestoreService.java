@@ -337,7 +337,7 @@ public class RestoreService {
 			}
 		}
 		if (deleted < stored.keySet().stream().filter(key -> !archived.contains(key)).count()) {
-			warnings.add("Certaines anciennes photos n'ont pas pu être supprimées du stockage : elles restent en fichiers orphelins, sans effet sur le site.");
+			warnings.add("Certaines anciennes photos n'ont pas pu être supprimées du stockage : elles restent en fichiers orphelins, sans effet sur le site");
 		}
 		return new RestoreStatus.Report(RestoreStatus.Mode.REPLACE, counts, uploaded, deleted, warnings);
 	}
@@ -358,7 +358,7 @@ public class RestoreService {
 		}
 		if (failed > 0) {
 			warnings.add(failed + (failed > 1 ? " photos n'ont pas pu être restaurées" : " photo n'a pas pu être restaurée")
-					+ " (fichier illisible dans l'archive, ou stockage indisponible).");
+					+ " (fichier illisible dans l'archive, ou stockage indisponible)");
 		}
 		return uploaded;
 	}

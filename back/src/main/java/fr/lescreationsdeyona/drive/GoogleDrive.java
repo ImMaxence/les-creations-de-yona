@@ -124,17 +124,17 @@ class GoogleDrive {
 		TokenResponse tokens = token(Map.of("code", code, "client_id", clientId, "client_secret", clientSecret,
 				"redirect_uri", redirectUri, "grant_type", "authorization_code"));
 		if (tokens.scope() == null || !tokens.scope().contains(DRIVE_SCOPE)) {
-			throw new DriveException("L'accès à Google Drive n'a pas été autorisé : recommencez en cochant la case Google Drive.");
+			throw new DriveException("L'accès à Google Drive n'a pas été autorisé : recommencez en cochant la case Google Drive");
 		}
 		if (tokens.refreshToken() == null || tokens.idToken() == null) {
-			throw new DriveException("Google n'a pas donné d'accès durable : recommencez la connexion.");
+			throw new DriveException("Google n'a pas donné d'accès durable : recommencez la connexion");
 		}
 		// Received from Google itself over HTTPS: its claims can be read without checking the signature
 		String[] parts = tokens.idToken().split("\\.");
 		String email = parts.length < 2 ? null
 				: jsonMapper.readValue(Base64.getUrlDecoder().decode(parts[1]), IdTokenClaims.class).email();
 		if (email == null) {
-			throw new DriveException("Google n'a pas indiqué l'adresse du compte : recommencez la connexion.");
+			throw new DriveException("Google n'a pas indiqué l'adresse du compte : recommencez la connexion");
 		}
 		return new Tokens(tokens.accessToken(), tokens.refreshToken(), email);
 	}
@@ -193,7 +193,7 @@ class GoogleDrive {
 			.POST(json(Map.of("name", name, "parents", List.of(folderId), "mimeType", "application/zip")))
 			.build(), "commencer l'envoi");
 		URI session = URI.create(started.headers().firstValue("Location")
-			.orElseThrow(() -> new DriveException("Google Drive n'a pas ouvert l'envoi du fichier.")));
+			.orElseThrow(() -> new DriveException("Google Drive n'a pas ouvert l'envoi du fichier")));
 		long offset = 0;
 		int failures = 0;
 		boolean askWhereItStopped = false;
@@ -217,7 +217,7 @@ class GoogleDrive {
 				}
 				catch (InterruptedException ex) {
 					Thread.currentThread().interrupt();
-					throw new DriveException("Sauvegarde interrompue.", false, ex);
+					throw new DriveException("Sauvegarde interrompue", false, ex);
 				}
 				if (response != null && response.statusCode() / 100 == 2) {
 					return jsonMapper.readValue(response.body(), Created.class).id();
@@ -228,10 +228,10 @@ class GoogleDrive {
 					continue;
 				}
 				if (response != null && response.statusCode() / 100 == 4) {
-					throw new DriveException("Google Drive a refusé le fichier (erreur " + response.statusCode() + ").");
+					throw new DriveException("Google Drive a refusé le fichier (erreur " + response.statusCode() + ")");
 				}
 				if (++failures > MAX_RETRIES) {
-					throw new DriveException("L'envoi vers Google Drive a échoué plusieurs fois de suite.");
+					throw new DriveException("L'envoi vers Google Drive a échoué plusieurs fois de suite");
 				}
 				askWhereItStopped = true;
 				pause(failures);
@@ -261,7 +261,7 @@ class GoogleDrive {
 			.POST(HttpRequest.BodyPublishers.ofString(form(parameters)))
 			.build(), null);
 		if (response.statusCode() == 400 && response.body().contains("invalid_grant")) {
-			throw new DriveException("L'accès à Google Drive a été retiré ou a expiré : reconnectez le compte.", true, null);
+			throw new DriveException("L'accès à Google Drive a été retiré ou a expiré : reconnectez le compte", true, null);
 		}
 		requireSuccess(response, "obtenir l'accès à Google Drive");
 		return jsonMapper.readValue(response.body(), TokenResponse.class);
@@ -277,17 +277,17 @@ class GoogleDrive {
 			return response;
 		}
 		catch (IOException ex) {
-			throw new DriveException("Google Drive est injoignable pour le moment.", false, ex);
+			throw new DriveException("Google Drive est injoignable pour le moment", false, ex);
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
-			throw new DriveException("Sauvegarde interrompue.", false, ex);
+			throw new DriveException("Sauvegarde interrompue", false, ex);
 		}
 	}
 
 	private static void requireSuccess(HttpResponse<String> response, String action) throws DriveException {
 		if (response.statusCode() / 100 != 2) {
-			throw new DriveException("Impossible de " + action + " sur Google Drive (erreur " + response.statusCode() + ").",
+			throw new DriveException("Impossible de " + action + " sur Google Drive (erreur " + response.statusCode() + ")",
 					response.statusCode() == 401, null);
 		}
 	}
@@ -322,7 +322,7 @@ class GoogleDrive {
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
-			throw new DriveException("Sauvegarde interrompue.", false, ex);
+			throw new DriveException("Sauvegarde interrompue", false, ex);
 		}
 	}
 

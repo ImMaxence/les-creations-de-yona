@@ -76,14 +76,14 @@ export default class Menu {
     const found = recipes.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
     found.forEach((recipe) => this.shoppingList.add(shoppingRecipeOf(recipe)));
     if (!found.length) {
-      this.toaster.error('Impossible de lire les recettes pour le moment : réessayez.');
+      this.toaster.error('Impossible de lire les recettes pour le moment : réessayez');
       return;
     }
     this.added.set(true);
     this.toaster.success(
       found.length === recipes.length
-        ? 'Les ingrédients du menu sont dans votre liste de courses.'
-        : `${found.length} recettes sur ${recipes.length} ajoutées : les autres n'ont pas pu être lues.`,
+        ? 'Les ingrédients du menu sont dans votre liste de courses'
+        : `${found.length} recettes sur ${recipes.length} ajoutées : les autres n'ont pas pu être lues`,
     );
   }
 }

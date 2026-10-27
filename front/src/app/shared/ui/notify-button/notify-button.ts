@@ -43,7 +43,7 @@ import { Icon } from '../icon/icon';
         <p class="notify__note">
           <svg yonaIcon="bell-off" [size]="18"></svg>
           Notifications bloquées pour ce site : autorisez-les dans les réglages du navigateur pour être prévenu·e des
-          nouvelles recettes.
+          nouvelles recettes
         </p>
       }
       @case ('install-first') {
@@ -52,7 +52,7 @@ import { Icon } from '../icon/icon';
             <svg yonaIcon="bell" [size]="18"></svg>
             <span>
               Pour être prévenu·e des nouvelles recettes sur iPhone,
-              <a [routerLink]="installPath">installez d'abord l'application</a>.
+              <a [routerLink]="installPath">installez d'abord l'application</a>
             </span>
           </p>
         }

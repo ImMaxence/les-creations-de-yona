@@ -129,13 +129,13 @@ export default class AdminAppearance {
     event.preventDefault();
     const name = this.newPresetName().trim();
     if (!name) {
-      this.toaster.error('Donnez un nom au préréglage.');
+      this.toaster.error('Donnez un nom au préréglage');
       return;
     }
     const created = await attempt(this.api.invoke(createAppearancePreset, { body: { name, theme: this.draft() } }));
     if (created.ok) {
       this.newPresetName.set('');
-      this.toaster.success(`Préréglage « ${created.value.name} » enregistré.`);
+      this.toaster.success(`Préréglage « ${created.value.name} » enregistré`);
       this.savedLooks.reload();
     }
   }
@@ -144,7 +144,7 @@ export default class AdminAppearance {
   protected async overwriteLook(look: AppearancePresetResponse): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Remplacer ce préréglage ?',
-      message: `« ${look.name} » prendra les couleurs, polices et arrondi choisis plus bas.`,
+      message: `« ${look.name} » prendra les couleurs, polices et arrondi choisis plus bas`,
       confirmLabel: 'Remplacer',
     });
     if (
@@ -152,7 +152,7 @@ export default class AdminAppearance {
       (await attempt(this.api.invoke(updateAppearancePreset, { id: look.id, body: { name: look.name, theme: this.draft() } })))
         .ok
     ) {
-      this.toaster.success(`Préréglage « ${look.name} » mis à jour.`);
+      this.toaster.success(`Préréglage « ${look.name} » mis à jour`);
       this.savedLooks.reload();
     }
   }
@@ -170,7 +170,7 @@ export default class AdminAppearance {
     }
     if ((await attempt(this.api.invoke(updateAppearancePreset, { id: look.id, body: { name, theme: look.theme } }))).ok) {
       this.renamingId.set(null);
-      this.toaster.success('Préréglage renommé.');
+      this.toaster.success('Préréglage renommé');
       this.savedLooks.reload();
     }
   }
@@ -178,11 +178,11 @@ export default class AdminAppearance {
   protected async removeLook(look: AppearancePresetResponse): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Supprimer ce préréglage ?',
-      message: `« ${look.name} » sera supprimé. L'apparence actuelle du site ne change pas.`,
+      message: `« ${look.name} » sera supprimé. L'apparence actuelle du site ne change pas`,
       confirmLabel: 'Supprimer',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteAppearancePreset, { id: look.id }))).ok) {
-      this.toaster.success('Préréglage supprimé.');
+      this.toaster.success('Préréglage supprimé');
       this.savedLooks.reload();
     }
   }
@@ -191,7 +191,7 @@ export default class AdminAppearance {
     this.saving.set(true);
     try {
       await this.siteTheme.save(this.draft());
-      this.toaster.success('Apparence enregistrée : les visiteurs la voient dès maintenant.');
+      this.toaster.success('Apparence enregistrée : les visiteurs la voient dès maintenant');
     } catch {
       // The API error is already shown as a toast
     } finally {

@@ -8,7 +8,7 @@ export const PHOTO_ACCEPT = ACCEPTED_TYPES.join(',');
 /** Why the API would refuse this file, checked before sending it; null when it may be sent. */
 export function photoFileError(file: File): string | null {
   if (!ACCEPTED_TYPES.includes(file.type)) {
-    return 'Choisissez une photo au format JPEG ou PNG.';
+    return 'Choisissez une photo au format JPEG ou PNG';
   }
-  return file.size > MAX_SIZE_BYTES ? 'Cette photo dépasse 10 Mo.' : null;
+  return file.size > MAX_SIZE_BYTES ? 'Cette photo dépasse 10 Mo' : null;
 }

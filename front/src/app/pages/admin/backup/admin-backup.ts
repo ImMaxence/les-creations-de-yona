@@ -133,7 +133,7 @@ export default class AdminBackup {
     this.driveBusy.set(false);
     if (started.ok) {
       this.drive.set(started.value);
-      this.toaster.success('Sauvegarde vers Google Drive lancée : elle peut prendre quelques minutes.');
+      this.toaster.success('Sauvegarde vers Google Drive lancée : elle peut prendre quelques minutes');
       this.pollDrive();
     }
   }
@@ -142,11 +142,11 @@ export default class AdminBackup {
     const confirmed = await this.confirm.ask({
       title: 'Déconnecter Google Drive ?',
       message:
-        "Les sauvegardes de chaque nuit s'arrêtent. Celles déjà sur le Drive y restent : supprimez-les depuis Google Drive si besoin.",
+        "Les sauvegardes de chaque nuit s'arrêtent. Celles déjà sur le Drive y restent : supprimez-les depuis Google Drive si besoin",
       confirmLabel: 'Déconnecter',
     });
     if (confirmed && (await attempt(this.api.invoke(disconnectDrive))).ok) {
-      this.toaster.success('Google Drive déconnecté.');
+      this.toaster.success('Google Drive déconnecté');
       this.drive.reload();
     }
   }
@@ -165,9 +165,9 @@ export default class AdminBackup {
       if (status.value.running) {
         this.pollDrive();
       } else if (status.value.lastBackupOk) {
-        this.toaster.success('Sauvegarde envoyée sur Google Drive.');
+        this.toaster.success('Sauvegarde envoyée sur Google Drive');
       } else {
-        this.toaster.error(status.value.lastBackupError ?? "La sauvegarde vers Google Drive n'a pas abouti.");
+        this.toaster.error(status.value.lastBackupError ?? "La sauvegarde vers Google Drive n'a pas abouti");
       }
     }, DRIVE_POLL_MS);
   }
@@ -180,11 +180,11 @@ export default class AdminBackup {
       return;
     }
     if (outcome === 'connecte') {
-      this.toaster.success('Google Drive connecté : une sauvegarde y sera envoyée chaque nuit.');
+      this.toaster.success('Google Drive connecté : une sauvegarde y sera envoyée chaque nuit');
     } else if (outcome === 'refuse') {
-      this.toaster.error("Connexion à Google Drive annulée : rien n'a été changé.");
+      this.toaster.error("Connexion à Google Drive annulée : rien n'a été changé");
     } else {
-      this.toaster.error(params.get('message') ?? 'La connexion à Google Drive a échoué.');
+      this.toaster.error(params.get('message') ?? 'La connexion à Google Drive a échoué');
     }
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
   }
@@ -216,7 +216,7 @@ export default class AdminBackup {
     const confirmed = await this.confirm.ask({
       title: 'Ajouter ce qui manque ?',
       message:
-        "Les recettes, catégories, photos… de la sauvegarde absentes du site y seront ajoutées. Rien de ce qui est en ligne ne sera modifié ni supprimé.",
+        "Les recettes, catégories, photos… de la sauvegarde absentes du site y seront ajoutées. Rien de ce qui est en ligne ne sera modifié ni supprimé",
       confirmLabel: 'Ajouter',
     });
     if (confirmed) {
@@ -228,7 +228,7 @@ export default class AdminBackup {
     const confirmed = await this.confirm.ask({
       title: 'Remplacer toutes les données ?',
       message:
-        "Dernière vérification : toutes les recettes, catégories, photos et réglages actuels du site seront supprimés et remplacés par ceux de la sauvegarde. C'est définitif.",
+        "Dernière vérification : toutes les recettes, catégories, photos et réglages actuels du site seront supprimés et remplacés par ceux de la sauvegarde. C'est définitif",
       confirmLabel: 'Tout remplacer',
     });
     if (confirmed) {
@@ -259,8 +259,8 @@ export default class AdminBackup {
   protected filesLine(report: Report): string {
     const sent = this.plural(report.filesUploaded, 'fichier photo envoyé', 'fichiers photo envoyés') + ' au stockage';
     return report.mode === 'REPLACE'
-      ? `${sent}, ${this.plural(report.filesDeleted, 'supprimé', 'supprimés')}.`
-      : `${sent}.`;
+      ? `${sent}, ${this.plural(report.filesDeleted, 'supprimé', 'supprimés')}`
+      : `${sent}`;
   }
 
   protected plural(count: number, one: string, many: string): string {
@@ -269,7 +269,7 @@ export default class AdminBackup {
 
   private async upload(file: File): Promise<void> {
     if (!file.name.toLowerCase().endsWith('.zip')) {
-      this.toaster.error('Choisissez le fichier .zip téléchargé avec « Sauvegarder mes données ».');
+      this.toaster.error('Choisissez le fichier .zip téléchargé avec « Sauvegarder mes données »');
       return;
     }
     const previous = this.status();
@@ -351,9 +351,9 @@ export default class AdminBackup {
       const after = this.status()?.state;
       if (before === 'APPLYING' && after === 'DONE') {
         await Promise.all([this.siteData.load(), this.siteTheme.load()]);
-        this.toaster.success('Restauration terminée.');
+        this.toaster.success('Restauration terminée');
       } else if (after === 'FAILED' && before !== 'FAILED') {
-        this.toaster.error(this.status()?.error ?? 'La restauration a échoué.');
+        this.toaster.error(this.status()?.error ?? 'La restauration a échoué');
       }
     }, POLL_MS);
   }

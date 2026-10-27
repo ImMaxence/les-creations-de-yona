@@ -18,7 +18,7 @@
   <p class="field__hint">
     Toutes les photos envoyées restent ici, même remplacées. « Ajouter une photo » la range ici sans l'afficher nulle part :
     elle se met ensuite sur une recette ou une catégorie avec « Choisir dans la galerie ». Une photo « Non utilisée »
-    peut être mise à la corbeille, d'où elle se restaure pendant 30 jours.
+    peut être mise à la corbeille, d'où elle se restaure pendant 30 jours
   </p>
   <div class="admin-toolbar">
     <yona-select label="Utilisation" [options]="usageOptions" [(value)]="usage" />
@@ -90,7 +90,7 @@
         </div>
       }
     } @else {
-      <p class="admin-empty">Aucune image.</p>
+      <p class="admin-empty">Aucune image</p>
     }
   } @else if (images.isLoading()) {
     <p class="admin-empty">Chargement…</p>

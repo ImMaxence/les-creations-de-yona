@@ -4,7 +4,7 @@
     <h1 class="list-page__title enter" style="--delay: 80ms">Ma liste de courses</h1>
     <p class="list-page__hint enter" style="--delay: 140ms">
       Ajoutez les ingrédients d'une recette depuis sa page, avec le nombre de portions voulu : les mêmes ingrédients
-      s'additionnent ici. Cochez au fur et à mesure dans le magasin.
+      s'additionnent ici. Cochez au fur et à mesure dans le magasin
     </p>
   </header>
 
@@ -14,7 +14,7 @@
     <div class="empty">
       <div class="empty__icon" aria-hidden="true"><svg yonaIcon="shopping-basket" [size]="40" [strokeWidth]="1.5"></svg></div>
       <h2>Votre liste est vide</h2>
-      <p>Sur une recette, touchez « Ajouter à ma liste de courses » sous les ingrédients.</p>
+      <p>Sur une recette, touchez « Ajouter à ma liste de courses » sous les ingrédients</p>
       <a yonaButton [routerLink]="recipesPath">Voir les recettes</a>
     </div>
   } @else {
@@ -104,7 +104,7 @@
             }
           </ul>
         } @else {
-          <p class="list-page__hint">Aucune recette : seulement les articles ajoutés à la main.</p>
+          <p class="list-page__hint">Aucune recette : seulement les articles ajoutés à la main</p>
         }
         @if (confirmingClear()) {
           <div class="clear">

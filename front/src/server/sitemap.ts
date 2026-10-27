@@ -126,6 +126,6 @@ export const sitemap: RequestHandler = async (req, res) => {
       .set('Cache-Control', 'no-store')
       .set('Retry-After', '300')
       .type('text/plain')
-      .send('Sitemap temporairement indisponible.');
+      .send('Sitemap temporairement indisponible');
   }
 };

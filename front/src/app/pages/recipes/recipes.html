@@ -136,13 +136,13 @@
         </div>
         @if (result().totalElements > 0) {
           <h2>Cette page est vide</h2>
-          <p>Il n'y a pas autant de pages de recettes.</p>
+          <p>Il n'y a pas autant de pages de recettes</p>
           <a yonaButton variant="secondary" routerLink="." queryParamsHandling="merge" [queryParams]="{ page: null }"
             >Revenir à la première page</a
           >
         } @else {
           <h2>Aucune recette trouvée</h2>
-          <p>Essayez un autre mot, un autre ingrédient ou une autre catégorie.</p>
+          <p>Essayez un autre mot, un autre ingrédient ou une autre catégorie</p>
           @if (hasFilters()) {
             <a yonaButton variant="secondary" [routerLink]="recipesPath">Voir toutes les recettes</a>
           }

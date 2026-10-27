@@ -79,7 +79,7 @@
               </span>
             } @else {
               <strong class="storage__value">Indisponible</strong>
-              <span class="tile__detail">Le stockage des images ne répond pas.</span>
+              <span class="tile__detail">Le stockage des images ne répond pas</span>
             }
           </div>
           <div>
@@ -115,7 +115,7 @@
         <p class="field__hint">
           Le disque est celui du serveur qui fait tourner le site : la base de données et les photos y sont, avec le reste
           de ce que le serveur héberge. Chaque photo compte ses deux tailles (800 et 1600 px), y compris les photos qui ne
-          sont plus utilisées.
+          sont plus utilisées
         </p>
       </section>
     }
@@ -126,7 +126,7 @@
         <h3 id="most-viewed-title" class="chart__title">Recettes les plus vues</h3>
         <p class="chart__subtitle">
           Les 10 recettes publiées les plus ouvertes sur le site, une fois par visite. Vos propres visites, connecté·e au
-          back-office, ne comptent pas.
+          back-office, ne comptent pas
         </p>
         @if (mostViewed().length) {
           <ol role="list" class="bars">
@@ -141,7 +141,7 @@
         } @else {
           <p class="admin-empty">
             <svg yonaIcon="eye" [size]="20"></svg>
-            Aucune vue pour le moment : elles sont comptées depuis la version 3.5.0.
+            Aucune vue pour le moment : elles sont comptées depuis la version 3.5.0
           </p>
         }
       </section>
@@ -192,7 +192,7 @@
             }
           </ul>
         } @else {
-          <p class="admin-empty">Aucune catégorie.</p>
+          <p class="admin-empty">Aucune catégorie</p>
         }
       </section>
 
@@ -211,7 +211,7 @@
             }
           </ul>
         } @else {
-          <p class="admin-empty">Aucun ingrédient utilisé.</p>
+          <p class="admin-empty">Aucun ingrédient utilisé</p>
         }
       </section>
     </div>
@@ -220,7 +220,7 @@
     <section class="admin-panel todo" aria-labelledby="incomplete-title">
       <h3 id="incomplete-title" class="chart__title">Recettes à compléter</h3>
       <p class="chart__subtitle">
-        Google met mieux en avant une recette avec photo, introduction, temps et portions. Les recettes publiées d'abord.
+        Google met mieux en avant une recette avec photo, introduction, temps et portions. Les recettes publiées d'abord
       </p>
       @if (data.incompleteRecipes.length) {
         <ul role="list" class="admin-list">
@@ -242,7 +242,7 @@
           }
         </ul>
       } @else {
-        <p class="admin-empty">Toutes les recettes sont complètes.</p>
+        <p class="admin-empty">Toutes les recettes sont complètes</p>
       }
     </section>
 
@@ -260,7 +260,7 @@
             }
           </ul>
         } @else {
-          <p class="admin-empty">Aucun brouillon oublié.</p>
+          <p class="admin-empty">Aucun brouillon oublié</p>
         }
       </section>
 
@@ -277,7 +277,7 @@
             }
           </ul>
         } @else {
-          <p class="admin-empty">Aucune recette publiée depuis plus d'un an sans retouche.</p>
+          <p class="admin-empty">Aucune recette publiée depuis plus d'un an sans retouche</p>
         }
       </section>
     </div>
@@ -288,7 +288,7 @@
           <h3 id="misses-title" class="chart__title">Recherches sans résultat</h3>
           <p class="chart__subtitle">
             Ce que les visiteurs ont cherché sans trouver de recette : des idées de recettes à écrire. Seul le texte tapé est
-            gardé, sans rien sur le visiteur, et effacé au bout de 12 mois.
+            gardé, sans rien sur le visiteur, et effacé au bout de 12 mois
           </p>
         </div>
         @if (data.searchMisses.length) {
@@ -325,13 +325,13 @@
       } @else {
         <p class="admin-empty">
           <svg yonaIcon="search-x" [size]="20"></svg>
-          Aucune recherche sans résultat pour le moment.
+          Aucune recherche sans résultat pour le moment
         </p>
       }
     </section>
   } @else if (stats.isLoading()) {
     <p class="admin-empty">Calcul des statistiques…</p>
   } @else if (stats.error()) {
-    <p class="admin-empty">Les statistiques n'ont pas pu être calculées.</p>
+    <p class="admin-empty">Les statistiques n'ont pas pu être calculées</p>
   }
 </section>

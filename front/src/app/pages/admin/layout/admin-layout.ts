@@ -45,7 +45,7 @@ export default class AdminLayout {
 
   protected async signOut(): Promise<void> {
     await this.session.signOut();
-    this.toaster.success('Vous êtes déconnecté.');
+    this.toaster.success('Vous êtes déconnecté');
     await this.router.navigateByUrl('/');
   }
 }

@@ -135,12 +135,12 @@ export default class AdminStats {
     const confirmed = await this.confirm.ask({
       title: term ? 'Effacer cette recherche ?' : 'Effacer toutes les recherches ?',
       message: term
-        ? `« ${term} » disparaîtra de la liste ; elle reviendra si un visiteur la cherche encore.`
-        : 'La liste repartira de zéro avec les prochaines recherches sans résultat.',
+        ? `« ${term} » disparaîtra de la liste ; elle reviendra si un visiteur la cherche encore`
+        : 'La liste repartira de zéro avec les prochaines recherches sans résultat',
       confirmLabel: 'Effacer',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteSearchMisses, { term }))).ok) {
-      this.toaster.success(term ? 'Recherche effacée.' : 'Recherches effacées.');
+      this.toaster.success(term ? 'Recherche effacée' : 'Recherches effacées');
       this.stats.reload();
     }
   }

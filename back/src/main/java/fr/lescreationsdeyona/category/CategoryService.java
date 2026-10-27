@@ -78,7 +78,7 @@ public class CategoryService {
 			.toList();
 		if (!inUse.isEmpty()) {
 			throw new ApiException(ErrorCode.CATEGORY_IN_USE, "Suppression annulée : " + String.join(", ", inUse)
-					+ (inUse.size() > 1 ? " contiennent" : " contient") + " encore des recettes.");
+					+ (inUse.size() > 1 ? " contiennent" : " contient") + " encore des recettes");
 		}
 		trash(categories);
 	}

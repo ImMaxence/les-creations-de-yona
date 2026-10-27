@@ -51,13 +51,13 @@ export default class AdminTags {
     event.preventDefault();
     const name = this.newName().trim();
     if (!name) {
-      this.toaster.error('Donnez un nom au tag.');
+      this.toaster.error('Donnez un nom au tag');
       return;
     }
     const created = await attempt(this.api.invoke(createTag, { body: { name } }));
     if (created.ok) {
       this.newName.set('');
-      this.toaster.success(`Tag « ${created.value.name} » créé.`);
+      this.toaster.success(`Tag « ${created.value.name} » créé`);
       this.tags.reload();
     }
   }
@@ -75,7 +75,7 @@ export default class AdminTags {
     }
     if ((await attempt(this.api.invoke(renameTag, { id: tag.id, body: { name } }))).ok) {
       this.editingId.set(null);
-      this.toaster.success('Tag renommé.');
+      this.toaster.success('Tag renommé');
       this.tags.reload();
     }
   }
@@ -84,12 +84,12 @@ export default class AdminTags {
     const confirmed = await this.confirm.ask({
       title: 'Supprimer le tag ?',
       message: tag.recipeCount
-        ? `« ${tag.name} » sera retiré de ${tag.recipeCount > 1 ? `ses ${tag.recipeCount} recettes` : 'sa recette'}, qui restent en ligne.`
-        : `« ${tag.name} » sera supprimé.`,
+        ? `« ${tag.name} » sera retiré de ${tag.recipeCount > 1 ? `ses ${tag.recipeCount} recettes` : 'sa recette'}, qui restent en ligne`
+        : `« ${tag.name} » sera supprimé`,
       confirmLabel: 'Supprimer',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteTags, { ids: [tag.id] }))).ok) {
-      this.toaster.success('Tag supprimé.');
+      this.toaster.success('Tag supprimé');
       if (this.selection.has(tag.id)) {
         this.selection.toggle(tag.id);
       }
@@ -101,7 +101,7 @@ export default class AdminTags {
     const count = this.selection.size();
     const confirmed = await this.confirm.ask({
       title: count > 1 ? `Supprimer ${count} tags ?` : 'Supprimer le tag ?',
-      message: 'Ils seront retirés de leurs recettes, qui restent en ligne.',
+      message: 'Ils seront retirés de leurs recettes, qui restent en ligne',
       confirmLabel: 'Supprimer',
     });
     if (!confirmed) {
@@ -111,7 +111,7 @@ export default class AdminTags {
     const deletion = await attempt(this.api.invoke(deleteTags, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} tags supprimés.` : 'Tag supprimé.');
+      this.toaster.success(count > 1 ? `${count} tags supprimés` : 'Tag supprimé');
       this.selection.clear();
       this.tags.reload();
     }

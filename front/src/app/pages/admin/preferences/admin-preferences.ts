@@ -24,12 +24,12 @@ type PendingImage = { file: File; previewUrl: string } | { imageId: string | nul
 
 /** Same rules as the API (SiteContentForm on the backend). */
 const contentSchema = schema<ContentDraft>((content) => {
-  required(content.aboutTitle, { message: 'Donnez un titre à la section.' });
-  maxLength(content.aboutTitle, 80, { message: '80 caractères au maximum.' });
-  required(content.aboutText, { message: 'Écrivez quelques mots de présentation.' });
-  maxLength(content.aboutText, 1500, { message: '1 500 caractères au maximum.' });
-  required(content.footerText, { message: "Le pied de page a besoin d'un texte." });
-  maxLength(content.footerText, 200, { message: '200 caractères au maximum.' });
+  required(content.aboutTitle, { message: 'Donnez un titre à la section' });
+  maxLength(content.aboutTitle, 80, { message: '80 caractères au maximum' });
+  required(content.aboutText, { message: 'Écrivez quelques mots de présentation' });
+  maxLength(content.aboutText, 1500, { message: '1 500 caractères au maximum' });
+  required(content.footerText, { message: "Le pied de page a besoin d'un texte" });
+  maxLength(content.footerText, 200, { message: '200 caractères au maximum' });
 });
 
 /**
@@ -131,7 +131,7 @@ export default class AdminPreferences {
       this.saving.set(false);
       this.siteData.setContent(content);
       if (ok) {
-        this.toaster.success('Préférences enregistrées : elles sont en ligne.');
+        this.toaster.success('Préférences enregistrées : elles sont en ligne');
       }
       return undefined;
     });

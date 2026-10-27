@@ -30,7 +30,7 @@
 </div>
 
 @if (partCount() > 1) {
-  <p class="total-hint">Total pour les {{ partCount() }} parties, détaillées dans la préparation.</p>
+  <p class="total-hint">Total pour les {{ partCount() }} parties, détaillées dans la préparation</p>
 }
 
 @if (mold(); as base) {
@@ -89,7 +89,7 @@
             </label>
           }
         </div>
-        <p class="mold__hint">Les quantités suivent la surface du moule, pour une préparation de même hauteur.</p>
+        <p class="mold__hint">Les quantités suivent la surface du moule, pour une préparation de même hauteur</p>
         <div class="mold__actions">
           <button type="submit" class="mold__apply" [disabled]="!canApplyMold()">Adapter les quantités</button>
           <button type="button" class="mold__link" (click)="editingMold.set(false)">Annuler</button>

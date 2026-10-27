@@ -63,15 +63,15 @@ export class NewRecipeNotifications {
       const { publicKey } = await this.api.invoke(getPushPublicKey);
       const subscription = await this.swPush.requestSubscription({ serverPublicKey: publicKey });
       await this.api.invoke(subscribeToNotifications, { body: subscriptionForm(subscription) });
-      this.toaster.success("C'est noté : vous serez prévenu·e de chaque nouvelle recette.");
+      this.toaster.success("C'est noté : vous serez prévenu·e de chaque nouvelle recette");
     } catch (error) {
       if (Notification.permission === 'denied') {
         this.state.set('blocked');
-        this.toaster.error('Les notifications sont bloquées pour ce site : autorisez-les dans les réglages du navigateur.');
+        this.toaster.error('Les notifications sont bloquées pour ce site : autorisez-les dans les réglages du navigateur');
       } else {
         // The API's own message when it refused (subscriptions full…)
         const detail = error instanceof HttpErrorResponse ? (error.error as { detail?: string } | null)?.detail : null;
-        this.toaster.error(detail ?? "Impossible d'activer les notifications sur cet appareil pour le moment.");
+        this.toaster.error(detail ?? "Impossible d'activer les notifications sur cet appareil pour le moment");
       }
       await this.swPush.unsubscribe().catch(() => undefined);
     } finally {
@@ -88,9 +88,9 @@ export class NewRecipeNotifications {
         await this.api.invoke(unsubscribeFromNotifications, { endpoint: subscription.endpoint }).catch(() => undefined);
         await this.swPush.unsubscribe();
       }
-      this.toaster.success('Vous ne recevrez plus de notification.');
+      this.toaster.success('Vous ne recevrez plus de notification');
     } catch {
-      this.toaster.error('Impossible de désactiver les notifications pour le moment.');
+      this.toaster.error('Impossible de désactiver les notifications pour le moment');
     } finally {
       this.busy.set(false);
     }

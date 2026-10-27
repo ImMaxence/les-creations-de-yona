@@ -20,7 +20,7 @@
         <p class="field__hint">
           Saisies le {{ recoveredAt() }}, avant que la page soit fermée.
           @if (recoveredIsOutdated()) {
-            La recette a été enregistrée depuis : les reprendre remplacera cette version.
+            La recette a été enregistrée depuis : les reprendre remplacera cette version
           }
         </p>
       </div>
@@ -36,7 +36,7 @@
     <div class="field">
       <label class="field__label" for="title">Titre</label>
       <input id="title" class="input" [formField]="recipeForm.title" [attr.aria-invalid]="isInvalid(recipeForm.title)" />
-      <span class="field__hint">La première lettre passe en majuscule à l'enregistrement.</span>
+      <span class="field__hint">La première lettre passe en majuscule à l'enregistrement</span>
       <yona-field-error [field]="recipeForm.title" />
     </div>
     <div class="field">
@@ -109,14 +109,14 @@
       } @else {
         <button type="button" class="link-button" (click)="creatingTag.set(true)"><svg yonaIcon="plus" [size]="16"></svg>Nouveau tag</button>
       }
-      <span class="field__hint">Les visiteurs peuvent filtrer les recettes par tag.</span>
+      <span class="field__hint">Les visiteurs peuvent filtrer les recettes par tag</span>
     </div>
     <div class="editor__grid">
       @if (draft().categoryIds.length > 1) {
         <div class="field">
           <span class="field__label">Catégorie principale</span>
           <yona-select label="Catégorie principale" [options]="mainCategoryOptions()" [value]="draft().categoryIds[0]" (valueChange)="chooseMainCategory($event)" />
-          <span class="field__hint">Elle figure dans l'adresse de la recette et mène le bouton « Retour ».</span>
+          <span class="field__hint">Elle figure dans l'adresse de la recette et mène le bouton « Retour »</span>
         </div>
       }
       <div class="field">
@@ -136,7 +136,7 @@
         <span class="field__hint">
           Heure de Paris. Le brouillon est publié tout seul à ce moment-là (à la minute près), puis les abonnés sont prévenus.
           @if (scheduledLabel(); as label) {
-            <strong>Programmée : {{ label }}.</strong>
+            <strong>Programmée : {{ label }}</strong>
           }
         </span>
         <yona-field-error [field]="recipeForm.scheduledAt" />
@@ -147,19 +147,19 @@
         <input type="checkbox" [formField]="recipeForm.featured" />
         Mettre à la une sur l'accueil
       </label>
-      <span class="field__hint">Une seule recette à la une : cocher celle-ci retire l'ancienne.</span>
+      <span class="field__hint">Une seule recette à la une : cocher celle-ci retire l'ancienne</span>
       <yona-field-error [field]="recipeForm.featured" />
     </div>
     <div class="field">
       <label class="field__label" for="intro">Introduction</label>
       <textarea id="intro" class="input" rows="3" [formField]="recipeForm.intro"></textarea>
-      <span class="field__hint">Quelques phrases d'accroche, reprises par Google sous le titre.</span>
+      <span class="field__hint">Quelques phrases d'accroche, reprises par Google sous le titre</span>
       <yona-field-error [field]="recipeForm.intro" />
     </div>
     <div class="field">
       <label class="field__label" for="video">Vidéo YouTube (facultatif)</label>
       <input id="video" type="url" inputmode="url" class="input" placeholder="https://www.youtube.com/watch?v=…" [formField]="recipeForm.videoUrl" [attr.aria-invalid]="isInvalid(recipeForm.videoUrl)" />
-      <span class="field__hint">Collez le lien de la vidéo : elle s'affiche tout en bas de la recette.</span>
+      <span class="field__hint">Collez le lien de la vidéo : elle s'affiche tout en bas de la recette</span>
       <yona-field-error [field]="recipeForm.videoUrl" />
     </div>
   </section>
@@ -189,7 +189,7 @@
           <yona-field-error [field]="recipeForm.restMinutes" />
         </div>
       </div>
-      <span class="field__hint">Repos, pousse, prise au froid… : compté dans le temps total et dans l'organisation proposée aux visiteurs.</span>
+      <span class="field__hint">Repos, pousse, prise au froid… : compté dans le temps total et dans l'organisation proposée aux visiteurs</span>
       <div class="field">
         <span class="field__label">Difficulté</span>
         <yona-select label="Difficulté" [options]="difficultyOptions" [formField]="recipeForm.difficulty" />
@@ -213,7 +213,7 @@
             </label>
           }
         </div>
-        <span class="field__hint">Le moule des quantités indiquées : les visiteurs peuvent les adapter au leur (24 cm au lieu de 20, rectangulaire…).</span>
+        <span class="field__hint">Le moule des quantités indiquées : les visiteurs peuvent les adapter au leur (24 cm au lieu de 20, rectangulaire…)</span>
         <yona-field-error [field]="recipeForm.moldLengthCm" />
         <yona-field-error [field]="recipeForm.moldWidthCm" />
       </div>
@@ -237,7 +237,7 @@
     <h3 id="pinterest-title" class="editor__title">Photo Pinterest (facultative)</h3>
     <p class="field__hint">
       Une photo verticale, proposée par le bouton « Épingler » de la recette : Pinterest met en avant les épingles hautes.
-      Sans elle, c'est la photo de la recette qui est proposée. Elle n'apparaît pas sur le site.
+      Sans elle, c'est la photo de la recette qui est proposée. Elle n'apparaît pas sur le site
     </p>
     <yona-image-upload
       portrait
@@ -280,7 +280,7 @@
         <button type="button" class="link-button" (click)="stopUsingParts()">Revenir à une recette sans parties</button>
       }
     </div>
-    <p class="field__hint parts-hint">Glissez un ingrédient ou une étape d'une partie à l'autre pour le déplacer. Sur le site, la liste des ingrédients additionne ceux de toutes les parties.</p>
+    <p class="field__hint parts-hint">Glissez un ingrédient ou une étape d'une partie à l'autre pour le déplacer. Sur le site, la liste des ingrédients additionne ceux de toutes les parties</p>
   } @else {
     <section class="admin-panel" aria-labelledby="ingredients-title">
       <h3 id="ingredients-title" class="editor__title">Ingrédients</h3>
@@ -296,7 +296,7 @@
       <svg yonaIcon="layers" [size]="22" [strokeWidth]="1.75"></svg>
       <div>
         <h3 id="parts-offer-title" class="parts-offer__title">Recette en plusieurs parties ?</h3>
-        <p class="field__hint">La pâte, puis la garniture : chaque partie a ses propres ingrédients et ses étapes. Les ingrédients et étapes déjà saisis deviennent la première partie.</p>
+        <p class="field__hint">La pâte, puis la garniture : chaque partie a ses propres ingrédients et ses étapes. Les ingrédients et étapes déjà saisis deviennent la première partie</p>
       </div>
       <button yonaButton variant="secondary" type="button" (click)="splitIntoParts()">Découper en parties</button>
     </section>
@@ -308,7 +308,7 @@
     <div class="field">
       <label class="field__label" for="equipment">Un ustensile par ligne</label>
       <textarea id="equipment" class="input" rows="4" placeholder="Moule à tarte de 24 cm&#10;Fouet électrique&#10;Poche à douille" [formField]="recipeForm.equipment"></textarea>
-      <span class="field__hint">Affiché sous les ingrédients et dans la « Mise en place » du mode cuisine.</span>
+      <span class="field__hint">Affiché sous les ingrédients et dans la « Mise en place » du mode cuisine</span>
       <yona-field-error [field]="recipeForm.equipment" />
     </div>
   </section>
@@ -318,7 +318,7 @@
     <div class="field">
       <label class="field__label" for="tip">Astuce, conservation, variante…</label>
       <textarea id="tip" class="input" rows="4" placeholder="Se conserve 3 jours au frais. Version sans gluten : remplacer la farine par…" [formField]="recipeForm.tip"></textarea>
-      <span class="field__hint">Affiché dans un encadré après les étapes. Markdown accepté : **gras**, listes avec « - ».</span>
+      <span class="field__hint">Affiché dans un encadré après les étapes. Markdown accepté : **gras**, listes avec « - »</span>
       <yona-field-error [field]="recipeForm.tip" />
     </div>
   </section>
@@ -380,7 +380,7 @@
 
 <!-- Steps of a part (the only part of a recipe without parts) -->
 <ng-template #stepsEditor let-p>
-  <p class="field__hint">Markdown accepté : **gras**, *italique*, listes avec « - » en début de ligne.</p>
+  <p class="field__hint">Markdown accepté : **gras**, *italique*, listes avec « - » en début de ligne</p>
   <ol
     class="lines"
     cdkDropList

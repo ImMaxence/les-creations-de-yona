@@ -72,10 +72,10 @@ export default class Install {
     const app = this.inAppBrowser();
     this.guideHint.set(
       app
-        ? `Vous êtes dans le navigateur d'${app}, qui ne sait pas installer d'application : ouvrez d'abord cette page dans ${platform === 'ios' ? 'Safari' : 'Chrome'}, puis suivez les étapes ci-dessous.`
+        ? `Vous êtes dans le navigateur d'${app}, qui ne sait pas installer d'application : ouvrez d'abord cette page dans ${platform === 'ios' ? 'Safari' : 'Chrome'}, puis suivez les étapes ci-dessous`
         : platform === 'ios'
-          ? "Sur iPhone et iPad, Apple ne permet pas l'installation en un seul bouton : deux gestes dans Safari suffisent, expliqués ci-dessous."
-          : 'Votre navigateur ne propose pas encore l’installation directe : suivez les étapes ci-dessous, cela prend dix secondes.',
+          ? "Sur iPhone et iPad, Apple ne permet pas l'installation en un seul bouton : deux gestes dans Safari suffisent, expliqués ci-dessous"
+          : 'Votre navigateur ne propose pas encore l’installation directe : suivez les étapes ci-dessous, cela prend dix secondes',
     );
     const guide = this.guide().nativeElement;
     guide.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });

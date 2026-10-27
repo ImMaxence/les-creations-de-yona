@@ -10,104 +10,104 @@ import org.springframework.http.HttpStatusCode;
 public enum ErrorCode {
 
 	// Generic, also used for framework and security errors.
-	BAD_REQUEST(HttpStatus.BAD_REQUEST, "La requête est invalide."),
-	VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Certains champs sont invalides."),
-	INVALID_SORT(HttpStatus.BAD_REQUEST, "Ce tri n'est pas autorisé."),
-	UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "Veuillez vous connecter."),
-	ACCESS_DENIED(HttpStatus.FORBIDDEN, "Vous n'avez pas accès à cette ressource."),
-	CSRF_TOKEN_INVALID(HttpStatus.FORBIDDEN, "Votre session a expiré, rechargez la page."),
-	RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Ressource introuvable."),
-	METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "Cette opération n'est pas autorisée."),
-	NOT_ACCEPTABLE(HttpStatus.NOT_ACCEPTABLE, "Ce format de réponse n'est pas disponible."),
-	CONTENT_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "Le contenu envoyé est trop volumineux."),
-	UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Ce format de contenu n'est pas pris en charge."),
-	DATA_CONFLICT(HttpStatus.CONFLICT, "L'opération entre en conflit avec des données existantes."),
-	INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur inattendue est survenue, réessayez plus tard."),
+	BAD_REQUEST(HttpStatus.BAD_REQUEST, "La requête est invalide"),
+	VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Certains champs sont invalides"),
+	INVALID_SORT(HttpStatus.BAD_REQUEST, "Ce tri n'est pas autorisé"),
+	UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "Veuillez vous connecter"),
+	ACCESS_DENIED(HttpStatus.FORBIDDEN, "Vous n'avez pas accès à cette ressource"),
+	CSRF_TOKEN_INVALID(HttpStatus.FORBIDDEN, "Votre session a expiré, rechargez la page"),
+	RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Ressource introuvable"),
+	METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "Cette opération n'est pas autorisée"),
+	NOT_ACCEPTABLE(HttpStatus.NOT_ACCEPTABLE, "Ce format de réponse n'est pas disponible"),
+	CONTENT_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "Le contenu envoyé est trop volumineux"),
+	UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Ce format de contenu n'est pas pris en charge"),
+	DATA_CONFLICT(HttpStatus.CONFLICT, "L'opération entre en conflit avec des données existantes"),
+	INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur inattendue est survenue, réessayez plus tard"),
 
 	// Recipes
-	RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "Recette introuvable."),
-	FEATURED_RECIPE_MUST_BE_PUBLISHED(HttpStatus.BAD_REQUEST, "Seule une recette publiée peut être mise à la une."),
-	DUPLICATE_RECIPE_INGREDIENT(HttpStatus.BAD_REQUEST, "Un même ingrédient apparaît plusieurs fois dans une même partie de la recette."),
-	DUPLICATE_RECIPE_CATEGORY(HttpStatus.BAD_REQUEST, "Une même catégorie est choisie plusieurs fois."),
-	RECIPE_INGREDIENT_REQUIRED(HttpStatus.BAD_REQUEST, "La recette doit avoir au moins un ingrédient."),
-	RECIPE_STEP_REQUIRED(HttpStatus.BAD_REQUEST, "La recette doit avoir au moins une étape."),
-	RECIPE_PART_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "Quand la recette a plusieurs parties, chacune doit avoir un titre."),
-	RECIPE_PART_EMPTY(HttpStatus.BAD_REQUEST, "Chaque partie doit avoir au moins un ingrédient ou une étape."),
-	DIFFICULTY_NOT_HALF_POINT(HttpStatus.BAD_REQUEST, "La difficulté va de 1 à 5, par demi-points (2,5 par exemple)."),
-	STEP_INGREDIENT_INVALID(HttpStatus.BAD_REQUEST, "Une étape indique un ingrédient absent de sa partie : enregistrez de nouveau la recette."),
-	MOLD_INVALID(HttpStatus.BAD_REQUEST, "Indiquez le diamètre d'un moule rond, le côté d'un moule carré, ou la longueur et la largeur d'un moule rectangulaire."),
-	SCHEDULED_RECIPE_MUST_BE_DRAFT(HttpStatus.BAD_REQUEST, "Seul un brouillon peut être programmé : la recette est déjà publiée."),
-	SCHEDULED_AT_PAST(HttpStatus.BAD_REQUEST, "La date de publication programmée est déjà passée."),
-	TRASHED_RECIPE_CATEGORIES_GONE(HttpStatus.CONFLICT, "Les catégories de cette recette ont toutes été supprimées : recréez-en une avant de la restaurer."),
-	VIDEO_URL_INVALID(HttpStatus.BAD_REQUEST, "Ce lien n'est pas une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…)."),
+	RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "Recette introuvable"),
+	FEATURED_RECIPE_MUST_BE_PUBLISHED(HttpStatus.BAD_REQUEST, "Seule une recette publiée peut être mise à la une"),
+	DUPLICATE_RECIPE_INGREDIENT(HttpStatus.BAD_REQUEST, "Un même ingrédient apparaît plusieurs fois dans une même partie de la recette"),
+	DUPLICATE_RECIPE_CATEGORY(HttpStatus.BAD_REQUEST, "Une même catégorie est choisie plusieurs fois"),
+	RECIPE_INGREDIENT_REQUIRED(HttpStatus.BAD_REQUEST, "La recette doit avoir au moins un ingrédient"),
+	RECIPE_STEP_REQUIRED(HttpStatus.BAD_REQUEST, "La recette doit avoir au moins une étape"),
+	RECIPE_PART_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "Quand la recette a plusieurs parties, chacune doit avoir un titre"),
+	RECIPE_PART_EMPTY(HttpStatus.BAD_REQUEST, "Chaque partie doit avoir au moins un ingrédient ou une étape"),
+	DIFFICULTY_NOT_HALF_POINT(HttpStatus.BAD_REQUEST, "La difficulté va de 1 à 5, par demi-points (2,5 par exemple)"),
+	STEP_INGREDIENT_INVALID(HttpStatus.BAD_REQUEST, "Une étape indique un ingrédient absent de sa partie : enregistrez de nouveau la recette"),
+	MOLD_INVALID(HttpStatus.BAD_REQUEST, "Indiquez le diamètre d'un moule rond, le côté d'un moule carré, ou la longueur et la largeur d'un moule rectangulaire"),
+	SCHEDULED_RECIPE_MUST_BE_DRAFT(HttpStatus.BAD_REQUEST, "Seul un brouillon peut être programmé : la recette est déjà publiée"),
+	SCHEDULED_AT_PAST(HttpStatus.BAD_REQUEST, "La date de publication programmée est déjà passée"),
+	TRASHED_RECIPE_CATEGORIES_GONE(HttpStatus.CONFLICT, "Les catégories de cette recette ont toutes été supprimées : recréez-en une avant de la restaurer"),
+	VIDEO_URL_INVALID(HttpStatus.BAD_REQUEST, "Ce lien n'est pas une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…)"),
 
 	// Trash
-	TRASH_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce n'est plus dans la corbeille."),
+	TRASH_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce n'est plus dans la corbeille"),
 
 	// Categories
-	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Catégorie introuvable."),
-	CATEGORY_IN_USE(HttpStatus.CONFLICT, "Cette catégorie contient encore des recettes."),
+	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Catégorie introuvable"),
+	CATEGORY_IN_USE(HttpStatus.CONFLICT, "Cette catégorie contient encore des recettes"),
 
 	// Tags
-	TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "Tag introuvable."),
-	TAG_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce tag existe déjà."),
+	TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "Tag introuvable"),
+	TAG_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce tag existe déjà"),
 
 	// Menus
-	MENU_NOT_FOUND(HttpStatus.NOT_FOUND, "Menu introuvable."),
-	MENU_ALREADY_EXISTS(HttpStatus.CONFLICT, "Un menu porte déjà ce titre."),
-	MENU_RECIPE_NOT_FOUND(HttpStatus.BAD_REQUEST, "Une des recettes du menu n'existe plus."),
+	MENU_NOT_FOUND(HttpStatus.NOT_FOUND, "Menu introuvable"),
+	MENU_ALREADY_EXISTS(HttpStatus.CONFLICT, "Un menu porte déjà ce titre"),
+	MENU_RECIPE_NOT_FOUND(HttpStatus.BAD_REQUEST, "Une des recettes du menu n'existe plus"),
 
 	// Glossary
-	GLOSSARY_TERM_NOT_FOUND(HttpStatus.NOT_FOUND, "Mot du glossaire introuvable."),
-	GLOSSARY_TERM_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce mot est déjà dans le glossaire."),
+	GLOSSARY_TERM_NOT_FOUND(HttpStatus.NOT_FOUND, "Mot du glossaire introuvable"),
+	GLOSSARY_TERM_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce mot est déjà dans le glossaire"),
 
 	// Notifications of new recipes
-	PUSH_SUBSCRIPTION_INVALID(HttpStatus.BAD_REQUEST, "Cet abonnement aux notifications n'est pas valide."),
-	PUSH_SUBSCRIPTIONS_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les abonnements aux notifications sont complets pour le moment."),
+	PUSH_SUBSCRIPTION_INVALID(HttpStatus.BAD_REQUEST, "Cet abonnement aux notifications n'est pas valide"),
+	PUSH_SUBSCRIPTIONS_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les abonnements aux notifications sont complets pour le moment"),
 
 	// Ingredients
-	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable."),
-	INGREDIENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Cet ingrédient existe déjà."),
-	INGREDIENT_IN_USE(HttpStatus.CONFLICT, "Cet ingrédient est utilisé dans au moins une recette."),
-	INGREDIENT_MERGE_INVALID(HttpStatus.BAD_REQUEST, "Choisissez au moins deux ingrédients, et l'ingrédient à garder ou le nouveau nom."),
-	INGREDIENT_MERGE_CONFLICT(HttpStatus.CONFLICT, "Ces ingrédients figurent ensemble dans une même partie d'une recette : corrigez-la avant de les fusionner."),
+	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable"),
+	INGREDIENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Cet ingrédient existe déjà"),
+	INGREDIENT_IN_USE(HttpStatus.CONFLICT, "Cet ingrédient est utilisé dans au moins une recette"),
+	INGREDIENT_MERGE_INVALID(HttpStatus.BAD_REQUEST, "Choisissez au moins deux ingrédients, et l'ingrédient à garder ou le nouveau nom"),
+	INGREDIENT_MERGE_CONFLICT(HttpStatus.CONFLICT, "Ces ingrédients figurent ensemble dans une même partie d'une recette : corrigez-la avant de les fusionner"),
 
 	// Social links
-	DUPLICATE_SOCIAL_PLATFORM(HttpStatus.BAD_REQUEST, "Chaque réseau social ne peut apparaître qu'une seule fois."),
+	DUPLICATE_SOCIAL_PLATFORM(HttpStatus.BAD_REQUEST, "Chaque réseau social ne peut apparaître qu'une seule fois"),
 
 	// Images
-	IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Image introuvable."),
-	IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "Aucune image n'a été envoyée."),
-	IMAGE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "L'image dépasse 10 Mo."),
-	IMAGE_FORMAT_UNSUPPORTED(HttpStatus.BAD_REQUEST, "Seules les images JPEG et PNG sont acceptées."),
-	IMAGE_UNREADABLE(HttpStatus.BAD_REQUEST, "L'image est illisible ou endommagée."),
-	IMAGE_TOO_MANY_PIXELS(HttpStatus.BAD_REQUEST, "L'image dépasse 100 mégapixels."),
-	IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image doit mesurer au moins 1200 × 800 pixels."),
-	IMAGE_NOT_LANDSCAPE(HttpStatus.BAD_REQUEST, "L'image doit être au format paysage (4:3 ou plus large)."),
-	PORTRAIT_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image Pinterest doit mesurer au moins 1000 × 1333 pixels."),
-	IMAGE_NOT_PORTRAIT(HttpStatus.BAD_REQUEST, "L'image Pinterest doit être verticale (3:4 ou plus haute, 2:3 conseillé)."),
-	STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Le stockage des images est indisponible, réessayez plus tard."),
+	IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Image introuvable"),
+	IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "Aucune image n'a été envoyée"),
+	IMAGE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "L'image dépasse 10 Mo"),
+	IMAGE_FORMAT_UNSUPPORTED(HttpStatus.BAD_REQUEST, "Seules les images JPEG et PNG sont acceptées"),
+	IMAGE_UNREADABLE(HttpStatus.BAD_REQUEST, "L'image est illisible ou endommagée"),
+	IMAGE_TOO_MANY_PIXELS(HttpStatus.BAD_REQUEST, "L'image dépasse 100 mégapixels"),
+	IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image doit mesurer au moins 1200 × 800 pixels"),
+	IMAGE_NOT_LANDSCAPE(HttpStatus.BAD_REQUEST, "L'image doit être au format paysage (4:3 ou plus large)"),
+	PORTRAIT_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image Pinterest doit mesurer au moins 1000 × 1333 pixels"),
+	IMAGE_NOT_PORTRAIT(HttpStatus.BAD_REQUEST, "L'image Pinterest doit être verticale (3:4 ou plus haute, 2:3 conseillé)"),
+	STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Le stockage des images est indisponible, réessayez plus tard"),
 
 	// Backup
-	BACKUP_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La sauvegarde n'est pas disponible sur ce serveur."),
-	DRIVE_NOT_CONNECTED(HttpStatus.CONFLICT, "Aucun compte Google Drive n'est connecté."),
-	DRIVE_BACKUP_RUNNING(HttpStatus.CONFLICT, "Une sauvegarde vers Google Drive est déjà en cours."),
+	BACKUP_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La sauvegarde n'est pas disponible sur ce serveur"),
+	DRIVE_NOT_CONNECTED(HttpStatus.CONFLICT, "Aucun compte Google Drive n'est connecté"),
+	DRIVE_BACKUP_RUNNING(HttpStatus.CONFLICT, "Une sauvegarde vers Google Drive est déjà en cours"),
 
 	// Restore
-	RESTORE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La restauration n'est pas disponible sur ce serveur."),
-	RESTORE_NOT_FOUND(HttpStatus.NOT_FOUND, "Cet envoi de sauvegarde a expiré ou n'existe plus : recommencez."),
-	RESTORE_BUSY(HttpStatus.CONFLICT, "Une restauration est déjà en cours : attendez qu'elle se termine ou annulez-la."),
-	RESTORE_CHUNK_INVALID(HttpStatus.BAD_REQUEST, "Morceau de fichier inattendu : recommencez l'envoi."),
-	RESTORE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "La sauvegarde dépasse 20 Go."),
-	RESTORE_NOT_ENOUGH_SPACE(HttpStatus.INSUFFICIENT_STORAGE, "Pas assez d'espace libre sur le serveur pour traiter cette sauvegarde."),
-	RESTORE_ARCHIVE_INVALID(HttpStatus.BAD_REQUEST, "Ce fichier n'est pas une sauvegarde du site (l'archive ZIP de « Sauvegarder mes données »)."),
-	RESTORE_NEWER_VERSION(HttpStatus.CONFLICT, "Cette sauvegarde vient d'une version plus récente du site : mettez le site à jour avant de la restaurer."),
-	RESTORE_NOT_READY(HttpStatus.CONFLICT, "La sauvegarde n'est pas prête : attendez la fin de l'envoi et de l'analyse."),
-	RESTORE_CONFIRMATION_REQUIRED(HttpStatus.BAD_REQUEST, "Tapez REMPLACER pour confirmer le remplacement de toutes les données."),
+	RESTORE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "La restauration n'est pas disponible sur ce serveur"),
+	RESTORE_NOT_FOUND(HttpStatus.NOT_FOUND, "Cet envoi de sauvegarde a expiré ou n'existe plus : recommencez"),
+	RESTORE_BUSY(HttpStatus.CONFLICT, "Une restauration est déjà en cours : attendez qu'elle se termine ou annulez-la"),
+	RESTORE_CHUNK_INVALID(HttpStatus.BAD_REQUEST, "Morceau de fichier inattendu : recommencez l'envoi"),
+	RESTORE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "La sauvegarde dépasse 20 Go"),
+	RESTORE_NOT_ENOUGH_SPACE(HttpStatus.INSUFFICIENT_STORAGE, "Pas assez d'espace libre sur le serveur pour traiter cette sauvegarde"),
+	RESTORE_ARCHIVE_INVALID(HttpStatus.BAD_REQUEST, "Ce fichier n'est pas une sauvegarde du site (l'archive ZIP de « Sauvegarder mes données »)"),
+	RESTORE_NEWER_VERSION(HttpStatus.CONFLICT, "Cette sauvegarde vient d'une version plus récente du site : mettez le site à jour avant de la restaurer"),
+	RESTORE_NOT_READY(HttpStatus.CONFLICT, "La sauvegarde n'est pas prête : attendez la fin de l'envoi et de l'analyse"),
+	RESTORE_CONFIRMATION_REQUIRED(HttpStatus.BAD_REQUEST, "Tapez REMPLACER pour confirmer le remplacement de toutes les données"),
 
 	// Appearance presets
-	APPEARANCE_PRESET_NOT_FOUND(HttpStatus.NOT_FOUND, "Préréglage introuvable."),
-	APPEARANCE_PRESET_NAME_TAKEN(HttpStatus.CONFLICT, "Un préréglage porte déjà ce nom.");
+	APPEARANCE_PRESET_NOT_FOUND(HttpStatus.NOT_FOUND, "Préréglage introuvable"),
+	APPEARANCE_PRESET_NAME_TAKEN(HttpStatus.CONFLICT, "Un préréglage porte déjà ce nom");
 
 	private final HttpStatus status;
 

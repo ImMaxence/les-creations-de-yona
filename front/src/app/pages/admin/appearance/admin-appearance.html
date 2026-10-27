@@ -5,14 +5,14 @@
   <p class="field__hint">
     Chaque changement s'affiche tout de suite sur tout le site, pour vous seulement. Les visiteurs le voient une fois
     enregistré. Chaque thème existe en version claire et sombre : le visiteur choisit Clair, Auto ou Sombre en haut
-    du site.
+    du site
   </p>
 
   <section class="admin-panel appearance__group" aria-labelledby="looks-title">
     <h3 id="looks-title" class="field__label">Mes préréglages</h3>
     <p class="field__hint">
       Un préréglage garde un thème de couleurs, deux polices et un arrondi sous le nom de votre choix. Cliquez dessus
-      pour remplir les choix plus bas (et les essayer), puis enregistrez pour les visiteurs.
+      pour remplir les choix plus bas (et les essayer), puis enregistrez pour les visiteurs
     </p>
     @if (savedLooks.value(); as looks) {
       @if (looks.length) {
@@ -71,7 +71,7 @@
           }
         </ul>
       } @else {
-        <p class="admin-empty">Aucun préréglage pour le moment : composez une apparence plus bas, puis enregistrez-la ici.</p>
+        <p class="admin-empty">Aucun préréglage pour le moment : composez une apparence plus bas, puis enregistrez-la ici</p>
       }
     }
     <div class="look__new">
@@ -137,7 +137,7 @@
     </div>
     <div class="sample" aria-hidden="true">
       <p class="sample__title">Tarte fine aux pommes</p>
-      <p class="sample__text">Une pâte feuilletée bien croustillante, de fines lamelles de pommes et un caramel au beurre salé maison.</p>
+      <p class="sample__text">Une pâte feuilletée bien croustillante, de fines lamelles de pommes et un caramel au beurre salé maison</p>
     </div>
   </fieldset>
 
@@ -159,7 +159,7 @@
         <span>px</span>
       </label>
     </div>
-    <p class="field__hint">0 : coins carrés. 16 : arrondi d'origine. Jusqu'à {{ maxRadius }} : tout devient rond.</p>
+    <p class="field__hint">0 : coins carrés. 16 : arrondi d'origine. Jusqu'à {{ maxRadius }} : tout devient rond</p>
     <div class="radius__preview" aria-hidden="true">
       <span class="radius__card"></span>
       <span class="button">Bouton</span>

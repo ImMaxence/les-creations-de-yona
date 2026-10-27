@@ -15,7 +15,7 @@ const DEFAULT_CONTENT: SiteContentResponse = {
   aboutTitle: 'Bienvenue dans ma cuisine',
   aboutText:
     "Je m'appelle Yona, je relève un grand défi en me lançant dans une aventure extraordinaire : faire de ma passion un métier et obtenir mon CAP Pâtisserie !",
-  footerText: 'Des recettes maison, à partager sans modération.',
+  footerText: 'Des recettes maison, à partager sans modération',
 };
 
 /**

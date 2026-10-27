@@ -137,8 +137,8 @@ export function recipesSeo(route: ActivatedRouteSnapshot): PageSeo {
     title: category ? `${category.name} · Recettes` : 'Recettes',
     description: excerpt(
       category
-        ? `Toutes les recettes de la catégorie ${category.name.toLowerCase()} : des recettes maison, simples et gourmandes.`
-        : 'Toutes les recettes maison de Yona : plats, desserts, pâtisseries, à refaire chez soi.',
+        ? `Toutes les recettes de la catégorie ${category.name.toLowerCase()} : des recettes maison, simples et gourmandes`
+        : 'Toutes les recettes maison de Yona : plats, desserts, pâtisseries, à refaire chez soi',
     ),
     canonicalPath: query ? `${RECIPES_PATH}?${query}` : RECIPES_PATH,
     // Search results and pages past the end are not worth indexing

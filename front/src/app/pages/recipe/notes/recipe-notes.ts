@@ -23,7 +23,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
       [value]="text()"
       (input)="write($event)"
     ></textarea>
-    <p class="notes__hint" id="notes-hint">Gardées seulement dans ce navigateur, sans compte. Retrouvées aussi dans le mode cuisine.</p>
+    <p class="notes__hint" id="notes-hint">Gardées seulement dans ce navigateur, sans compte. Retrouvées aussi dans le mode cuisine</p>
   `,
   styleUrl: './recipe-notes.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

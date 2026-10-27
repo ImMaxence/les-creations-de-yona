@@ -101,12 +101,12 @@ export default class AdminTrash {
     const confirmed = await this.confirm.ask({
       title: 'Effacer définitivement ?',
       message: `« ${item.title} » ne pourra plus être ${KINDS[item.kind].feminine ? 'restaurée' : 'restauré'}. ${
-        item.kind === 'IMAGE' ? 'Ses fichiers sont supprimés du stockage.' : 'Sa photo reste dans la galerie.'
+        item.kind === 'IMAGE' ? 'Ses fichiers sont supprimés du stockage' : 'Sa photo reste dans la galerie'
       }`,
       confirmLabel: 'Effacer',
     });
     if (confirmed && (await attempt(this.api.invoke(eraseFromTrash, { id: item.id }))).ok) {
-      this.toaster.success('Effacé définitivement.');
+      this.toaster.success('Effacé définitivement');
       this.items.reload();
     }
   }
@@ -117,12 +117,12 @@ export default class AdminTrash {
       title: 'Vider la corbeille ?',
       message:
         count > 1
-          ? `Les ${count} éléments de la corbeille seront effacés et ne pourront plus être restaurés.`
-          : "L'élément de la corbeille sera effacé et ne pourra plus être restauré.",
+          ? `Les ${count} éléments de la corbeille seront effacés et ne pourront plus être restaurés`
+          : "L'élément de la corbeille sera effacé et ne pourra plus être restauré",
       confirmLabel: 'Vider la corbeille',
     });
     if (confirmed && (await attempt(this.api.invoke(emptyTrash))).ok) {
-      this.toaster.success('Corbeille vidée.');
+      this.toaster.success('Corbeille vidée');
       this.kind.set('ALL');
       this.items.reload();
     }
@@ -149,15 +149,15 @@ function restoredMessage(restored: TrashRestored): string {
     case 'RECIPE': {
       const where = restored.status === 'PUBLISHED' ? 'est de nouveau en ligne' : 'est restaurée en brouillon';
       const menus = back ? `, et dans ${back > 1 ? `ses ${back} menus` : 'son menu'}` : '';
-      return `« ${restored.title} » ${where}${menus}.`;
+      return `« ${restored.title} » ${where}${menus}`;
     }
     case 'CATEGORY':
-      return `Catégorie « ${restored.title} » restaurée.`;
+      return `Catégorie « ${restored.title} » restaurée`;
     case 'MENU':
-      return `Menu « ${restored.title} » restauré, avec ${back > 1 ? `${back} recettes` : back ? '1 recette' : 'aucune recette'}.`;
+      return `Menu « ${restored.title} » restauré, avec ${back > 1 ? `${back} recettes` : back ? '1 recette' : 'aucune recette'}`;
     case 'IMAGE':
       return back
-        ? `Photo remise dans la galerie, et à ${back > 1 ? `ses ${back} emplacements` : 'sa place'}.`
-        : 'Photo remise dans la galerie.';
+        ? `Photo remise dans la galerie, et à ${back > 1 ? `ses ${back} emplacements` : 'sa place'}`
+        : 'Photo remise dans la galerie';
   }
 }

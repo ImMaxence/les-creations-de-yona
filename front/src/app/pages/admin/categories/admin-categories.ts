@@ -86,14 +86,14 @@ export default class AdminCategories {
     event.preventDefault();
     const name = this.newName().trim();
     if (!name) {
-      this.toaster.error('Donnez un nom à la catégorie.');
+      this.toaster.error('Donnez un nom à la catégorie');
       return;
     }
     if (!(await attempt(this.api.invoke(createCategory, { body: { name } }))).ok) {
       return;
     }
     this.newName.set('');
-    this.toaster.success(`Catégorie « ${name} » créée.`);
+    this.toaster.success(`Catégorie « ${name} » créée`);
     await this.siteData.load();
   }
 
@@ -112,7 +112,7 @@ export default class AdminCategories {
       return;
     }
     this.editingId.set(null);
-    this.toaster.success('Catégorie renommée.');
+    this.toaster.success('Catégorie renommée');
     await this.siteData.load();
   }
 
@@ -127,7 +127,7 @@ export default class AdminCategories {
     this.uploadingId.set(null);
     this.uploadProgress.set(null);
     if (upload.ok) {
-      this.toaster.success('Photo enregistrée.');
+      this.toaster.success('Photo enregistrée');
       await this.siteData.load();
     }
   }
@@ -140,7 +140,7 @@ export default class AdminCategories {
     );
     this.uploadingId.set(null);
     if (choice.ok) {
-      this.toaster.success(imageId ? 'Photo enregistrée.' : 'Photo retirée, elle reste dans la galerie.');
+      this.toaster.success(imageId ? 'Photo enregistrée' : 'Photo retirée, elle reste dans la galerie');
       await this.siteData.load();
     }
   }
@@ -148,13 +148,13 @@ export default class AdminCategories {
   protected async remove(category: CategoryResponse): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Mettre la catégorie à la corbeille ?',
-      message: `« ${category.name} » quitte le site et reste 30 jours dans la corbeille, sa photo reste dans la galerie. Impossible tant qu'elle contient des recettes.`,
+      message: `« ${category.name} » quitte le site et reste 30 jours dans la corbeille, sa photo reste dans la galerie. Impossible tant qu'elle contient des recettes`,
       confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed || !(await attempt(this.api.invoke(deleteCategory, { id: category.id }))).ok) {
       return;
     }
-    this.toaster.success('Catégorie mise à la corbeille.');
+    this.toaster.success('Catégorie mise à la corbeille');
     if (this.selection.has(category.id)) {
       this.selection.toggle(category.id);
     }
@@ -167,7 +167,7 @@ export default class AdminCategories {
     const confirmed = await this.confirm.ask({
       title: count > 1 ? `Mettre ${count} catégories à la corbeille ?` : 'Mettre la catégorie à la corbeille ?',
       message:
-        "Elles restent 30 jours dans la corbeille, leurs photos dans la galerie. Impossible si l'une d'elles contient encore des recettes : rien n'est alors supprimé.",
+        "Elles restent 30 jours dans la corbeille, leurs photos dans la galerie. Impossible si l'une d'elles contient encore des recettes : rien n'est alors supprimé",
       confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed) {
@@ -177,7 +177,7 @@ export default class AdminCategories {
     const deletion = await attempt(this.api.invoke(deleteCategories, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} catégories mises à la corbeille.` : 'Catégorie mise à la corbeille.');
+      this.toaster.success(count > 1 ? `${count} catégories mises à la corbeille` : 'Catégorie mise à la corbeille');
       this.selection.clear();
       await this.siteData.load();
     }

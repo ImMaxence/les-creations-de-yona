@@ -8,7 +8,7 @@
   <p class="field__hint">
     Quelques recettes réunies pour une occasion (« Menu de Noël », « Goûter d'anniversaire ») : une page sur le site, et
     tout à la liste de courses en un geste. Sa photo est celle de sa première recette ; seules ses recettes publiées
-    s'affichent.
+    s'affichent
   </p>
 
   @if (draft(); as menu) {
@@ -116,7 +116,7 @@
         }
       </ul>
     } @else if (!draft()) {
-      <p class="admin-empty">Aucun menu pour le moment.</p>
+      <p class="admin-empty">Aucun menu pour le moment</p>
     }
   } @else if (menus.isLoading()) {
     <p class="admin-empty">Chargement…</p>

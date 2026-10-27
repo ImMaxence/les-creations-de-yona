@@ -71,7 +71,7 @@ export default class AdminGlossary {
   protected suggestForms(): void {
     const suggested = usualForms(this.name().trim());
     if (!suggested.length) {
-      this.toaster.error("Écrivez d'abord le mot.");
+      this.toaster.error("Écrivez d'abord le mot");
       return;
     }
     const typed = splitForms(this.forms());
@@ -86,7 +86,7 @@ export default class AdminGlossary {
       forms: splitForms(this.forms()).slice(0, MAX_FORMS),
     };
     if (!body.name || !body.definition) {
-      this.toaster.error('Donnez le mot et sa définition.');
+      this.toaster.error('Donnez le mot et sa définition');
       return;
     }
     const editing = this.editing();
@@ -98,7 +98,7 @@ export default class AdminGlossary {
     );
     this.saving.set(false);
     if (saved.ok) {
-      this.toaster.success(editing ? `« ${saved.value.name} » modifié.` : `« ${saved.value.name} » ajouté au glossaire.`);
+      this.toaster.success(editing ? `« ${saved.value.name} » modifié` : `« ${saved.value.name} » ajouté au glossaire`);
       this.cancel();
       this.terms.reload();
     }
@@ -107,11 +107,11 @@ export default class AdminGlossary {
   protected async remove(term: GlossaryTermResponse): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Retirer ce mot du glossaire ?',
-      message: `« ${term.name} » ne sera plus expliqué dans les recettes.`,
+      message: `« ${term.name} » ne sera plus expliqué dans les recettes`,
       confirmLabel: 'Retirer',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteGlossaryTerms, { ids: [term.id] }))).ok) {
-      this.toaster.success('Mot retiré du glossaire.');
+      this.toaster.success('Mot retiré du glossaire');
       if (this.selection.has(term.id)) {
         this.selection.toggle(term.id);
       }
@@ -126,7 +126,7 @@ export default class AdminGlossary {
     const count = this.selection.size();
     const confirmed = await this.confirm.ask({
       title: count > 1 ? `Retirer ${count} mots du glossaire ?` : 'Retirer ce mot du glossaire ?',
-      message: 'Ils ne seront plus expliqués dans les recettes.',
+      message: 'Ils ne seront plus expliqués dans les recettes',
       confirmLabel: 'Retirer',
     });
     if (!confirmed) {
@@ -136,7 +136,7 @@ export default class AdminGlossary {
     const deletion = await attempt(this.api.invoke(deleteGlossaryTerms, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} mots retirés.` : 'Mot retiré.');
+      this.toaster.success(count > 1 ? `${count} mots retirés` : 'Mot retiré');
       this.selection.clear();
       this.cancel();
       this.terms.reload();
