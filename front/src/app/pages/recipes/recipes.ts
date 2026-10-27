@@ -101,21 +101,18 @@ export default class Recipes {
     ...this.categories().map((category) => ({ value: category.slug, label: category.name })),
   ]);
   /**
-   * Ingredients of the published recipes, but those already chosen; choosing one adds it to the
-   * filter at once, and the list is ready for the next.
+   * The ingredients of the search, from the URL; changed at once on a pick or a removal, before
+   * the results arrive, so that the chips and the list do not wait for them.
    */
+  protected readonly chosenIngredients = linkedSignal(() => this.filters().ingredients);
+  /** Ingredients of the published recipes, but those already chosen: picked one after the other. */
   protected readonly ingredientOptions = computed<SelectOption<string>[]>(() => {
-    const chosen = this.filters().ingredients;
+    const chosen = this.chosenIngredients();
     return this.data()
       .ingredients.filter((name) => !chosen.some((known) => sameName(known, name)))
       .map((name) => ({ value: name, label: name }));
   });
   protected readonly maxIngredients = MAX_INGREDIENTS;
-  /** The one just picked, until the page shows it among the chosen: back to the placeholder then. */
-  protected readonly ingredientPick = linkedSignal<string[], string | undefined>({
-    source: () => this.filters().ingredients,
-    computation: () => undefined,
-  });
   /** « œufs » et « chocolat ». */
   protected readonly ingredientsLabel = computed(() => {
     const quoted = this.filters().ingredients.map((name) => `« ${name} »`);
@@ -142,15 +139,17 @@ export default class Recipes {
     this.updateQuery({ [RECIPES_QUERY.difficulty]: difficulty ?? null, [RECIPES_QUERY.page]: null });
   }
 
-  protected addIngredient(name: string | undefined): void {
-    if (name) {
-      this.updateQuery({ [RECIPES_QUERY.ingredient]: [...this.filters().ingredients, name], [RECIPES_QUERY.page]: null });
-    }
+  protected addIngredient(name: string): void {
+    this.changeIngredients([...this.chosenIngredients(), name]);
   }
 
   protected removeIngredient(name: string): void {
-    const rest = this.filters().ingredients.filter((known) => known !== name);
-    this.updateQuery({ [RECIPES_QUERY.ingredient]: rest.length ? rest : null, [RECIPES_QUERY.page]: null });
+    this.changeIngredients(this.chosenIngredients().filter((known) => known !== name));
+  }
+
+  private changeIngredients(names: string[]): void {
+    this.chosenIngredients.set(names);
+    this.updateQuery({ [RECIPES_QUERY.ingredient]: names.length ? names : null, [RECIPES_QUERY.page]: null });
   }
 
   protected search(search: string): void {

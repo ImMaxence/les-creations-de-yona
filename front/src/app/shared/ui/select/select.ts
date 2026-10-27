@@ -9,6 +9,7 @@ import {
   inject,
   input,
   model,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -53,6 +54,12 @@ export class Select<T> {
   readonly size = input<'medium' | 'large'>('medium');
   /** A filter field at the top of the open list, accents and case ignored. */
   readonly searchable = input(false, { transform: booleanAttribute });
+  /**
+   * A list to pick from rather than a value to hold ("Ajouter un ingrédient"): the choice is sent
+   * through `picked` and the button keeps showing the placeholder.
+   */
+  readonly pickOnly = input(false, { transform: booleanAttribute });
+  readonly picked = output<T>();
 
   protected readonly id = `select-${nextId++}`;
   protected readonly open = signal(false);
@@ -88,7 +95,9 @@ export class Select<T> {
 
   protected choose(position: number): void {
     const option = this.shown()[position]?.option;
-    if (option) {
+    if (option && this.pickOnly()) {
+      this.picked.emit(option.value);
+    } else if (option) {
       this.value.set(option.value);
     }
     this.close();

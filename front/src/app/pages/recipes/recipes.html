@@ -28,25 +28,25 @@
     <!-- "Qu'est-ce que je peux faire avec…": each ingredient picked is added to the others -->
     <yona-select
       class="tool-select"
-      [label]="filters().ingredients.length ? 'Ajouter un ingrédient' : 'Filtrer par ingrédient'"
+      [label]="chosenIngredients().length ? 'Ajouter un ingrédient' : 'Filtrer par ingrédient'"
       [placeholder]="
-        filters().ingredients.length >= maxIngredients
+        chosenIngredients().length >= maxIngredients
           ? maxIngredients + ' ingrédients au plus'
-          : filters().ingredients.length
+          : chosenIngredients().length
             ? 'Et aussi…'
             : 'Avec un ingrédient…'
       "
       size="large"
       searchable
-      [disabled]="filters().ingredients.length >= maxIngredients"
+      pickOnly
+      [disabled]="chosenIngredients().length >= maxIngredients"
       [options]="ingredientOptions()"
-      [(value)]="ingredientPick"
-      (valueChange)="addIngredient($event)"
+      (picked)="addIngredient($event)"
     />
 
-    @if (filters().ingredients.length) {
+    @if (chosenIngredients().length) {
       <ul role="list" class="chosen-ingredients" aria-label="Ingrédients choisis">
-        @for (name of filters().ingredients; track name) {
+        @for (name of chosenIngredients(); track name) {
           <li>
             <button type="button" class="chip chosen-ingredients__chip" [attr.aria-label]="'Retirer ' + name" (click)="removeIngredient(name)">
               {{ name }}

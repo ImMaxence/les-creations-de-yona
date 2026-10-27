@@ -2,22 +2,32 @@ import { TestBed } from '@angular/core/testing';
 import AdminChangelog, { versionsOf } from './admin-changelog';
 
 describe('versionsOf', () => {
-  it('leaves out the introduction, from the first version on', () => {
-    expect(versionsOf('# Changelog\r\n\r\nIntro [ReadMe](ReadMe.md).\r\n\r\n## 3.2.0 - 2026-10-27\r\n\r\n- Ajouté')).toBe(
-      '## 3.2.0 - 2026-10-27\n\n- Ajouté',
-    );
+  it('cuts the CHANGELOG into versions, without its introduction', () => {
+    const markdown = '# Changelog\r\n\r\nIntro.\r\n\r\n## 3.2.0 - 2026-10-27\r\n\r\n- Ajouté\r\n\r\n## 3.1.0\r\n\r\n- Avant';
+    expect(versionsOf(markdown)).toEqual([
+      { version: '3.2.0', date: '27 octobre 2026', markdown: '- Ajouté' },
+      { version: '3.1.0', date: null, markdown: '- Avant' },
+    ]);
   });
 });
 
 describe('AdminChangelog', () => {
-  it('shows every version of the CHANGELOG, the latest first', async () => {
+  it('opens the latest version, and renders another one only once opened', async () => {
     const fixture = TestBed.createComponent(AdminChangelog);
     await fixture.whenStable();
     const element: HTMLElement = fixture.nativeElement;
-    const versions = [...element.querySelectorAll('.changelog h2')].map((heading) => heading.textContent);
-    expect(versions[0]).toMatch(/^3\.2\.0 - /);
-    expect(versions).toContain('3.1.0 - 2026-10-26');
-    expect(element.querySelector('.changelog')?.textContent).not.toContain('# Changelog');
-    expect(element.querySelectorAll('.changelog h3').length).toBeGreaterThan(0);
+    const folds = [...element.querySelectorAll<HTMLDetailsElement>('.changelog__version')];
+
+    expect(folds.length).toBeGreaterThan(1);
+    expect(folds[0].querySelector('.changelog__title')?.textContent).toBe('Version 3.2.0');
+    expect(folds[0].open).toBe(true);
+    expect(folds[0].querySelector('.changelog__body h3')).not.toBeNull();
+    expect(folds[1].open).toBe(false);
+    expect(folds[1].querySelector('.changelog__body')).toBeNull();
+
+    folds[1].open = true;
+    folds[1].dispatchEvent(new Event('toggle'));
+    await fixture.whenStable();
+    expect(folds[1].querySelector('.changelog__body')).not.toBeNull();
   });
 });

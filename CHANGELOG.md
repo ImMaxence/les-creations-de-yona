@@ -20,7 +20,7 @@ Front 3.2.0 (dont les retours publiés en front 3.1.1), backend 3.2.0. Pas de mi
 
 ### Ajouté, dans le back-office
 
-- Page **Nouveautés** : ce journal des versions, en lecture seule, pour voir ce qui a changé sur le site à chaque mise à jour (aussi depuis le lien à côté des versions, en haut du back-office).
+- Page **Nouveautés** : ce journal des versions, en lecture seule, une section dépliable par version (la dernière ouverte), pour voir ce qui a changé sur le site à chaque mise à jour (aussi depuis le lien à côté des versions, en haut du back-office).
 
 ### Modifié
 
