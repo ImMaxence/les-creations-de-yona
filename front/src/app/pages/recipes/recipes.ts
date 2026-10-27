@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, Scroll } from '@angular/router';
-import { filter } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
 import { RecipeSuggestion } from '../../core/api/generated/models/recipe-suggestion';
 import { SiteData } from '../../core/site/site-data';
 import { Reveal } from '../../shared/motion/reveal';
+import { keepScrollThroughNextNavigation } from '../../shared/routing/kept-scroll';
 import { RECIPES_PATH, recipeLink } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { Pagination } from '../../shared/ui/pagination/pagination';
@@ -44,8 +43,8 @@ export default class Recipes {
   readonly data = input.required<RecipesPageData>();
 
   private readonly router = inject(Router);
-  /** Scroll position kept through the next navigation: a change of page size, not of page. */
-  private keptScroll: number | null = null;
+  /** A change of page size keeps the visitor where they are; a change of page goes to the top. */
+  private readonly keepScroll = keepScrollThroughNextNavigation();
   protected readonly categories = inject(SiteData).categories;
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly pageSizeOptions: SelectOption<number>[] = PAGE_SIZES.map((size) => ({
@@ -160,25 +159,8 @@ export default class Recipes {
     this.router.navigate(recipeLink({ slug: suggestion.slug, categories: [{ slug: suggestion.categorySlug }] }));
   }
 
-  constructor() {
-    // The router scrolls back to the top on its Scroll event, after this subscriber has run: a
-    // change of page size puts the visitor back in the next frame, still before it is painted.
-    this.router.events
-      .pipe(
-        filter((event) => event instanceof Scroll),
-        takeUntilDestroyed(),
-      )
-      .subscribe(() => {
-        const top = this.keptScroll;
-        if (top !== null) {
-          this.keptScroll = null;
-          requestAnimationFrame(() => window.scrollTo({ top, behavior: 'instant' }));
-        }
-      });
-  }
-
   protected changePageSize(pageSize: number | undefined): void {
-    this.keptScroll = window.scrollY;
+    this.keepScroll();
     this.updateQuery({
       [RECIPES_QUERY.pageSize]: pageSize === DEFAULT_PAGE_SIZE ? null : (pageSize ?? null),
       [RECIPES_QUERY.page]: null,

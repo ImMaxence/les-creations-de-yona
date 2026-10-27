@@ -48,6 +48,7 @@ Modèle de données, choix techniques et leurs raisons, images, charte graphique
 
 ### Frontend
 
+- Position dans la page (3.5.3) : le routeur remonte en haut à chaque navigation (`scrollPositionRestoration: 'enabled'`), ce qui convient à une nouvelle page. Un filtre, un tri ou un nombre par page changés sur place ne réécrivent que les paramètres de l'adresse : la page appelle `keepScrollThroughNextNavigation()` (`shared/routing/kept-scroll.ts`) juste avant de naviguer, et la position est remise à l'image suivante, avant l'affichage. Une liste chargée par une `resource` (back-office) se vide pendant le chargement de nouveaux paramètres : la précédente reste affichée (`linkedSignal`), sans quoi la page rétrécit et la position se perd.
 - Minuteurs du mode cuisine (3.3) : un service de toute l'application (`core/kitchen/kitchen-timers.ts`), pas du composant, pour qu'ils survivent à la fermeture du mode et au changement de page ; clé `{slug}#{étape}`, une sonnerie à la fois (la dernière arrivée). La barre (`core/kitchen/timers-bar.ts`, dans `app.html`) s'efface tant qu'un mode cuisine est ouvert. « Reprendre » navigue vers la recette et dépose une demande que le mode cuisine de cette recette reprend à son ouverture.
 - Angular 22 avec signals (`signal`, `computed`, `input()`, `output()`), composants standalone, sans NgModule.
 - Styles en SCSS uniquement, sans Tailwind ni framework CSS. Espacements, breakpoints et animations dans `styles/_variables.scss` ; couleurs, polices et arrondi dans `core/theme/`.

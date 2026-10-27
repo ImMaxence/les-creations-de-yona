@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, resource, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  resource,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
@@ -9,6 +19,7 @@ import { deleteRecipes } from '../../../core/api/generated/fn/admin-recipes/dele
 import { duplicateRecipe } from '../../../core/api/generated/fn/admin-recipes/duplicate-recipe';
 import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
+import { PageResponseRecipeAdminSummary } from '../../../core/api/generated/models/page-response-recipe-admin-summary';
 import { listAdminTags } from '../../../core/api/generated/fn/admin-tags/list-admin-tags';
 import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
 import { Confirm } from '../../../core/dialog/confirm';
@@ -17,6 +28,7 @@ import { SiteData } from '../../../core/site/site-data';
 import { categoryNames } from '../../../shared/format/categories';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { parisDateTime } from '../../../shared/format/paris-time';
+import { keepScrollThroughNextNavigation } from '../../../shared/routing/kept-scroll';
 import { recipeLink } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
@@ -147,8 +159,16 @@ export default class AdminRecipes {
     }),
     loader: ({ params }) => this.api.invoke(searchRecipes, params),
   });
-  protected readonly totalPages = computed(() => this.recipes.value()?.totalPages ?? 0);
-  protected readonly totalElements = computed(() => this.recipes.value()?.totalElements ?? 0);
+  /**
+   * The list shown: the previous one stays on screen while the next one loads (a filter or an
+   * order changed), so that the page keeps its height and the admin their place in it.
+   */
+  protected readonly result = linkedSignal<PageResponseRecipeAdminSummary | undefined, PageResponseRecipeAdminSummary | undefined>({
+    source: this.recipes.value,
+    computation: (value, previous) => value ?? previous?.value,
+  });
+  protected readonly totalPages = computed(() => this.result()?.totalPages ?? 0);
+  protected readonly totalElements = computed(() => this.result()?.totalElements ?? 0);
 
   /** Ingredients used by a recipe at least; choosing one filters the list at once. */
   private readonly knownIngredients = resource({
@@ -172,8 +192,10 @@ export default class AdminRecipes {
 
   /** Kept from one page of the list to another. */
   protected readonly selection = new Selection<number>();
-  protected readonly shownIds = computed(() => this.recipes.value()?.content.map((recipe) => recipe.id) ?? []);
+  protected readonly shownIds = computed(() => this.result()?.content.map((recipe) => recipe.id) ?? []);
   protected readonly deleting = signal(false);
+  /** A filter, an order or a search changes the list in place; a page of the pagination starts at the top. */
+  private readonly keepScroll = keepScrollThroughNextNavigation();
 
   constructor() {
     // The fields show the search of the URL (on arrival, back and forward)
@@ -239,6 +261,7 @@ export default class AdminRecipes {
 
   /** The order chosen stays: it is not a filter. */
   protected clearFilters(): void {
+    this.keepScroll();
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: this.sort() === DEFAULT_SORT ? {} : { [ADMIN_RECIPES_QUERY.sort]: this.sort() },
@@ -294,8 +317,9 @@ export default class AdminRecipes {
     }
   }
 
-  /** Any filter change goes back to the first page. */
+  /** Any filter change goes back to the first page, the admin staying where they are on it. */
   private updateQuery(queryParams: Record<string, string | null>): void {
+    this.keepScroll();
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { ...queryParams, [ADMIN_RECIPES_QUERY.page]: null },

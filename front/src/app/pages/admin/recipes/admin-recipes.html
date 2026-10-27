@@ -34,7 +34,7 @@
     <yona-filter-chip label="Recettes avec cette photo" [imageId]="image" (cleared)="clearImage()" />
   }
 
-  @if (recipes.value(); as result) {
+  @if (result(); as result) {
     @if (result.content.length) {
       <yona-bulk-bar
         shownLabel="cette page"
@@ -52,7 +52,7 @@
           · page {{ currentPage() }} sur {{ totalPages() }}
         }
       </p>
-      <ul role="list" class="admin-list">
+      <ul role="list" class="admin-list" [class.is-busy]="recipes.isLoading()" [attr.aria-busy]="recipes.isLoading()">
         @for (recipe of result.content; track recipe.id) {
           <li class="admin-row" [class.is-selected]="selection.has(recipe.id)">
             <label class="select-box">

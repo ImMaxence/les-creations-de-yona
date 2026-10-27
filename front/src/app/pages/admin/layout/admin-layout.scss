@@ -210,6 +210,12 @@ textarea.input {
   list-style: none;
 }
 
+// The previous list, kept on screen while the next one loads
+.admin-list.is-busy {
+  opacity: 0.55;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
 .admin-row {
   display: flex;
   flex-wrap: wrap;

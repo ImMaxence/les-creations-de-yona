@@ -2,6 +2,18 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste. Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.5.3 - 2026-10-28
+
+Front 3.5.3, backend 3.5.3. Pas de migration de base.
+
+### Corrigé
+
+- **Liste des recettes du back-office : on reste où on est** en changeant le tri, un filtre ou la recherche, au lieu de remonter en haut de la page. La liste précédente reste affichée, estompée, le temps que la nouvelle arrive. Changer de page ramène toujours en haut, pour lire la nouvelle page depuis le début.
+
+### Technique
+
+- `shared/routing/kept-scroll.ts` : garder la position à travers une navigation qui ne change que les paramètres de l'adresse, partagé avec la page Recettes (nombre par page).
+
 ## 3.5.2 - 2026-10-27
 
 Front 3.5.2, backend 3.5.2. Pas de migration de base.
