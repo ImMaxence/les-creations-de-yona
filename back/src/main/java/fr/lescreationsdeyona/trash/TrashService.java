@@ -13,6 +13,8 @@ import fr.lescreationsdeyona.recipe.RecipeLinks;
 import fr.lescreationsdeyona.recipe.RecipeService;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -98,6 +100,16 @@ public class TrashService {
 	@Transactional
 	public void erase(long id) {
 		erase(List.of(find(id)));
+	}
+
+	/** Several at once, all or none: an id no longer in the trash cancels the whole erasure. */
+	@Transactional
+	public void eraseSelected(Collection<Long> ids) {
+		List<TrashItem> items = trashRepository.findAllById(new HashSet<>(ids));
+		if (items.size() != new HashSet<>(ids).size()) {
+			throw new ApiException(ErrorCode.TRASH_ITEM_NOT_FOUND);
+		}
+		erase(items);
 	}
 
 	/** "Vider la corbeille". */

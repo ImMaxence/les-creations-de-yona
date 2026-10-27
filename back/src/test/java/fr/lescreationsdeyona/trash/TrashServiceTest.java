@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.trash;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -9,6 +10,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import fr.lescreationsdeyona.category.CategoryService;
+import fr.lescreationsdeyona.error.ApiException;
+import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.menu.MenuService;
 import fr.lescreationsdeyona.recipe.RecipeDetail;
@@ -90,6 +93,28 @@ class TrashServiceTest {
 		when(trashRepository.findAllByOrderByDeletedAtDesc()).thenReturn(List.of(item(1, TrashKind.MENU)));
 
 		assertThat(service.list().getFirst().erasedAt()).isEqualTo(Instant.parse("2026-10-31T10:00:00Z"));
+	}
+
+	@Test
+	void erasesASelectionAllOrNone() {
+		TrashItem photo = item(1, TrashKind.IMAGE);
+		TrashItem menu = item(2, TrashKind.MENU);
+		when(trashRepository.findAllById(any())).thenReturn(List.of(photo, menu));
+
+		service.eraseSelected(List.of(1L, 2L, 2L));
+
+		verify(imageService).eraseFromTrash(photo);
+		verify(trashRepository).deleteAll(List.of(photo, menu));
+	}
+
+	@Test
+	void erasesNothingWhenOneIsNoLongerInTheTrash() {
+		when(trashRepository.findAllById(any())).thenReturn(List.of(item(1, TrashKind.MENU)));
+
+		assertThatThrownBy(() -> service.eraseSelected(List.of(1L, 9L))).isInstanceOf(ApiException.class)
+			.extracting("code")
+			.isEqualTo(ErrorCode.TRASH_ITEM_NOT_FOUND);
+		verify(trashRepository, never()).deleteAll(any());
 	}
 
 }

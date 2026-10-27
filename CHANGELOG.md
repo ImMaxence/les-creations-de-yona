@@ -1,6 +1,23 @@
 # Changelog
 
-Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste. Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
+Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste (règle complète et fichiers à mettre à jour : [docs/developpement.md](docs/developpement.md#monter-la-version)). Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
+
+## 3.6.0 - 2026-10-28
+
+Front 3.6.0, backend 3.6.0. Pas de migration de base.
+
+### Ajouté, dans le back-office
+
+- **Corbeille : sélection multiple**, comme sur les autres listes. Cases à cocher et « Tout sélectionner » (ce qui est affiché, ou seulement un type : les recettes, les photos…), puis :
+  - **Restaurer** : chaque élément revient comme s'il était restauré seul, les photos et les catégories d'abord, pour qu'une recette et sa catégorie restaurées ensemble se retrouvent. Ce qui ne peut pas revenir (catégories disparues, titre de menu déjà pris) reste dans la corbeille, toujours coché, avec la raison dans un message ; le reste est restauré.
+  - **Effacer définitivement** la sélection, après confirmation. « Vider la corbeille » efface toujours tout d'un coup.
+
+### Technique
+
+- API : `POST /api/admin/trash/restore?ids=` (chaque élément dans sa transaction, réponse `restored` et `failed`), `DELETE /api/admin/trash/selection?ids=` (tout ou rien) ; 500 éléments au plus.
+- Barre de sélection du back-office (`bulk-bar`) : action « Restaurer » facultative.
+- Règle des versions écrite dans la documentation ([développement](docs/developpement.md#monter-la-version)) : quand monter la majeure, la mineure ou le correctif, et les fichiers à mettre à jour.
+- 71 tests backend.
 
 ## 3.5.3 - 2026-10-28
 

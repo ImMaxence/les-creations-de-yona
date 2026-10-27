@@ -19,9 +19,29 @@
           <yona-select label="Type" [options]="kindOptions()" [(value)]="kind" />
         </div>
       }
-      <ul role="list" class="admin-list">
+      <yona-bulk-bar
+        [shownLabel]="shownLabel()"
+        [count]="selection.size()"
+        [allShown]="selection.hasAll(shownIds())"
+        [busy]="bulkBusy()"
+        restoreLabel="Restaurer"
+        deleteLabel="Effacer définitivement"
+        (toggleAll)="selection.toggleAll(shownIds())"
+        (cleared)="selection.clear()"
+        (restored)="restoreSelected()"
+        (deleted)="eraseSelected()"
+      />
+      <ul role="list" class="admin-list" [class.is-busy]="bulkBusy()" [attr.aria-busy]="bulkBusy()">
         @for (item of shown(); track item.id) {
-          <li class="admin-row">
+          <li class="admin-row" [class.is-selected]="selection.has(item.id)">
+            <label class="select-box">
+              <input
+                type="checkbox"
+                [checked]="selection.has(item.id)"
+                [attr.aria-label]="'Sélectionner « ' + item.title + ' »'"
+                (change)="selection.toggle(item.id)"
+              />
+            </label>
             @if (item.kind === 'IMAGE') {
               <img class="admin-thumb" [src]="trashedImageUrl(item)" alt="" width="64" height="48" loading="lazy" />
             } @else {

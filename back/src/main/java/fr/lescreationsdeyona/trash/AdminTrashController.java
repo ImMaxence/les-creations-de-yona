@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,6 +33,8 @@ class AdminTrashController {
 	private static final String WEBP = "image/webp";
 
 	private final TrashService trashService;
+
+	private final TrashBatchService trashBatchService;
 
 	@Operation(summary = "Deleted recipes, categories, menus and photos, kept 30 days; the last deleted first")
 	@GetMapping
@@ -45,6 +50,15 @@ class AdminTrashController {
 	@PostMapping("/{id}/restore")
 	TrashRestored restoreFromTrash(@PathVariable long id) {
 		return trashService.restore(id);
+	}
+
+	@Operation(summary = "Restore several things deleted, each on its own",
+			description = "Photos first, then categories, recipes and menus, so that restored together they find each "
+					+ "other again. One that cannot be restored stays in the trash and is listed with the reason; the "
+					+ "others are restored. Refused at once if an id is no longer in the trash.")
+	@PostMapping("/restore")
+	TrashBatchRestored restoreSeveralFromTrash(@RequestParam @NotEmpty @Size(max = 500) List<Long> ids) {
+		return trashBatchService.restore(ids);
 	}
 
 	@Operation(summary = "A deleted photo, 800 px wide, to show it in the trash",
@@ -66,6 +80,14 @@ class AdminTrashController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void eraseFromTrash(@PathVariable long id) {
 		trashService.erase(id);
+	}
+
+	@Operation(summary = "Erase several things deleted for good, all or none",
+			description = "A recipe's or a category's photo stays in the gallery; a photo's files are deleted.")
+	@DeleteMapping("/selection")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void eraseSeveralFromTrash(@RequestParam @NotEmpty @Size(max = 500) List<Long> ids) {
+		trashService.eraseSelected(ids);
 	}
 
 	@Operation(summary = "Empty the trash")

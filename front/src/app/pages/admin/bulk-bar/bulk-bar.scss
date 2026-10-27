@@ -14,11 +14,18 @@
   color: var(--color-text-muted);
 }
 
-.delete {
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.delete,
+.restore {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  margin-left: auto;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-pill);
   background-color: var(--color-danger);
@@ -34,4 +41,8 @@
   &:disabled {
     opacity: 0.5;
   }
+}
+
+.restore {
+  background-color: var(--color-accent);
 }

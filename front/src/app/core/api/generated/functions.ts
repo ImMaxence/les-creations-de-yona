@@ -125,6 +125,8 @@ export type { GetPushPublicKey$Params as GetPushPublicKey$Params } from './fn/no
 export { getPushPublicKey as getPushPublicKey } from './fn/notifications/get-push-public-key';
 export type { RestoreFromTrash$Params as RestoreFromTrash$Params } from './fn/admin-trash/restore-from-trash';
 export { restoreFromTrash as restoreFromTrash } from './fn/admin-trash/restore-from-trash';
+export type { RestoreSeveralFromTrash$Params as RestoreSeveralFromTrash$Params } from './fn/admin-trash/restore-several-from-trash';
+export { restoreSeveralFromTrash as restoreSeveralFromTrash } from './fn/admin-trash/restore-several-from-trash';
 export type { ListTrash$Params as ListTrash$Params } from './fn/admin-trash/list-trash';
 export { listTrash as listTrash } from './fn/admin-trash/list-trash';
 export type { EmptyTrash$Params as EmptyTrash$Params } from './fn/admin-trash/empty-trash';
@@ -133,6 +135,8 @@ export type { GetTrashedImage$Params as GetTrashedImage$Params } from './fn/admi
 export { getTrashedImage as getTrashedImage } from './fn/admin-trash/get-trashed-image';
 export type { EraseFromTrash$Params as EraseFromTrash$Params } from './fn/admin-trash/erase-from-trash';
 export { eraseFromTrash as eraseFromTrash } from './fn/admin-trash/erase-from-trash';
+export type { EraseSeveralFromTrash$Params as EraseSeveralFromTrash$Params } from './fn/admin-trash/erase-several-from-trash';
+export { eraseSeveralFromTrash as eraseSeveralFromTrash } from './fn/admin-trash/erase-several-from-trash';
 export type { ListImages$Params as ListImages$Params } from './fn/admin-images/list-images';
 export { listImages as listImages } from './fn/admin-images/list-images';
 export type { UploadImage$Params as UploadImage$Params } from './fn/admin-images/upload-image';
