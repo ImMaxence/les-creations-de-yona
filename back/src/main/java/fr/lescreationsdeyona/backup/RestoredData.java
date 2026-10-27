@@ -134,6 +134,7 @@ class RestoredData {
 			added.socialLinks = mergeSocialLinks(scratch, site);
 			added.presets = mergePresets(scratch, site);
 			long glossaryTerms = mergeGlossary(scratch, site);
+			mergeMenus(scratch, site);
 			return new RestoreStatus.Counts(added.recipes, added.categories, added.tags, added.ingredients,
 					added.images, added.socialLinks, added.presets, glossaryTerms);
 		});
@@ -359,6 +360,39 @@ class RestoredData {
 	}
 
 	/**
+	 * A menu whose title or address the site already has is left out. Its recipes are found by their
+	 * address, once the backup's recipes are merged; those the site lacks are left out.
+	 */
+	private void mergeMenus(JdbcClient scratch, JdbcClient site) {
+		for (Map<String, Object> menu : scratch.sql("select * from menu order by id").query().listOfRows()) {
+			Map<String, Object> values = new LinkedHashMap<>(menu);
+			long backupId = ((Number) values.remove("id")).longValue();
+			Long siteId = site.sql("insert into menu (" + columns(values) + ") values (" + parameters(values)
+					+ ") on conflict do nothing returning id")
+				.params(values)
+				.query(Long.class)
+				.optional()
+				.orElse(null);
+			if (siteId == null) {
+				continue;
+			}
+			int position = 0;
+			for (String slug : scratch.sql("""
+					select recipe.slug from menu_recipe join recipe on recipe.id = menu_recipe.recipe_id
+					where menu_recipe.menu_id = :id order by menu_recipe.position""")
+				.param("id", backupId).query(String.class).list()) {
+				position += site.sql("""
+						insert into menu_recipe (menu_id, recipe_id, position)
+						select :menu, id, :position from recipe where slug = :slug""")
+					.param("menu", siteId)
+					.param("position", position)
+					.param("slug", slug)
+					.update();
+			}
+		}
+	}
+
+	/**
 	 * Every table of the site (but Flyway's history and the tables tied to this server, saved empty)
 	 * emptied, then filled with the backup's rows, parents before children; identity sequences then
 	 * continue after the restored ids.
@@ -443,9 +477,7 @@ class RestoredData {
 	}
 
 	private static long insertReturningId(JdbcClient site, String table, Map<String, Object> values) {
-		String columns = values.keySet().stream().map(RestoredData::quoted).collect(Collectors.joining(", "));
-		String parameters = values.keySet().stream().map(column -> ":" + column).collect(Collectors.joining(", "));
-		return site.sql("insert into " + table + " (" + columns + ") values (" + parameters + ") returning id")
+		return site.sql("insert into " + table + " (" + columns(values) + ") values (" + parameters(values) + ") returning id")
 			.params(values)
 			.query(Long.class)
 			.single();
@@ -482,6 +514,15 @@ class RestoredData {
 	/** Names read from the catalog, written as SQL identifiers. */
 	private static String quoted(String identifier) {
 		return "\"" + identifier.replace("\"", "\"\"") + "\"";
+	}
+
+	/** Column names of a row, quoted. */
+	private static String columns(Map<String, Object> values) {
+		return values.keySet().stream().map(RestoredData::quoted).collect(Collectors.joining(", "));
+	}
+
+	private static String parameters(Map<String, Object> values) {
+		return values.keySet().stream().map(column -> ":" + column).collect(Collectors.joining(", "));
 	}
 
 }

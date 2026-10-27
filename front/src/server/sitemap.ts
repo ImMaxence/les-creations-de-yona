@@ -1,4 +1,5 @@
 import type { Request, RequestHandler } from 'express';
+import type { MenuSummary } from '../app/core/api/generated/models/menu-summary';
 import type { PageResponseRecipeCard } from '../app/core/api/generated/models/page-response-recipe-card';
 import type { RecipeCard } from '../app/core/api/generated/models/recipe-card';
 import { SITE_URL } from '../app/core/seo/page-seo';
@@ -6,9 +7,11 @@ import {
   GLOSSARY_PATH,
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
+  MENUS_PATH,
   PRIVACY_POLICY_PATH,
   RECIPES_PATH,
   categoryQueryParams,
+  menuLink,
   recipeLink,
 } from '../app/shared/routing/links';
 
@@ -56,12 +59,26 @@ async function hasGlossary(origin: string): Promise<boolean> {
   }
 }
 
+/** Published menus; a failure only leaves them out. */
+async function fetchMenus(origin: string): Promise<MenuSummary[]> {
+  try {
+    const response = await fetch(new URL('/api/menus', origin), {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    });
+    return response.ok ? ((await response.json()) as MenuSummary[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Indexable pages only: no search results, no empty category nor glossary (all noindex). */
-function sitemapPaths(recipes: RecipeCard[], glossary: boolean): string[] {
+function sitemapPaths(recipes: RecipeCard[], glossary: boolean, menus: MenuSummary[]): string[] {
   const categories = new Set(recipes.flatMap((recipe) => recipe.categories.map((category) => category.slug)));
   return [
     ...STATIC_PATHS,
     ...(glossary ? [GLOSSARY_PATH] : []),
+    ...(menus.length ? [MENUS_PATH, ...menus.map((menu) => menuLink(menu).join('/'))] : []),
     ...[...categories].map(
       (slug) => `${RECIPES_PATH}?${new URLSearchParams(categoryQueryParams({ slug }))}`,
     ),
@@ -93,14 +110,15 @@ function toXml(paths: string[]): string {
  */
 export const sitemap: RequestHandler = async (req, res) => {
   try {
-    const [recipes, glossary] = await Promise.all([
+    const [recipes, glossary, menus] = await Promise.all([
       fetchPublishedRecipes(apiOrigin(req)),
       hasGlossary(apiOrigin(req)),
+      fetchMenus(apiOrigin(req)),
     ]);
     res
       .type('application/xml')
       .set('Cache-Control', 'public, max-age=3600')
-      .send(toXml(sitemapPaths(recipes, glossary)));
+      .send(toXml(sitemapPaths(recipes, glossary, menus)));
   } catch (error) {
     console.error('Sitemap unavailable', error);
     res

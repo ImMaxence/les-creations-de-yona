@@ -25,6 +25,7 @@ import {
   FAVORITES_PATH,
   GLOSSARY_PATH,
   INSTALL_PATH,
+  MENUS_PATH,
   RECIPES_PATH,
   SHOPPING_LIST_PATH,
   categoryQueryParams,
@@ -64,6 +65,7 @@ export class MobileMenu {
   protected readonly favorites = inject(Favorites);
   protected readonly shoppingList = inject(ShoppingList);
   protected readonly recipesPath = RECIPES_PATH;
+  protected readonly menusPath = MENUS_PATH;
   protected readonly installPath = INSTALL_PATH;
   protected readonly glossaryPath = GLOSSARY_PATH;
   protected readonly favoritesPath = FAVORITES_PATH;

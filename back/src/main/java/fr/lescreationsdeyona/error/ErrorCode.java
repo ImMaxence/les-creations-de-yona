@@ -50,6 +50,11 @@ public enum ErrorCode {
 	TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "Tag introuvable."),
 	TAG_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce tag existe déjà."),
 
+	// Menus
+	MENU_NOT_FOUND(HttpStatus.NOT_FOUND, "Menu introuvable."),
+	MENU_ALREADY_EXISTS(HttpStatus.CONFLICT, "Un menu porte déjà ce titre."),
+	MENU_RECIPE_NOT_FOUND(HttpStatus.BAD_REQUEST, "Une des recettes du menu n'existe plus."),
+
 	// Glossary
 	GLOSSARY_TERM_NOT_FOUND(HttpStatus.NOT_FOUND, "Mot du glossaire introuvable."),
 	GLOSSARY_TERM_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ce mot est déjà dans le glossaire."),

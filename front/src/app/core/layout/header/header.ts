@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
-import { RECIPES_PATH } from '../../../shared/routing/links';
+import { MENUS_PATH, RECIPES_PATH } from '../../../shared/routing/links';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { CategoryMenu } from '../category-menu/category-menu';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
@@ -21,6 +21,8 @@ const SCROLL_DIRECTION_THRESHOLD_PX = 6;
   styleUrl: './header.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    // The site's banner landmark: the logo is in it, not loose on the page
+    role: 'banner',
     '[class.is-scrolled]': 'scrolled()',
     '[class.is-hidden]': 'hidden()',
     '(window:scroll)': 'onScroll()',
@@ -30,6 +32,7 @@ export class Header {
   protected readonly siteData = inject(SiteData);
   protected readonly adminSession = inject(AdminSession);
   protected readonly recipesPath = RECIPES_PATH;
+  protected readonly menusPath = MENUS_PATH;
 
   protected readonly scrolled = signal(false);
   /** Hidden while reading down the page, back as soon as the reader scrolls up. */

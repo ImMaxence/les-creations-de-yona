@@ -3,6 +3,7 @@ import { Params } from '@angular/router';
 export const RECIPES_PATH = '/recettes';
 export const INSTALL_PATH = '/installer';
 export const GLOSSARY_PATH = '/glossaire';
+export const MENUS_PATH = '/menus';
 export const FAVORITES_PATH = '/favoris';
 export const SHOPPING_LIST_PATH = '/liste-de-courses';
 export const LEGAL_NOTICE_PATH = '/mentions-legales';
@@ -17,6 +18,11 @@ export function mainCategory<T>(recipe: { categories: T[] }): T {
 /** Canonical, SEO friendly URL of a recipe: /recettes/{main-category-slug}/{recipe-slug}. */
 export function recipeLink(recipe: { slug: string; categories: { slug: string }[] }): string[] {
   return [RECIPES_PATH, mainCategory(recipe).slug, recipe.slug];
+}
+
+/** A menu put together by the admin: /menus/{slug}. */
+export function menuLink(menu: { slug: string }): string[] {
+  return [MENUS_PATH, menu.slug];
 }
 
 /** Query params of the recipes page filtered on a category: /recettes?categorie={slug}. */

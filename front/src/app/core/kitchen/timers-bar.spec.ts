@@ -6,6 +6,8 @@ import { TimersBar } from './timers-bar';
 describe('TimersBar', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // The timers are kept in the tab: none left from another test
+    sessionStorage.clear();
     Object.defineProperty(navigator, 'vibrate', { value: vi.fn(), configurable: true });
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });

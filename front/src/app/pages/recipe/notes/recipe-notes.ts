@@ -10,10 +10,12 @@ import { Icon } from '../../../shared/ui/icon/icon';
   selector: 'yona-recipe-notes',
   imports: [Icon],
   template: `
-    <h2 class="notes__title" id="notes-title"><svg yonaIcon="pencil" [size]="20" [strokeWidth]="1.75"></svg>Mes notes</h2>
+    <h2 class="notes__title">
+      <svg yonaIcon="pencil" [size]="20" [strokeWidth]="1.75"></svg><label for="recipe-notes">Mes notes</label>
+    </h2>
     <textarea
+      id="recipe-notes"
       class="notes__field"
-      aria-labelledby="notes-title"
       aria-describedby="notes-hint"
       rows="3"
       placeholder="Par exemple : 10 min de plus dans mon four, un peu moins de sucre…"

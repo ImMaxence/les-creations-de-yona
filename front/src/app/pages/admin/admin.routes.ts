@@ -64,6 +64,11 @@ export const adminRoutes: Routes = [
         title: 'Tags · Back-office',
       },
       {
+        path: 'menus',
+        loadComponent: () => import('./menus/admin-menus'),
+        title: 'Menus · Back-office',
+      },
+      {
         path: 'glossaire',
         loadComponent: () => import('./glossary/admin-glossary'),
         title: 'Glossaire · Back-office',

@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 3.3.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 3.4.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 | Accueil | Recettes | Back-office |
 | --- | --- | --- |
@@ -17,7 +17,8 @@ Version 3.3.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 **Pour les visiteurs, sans compte**
 
 - Recettes avec recherche (titre, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté), portions et moule ajustables, « Organiser mon temps ».
-- Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page.
+- Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page et après un rechargement.
+- Menus composés par Yona (« Menu de Noël », « Goûter d'anniversaire »), toutes leurs recettes à la liste de courses en un geste.
 - Favoris, liste de courses rangée par rayon, notes personnelles : gardés dans le navigateur.
 - Application installable, lisible hors connexion, notifications des nouvelles recettes.
 - Glossaire de pâtisserie, mots expliqués d'un appui dans les étapes.
@@ -25,7 +26,7 @@ Version 3.3.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 **Pour Yona (back-office, connexion Google)**
 
 - Éditeur de recettes (parties, étapes minutées, matériel, conseil, publication programmée, brouillon gardé), aperçu, corbeille.
-- Galerie de photos, catégories, tags, ingrédients (doublons, rayons), glossaire.
+- Galerie de photos, catégories, tags, menus, ingrédients (doublons, rayons), glossaire.
 - Apparence (thèmes, polices), statistiques, sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
 
 Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).
@@ -47,7 +48,7 @@ Le site sur `http://localhost:8000`. Lancer le backend ou le front à part, avec
 ```bash
 cd front && npm test   # tests unitaires du front (Vitest)
 cd back && ./mvnw test # tests unitaires du backend (JUnit)
-cd e2e && npm test     # parcours dans Chrome, le site lancé en local
+cd e2e && npm test     # parcours dans Chrome (dont accessibilité et Lighthouse), le site lancé en local
 ```
 
 ## Documentation

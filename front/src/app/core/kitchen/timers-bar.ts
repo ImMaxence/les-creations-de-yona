@@ -13,6 +13,13 @@ import { KitchenTimers, formatClock } from './kitchen-timers';
   template: `
     @if (shown()) {
       <aside class="timers-bar" aria-label="Minuteurs du mode cuisine">
+        <!-- After a reload: the timers go on, but the browser waits for a tap to play a sound -->
+        @if (timers.soundAsleep()) {
+          <button type="button" class="timers-bar__wake" (click)="timers.wakeSound()">
+            <svg yonaIcon="bell-off" [size]="18"></svg>
+            Touchez pour réactiver la sonnerie
+          </button>
+        }
         @if (timers.ringing(); as ringing) {
           <div class="timers-bar__ringing" role="alert">
             <svg yonaIcon="bell-ring" [size]="20"></svg>

@@ -51,6 +51,26 @@
   }
 </section>
 
+<!-- Menus of the moment: the latest updated -->
+@if (menus().length) {
+  <section class="container menus" aria-labelledby="menus-title">
+    <header class="section-head" yonaReveal>
+      <p class="eyebrow">Pour chaque occasion</p>
+      <h2 id="menus-title">Nos menus</h2>
+    </header>
+    <ul role="list" class="menus__grid">
+      @for (menu of menus(); track menu.slug; let i = $index) {
+        <li yonaReveal [revealDelay]="(i % 3) * 90"><yona-menu-card [menu]="menu" /></li>
+      }
+    </ul>
+    @if (siteData.menus().length > menus().length) {
+      <div class="latest__more" yonaReveal>
+        <a yonaButton variant="secondary" [routerLink]="menusPath">Tous les menus <svg yonaIcon="arrow-right"></svg></a>
+      </div>
+    }
+  </section>
+}
+
 <section class="container about" yonaReveal aria-labelledby="about-title">
   <div class="about__portrait">
     <!-- The photo chosen in the back-office (Préférences), otherwise the one bundled with the site -->

@@ -1,0 +1,124 @@
+<section class="admin-section" aria-labelledby="menus-title">
+  <div class="admin-section__head">
+    <h2 id="menus-title">Menus</h2>
+    @if (!draft()) {
+      <button yonaButton type="button" (click)="startNew()"><svg yonaIcon="plus"></svg>Nouveau menu</button>
+    }
+  </div>
+  <p class="field__hint">
+    Quelques recettes réunies pour une occasion (« Menu de Noël », « Goûter d'anniversaire ») : une page sur le site, et
+    tout à la liste de courses en un geste. Sa photo est celle de sa première recette ; seules ses recettes publiées
+    s'affichent.
+  </p>
+
+  @if (draft(); as menu) {
+    <form class="admin-panel menu-form" aria-labelledby="menu-form-title" (submit)="save($event)">
+      <h3 id="menu-form-title">{{ menu.id === null ? 'Nouveau menu' : 'Modifier le menu' }}</h3>
+      <div class="field">
+        <label class="field__label" for="menu-title">Titre</label>
+        <input
+          id="menu-title"
+          class="input"
+          maxlength="100"
+          placeholder="Menu de Noël"
+          [value]="menu.title"
+          (input)="update({ title: $any($event.target).value })"
+        />
+      </div>
+      <div class="field">
+        <label class="field__label" for="menu-intro">Présentation (facultative)</label>
+        <textarea
+          id="menu-intro"
+          class="input"
+          rows="3"
+          maxlength="1000"
+          placeholder="Un repas de fête à préparer en grande partie la veille…"
+          [value]="menu.intro"
+          (input)="update({ intro: $any($event.target).value })"
+        ></textarea>
+      </div>
+
+      <div class="field">
+        <span class="field__label" id="menu-recipes-label">Recettes, dans l'ordre</span>
+        @if (menu.recipes.length) {
+          <ol class="menu-recipes" aria-labelledby="menu-recipes-label">
+            @for (recipe of menu.recipes; track recipe.id; let i = $index; let last = $last) {
+              <li class="menu-recipe">
+                <span class="menu-recipe__position">{{ i + 1 }}</span>
+                <span class="menu-recipe__title">
+                  {{ recipe.title }}
+                  @if (recipe.status === 'DRAFT') {
+                    <span class="badge">Brouillon</span>
+                  }
+                </span>
+                <button type="button" class="icon-button" [attr.aria-label]="'Monter ' + recipe.title" [disabled]="i === 0" (click)="moveRecipe(i, -1)">
+                  <svg yonaIcon="arrow-up" [size]="16"></svg>
+                </button>
+                <button type="button" class="icon-button" [attr.aria-label]="'Descendre ' + recipe.title" [disabled]="last" (click)="moveRecipe(i, 1)">
+                  <svg yonaIcon="arrow-down" [size]="16"></svg>
+                </button>
+                <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Retirer ' + recipe.title" (click)="removeRecipe(i)">
+                  <svg yonaIcon="x" [size]="16"></svg>
+                </button>
+              </li>
+            }
+          </ol>
+        }
+        <yona-select
+          label="Ajouter une recette au menu"
+          [placeholder]="menu.recipes.length >= maxRecipes ? maxRecipes + ' recettes au plus' : 'Ajouter une recette…'"
+          searchable
+          pickOnly
+          [disabled]="menu.recipes.length >= maxRecipes"
+          [options]="recipeOptions()"
+          (picked)="addRecipe($event)"
+        />
+      </div>
+
+      <label class="checkbox-field">
+        <input type="checkbox" [checked]="menu.published" (change)="update({ published: $any($event.target).checked })" />
+        Publier sur le site
+      </label>
+
+      <div class="menu-form__actions">
+        <button yonaButton variant="secondary" type="button" (click)="draft.set(null)">Annuler</button>
+        <button yonaButton type="submit" [disabled]="saving()"><svg yonaIcon="save"></svg>Enregistrer</button>
+      </div>
+    </form>
+  }
+
+  @if (menus.value(); as list) {
+    @if (list.length) {
+      <ul role="list" class="admin-list">
+        @for (menu of list; track menu.id) {
+          <li class="admin-row">
+            <div class="admin-row__main">
+              <span class="admin-row__title">
+                {{ menu.title }}
+                <span class="badge" [class.badge--published]="menu.published">{{ menu.published ? 'Publié' : 'Brouillon' }}</span>
+              </span>
+              <span class="admin-row__meta">
+                {{ menu.recipeCount }} recette{{ menu.recipeCount > 1 ? 's' : '' }}
+                @if (menu.published) {
+                  <a class="link-button" [routerLink]="menuLink(menu)">Voir sur le site <svg yonaIcon="external-link" [size]="14"></svg></a>
+                }
+              </span>
+            </div>
+            <div class="admin-row__actions">
+              <button type="button" class="icon-button" [attr.aria-label]="'Modifier ' + menu.title" (click)="edit(menu)">
+                <svg yonaIcon="pencil" [size]="18"></svg>
+              </button>
+              <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + menu.title" (click)="remove(menu)">
+                <svg yonaIcon="trash" [size]="18"></svg>
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else if (!draft()) {
+      <p class="admin-empty">Aucun menu pour le moment.</p>
+    }
+  } @else if (menus.isLoading()) {
+    <p class="admin-empty">Chargement…</p>
+  }
+</section>

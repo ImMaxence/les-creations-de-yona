@@ -1,8 +1,11 @@
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { DestroyRef, Injectable, PLATFORM_ID, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import { KitchenAlarm } from './kitchen-alarm';
 
 const TICK_MS = 250;
+/** In the tab only (sessionStorage): found again after a reload, or when the phone killed the page. */
+const STORAGE_KEY = 'yona-kitchen-timers';
 /** "+ 1 min": the cake is not quite done. */
 export const EXTRA_MS = 60_000;
 
@@ -38,11 +41,27 @@ export function formatClock(ms: number): string {
   return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${rest}` : `${minutes}:${rest}`;
 }
 
+interface StoredTimers {
+  timers: KitchenTimer[];
+  ringing: string | null;
+}
+
+function isStored(value: unknown): value is StoredTimers {
+  const stored = value as StoredTimers | null;
+  return (
+    !!stored &&
+    Array.isArray(stored.timers) &&
+    stored.timers.every((timer) => typeof timer?.key === 'string' && typeof timer?.totalMs === 'number')
+  );
+}
+
 /**
  * The timers of the cooking mode, for the whole visit: they keep running while the visitor goes
  * to another recipe or another page, shown in a bar at the bottom of every page (TimersBar) when
  * no cooking mode is open. At the end, a ring (sound scheduled on the audio clock, see
- * KitchenAlarm) and a vibration, until stopped. Lost when the tab is closed or reloaded.
+ * KitchenAlarm) and a vibration, until stopped. Kept in the tab: after a reload (or the phone
+ * killing the page in the background), they are found again on time, but silent until the next
+ * tap anywhere, browsers only letting a page play sound or vibrate after the visitor acted.
  */
 @Injectable({ providedIn: 'root' })
 export class KitchenTimers {
@@ -60,12 +79,43 @@ export class KitchenTimers {
   readonly modeOpen = signal(false);
   /** "Reprendre" from the bar: the cooking mode of that recipe opens at that step. */
   readonly resumeRequest = signal<{ slug: string; stepIndex: number } | null>(null);
+  /** Timers found again after a reload: silent until a tap ("Touchez pour réactiver la sonnerie"). */
+  readonly soundAsleep = signal(false);
+
+  private readonly wakeOnTap = () => this.wakeSound();
 
   constructor() {
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      this.restore();
+      effect(() => {
+        const stored: StoredTimers = { timers: this.list(), ringing: this.ringing()?.key ?? null };
+        untracked(() => this.save(stored));
+      });
+    }
     inject(DestroyRef).onDestroy(() => {
       clearInterval(this.ticker);
       this.alarm.close();
+      this.stopListeningForTap();
     });
+  }
+
+  /** The first tap after a reload: the sound and the vibration of the timers found again. */
+  wakeSound(): void {
+    if (!this.soundAsleep()) {
+      return;
+    }
+    this.soundAsleep.set(false);
+    this.stopListeningForTap();
+    this.unlock();
+    const now = Date.now();
+    for (const timer of this.running()) {
+      this.alarm.schedule(timer.key, Math.max(0, timer.endsAt! - now));
+    }
+    const ringing = this.ringing();
+    if (ringing) {
+      this.alarm.vibrate();
+      this.alarm.ringNow(ringing.key);
+    }
   }
 
   get(slug: string, stepIndex: number): KitchenTimer | undefined {
@@ -134,6 +184,50 @@ export class KitchenTimers {
     if (ringing) {
       this.alarm.cancel(ringing.key);
       this.silence(ringing.key);
+    }
+  }
+
+  /** Kept in the tab, at each change: a reload finds them again (never sent anywhere). */
+  private save(stored: StoredTimers): void {
+    try {
+      if (stored.timers.length) {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+      } else {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      // Storage blocked (private browsing): kept for this page only
+    }
+  }
+
+  /** Those running go on where they are; those ended meanwhile ring, silently until a tap. */
+  private restore(): void {
+    let stored: unknown;
+    try {
+      stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? 'null');
+    } catch {
+      return;
+    }
+    if (!isStored(stored) || !stored.timers.length) {
+      return;
+    }
+    this.timers.set(new Map(stored.timers.map((timer) => [timer.key, timer])));
+    const ringing = stored.ringing ? this.timers().get(stored.ringing) : undefined;
+    if (ringing) {
+      this.ringing.set(ringing);
+    }
+    if (this.running().length || ringing) {
+      this.soundAsleep.set(true);
+      document.addEventListener('pointerdown', this.wakeOnTap, true);
+      document.addEventListener('keydown', this.wakeOnTap, true);
+    }
+    this.tick();
+  }
+
+  private stopListeningForTap(): void {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('pointerdown', this.wakeOnTap, true);
+      document.removeEventListener('keydown', this.wakeOnTap, true);
     }
   }
 

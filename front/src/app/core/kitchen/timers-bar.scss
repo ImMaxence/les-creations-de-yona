@@ -60,6 +60,21 @@
   }
 }
 
+// The sound asleep after a reload: a tap anywhere wakes it, this one says so
+.timers-bar__wake {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  box-shadow: var(--shadow-md);
+}
+
 .timers-bar__label {
   flex: 1;
   min-width: 0;

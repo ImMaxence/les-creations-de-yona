@@ -5,6 +5,7 @@ import { homeSeo } from './pages/home/home.seo';
 import { glossaryResolver, recipeResolver, recipeSeo, relatedRecipesResolver } from './pages/recipe/recipe.resolver';
 import { recipesResolver, recipesSeo } from './pages/recipes/recipes.resolver';
 import { glossarySeo } from './pages/glossary/glossary.seo';
+import { MENUS_SEO, menuResolver, menuSeo } from './pages/menus/menus.resolver';
 
 const NO_INDEX: RouteSeo = { noIndex: true };
 
@@ -28,6 +29,17 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/recipe/recipe'),
     resolve: { recipe: recipeResolver, related: relatedRecipesResolver, glossary: glossaryResolver },
     data: { [SEO_DATA_KEY]: recipeSeo satisfies RouteSeo },
+  },
+  {
+    path: 'menus',
+    loadComponent: () => import('./pages/menus/menus'),
+    data: { [SEO_DATA_KEY]: MENUS_SEO satisfies RouteSeo },
+  },
+  {
+    path: 'menus/:slug',
+    loadComponent: () => import('./pages/menus/menu'),
+    resolve: { menu: menuResolver },
+    data: { [SEO_DATA_KEY]: menuSeo satisfies RouteSeo },
   },
   {
     path: 'glossaire',

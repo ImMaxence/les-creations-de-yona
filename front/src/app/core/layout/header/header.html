@@ -15,6 +15,11 @@
       <li>
         <a class="nav__link" [routerLink]="recipesPath" routerLinkActive="is-active">Recettes</a>
       </li>
+      @if (siteData.menus().length) {
+        <li>
+          <a class="nav__link" [routerLink]="menusPath" routerLinkActive="is-active">Menus</a>
+        </li>
+      }
       <li>
         <yona-category-menu [categories]="siteData.categories()" />
       </li>

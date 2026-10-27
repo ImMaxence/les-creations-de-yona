@@ -53,6 +53,16 @@ export type { DuplicateRecipe$Params as DuplicateRecipe$Params } from './fn/admi
 export { duplicateRecipe as duplicateRecipe } from './fn/admin-recipes/duplicate-recipe';
 export type { PreviewRecipe$Params as PreviewRecipe$Params } from './fn/admin-recipes/preview-recipe';
 export { previewRecipe as previewRecipe } from './fn/admin-recipes/preview-recipe';
+export type { GetAdminMenu$Params as GetAdminMenu$Params } from './fn/admin-menus/get-admin-menu';
+export { getAdminMenu as getAdminMenu } from './fn/admin-menus/get-admin-menu';
+export type { UpdateMenu$Params as UpdateMenu$Params } from './fn/admin-menus/update-menu';
+export { updateMenu as updateMenu } from './fn/admin-menus/update-menu';
+export type { DeleteMenu$Params as DeleteMenu$Params } from './fn/admin-menus/delete-menu';
+export { deleteMenu as deleteMenu } from './fn/admin-menus/delete-menu';
+export type { ListAdminMenus$Params as ListAdminMenus$Params } from './fn/admin-menus/list-admin-menus';
+export { listAdminMenus as listAdminMenus } from './fn/admin-menus/list-admin-menus';
+export type { CreateMenu$Params as CreateMenu$Params } from './fn/admin-menus/create-menu';
+export { createMenu as createMenu } from './fn/admin-menus/create-menu';
 export type { RenameIngredient$Params as RenameIngredient$Params } from './fn/admin-ingredients/rename-ingredient';
 export { renameIngredient as renameIngredient } from './fn/admin-ingredients/rename-ingredient';
 export type { DeleteIngredient$Params as DeleteIngredient$Params } from './fn/admin-ingredients/delete-ingredient';
@@ -141,6 +151,10 @@ export type { SuggestRecipeTitles$Params as SuggestRecipeTitles$Params } from '.
 export { suggestRecipeTitles as suggestRecipeTitles } from './fn/recipes/suggest-recipe-titles';
 export type { GetFeaturedRecipe$Params as GetFeaturedRecipe$Params } from './fn/recipes/get-featured-recipe';
 export { getFeaturedRecipe as getFeaturedRecipe } from './fn/recipes/get-featured-recipe';
+export type { ListMenus$Params as ListMenus$Params } from './fn/menus/list-menus';
+export { listMenus as listMenus } from './fn/menus/list-menus';
+export type { GetMenu$Params as GetMenu$Params } from './fn/menus/get-menu';
+export { getMenu as getMenu } from './fn/menus/get-menu';
 export type { ListPublishedIngredients$Params as ListPublishedIngredients$Params } from './fn/ingredients/list-published-ingredients';
 export { listPublishedIngredients as listPublishedIngredients } from './fn/ingredients/list-published-ingredients';
 export type { ListIngredientAisles$Params as ListIngredientAisles$Params } from './fn/ingredients/list-ingredient-aisles';

@@ -118,6 +118,8 @@
   </div>
 
   <div class="results">
+    <!-- The cards' titles are h3: their section heading, for screen readers -->
+    <h2 class="visually-hidden">Résultats</h2>
     @if (result().content.length) {
       <ul role="list" class="recipe-grid">
         <!-- Cards appearing after a filter change fade in; cards already shown stay put -->

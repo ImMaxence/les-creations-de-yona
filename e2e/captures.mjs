@@ -26,7 +26,7 @@ await desktop.context().close();
 
 // Le back-office sans connexion Google : la page « Nouveautés », la seule sans données de l'API admin
 const admin = await newPage(browser, DESKTOP);
-await fakeAdmin(admin, '3.3.0');
+await fakeAdmin(admin, '3.4.0');
 await admin.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
 await admin.locator('details.changelog__version').first().waitFor();
 await shoot(admin, 'pc-administration.png');

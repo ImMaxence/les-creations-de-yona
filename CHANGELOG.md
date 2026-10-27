@@ -2,6 +2,29 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste. Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.4.0 - 2026-10-27
+
+Front 3.4.0, backend 3.4.0. Migration de base : V11.
+
+### Ajouté, pour les visiteurs
+
+- **Menus** : des recettes réunies pour une occasion (« Menu de Noël », « Goûter d'anniversaire »), sur une page à elles, avec « Tout ajouter à ma liste de courses ». Une page « Menus », « Nos menus » sur l'accueil et « Menus » dans la barre du haut, dès qu'un menu est publié.
+- **Les minuteurs survivent à un rechargement** : si la page est rechargée, ou fermée par le téléphone en arrière-plan (fréquent sur iPhone), les minuteurs sont retrouvés à l'heure. Le téléphone ne laisse sonner qu'après un appui : « Touchez pour réactiver la sonnerie » le rappelle.
+
+### Ajouté, dans le back-office
+
+- Page **Menus** : titre, présentation, recettes dans l'ordre voulu (12 au plus), publié ou non.
+
+### Corrigé
+
+- Accessibilité : l'en-tête du site est reconnu comme tel par les lecteurs d'écran, les titres de la page Recettes se suivent dans l'ordre, le champ « Mes notes » a une vraie étiquette.
+
+### Technique
+
+- Parcours dans Chrome : l'accessibilité de chaque page publique vérifiée par axe, et la vitesse et la qualité par Lighthouse (seuils : performance 70, accessibilité 100, bonnes pratiques 95, SEO 100) ; 56 vérifications.
+- Pages et API compressées par la passerelle (moins de données entre le serveur et Cloudflare, et une mesure locale fidèle).
+- API : `GET /api/menus`, `GET /api/menus/{slug}`, `/api/admin/menus`.
+
 ## 3.3.0 - 2026-10-27
 
 Front 3.3.0, backend 3.3.0. Migration de base : V10.

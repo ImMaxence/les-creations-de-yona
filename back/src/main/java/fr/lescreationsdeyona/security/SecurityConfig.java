@@ -34,7 +34,7 @@ class SecurityConfig {
 			@Value("${springdoc.api-docs.enabled}") boolean apiDocsEnabled) {
 		http.authorizeHttpRequests(requests -> {
 			requests.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
-				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/recipe-suggestions",
+				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/recipe-suggestions", "/api/menus", "/api/menus/*",
 						"/api/ingredients", "/api/ingredients/aisles", "/api/site-content", "/api/categories/**", "/api/tags", "/api/social-links/**",
 						"/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key")
 				.permitAll()

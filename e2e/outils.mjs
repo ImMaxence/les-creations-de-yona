@@ -13,8 +13,8 @@ export const DESKTOP = { width: 1280, height: 900 };
  * Chrome installé sur la machine (aucun navigateur téléchargé), sans fenêtre ; HEADED=1 pour la voir.
  * CHROME_CHANNEL=msedge pour Edge.
  */
-export async function launch() {
-  return chromium.launch({ channel: process.env.CHROME_CHANNEL ?? 'chrome', headless: !process.env.HEADED });
+export async function launch(options = {}) {
+  return chromium.launch({ channel: process.env.CHROME_CHANNEL ?? 'chrome', headless: !process.env.HEADED, ...options });
 }
 
 export function folder(name) {

@@ -20,6 +20,7 @@ describe('KitchenTimers', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    sessionStorage.clear();
     Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     timers = TestBed.inject(KitchenTimers);
@@ -84,6 +85,38 @@ describe('KitchenTimers', () => {
     timers.reset('tarte#1');
     expect(timers.get('tarte', 1)).toBeUndefined();
     expect(timers.running()).toEqual([]);
+  });
+
+  it('keeps the timers in the tab, and finds them again after a reload, silent until a tap', async () => {
+    const vibrateSpy = vibrate;
+    timers.toggle(TART, 60_000);
+    timers.toggle(SOUP, 10 * 60_000);
+    TestBed.tick();
+    expect(JSON.parse(sessionStorage.getItem('yona-kitchen-timers')!).timers).toHaveLength(2);
+
+    // The page reloaded 2 min later: the tart has ended meanwhile, the soup goes on
+    vi.advanceTimersByTime(2 * 60_000);
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const reloaded = TestBed.inject(KitchenTimers);
+    vi.advanceTimersByTime(250);
+
+    expect(reloaded.soundAsleep()).toBe(true);
+    expect(reloaded.ringing()?.title).toBe('Tarte fine');
+    // 10 min, 2 min and a quarter of a second later: 7:59.75, shown 8:00
+    expect(formatClock(reloaded.remainingMs(reloaded.get('veloute', 0)!))).toBe('8:00');
+    vibrateSpy.mockClear();
+    document.dispatchEvent(new Event('pointerdown'));
+    expect(reloaded.soundAsleep()).toBe(false);
+    expect(vibrateSpy).toHaveBeenCalledWith(expect.any(Array));
+  });
+
+  it('forgets them once all are put back to zero', () => {
+    timers.toggle(TART, 60_000);
+    TestBed.tick();
+    timers.reset('tarte#1');
+    TestBed.tick();
+    expect(sessionStorage.getItem('yona-kitchen-timers')).toBeNull();
   });
 
   it('"Reprendre" goes back to the recipe and asks its cooking mode for the step', () => {

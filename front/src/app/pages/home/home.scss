@@ -297,3 +297,24 @@
   font-weight: 600;
   line-height: 1.2;
 }
+
+// Menus of the moment ----------------------------------------------------------
+
+.menus__grid {
+  display: grid;
+  gap: var(--space-5);
+
+  @include m.from(sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include m.from(lg) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.menus .latest__more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}

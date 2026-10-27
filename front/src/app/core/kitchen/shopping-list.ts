@@ -1,4 +1,7 @@
 import { Injectable, computed } from '@angular/core';
+import { RecipeDetail } from '../api/generated/models/recipe-detail';
+import { roundForKitchen } from '../../shared/format/units';
+import { mainCategory } from '../../shared/routing/links';
 import { storedSignal } from './stored-signal';
 
 const STORAGE_KEY = 'yona-shopping-list';
@@ -41,6 +44,26 @@ function isState(value: unknown): value is ShoppingState {
     Array.isArray(state.extras) &&
     state.recipes.every((recipe) => typeof recipe?.slug === 'string' && Array.isArray(recipe?.lines))
   );
+}
+
+/**
+ * A recipe as the list keeps it: its lines with the quantities shown (multiplied by ratio, then
+ * rounded to measurable values), for the servings given.
+ */
+export function shoppingRecipeOf(recipe: RecipeDetail, ratio = 1, servings = recipe.servings ?? null): ShoppingRecipe {
+  return {
+    slug: recipe.slug,
+    title: recipe.title,
+    categorySlug: mainCategory(recipe).slug,
+    servings,
+    lines: recipe.parts.flatMap((part) =>
+      part.ingredients.map((line) => ({
+        name: line.name,
+        quantity: line.quantity == null ? null : ratio === 1 ? line.quantity : roundForKitchen(line.quantity * ratio),
+        unit: line.unit ?? null,
+      })),
+    ),
+  };
 }
 
 /** Same key as the totals of recipe-parts.ts: one line per ingredient, whatever its case. */

@@ -7,13 +7,13 @@ import { RecipeCard as RecipeCardModel } from '../../core/api/generated/models/r
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Favorites } from '../../core/kitchen/favorites';
 import { RecipeNotes } from '../../core/kitchen/recipe-notes';
-import { ShoppingList } from '../../core/kitchen/shopping-list';
+import { ShoppingList, shoppingRecipeOf } from '../../core/kitchen/shopping-list';
 import { Toaster } from '../../core/notifications/toaster';
 import { absoluteUrl } from '../../core/seo/page-seo';
 import { glossaryMatcher } from '../../shared/format/glossary';
 import { MarkdownPipe } from '../../shared/format/markdown.pipe';
 import { ParisDatePipe } from '../../shared/format/paris-date.pipe';
-import { formatMinutes, roundForKitchen } from '../../shared/format/units';
+import { formatMinutes } from '../../shared/format/units';
 import { Reveal } from '../../shared/motion/reveal';
 import { RECIPE_IMAGE_TRANSITION } from '../../shared/motion/view-transitions';
 import {
@@ -160,20 +160,10 @@ export default class Recipe {
   protected addToShoppingList(): void {
     const recipe = this.recipe();
     const ratio = this.ratio();
-    this.shoppingList.add({
-      slug: recipe.slug,
-      title: recipe.title,
-      categorySlug: mainCategory(recipe).slug,
-      // With the visitor's mold: the servings it makes, roughly
-      servings: this.chosenMold() && recipe.servings ? Math.max(1, Math.round(recipe.servings * ratio)) : this.servings(),
-      lines: recipe.parts.flatMap((part) =>
-        part.ingredients.map((line) => ({
-          name: line.name,
-          quantity: line.quantity == null ? null : ratio === 1 ? line.quantity : roundForKitchen(line.quantity * ratio),
-          unit: line.unit ?? null,
-        })),
-      ),
-    });
+    // With the visitor's mold: the servings it makes, roughly
+    const servings =
+      this.chosenMold() && recipe.servings ? Math.max(1, Math.round(recipe.servings * ratio)) : this.servings();
+    this.shoppingList.add(shoppingRecipeOf(recipe, ratio, servings));
     this.toaster.success('Ingrédients ajoutés à votre liste de courses.');
   }
 

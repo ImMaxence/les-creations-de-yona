@@ -35,6 +35,13 @@
           >Recettes <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
         ></a>
       </li>
+      @if (siteData.menus().length) {
+        <li class="stagger" style="--i: 1">
+          <a [routerLink]="menusPath" routerLinkActive="is-active"
+            >Menus <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
+          ></a>
+        </li>
+      }
       <li class="stagger" style="--i: 1">
         <a [routerLink]="favoritesPath" routerLinkActive="is-active">
           <span class="menu__label">

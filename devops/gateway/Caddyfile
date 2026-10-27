@@ -9,6 +9,10 @@
 # /api/* goes to the backend, everything else to the Angular SSR server.
 # Both read the public URL from the X-Forwarded-* headers (Google return URL, SSR origin).
 :80 {
+	# Compressed here: smaller transfers to Cloudflare (which compresses for visitors anyway), and a
+	# local Lighthouse measures what visitors get. Photos (WebP) are already compressed: left alone.
+	encode zstd gzip
+
 	handle /api/* {
 		reverse_proxy back:8080
 	}
