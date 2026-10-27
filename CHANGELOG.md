@@ -18,6 +18,10 @@ Front 3.2.0 (dont les retours publiés en front 3.1.1), backend 3.2.0. Pas de mi
 - **Bandeau d'installation** de l'application, seulement quand le navigateur peut l'installer tout de suite ; « Plus tard » le cache un mois.
 - Accueil : encart « Ne ratez aucune nouvelle recette » avec le bouton des notifications mis en avant.
 
+### Ajouté, dans le back-office
+
+- Page **Nouveautés** : ce journal des versions, en lecture seule, pour voir ce qui a changé sur le site à chaque mise à jour (aussi depuis le lien à côté des versions, en haut du back-office).
+
 ### Modifié
 
 - Accueil : les dernières recettes juste sous la recette à la une, « À propos » et les notifications après.

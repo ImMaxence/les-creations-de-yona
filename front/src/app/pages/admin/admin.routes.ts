@@ -99,6 +99,11 @@ export const adminRoutes: Routes = [
         title: 'Apparence · Back-office',
       },
       {
+        path: 'nouveautes',
+        loadComponent: () => import('./changelog/admin-changelog'),
+        title: 'Nouveautés · Back-office',
+      },
+      {
         path: 'sauvegarde',
         loadComponent: () => import('./backup/admin-backup'),
         title: 'Sauvegarde · Back-office',

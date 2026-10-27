@@ -1,0 +1,36 @@
+// Not encapsulated (as the admin layout): the CHANGELOG is rendered through [innerHTML]
+.changelog {
+  max-width: 48rem;
+
+  // "3.2.0 - 2026-10-27": one card per version
+  h2 {
+    margin-top: var(--space-7);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-line);
+    font-size: var(--text-xl);
+    color: var(--color-accent-strong);
+
+    &:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+  }
+
+  // "Ajouté, pour les visiteurs", "Corrigé"…
+  h3 {
+    margin-top: var(--space-5);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  code {
+    padding: 0.1em 0.35em;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    font-size: 0.9em;
+  }
+}

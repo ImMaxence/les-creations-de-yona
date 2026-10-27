@@ -8,6 +8,9 @@ COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --no-audit --no-fund
 COPY . .
+# The CHANGELOG of the repository, imported by the "Nouveautés" page as ../CHANGELOG.md (context
+# "repo" of the Compose files: docker build --build-context repo=.. outside Compose)
+COPY --from=repo CHANGELOG.md /CHANGELOG.md
 RUN npm run build
 
 # --- Runtime: Node.js and the built application only. The server bundle already contains its

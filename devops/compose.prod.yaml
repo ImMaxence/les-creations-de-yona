@@ -92,7 +92,11 @@ services:
 
   # Angular SSR server, reached through the gateway only.
   front:
-    build: ../front
+    build:
+      context: ../front
+      # The CHANGELOG at the root, shown in the back-office ("Nouveautés")
+      additional_contexts:
+        repo: ..
     restart: unless-stopped
     logging: *logging
     environment:

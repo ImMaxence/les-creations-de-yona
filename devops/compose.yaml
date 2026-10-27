@@ -96,7 +96,11 @@ services:
   # Angular SSR server. Not published: reached through the gateway, like in production.
   front:
     profiles: [app]
-    build: ../front
+    build:
+      context: ../front
+      # The CHANGELOG at the root, shown in the back-office ("Nouveautés")
+      additional_contexts:
+        repo: ..
     restart: unless-stopped
     logging: *logging
     environment:

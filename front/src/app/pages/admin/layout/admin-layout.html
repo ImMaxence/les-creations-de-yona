@@ -5,7 +5,8 @@
       <h1 class="admin__title">Bonjour {{ firstName() }}</h1>
       <p class="admin__email">{{ email() }}</p>
       <p class="admin__versions">
-        Site v{{ frontVersion }} · API v{{ backVersion.value()?.version ?? '…' }}
+        Site v{{ frontVersion }} · API v{{ backVersion.value()?.version ?? '…' }} ·
+        <a routerLink="nouveautes">Nouveautés</a>
       </p>
     </div>
     <button yonaButton variant="secondary" type="button" (click)="signOut()">
@@ -27,6 +28,7 @@
     <a routerLink="preferences" routerLinkActive="is-active"><svg yonaIcon="sliders-horizontal" [size]="18"></svg>Préférences</a>
     <a routerLink="sauvegarde" routerLinkActive="is-active"><svg yonaIcon="database-backup" [size]="18"></svg>Sauvegarde</a>
     <a routerLink="corbeille" routerLinkActive="is-active"><svg yonaIcon="trash" [size]="18"></svg>Corbeille</a>
+    <a routerLink="nouveautes" routerLinkActive="is-active"><svg yonaIcon="sparkles" [size]="18"></svg>Nouveautés</a>
   </nav>
 
   <router-outlet />
