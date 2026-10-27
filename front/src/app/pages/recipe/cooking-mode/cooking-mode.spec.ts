@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { KitchenTimers } from '../../../core/kitchen/kitchen-timers';
 import { CookingMode, CookingPart } from './cooking-mode';
 
 const PARTS: CookingPart[] = [
@@ -9,6 +10,7 @@ const PARTS: CookingPart[] = [
     steps: [
       { description: 'Préchauffer le four.', ingredientPositions: [] },
       { description: 'Cuire.', durationMinutes: 1, ingredientPositions: [] },
+      { description: 'Laisser refroidir.', ingredientPositions: [] },
     ],
   },
 ];
@@ -17,30 +19,34 @@ const PARTS: CookingPart[] = [
 interface CookingModeView {
   miseEnPlace(): boolean;
   index(): number;
-  ringing(): number | null;
+  freeMinutes(): number;
   go(delta: number): void;
   toggleTimer(stepIndex: number): void;
   addMinute(stepIndex: number): void;
-  stopRinging(): void;
+  changeFreeMinutes(direction: 1 | -1): void;
   remainingMs(stepIndex: number): number;
+  isRinging(stepIndex: number): boolean;
   clock(ms: number): string;
 }
 
 describe('CookingMode', () => {
   let fixture: ComponentFixture<CookingMode>;
   let mode: CookingModeView;
-  const vibrate = vi.fn();
+  let timers: KitchenTimers;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
+    Object.defineProperty(navigator, 'vibrate', { value: vi.fn(), configurable: true });
     // jsdom has no modal dialogs
     HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
       this.open = true;
     };
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    timers = TestBed.inject(KitchenTimers);
     fixture = TestBed.createComponent(CookingMode);
     fixture.componentRef.setInput('title', 'Gâteau');
+    fixture.componentRef.setInput('slug', 'gateau');
+    fixture.componentRef.setInput('link', ['/recettes', 'desserts', 'gateau']);
     fixture.componentRef.setInput('parts', PARTS);
     fixture.componentRef.setInput('ingredients', [{ name: 'Farine', amount: '200 g', note: null, parts: [] }]);
     mode = fixture.componentInstance as unknown as CookingModeView;
@@ -48,14 +54,9 @@ describe('CookingMode', () => {
 
   afterEach(() => {
     fixture.destroy();
+    TestBed.resetTestingModule();
     vi.useRealTimers();
-    vibrate.mockReset();
   });
-
-  /** One second of a running timer. */
-  function waitOneSecond(): void {
-    vi.advanceTimersByTime(1000);
-  }
 
   it('opens on the mise en place, then goes through the steps and back to it', () => {
     fixture.componentInstance.start();
@@ -70,7 +71,14 @@ describe('CookingMode', () => {
     expect(mode.miseEnPlace()).toBe(true);
   });
 
-  it('opens on the first step when the recipe gives no ingredients', () => {
+  it('opens on the mise en place for the equipment alone', () => {
+    fixture.componentRef.setInput('ingredients', []);
+    fixture.componentRef.setInput('equipment', ['Moule à tarte']);
+    fixture.componentInstance.start();
+    expect(mode.miseEnPlace()).toBe(true);
+  });
+
+  it('opens on the first step with nothing to get out', () => {
     fixture.componentRef.setInput('ingredients', []);
     fixture.componentInstance.start();
     expect(mode.miseEnPlace()).toBe(false);
@@ -78,52 +86,57 @@ describe('CookingMode', () => {
 
   it('starts a 1 min timer at 1:00, not 1:01, even long after the mode opened', () => {
     fixture.componentInstance.start(1);
-    // The page shown for a while before the timer is started
     vi.advanceTimersByTime(5300);
     mode.toggleTimer(1);
     expect(mode.clock(mode.remainingMs(1))).toBe('1:00');
-    waitOneSecond();
+    vi.advanceTimersByTime(1000);
     expect(mode.clock(mode.remainingMs(1))).toBe('0:59');
   });
 
-  it('resumes after a pause from where it stopped', () => {
-    fixture.componentInstance.start(1);
-    mode.toggleTimer(1);
-    vi.advanceTimersByTime(10_000);
-    mode.toggleTimer(1);
-    vi.advanceTimersByTime(30_000);
-    mode.toggleTimer(1);
-    expect(mode.clock(mode.remainingMs(1))).toBe('0:50');
-  });
-
-  it('rings and buzzes at the end, then "+ 1 min" starts it again', () => {
+  it('rings at the end, then "+ 1 min" starts it again', () => {
     fixture.componentInstance.start(1);
     mode.toggleTimer(1);
     vi.advanceTimersByTime(60_500);
-    expect(mode.ringing()).toBe(1);
-    expect(vibrate).toHaveBeenCalledWith(expect.any(Array));
-
+    expect(mode.isRinging(1)).toBe(true);
     mode.addMinute(1);
-    expect(mode.ringing()).toBeNull();
-    // The buzzing stops
-    expect(vibrate).toHaveBeenLastCalledWith(0);
+    expect(mode.isRinging(1)).toBe(false);
     expect(mode.clock(mode.remainingMs(1))).toBe('1:00');
-    vi.advanceTimersByTime(60_500);
-    expect(mode.ringing()).toBe(1);
   });
 
-  it('keeps the timers once the mode is closed, and is stopped from the page', () => {
+  it('offers a free timer on a step without duration, of the minutes chosen', () => {
+    fixture.componentInstance.start(2);
+    expect(mode.freeMinutes()).toBe(5);
+    for (let i = 0; i < 6; i++) {
+      mode.changeFreeMinutes(1);
+    }
+    // 6, 7, 8, 9, 10, then 15
+    expect(mode.freeMinutes()).toBe(15);
+    mode.changeFreeMinutes(-1);
+    expect(mode.freeMinutes()).toBe(10);
+    mode.toggleTimer(2);
+    expect(mode.clock(mode.remainingMs(2))).toBe('10:00');
+    // Back to 5 on another step, the timer started keeps its minutes
+    mode.go(-1);
+    expect(mode.freeMinutes()).toBe(5);
+    expect(mode.clock(mode.remainingMs(2))).toBe('10:00');
+  });
+
+  it('keeps its timers in the visit: the mode closed or the page left', () => {
     fixture.componentInstance.start(1);
     mode.toggleTimer(1);
     fixture.componentInstance.open.set(false);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.timers-bar')?.textContent).toContain('Étape 2 : 1:00');
+    expect(timers.modeOpen()).toBe(false);
+    fixture.destroy();
+    expect(timers.running().map((timer) => timer.title)).toEqual(['Gâteau']);
+  });
 
-    vi.advanceTimersByTime(60_500);
+  it('opens at the step asked for by "Reprendre"', () => {
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.timers-bar__ringing')?.textContent).toContain("c'est prêt");
-    mode.stopRinging();
+    timers.resumeRequest.set({ slug: 'gateau', stepIndex: 1 });
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.timers-bar')).toBeNull();
+    expect(fixture.componentInstance.open()).toBe(true);
+    expect(mode.index()).toBe(1);
+    expect(timers.resumeRequest()).toBeNull();
   });
 });

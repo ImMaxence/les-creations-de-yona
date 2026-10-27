@@ -138,6 +138,18 @@
             <a class="basket__link" [routerLink]="shoppingListPath">Voir ma liste</a>
           }
         </div>
+        @if (recipe().equipment.length) {
+          <section class="equipment" aria-labelledby="equipment-title">
+            <h3 id="equipment-title" class="equipment__title">
+              <svg yonaIcon="utensils-crossed" [size]="20" [strokeWidth]="1.75"></svg>Matériel
+            </h3>
+            <ul class="equipment__list">
+              @for (item of recipe().equipment; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          </section>
+        }
       </section>
 
       <section class="preparation" aria-labelledby="steps-title">
@@ -225,6 +237,9 @@
 
 <yona-cooking-mode
   [title]="recipe().title"
+  [slug]="recipe().slug"
+  [link]="recipeLink()"
+  [equipment]="recipe().equipment"
   [parts]="parts()"
   [ingredients]="ingredients()"
   [totalMinutes]="totalMinutes()"

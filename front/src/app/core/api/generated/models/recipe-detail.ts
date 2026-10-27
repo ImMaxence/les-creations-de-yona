@@ -18,6 +18,11 @@ export interface RecipeDetail {
    * From 1 to 5, by half points
    */
   difficulty?: number;
+
+  /**
+   * Equipment needed (moule à tarte, fouet…), in order; empty when none
+   */
+  equipment: Array<string>;
   featured: boolean;
   id: number;
   imageId?: string;

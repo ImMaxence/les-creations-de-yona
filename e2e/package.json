@@ -1,0 +1,14 @@
+{
+  "name": "les-creations-de-yona-e2e",
+  "private": true,
+  "license": "MIT",
+  "description": "Parcours dans Chrome contre le site lancé en local (pile Docker), avant une mise en ligne",
+  "type": "module",
+  "scripts": {
+    "test": "node parcours.mjs",
+    "captures": "node captures.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.64.1"
+  }
+}

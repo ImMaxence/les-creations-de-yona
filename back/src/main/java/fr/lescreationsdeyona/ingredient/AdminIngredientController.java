@@ -61,6 +61,13 @@ class AdminIngredientController {
 		return ingredientService.rename(id, form);
 	}
 
+	@Operation(summary = "Put ingredients in a shop aisle (sorting the shopping list), or in none")
+	@PutMapping("/aisle")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void setIngredientAisle(@Valid @RequestBody IngredientAisleForm form) {
+		ingredientService.setAisle(form.ingredientIds(), form.aisle());
+	}
+
 	@Operation(summary = "Delete several ingredients, all or none; refused while a recipe uses one of them")
 	@DeleteMapping
 	@ResponseStatus(HttpStatus.NO_CONTENT)

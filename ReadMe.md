@@ -1,525 +1,69 @@
 # Les créations de Yona
 
-Blog de cuisine : recettes, catégories, recherche. Projet monorepo.
+Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Dernière mise à jour : 2026-10-27 (version 3.2.0). Historique des versions : [CHANGELOG.md](CHANGELOG.md).
+Version 3.3.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
-## Périmètre v1
+| Accueil | Recettes | Back-office |
+| --- | --- | --- |
+| ![Accueil sur ordinateur](docs/captures/pc-accueil.png) | ![Recettes sur ordinateur](docs/captures/pc-recettes.png) | ![Back-office sur ordinateur](docs/captures/pc-administration.png) |
 
-### Pages publiques
+| Installer l'application | Notifications | Glossaire |
+| --- | --- | --- |
+| ![Installer l'application sur téléphone](docs/captures/telephone-installer.png) | ![Notifications sur téléphone](docs/captures/telephone-notifications.png) | ![Glossaire sur téléphone](docs/captures/telephone-glossaire.png) |
 
-- Accueil (`/`) :
-  - Recette à la une : grande card en haut (image, titre, catégories). Champ `featured`, une seule à la fois ; si aucune, la plus récente publiée.
-  - Les 3 dernières recettes, toutes catégories confondues, bouton « Voir plus » vers `/recettes` : juste sous la recette à la une, pour qui revient sur le site.
-  - À propos : présentation de l'autrice, titre, texte et photo modifiables dans le back-office (Préférences) ; sans photo choisie, celle du projet Angular.
-  - « Ne ratez aucune nouvelle recette » : encart sous « À propos », bouton des notifications mis en avant (plein, plus grand). Absent là où les notifications ne peuvent pas marcher ; sur iPhone, le lien vers l'installation de l'application.
-  - Toutes les catégories, avec image, cliquables vers `/recettes?categorie={slug}` (grille de 2 sur téléphone, 4 au-delà).
-- Recettes (`/recettes`) :
-  - Grille de cards de même taille (une par ligne sur téléphone avec une photo moins haute, 2 puis 3 colonnes) : image, date de publication, titre (tronqué avec ellipsis), catégories. Les dernières publiées en premier.
-  - Recherche par titre avec autocomplétion, ingrédient et catégorie choisis dans des menus déroulants (celui des ingrédients se filtre en tapant ; seuls les ingrédients des recettes publiées y figurent), recherche lancée dès le choix (une recette apparaît dans chacune de ses catégories). Filtres combinables, dans l'URL (`q`, `ingredient`, `categorie`).
-  - « Qu'est-ce que je peux faire avec… » : plusieurs ingrédients à la fois, 5 au plus. Chaque ingrédient choisi s'ajoute aux autres en puce (retiré d'un appui), tout de suite, sans attendre les résultats ; le menu reste sur « Et aussi… » (`yona-select` en mode `pickOnly` : il annonce le choix par `picked` sans le garder) ; seules les recettes qui les ont tous sortent. Dans l'URL, `ingredient` répété (`?ingredient=Œufs&ingredient=Chocolat`) ; les anciens liens à un seul ingrédient marchent toujours.
-  - « Plus de filtres » (repliés sur téléphone, sauf s'ils sont utilisés) : tag, temps total (prêt en 15 min, 30 min, 1 h au plus ; préparation + repos + cuisson, une recette sans temps de préparation ni de cuisson est écartée) et difficulté (facile 1 à 2 étoiles, moyenne 2,5 à 3,5, difficile 4 à 5). Dans l'URL : `tag`, `temps`, `difficulte`. Pages filtrées ainsi en `noindex`.
-  - « Effacer tous les filtres » dès qu'un filtre est actif (recherche comprise) : retour à toutes les recettes, en gardant le nombre par page.
-  - Une recherche par titre sans aucun résultat est notée, anonymement, pour la page Statistiques (voir « Recherches sans résultat »).
-  - Pagination numérotée, nombre d'éléments par page au choix.
-- Recette (`/recettes/{slug-categorie}/{slug-recette}`) :
-  - Header : image pleine largeur, titre et catégories superposés sur un dégradé noir qui part du bas de l'image, bouton « Retour » en haut à gauche (page précédente du site, sinon la catégorie principale de la recette), cœur (favori) et bouton « Partager » en haut à droite (feuille de partage du téléphone, sinon lien copié).
-  - Tags de la recette sous l'introduction, chacun vers `/recettes?tag={slug}`.
-  - Boutons « Mode cuisine », « Épingler » (Pinterest) et « Imprimer ».
-  - Temps (préparation, repos, cuisson, total), et difficulté de 1 à 5 étoiles par demi-étoile (facultative).
-  - « Organiser mon temps » (repli sous les temps) : « Je commence à 14 h » affiche « Prête vers 15 h 30 », ou « Je veux servir à 19 h » affiche l'heure où commencer ; préparation, repos (pousse, prise au froid…) et cuisson additionnés. Heure du navigateur, préremplie après l'affichage.
-  - Moule (si la recette en indique un) : « Pour un moule rond de 20 cm », puis « Adapter à mon moule » (rond, carré ou rectangle, en cm) : les quantités suivent la surface du moule (même hauteur), avec le facteur affiché (« × 1,44 ») et les portions approximatives ; « Revenir au moule de la recette ».
-  - Mots du glossaire soulignés en pointillé dans les étapes (première occurrence de chaque mot par étape) : un appui ou Entrée affiche la définition dans une bulle, avec un lien « Tout le glossaire ».
-  - « Le conseil de Yona » : encadré facultatif après les étapes (astuce, conservation, variante…), en Markdown.
-  - « Mes notes » : champ libre du visiteur sous le conseil (« 10 min de plus dans mon four », « moins de sucre »), 2 000 caractères, gardé à chaque frappe dans le navigateur seulement (`localStorage`, clé `yona-recipe-notes`, 200 recettes au plus : la note écrite il y a le plus longtemps part la première ; une note vidée est oubliée). Rappelé dans le mode cuisine. Pas imprimé.
-  - « Vous aimerez aussi » : 3 recettes publiées proches (tags communs d'abord, puis catégories), sinon les dernières.
-  - Ingrédients, étapes, vidéo YouTube en bas de page si la recette en a une (chargée seulement au clic), date de dernière mise à jour.
-  - Recette en parties (la pâte, la garniture…) : la liste « Ingrédients » est le total de toutes les parties (quantités d'une même unité additionnées, parties concernées indiquées sous chaque ingrédient), puis « Préparation » détaille chaque partie (ses ingrédients et ses étapes), avec un sommaire cliquable des parties.
-  - « Ajouter à ma liste de courses » sous les ingrédients, avec les portions choisies (ajoutée de nouveau, la recette est mise à jour).
-  - Mode cuisine : plein écran, une étape par écran en gros caractères, partie et numéro d'étape, barre de progression, « Commencé à 14:02 · prête vers 15:32 » ; flèches du clavier ou glissement du doigt pour changer d'étape. Il s'ouvre sur la « Mise en place » (si la recette a des ingrédients) : tous les ingrédients de la recette à cocher une fois sortis et pesés, et « Mes notes » s'il y en a ; « C'est parti » passe à l'étape 1, « Précédente » depuis l'étape 1 y revient (les ingrédients cochés le restent). Les ingrédients de l'étape (choisis dans le back-office) s'affichent avec elle, « Tous les ingrédients » de la partie (ou de la recette) restent à portée de main. Une étape qui a une durée a un minuteur (lecture, pause, remise à zéro) qui continue pendant qu'on change d'étape, et même une fois le mode fermé : une barre en bas de la page de la recette montre alors les minuteurs en cours (« Étape 3 : 4:12 · Reprendre », qui rouvre le mode à cette étape), puis « C'est prêt ! » avec « + 1 min » et « Arrêter ». À la fin, une sonnerie (trois notes, toutes les 1,5 s pendant 30 s, synthétisées par le navigateur, sans fichier son), une vibration légère et saccadée au même rythme (trois petites secousses ; Android, Safari sur iPhone ne sait pas vibrer) et un bandeau « C'est prêt ! » avec « Arrêter la sonnerie » et « + 1 min » (à côté du minuteur terminé une fois la sonnerie arrêtée) : le gâteau pas tout à fait cuit, le minuteur repart pour une minute et sonnera de nouveau, sans tout remettre à zéro. La sonnerie est programmée sur l'horloge audio dès le lancement du minuteur : elle sonne à l'heure même si le navigateur ralentit la page ; sur iPhone, elle passe outre le mode silencieux. Mots du glossaire expliqués comme sur la page. Écran maintenu allumé pendant le mode, si le navigateur le permet.
-  - Épingler : simple lien vers la page d'épinglage de Pinterest (adresse, photo et titre de la recette), sans aucun script de Pinterest ; photo verticale de la recette si elle en a une, sinon sa photo.
-  - Impression : feuille de style d'impression (photo réduite, ingrédients puis étapes, sans boutons ni en-tête du site, couleurs claires).
-- Glossaire (`/glossaire`) : les mots de pâtisserie par lettre (« É » rangé sous « E »), raccourcis A–Z, chaque mot avec son ancre (`/glossaire#chemiser`), mise en évidence à l'arrivée depuis une recette. Données structurées `DefinedTermSet`. En `noindex` tant qu'il est vide.
-- Erreurs : 404 (URL inconnue, recette introuvable ou en brouillon) et erreur serveur.
-- Installer l'application (`/installer`) : bouton d'installation quand le navigateur le propose, guide pas à pas pour iPhone/iPad, Android et ordinateur. Liée depuis le pied de page et le menu mobile (plus depuis la navbar : on n'installe qu'une fois).
-- Bandeau « Les recettes à portée de main » en bas de l'écran, seulement quand le navigateur peut installer l'application tout de suite (Chrome, Edge, Android ; jamais sur iPhone, qui demande des étapes à la main) : « Installer » ouvre la fenêtre du navigateur, « Plus tard » le cache un mois (date gardée dans `localStorage`, clé `yona-install-banner-dismissed` ; un refus dans la fenêtre du navigateur compte pareil). Attend la réponse au bandeau des cookies ; ni dans l'administration, ni sur la page d'installation, ni une fois installée.
-- Mes favoris (`/favoris`) : recettes marquées du cœur, gardées dans le navigateur seulement (`localStorage`, clé `yona-favorites`, 200 au plus), sous forme de cards : lisibles hors connexion dans l'application installée. Pas de compte.
-- Ma liste de courses (`/liste-de-courses`) : ingrédients des recettes ajoutées, les mêmes additionnés (même calcul que le total d'une recette en parties, recettes concernées sous chaque ingrédient), à cocher (cochés en bas), articles libres en plus, partage par WhatsApp, feuille de partage ou copie du texte, liste vidée sur confirmation. Gardée dans le navigateur (clé `yona-shopping-list`). Ces deux pages sont en `noindex`, et leur contenu n'apparaît qu'une fois la page chargée dans le navigateur (le serveur ne le connaît pas).
+## Ce que fait le site
 
-### Application installable (PWA)
+**Pour les visiteurs, sans compte**
 
-- Le site s'installe comme une application (écran d'accueil du téléphone, ordinateur), sans store : plein écran, icône dédiée.
-- Les pages et recettes déjà consultées restent lisibles hors connexion.
-- Notifications des nouvelles recettes (Web Push) : « Me prévenir des nouvelles recettes » (accueil, pied de page, page « Installer l'application ») ; le navigateur demande l'accord, puis une notification arrive à chaque recette publiée pour la première fois, même site fermé ; un appui ouvre la recette. « Notifications activées · désactiver » pour arrêter. Sur iPhone et iPad : seulement dans l'application installée (iOS 16.4+), la page l'explique. Bloquées dans le navigateur : le bouton le dit.
+- Recettes avec recherche (titre, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté), portions et moule ajustables, « Organiser mon temps ».
+- Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page.
+- Favoris, liste de courses rangée par rayon, notes personnelles : gardés dans le navigateur.
+- Application installable, lisible hors connexion, notifications des nouvelles recettes.
+- Glossaire de pâtisserie, mots expliqués d'un appui dans les étapes.
 
-### Navigation
+**Pour Yona (back-office, connexion Google)**
 
-- Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), administration (admins seulement). Icônes cœur (favoris) et panier (liste de courses) avec leur nombre d'éléments, aussi sur téléphone à côté du menu.
-- Menu mobile : bouton hamburger, panneau plein écran avec les mêmes entrées, plus « Mes favoris », « Ma liste de courses » et « Glossaire ».
-- Footer sur toutes les pages : réseaux sociaux, « Me prévenir des nouvelles recettes », « Glossaire de pâtisserie », « Installer l'application », mentions légales, politique de confidentialité, lien discret « Espace admin ».
-- Affichage Clair / Auto / Sombre au choix du visiteur : icône dans la navbar, trois boutons dans le menu mobile. « Auto » (par défaut) suit le réglage du système. Choix gardé dans le navigateur (`localStorage`), appliqué avant le premier affichage.
+- Éditeur de recettes (parties, étapes minutées, matériel, conseil, publication programmée, brouillon gardé), aperçu, corbeille.
+- Galerie de photos, catégories, tags, ingrédients (doublons, rayons), glossaire.
+- Apparence (thèmes, polices), statistiques, sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
 
-### Back-office (`/admin`)
+Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).
 
-- Accès réservé à 2 admins via Google, pas de création de compte.
-- Entrée : lien « Espace admin » du footer, visible de tous (l'application installée n'a pas de barre d'adresse pour taper `/admin`). Un visiteur qui le suit arrive sur la connexion Google, puis sur la page d'accès refusé. Pages jamais indexées.
-- Recettes : liste paginée (20 par page), les dernières modifiées en premier, avec miniature de la photo ; recherche par titre, filtres ingrédient (menu filtrable), catégorie, tag et statut, le tout dans l'URL (`q`, `idIngredient`, `categorie`, `tag`, `statut`, `page`) ; création, modification, publication ou brouillon, « Dupliquer », mise à la corbeille. Badge « Publiée samedi 31 octobre à 10:00 » pour un brouillon programmé.
-- Éditeur de recette : tags à cocher (facultatifs), créables depuis le formulaire ; « Photo Pinterest (facultative) » : photo verticale (1000 × 1333 px au moins, 3:4 ou plus haute, 2:3 conseillé), envoyée ou choisie parmi les photos verticales de la galerie, proposée par le bouton « Épingler » et jamais affichée sur le site.
-- Éditeur, champs ajoutés en 3.1 : temps de repos ; moule facultatif (rond : diamètre, carré : côté, rectangulaire : longueur et largeur, en cm) ; « Le conseil de Yona » (Markdown, 2 000 caractères) ; sous chaque étape, les ingrédients de sa partie à cocher (« Ingrédients de l'étape », pour le mode cuisine) : ils suivent l'ingrédient s'il change de place, et le perdent s'il quitte la partie.
-- Publication programmée : un brouillon reçoit une date et une heure (heure de Paris, à venir) ; le backend le publie dans la minute qui suit (`ScheduledPublication`), puis les abonnés sont prévenus. Une recette publiée ne se programme pas.
-- « Dupliquer » (éditeur et liste) : nouveau brouillon « … (copie) » avec le même contenu, les mêmes photos, catégories et tags, ouvert aussitôt. Fait depuis la version enregistrée (l'éditeur prévient s'il reste des modifications).
-- Brouillon gardé automatiquement : chaque modification non enregistrée est gardée dans le navigateur (`localStorage`, clé `yona-recipe-draft-{id|nouvelle}`), moins d'une seconde après la saisie et aussitôt l'onglet quitté ou le téléphone verrouillé. En rouvrant l'éditeur : « Des modifications non enregistrées ont été retrouvées » (date, et avertissement si la recette a été enregistrée depuis) avec « Reprendre » ou « Ignorer ». Effacé à l'enregistrement. Les photos choisies avant la création ne sont pas gardées.
-- Corbeille (`/admin/corbeille`) : une recette supprimée quitte le site et y reste 30 jours (« effacée dans 12 jours »), puis est effacée chaque nuit à 4 h 30. « Restaurer » (ou « Restaurer et modifier ») la recrée telle qu'elle était : même adresse si elle est libre, mêmes dates de création et de publication, ses photos si elles sont encore dans la galerie, ses catégories et tags qui existent encore (refusé si aucune catégorie ne reste), jamais à la une, sans nouvelle notification. « Effacer définitivement », « Vider la corbeille ».
-- Glossaire (`/admin/glossaire`) : mot (60 caractères, unique, casse et accents ignorés, première lettre en majuscule), définition (600 caractères), autres formes trouvées dans les étapes (verbe conjugué, pluriel… 20 au plus), avec « Proposer les formes courantes » (verbes en -er et -ir, pluriel d'un nom ; la forme courte « chemise » est laissée de côté, c'est souvent un autre mot). Modifier, retirer, sélection multiple.
-- Aperçu : bouton « Aperçu » de l'éditeur, qui affiche en plein écran la recette telle que les visiteurs la verront, modifications non enregistrées comprises, sans rien enregistrer. Page `/admin/apercu/{id}` (version enregistrée, brouillon compris), liée depuis la liste pour les brouillons. Réservé aux admins (guard, et API sous `/api/admin`).
-- Sélection multiple et suppression groupée (recettes, catégories, ingrédients, galerie) : cases à cocher, « Tout sélectionner » pour les éléments affichés, sélection gardée d'une page à l'autre. Tout ou rien : une catégorie qui contient des recettes ou un ingrédient utilisé annule la suppression, en les nommant.
-- Liens filtrés : « Voir ses recettes » sous la photo de chaque catégorie, « Voir les recettes » sur chaque ingrédient utilisé, vers la liste des recettes filtrée. Galerie : sous chaque photo, « Voir les recettes » et « Voir les catégories » qui l'affichent (listes filtrées par `?photo=`), et sa date d'envoi. Plusieurs catégories par recette (puces à cocher), dont une principale ; catégorie créable depuis le formulaire de la recette. Parties facultatives (« Découper en parties ») : titre, ingrédients et étapes par partie, ingrédients et étapes déplaçables d'une partie à l'autre par glisser-déposer. Ingrédients proposés pendant la saisie, les plus utilisés en premier.
-- Catégories, ingrédients (modifier, supprimer), réseaux sociaux (Pinterest compris).
-- Tags (`/admin/tags`) : végétarien, sans gluten, de saison… Création, renommage, suppression (une à une ou groupée), nombre de recettes (brouillons compris), « Voir les recettes ». Nom unique (casse et accents ignorés), 40 caractères au plus. Contrairement à une catégorie, un tag utilisé peut être supprimé : il est retiré de ses recettes.
-- Ingrédients : filtre « Utilisés / Non utilisés ». « Détecter les doublons » regroupe les ingrédients écrits de plusieurs façons (casse, accents, ponctuation, pluriels en -s/-x, une faute de frappe à partir de 6 lettres, deux à partir de 12) et propose de les fusionner : garder l'un d'eux (le plus utilisé par défaut) ou tout remplacer par un nouveau nom. Les recettes sont mises à jour, les autres ingrédients supprimés. Fusion refusée si deux d'entre eux figurent dans une même partie d'une recette.
-- Galerie : toutes les photos envoyées, gardées même une fois remplacées. « Ajouter une photo » l'y range directement (avec barre de progression), sans l'afficher nulle part. Filtres « Utilisées / Non utilisées » et type d'envoi (dont « Photos Pinterest »), suppression, liens vers les recettes et catégories qui les affichent. Une photo de la galerie peut être remise sur une recette ou une catégorie (« Choisir dans la galerie ») : les photos paysage pour les photos du site, les photos verticales pour Pinterest, jamais l'une à la place de l'autre.
-- Apparence : thème de couleurs (20 thèmes, chacun en version claire et sombre, dont 5 plus audacieux : Néon, Art déco, Lagon, Bonbon, Aurore boréale), police des titres (15) et police du texte (10), arrondi des coins de 0 à 999 px. Aperçu immédiat sur tout le site, visible des visiteurs une fois enregistré.
-- Préréglages d'apparence (« Mes préréglages », en haut de la page Apparence) : un thème, deux polices et un arrondi gardés sous un nom libre (unique, 50 caractères au plus). Chaque préréglage montre ce qu'il contient (couleurs claires et sombres, polices, arrondi) ; un clic remplit les choix de la page (et l'aperçu), à enregistrer ensuite comme d'habitude ; celui qui correspond aux choix en cours est coché. Remplacer par les choix actuels, renommer, supprimer.
-- Préférences : textes et photo de « À propos » et texte du pied de page ; la nouvelle photo n'est qu'un aperçu tant que « Enregistrer » n'est pas cliqué, comme les textes ; « Annuler les changements ».
-- Sauvegarde : bouton « Sauvegarder mes données », qui télécharge une archive ZIP (base PostgreSQL, tout le bucket S3, et un `manifest.json` avec la date et la version du site).
-- Sauvegarde automatique sur Google Drive (même page) : « Connecter Google Drive » (page de consentement de Google), puis chaque nuit vers 3 h la même archive est envoyée dans un dossier « Les créations de Yona · sauvegardes » ; les 7 plus récentes sont gardées, les plus anciennes supprimées. Compte connecté, lien vers le dossier, dernière sauvegarde (date, taille, ou raison de l'échec), prochaine ; « Sauvegarder maintenant », « Déconnecter » (les sauvegardes restent sur le Drive).
-- Restauration (même page) : glisser le ZIP (ou le choisir). Il est envoyé par morceaux de 32 Mio (Cloudflare refuse les requêtes de plus de 100 Mo), avec barre de progression ; le serveur l'analyse dans une base à part, sans toucher au site, puis affiche la date et la version de la sauvegarde et un tableau « dans la sauvegarde / sur le site / manquant sur le site ». Deux choix :
-  - « Ajouter ce qui manque » (conseillé) : n'ajoute que ce que le site n'a pas, sans rien modifier ni supprimer (détails dans « Sauvegarde et restauration »).
-  - « Tout remplacer », dans une zone danger repliée : avertissements chiffrés (recettes perdues, fichiers photo supprimés), case « J'ai compris », mot REMPLACER à taper, confirmation finale.
-  - Une restauration à la fois ; elle reprend si la page est rechargée (identifiant gardé dans `sessionStorage`) ; « Annuler » supprime l'archive du serveur.
-- Statistiques (`/admin/statistiques`) : recettes (publiées, brouillons, sans photo, avec vidéo, en plusieurs parties, créées sur 30 jours, publications programmées, dans la corbeille), mots du glossaire, abonnés aux nouvelles recettes, catégories, ingrédients et photos (dont non utilisés) ; recettes créées par mois sur 12 mois, recettes par catégorie, ingrédients les plus utilisés ; stockage : poids des photos (tout le bucket), taille de la base, espace libre et total du disque du serveur. Graphiques à une seule série, couleur d'accent du thème, valeurs écrites à côté des barres ou dans un tableau. Puis ce qui reste à faire :
-  - Recettes à compléter (100 au plus) : sans photo, introduction, temps, portions ou difficulté, ce qui manque à chacune, les publiées d'abord.
-  - Brouillons oubliés (pas modifiés depuis 30 jours) et recettes à rafraîchir (publiées, pas modifiées depuis 12 mois), 50 au plus chacun.
-  - Recherches sans résultat (30 au plus, les plus fréquentes d'abord), à effacer une à une ou toutes.
-  - Bouton « Visites (Google Analytics) » vers `analytics.google.com` (la fréquentation n'est pas recopiée dans le back-office) et « Exporter en PDF » : impression de la page (tableaux dépliés, sans menus), que le navigateur propose d'enregistrer en PDF.
-- Nouveautés (`/admin/nouveautes`, aussi par le lien « Nouveautés » à côté des versions) : le [CHANGELOG.md](CHANGELOG.md) en lecture seule, une section dépliable par version (« Version 3.2.0 · En ligne · 27 octobre 2026 »), la plus récente ouverte ; le texte d'une version n'est mis en page qu'une fois ouverte, la page reste légère même avec des dizaines de versions. L'introduction du fichier, pour les développeurs, est laissée de côté. Intégré au build du front (`loader` `.md` en texte dans `angular.json`), dans le seul code de cette page : rien à appeler sur l'API, et toujours celui de la version en ligne.
-- Infobulles des boutons-icônes : à droite de l'icône, centrées (à gauche s'il n'y a pas la place, au-dessus en dernier recours), jamais par-dessus.
-- Photos : barre de progression pendant l'envoi, puis « Préparation de la photo… » pendant la conversion WebP. Choix dans la galerie : les plus récentes en premier, pagination numérotée.
+## Démarrage rapide
 
-### Pages légales
-
-- Mentions légales (`/mentions-legales`) et politique de confidentialité (`/politique-de-confidentialite`), liées depuis le footer.
-- Mentions légales : certaines images d'illustration sont générées par IA (Google Gemini), comme l'exige la transparence sur les contenus générés. à titre non professionnel (adresse communiquée sur demande, art. 6, III, 2 LCEN). Hébergement : auto-hébergé à Aix-en-Provence, derrière Cloudflare. Crédits : les 25 polices proposées (licence SIL Open Font License), à tenir à jour avec `theme-fonts.ts`. Contact et texte dans `front/src/app/pages/legal/`.
-- Politique de confidentialité : mesure d'audience Google Analytics sur consentement, recherches sans résultat (texte seul, 12 mois), favoris, liste de courses et notes (stockage local), « Plus tard » du bandeau d'installation (stockage local), bouton « Épingler » (simple lien), notifications des nouvelles recettes (adresse d'abonnement et clés seulement, sur consentement), sauvegardes envoyées sur le Google Drive d'un administrateur (sans les abonnements).
-
-### SEO
-
-- Angular SSR, balises meta par page, données structurées Recipe (JSON-LD, avec les tags en `keywords`, `totalTime` repos compris, `datePublished` = première publication), DefinedTermSet pour le glossaire, sitemap.xml, robots.txt.
-- Maillage interne : « Vous aimerez aussi » sur chaque recette, mots du glossaire liés à la page Glossaire.
-
-## Stack
-
-| Partie | Choix |
-| --- | --- |
-| Frontend | Angular 22 |
-| Backend | Spring Boot 4, Java 25 LTS, Maven |
-| Base de données | PostgreSQL 18 |
-| Migrations | Flyway Community (gratuit, open source) |
-| Auth | Google (OIDC) via Spring Security, session serveur (cookie HttpOnly) |
-| Images | Protocole S3 via AWS SDK v2 (BOM). SeaweedFS (compatible S3) en local et sur Coolify : seul l'endpoint change. Identifiants S3 en variables d'environnement, métadonnées des images en base |
-| DevOps | Docker Compose sur Coolify : PostgreSQL 18 et SeaweedFS en conteneurs |
-| Validation API | ProblemDetail (RFC 9457) |
-| Mapping | MapStruct avec une configuration partagée `@MapperConfig` |
-| Boilerplate | Lombok limité (getters et setters des entités, constructeur des services), DTO en records |
-| Documentation API | springdoc-openapi exposé par le backend, consommé par le front pour générer ses services |
-| Hébergement | Serveur perso sur Coolify, Cloudflare en DNS et proxy |
-
-## Structure
-
-```
-back/      API Spring Boot
-front/     application Angular
-devops/    Docker Compose (local : compose.yaml, Coolify : compose.prod.yaml), passerelle Caddy, configuration d'environnement
-docs/      documentation technique : restauration d'une sauvegarde, services Google, changement de domaine
-ReadMe.md
-```
-
-## Démarrage local
-
-Prérequis : Docker Desktop (Compose v2).
+Avec Docker Desktop seulement (ni JDK ni Node sur la machine) :
 
 ```bash
 cd devops
 cp .env.example .env   # puis remplacer chaque valeur "change-me"
-docker compose up -d --wait
+docker compose --profile app up -d --build --wait
 ```
 
-| Service | Image | Accès depuis la machine |
-| --- | --- | --- |
-| PostgreSQL | `postgres:18.6-alpine` | `localhost:5432` |
-| SeaweedFS (API S3) | `chrislusf/seaweedfs:4.48` (`weed mini`) | `http://localhost:8333` |
-| Backend (profil `app`, facultatif) | construit depuis `back/Dockerfile` | `http://localhost:8080` |
-| Front SSR (profil `app`) | construit depuis `front/Dockerfile` | via la passerelle uniquement |
-| Passerelle (profil `app`) | construite depuis `devops/gateway/` (Caddy 2.11.7) | `http://localhost:8000` : application complète |
+Le site sur `http://localhost:8000`. Lancer le backend ou le front à part, avec rechargement à chaud : [docs/developpement.md](docs/developpement.md#démarrage-local).
 
-- Ports exposés sur `127.0.0.1` uniquement, jamais sur le réseau local.
-- Base créée avec la collation ICU `fr-FR` (tri français des titres). Checksums de données activés (défaut de PostgreSQL 18).
-- Bucket `S3_BUCKET` créé au démarrage, privé : accès anonyme refusé, seuls les identifiants `S3_ACCESS_KEY` / `S3_SECRET_KEY` y accèdent. Pas de création automatique d'autres buckets, suppression d'un bucket non vide refusée. Télémétrie SeaweedFS désactivée.
-- Arrêt : `docker compose down`. Remise à zéro complète (supprime les données) : `docker compose down --volumes`.
-- Journaux : 3 fichiers de 10 Mo au plus par conteneur (`x-logging`), effacés aussi quand le conteneur est recréé (chaque déploiement). Cohérent avec la politique de confidentialité (12 mois au plus).
-- Application complète dans Docker, sans JDK ni Node sur la machine : `docker compose --profile app up -d --build --wait`, puis `http://localhost:8000`. La passerelle (`devops/gateway/Caddyfile`, intégré à son image) envoie `/api/*` au backend et le reste au front, en local comme en production. Arrêt : `docker compose --profile app down`.
-
-### Backend
-
-Prérequis : JDK 25. Les services Docker Compose doivent tourner.
+## Tests
 
 ```bash
-cd back
-./mvnw spring-boot:run   # Windows : .\mvnw.cmd spring-boot:run
-./mvnw test              # tests unitaires (sans base ni Docker)
+cd front && npm test   # tests unitaires du front (Vitest)
+cd back && ./mvnw test # tests unitaires du backend (JUnit)
+cd e2e && npm test     # parcours dans Chrome, le site lancé en local
 ```
 
-- Tests unitaires sans JDK sur la machine : `docker run --rm -v "$PWD:/build" -v yona-m2:/root/.m2 -w /build eclipse-temurin:25.0.4.1_1-jdk-resolute ./mvnw --batch-mode test` depuis `back/` (sous Git Bash, préfixer par `MSYS_NO_PATHCONV=1` et utiliser `$(pwd -W)`).
+## Documentation
 
-- Lit les identifiants de `devops/.env` (lancement depuis `back/`). En production, mêmes clés en variables d'environnement, plus `POSTGRES_HOST` et `S3_ENDPOINT` (par défaut `http://localhost:8333`).
-- Flyway applique les migrations de `back/src/main/resources/db/migration` au démarrage. Hibernate vérifie seulement que les entités correspondent au schéma (`ddl-auto: validate`).
-- Santé : `http://localhost:8080/actuator/health`.
-- Documentation de l'API : `http://localhost:8080/api/docs` (OpenAPI, lu par le front pour générer ses services) et `http://localhost:8080/api/docs/ui` (Swagger UI). Désactivée par défaut, activée en local par `API_DOCS_ENABLED=true` dans `devops/.env`. En production, la variable reste absente : les URL de documentation sont refusées comme toute route inconnue.
-- Connexion admin : client OAuth Google à créer (type « Application Web »), avec les URL de retour listées dans `devops/.env.example`. Renseigner `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` et `APP_ADMIN_EMAILS` dans `devops/.env`. Application Google laissée en mode « Test », avec les adresses admin dans « Utilisateurs test ».
-- Sauvegarde : nécessite le client `pg_dump` 18. Il est inclus dans l'image Docker. En lancement local, l'installer et renseigner `PG_DUMP_PATH`, sinon la route répond 503 `BACKUP_UNAVAILABLE`.
-- Encodage WebP : libwebp est une bibliothèque native, autorisée par `--enable-native-access=ALL-UNNAMED` (déjà passé par `spring-boot:run` et par l'image Docker).
-
-Image Docker (`back/Dockerfile`) : build Maven multi-étapes, jar découpé en couches Spring Boot, JRE Temurin 25 sur Ubuntu 26.04 avec `postgresql-client-18`, utilisateur non root, health check sur `/actuator/health`.
-
-### Frontend
-
-Prérequis : Node.js 24 LTS. Le backend doit tourner (`http://localhost:8080`, en local ou dans Docker).
-
-```bash
-cd front
-npm ci
-npm start              # http://localhost:4200, avec SSR, /api relayé vers le backend (proxy.conf.json)
-npm run build          # build de production (navigateur + serveur SSR) dans dist/
-npm test               # tests unitaires (Vitest, dans Node.js avec jsdom), sans backend
-npm run api:generate   # régénère le client API depuis http://localhost:8080/api/docs
-npm run fonts:generate # régénère src/styles/_fonts.scss après une mise à jour d'un paquet @fontsource-variable
-```
-
-- Client API généré par `ng-openapi-gen` dans `src/app/core/api/generated` (versionné, ne pas modifier à la main). À régénérer après chaque changement d'API du backend.
-- Budgets de build (`angular.json`) : bundle initial 800 Ko (avertissement), styles d'un composant 8 Ko.
-- Icônes : composant maison `<svg yonaIcon="heart" [size]="18">` (`shared/ui/icon/`), dessiné en SVG inline depuis `icons.ts`, qui ne contient que les icônes utilisées (tracés Lucide, licence ISC). Remplace `@lucide/angular` (3.1.0) : bundle initial ramené de 730 à 505 Ko de JavaScript brut (`main` de 448 à 223 Ko), nouvelles fonctionnalités comprises, soit moins de code à analyser au premier chargement sur téléphone ; le poids transféré, déjà bien compressé, change peu (135 → 133 Ko). Ajouter une icône : copier ses formes depuis lucide.dev dans `icons.ts`, sous son nom.
-- Ajouter une police : paquet `@fontsource-variable/…` (version exacte), ligne dans `scripts/generate-fonts.mjs`, `npm run fonts:generate`, entrée dans `core/theme/theme-fonts.ts`, enum et contrainte CHECK côté backend (migration), crédits des mentions légales.
-- Serveur SSR de production : `npm run serve:ssr` (port `PORT`, 4000 par défaut). Variables :
-  - `API_URL` : URL interne du backend (ex. `http://back:8080`). Le serveur SSR l'appelle directement, sans repasser par Cloudflare. Sans elle, il appelle l'origine publique du site.
-  - `NG_ALLOWED_HOSTS` : hôtes acceptés en plus de `les-creations-de-yona.fr` (protection SSRF d'Angular), ex. `localhost` pour un test local.
-  - `NG_TRUST_PROXY_HEADERS` : en-têtes du proxy à prendre en compte (`x-forwarded-host,x-forwarded-proto,x-forwarded-for`), seulement si le serveur n'est joignable qu'à travers ce proxy.
-- Cache HTTP : fichiers hashés (JS, CSS, polices) un an `immutable` ; fichiers de `public/` (favicon, photo de l'auteur, `robots.txt`) un jour, car leur nom ne change pas ; fichiers du service worker (`ngsw.json`, `ngsw-worker.js`, manifeste) jamais en cache, pour que les applications installées reçoivent les mises à jour.
-- En-têtes de sécurité (`src/server/security-headers.ts`), posés par le serveur de production sur toutes ses réponses (pas par `npm start`, dont les scripts seraient bloqués) :
-  - CSP : scripts du site uniquement. Les scripts inline du build (contrat d'event replay) sont autorisés par leur hash, calculé au démarrage depuis les fichiers HTML construits ; celui qu'Angular écrit au rendu par un nonce aléatoire propre à chaque réponse (`REQUEST_CONTEXT`, puis `CSP_NONCE`). Styles inline autorisés (styles de composants Angular). Aucune intégration dans une iframe (`frame-ancestors 'none'`). Iframes limitées au lecteur YouTube `youtube-nocookie.com` (vidéos des recettes, chargées au clic).
-  - Inlining du CSS critique désactivé (`angular.json`) : son script de chargement ne peut pas recevoir le nonce. Coût faible, la feuille de style globale fait environ 15 Ko (2,5 Ko compressée).
-  - HSTS (un an, sans sous-domaines), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (caméra, micro, géolocalisation, paiement coupés ; le maintien de l'écran allumé reste permis), `Cross-Origin-Opener-Policy`. `X-Powered-By` retiré.
-- Référencement :
-  - `/sitemap.xml` (`src/server/sitemap.ts`) : construit à chaque demande depuis l'API (accueil, recettes, catégories ayant au moins une recette, toutes les recettes publiées, installation, glossaire s'il a des mots, pages légales), en cache une heure. URL sur le domaine de production.
-  - `public/robots.txt` : API exclue sauf les photos, lien vers le sitemap. `/admin` n'y figure pas exprès : ses pages répondent `X-Robots-Tag: noindex, nofollow`, que les robots doivent pouvoir lire.
-- Notifications (Web Push) : `core/pwa/new-recipe-notifications.ts` (`SwPush` d'Angular, clé publique lue sur `/api/notifications/public-key`), bouton `shared/ui/notify-button`. La notification reçue est affichée par le service worker d'Angular (champ `notification` du message), un appui ouvre la recette (`onActionClick`, `navigateLastFocusedOrOpen`). Sans service worker (`npm start`), le bouton n'apparaît pas.
-- Application installable (PWA) : service worker Angular (`ngsw-config.json`), actif seulement dans le build de production. Pour le tester en local : `npm run build`, puis `npm run serve:ssr` ou l'application complète dans Docker. Icônes dans `public/icons/`, manifeste dans `public/manifest.webmanifest`. Nom sous l'icône une fois installée : « Recette Yona » (`short_name` du manifeste, `apple-mobile-web-app-title` pour iOS).
-- Les écritures (POST, PUT, DELETE) contournent le service worker (en-tête `ngsw-bypass`) : relayé par lui, Safari sur iOS perd le fichier envoyé lors de l'upload d'une photo.
-  - Pages : toujours demandées au serveur (rendu SSR à jour), version hors ligne en secours.
-  - API publique (`/api/recipes`, catégories, réseaux sociaux) : réseau d'abord, cache de 30 jours si le réseau ne répond pas en 4 secondes.
-  - Images : servies depuis le cache (leur URL change à chaque nouvelle photo), 30 jours.
-  - `/api/admin/**` et la connexion Google ne passent jamais par le cache.
-  - Une page rendue par le serveur reçoit ses données dans le HTML, sans appel à l'API : ces requêtes sont rejouées une fois en arrière-plan après le chargement (`core/pwa/offline-warmup.ts`), pour que la page soit aussi lisible hors connexion.
-
-Image Docker (`front/Dockerfile`) : build Node 24 multi-étapes, image finale sans `node_modules` (le serveur SSR embarque ses dépendances), utilisateur non root, health check sur `/healthz` (répond sans rendu Angular).
-
-Organisation de `front/src` :
-
-```
-app/core/      services globaux, layout (header, menus, footer), thème (couleurs, polices, clair/sombre), favoris et liste de courses (kitchen/), client API généré
-app/shared/    composants d'interface (bouton, carte de recette, image), directive de reveal, utilitaires
-app/pages/     une page par route, chargée à la demande
-styles/        variables (espacements, breakpoints, animations), polices (généré), reset, base typographique, animations, impression
-server/        middlewares du serveur SSR Express (en-têtes de sécurité, sitemap) ; point d'entrée : server.ts
-scripts/       génération de styles/_fonts.scss (npm run fonts:generate)
-```
-
-### API
-
-| Accès | Routes |
+| Document | Contenu |
 | --- | --- |
-| Public (GET) | `/api/recipes` (recherche, filtres `category`, `tag`, `ingredient` (nom exact, accents ignorés ; répété pour plusieurs ingrédients, tous exigés, 5 au plus, 100 caractères chacun), `maxMinutes` (1 à 1440, repos compris), `difficulty` (`EASY`, `MEDIUM`, `HARD`), pagination, tri par défaut `publishedAt,desc` ; une recherche `q` sans résultat est notée), `/api/ingredients` (ingrédients des recettes publiées), `/api/recipes/{slug}`, `/api/recipes/{slug}/related` (3 recettes proches), `/api/glossary`, `/api/notifications/public-key` (clé VAPID), `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/tags` (avec le nombre de recettes publiées), `/api/social-links`, `/api/site-content`, `/api/theme`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
-| Admin | `/api/admin/me`, `/api/admin/stats` (statistiques et stockage), `/api/admin/recipes`, `POST /api/admin/recipes/preview` (aperçu sans enregistrement), `/api/admin/categories`, `/api/admin/ingredients`, `GET /api/admin/ingredients/similar`, `POST /api/admin/ingredients/merge`, `DELETE` sur `/api/admin/recipes`, `/categories`, `/ingredients` et `/images` avec `?ids=` (suppression groupée, tout ou rien), `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind`, `portrait` et `used` ; `POST` multipart pour y ajouter une photo), `PUT /api/admin/recipes/{id}/pinterest-image` et `…/pinterest-image-choice` (photo verticale), `/api/admin/tags` (`DELETE` avec `?ids=`), `PUT /api/admin/theme`, `/api/admin/appearance-presets`, `/api/admin/site-content`, `DELETE /api/admin/search-misses` (`?term=`, ou toutes), `/api/admin/version` (version du backend), `/api/admin/backup`, `/api/admin/restore` (`POST` pour commencer, `PUT …/{id}/chunks/{index}` en `application/octet-stream`, `GET …/{id}` pour l'état, `POST …/{id}/apply` avec `MERGE` ou `REPLACE` + `REMPLACER`, `DELETE …/{id}`), `POST /api/admin/recipes/{id}/duplicate`, `/api/admin/recipe-trash` (`GET`, `DELETE` pour vider, `POST …/{id}/restore`, `DELETE …/{id}`), `/api/admin/glossary` (`POST`, `PUT …/{id}`, `DELETE` avec `?ids=`), `/api/admin/drive` (`GET` l'état, `POST …/backup` maintenant, `DELETE` pour déconnecter ; `GET …/connect` et `…/callback` ouverts par le navigateur, hors OpenAPI) |
-| Public (écriture) | `POST /api/notifications/subscriptions` (corps de `PushSubscription.toJSON()`), `DELETE /api/notifications/subscriptions?endpoint=` : sans jeton CSRF (les visiteurs n'en ont pas), seuls les services de notification des navigateurs acceptés (Google, Mozilla, Apple, Microsoft), 20 000 abonnements au plus |
-| Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
+| [Fonctionnalités](docs/fonctionnalites.md) | La spécification : chaque page du site et du back-office |
+| [Développement](docs/developpement.md) | Stack, structure, lancement local, tests, API |
+| [Production](docs/production.md) | Mise en ligne sur Coolify, Cloudflare, services Google |
+| [Architecture et décisions](docs/architecture.md) | Modèle de données, choix techniques, images, charte graphique |
+| [Roadmap](docs/roadmap.md) | Versions passées et points à vérifier |
+| [CHANGELOG](CHANGELOG.md) | Le détail de chaque version, aussi affiché dans le back-office |
+| [Sécurité](SECURITY-REVIEW.md) · [Restauration](docs/restauration.md) · [Google](docs/google.md) · [Domaine](docs/changement-de-domaine.md) | Revue de sécurité, procédures |
 
-- Erreurs : ProblemDetail avec `code` stable (`ErrorCode`) et `detail` en français. Erreurs de validation listées dans `errors` (`field`, `message`).
-- Écritures admin : en-tête `X-XSRF-TOKEN` recopié du cookie `XSRF-TOKEN`, que `GET /api/admin/me` crée. Angular le fait automatiquement. Aucun cookie n'est posé pour un visiteur public.
-- Images : le front construit l'URL à partir du `imageId` des recettes et catégories. Réponse `Cache-Control: public, max-age=31536000, immutable` : une nouvelle photo a un nouvel identifiant, donc une nouvelle URL.
-- Sauvegarde : à ouvrir comme un lien classique (`<a href="/api/admin/backup">`), pas via `HttpClient`, qui chargerait toute l'archive en mémoire. Restauration : morceaux envoyés par `XMLHttpRequest` (progression), comme les photos (`core/api/image-uploads.ts`).
-- Toute route non listée est refusée.
+## Licence
 
-## Production (Coolify)
+Le code est sous [licence MIT](LICENSE) : libre de le reprendre, de le modifier et de le redistribuer, en gardant la mention « Copyright (c) 2026 Maxence Bonnici » et le texte de la licence.
 
-Fichier : `devops/compose.prod.yaml`. Mêmes services qu'en local, sans port publié ni profil. Seule la passerelle reçoit le domaine. Chaîne d'une requête : Cloudflare → Traefik (proxy de Coolify, HTTPS) → passerelle Caddy → front ou backend.
-
-- URL publique : Traefik transmet `X-Forwarded-Proto: https` et le domaine. Caddy les conserve (`trusted_proxies`), le backend les lit (`forward-headers-strategy: framework`) pour construire l'URL de retour Google, et le serveur SSR (`NG_TRUST_PROXY_HEADERS`). Vérifié en simulant Traefik devant la stack de production : URL de retour `https://les-creations-de-yona.fr/api/login/oauth2/code/google`, domaine inconnu refusé (400).
-- Secrets : identifiants PostgreSQL et S3 générés par Coolify au premier déploiement (`SERVICE_USER_*`, `SERVICE_PASSWORD_64_*`), conservés ensuite. À saisir : `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_ADMIN_EMAILS`. Ne jamais définir `API_DOCS_ENABLED`. Facultatif : `PUSH_SUBJECT` (contact donné aux services de notification, `https://les-creations-de-yona.fr` par défaut). Les clés des notifications (VAPID) sont créées par le backend au premier démarrage, en base (`web_push_key`) : rien à saisir.
-- Données : volumes `postgres-data` et `seaweedfs-data`, conservés d'un déploiement à l'autre. Supprimer la ressource Coolify les supprime : faire une sauvegarde avant.
-- Versions : `back/pom.xml` et `front/package.json`, en version sémantique (1.0.0), notées dans [CHANGELOG.md](CHANGELOG.md), à monter ensemble à chaque mise en production : `npm version x.y.z --no-git-tag-version` dans `front/`, la balise `<version>` du `pom.xml` à la main. Affichées en haut du back-office (« Site v… · API v… ») : la version du front est lue dans `package.json` au build, celle du backend dans `build-info.properties` (plugin Maven de Spring Boot), par `GET /api/admin/version`.
-- Le CHANGELOG est lu par les admins dans le back-office (« Nouveautés ») : y décrire les changements en mots de tous les jours, la partie technique dans une section « Technique ». Image Docker du front : le fichier, à la racine du dépôt, hors du contexte `front/`, arrive par un second contexte de build (`additional_contexts: repo: ..` dans les deux fichiers Compose, `COPY --from=repo` dans `front/Dockerfile`) ; Docker Compose 2.17 au moins, et en dehors de Compose `docker build --build-context repo=.. front`.
-
-Mise en place :
-
-1. Projet Coolify → **+ New** → **Public Repository** : `https://github.com/ImMaxence/les-creations-de-yona`, branche `main`, build pack **Docker Compose**.
-2. **Base Directory** : `/devops`. **Docker Compose Location** : `/compose.prod.yaml`. Les contextes de build (`../back`, `../front`, `./gateway`) sont relatifs à ce dossier.
-3. **Domains** : sur le service `gateway` uniquement, `https://les-creations-de-yona.fr`. Les autres services restent sans domaine.
-4. **Environment Variables** : renseigner les trois variables Google, laisser les variables générées.
-5. **Deploy**. Premier build long (Maven et Angular sur le serveur).
-6. Déploiement à chaque commit : Coolify, onglet **Webhooks** → **GitHub** : définir un secret, copier l'URL. GitHub, **Settings → Webhooks → Add webhook** : cette URL, `Content type: application/json`, le même secret, événement **push**. Vérifier que **Auto Deploy** est actif dans les options avancées de Coolify.
-7. Google Cloud : URI de retour `https://les-creations-de-yona.fr/api/login/oauth2/code/google` et origine `https://les-creations-de-yona.fr` (déjà faits).
-
-Cloudflare (offre gratuite, proxy seulement) :
-
-- DNS : enregistrement `A` du domaine vers le serveur, proxifié (nuage orange), comme le site déjà hébergé sur ce Coolify.
-- SSL/TLS : mode **Full (strict)** (ou **Full**). Jamais **Flexible** : Cloudflare appellerait le serveur en HTTP, Traefik redirigerait vers HTTPS, et la page bouclerait.
-- **Email Address Obfuscation** (Scrape Shield, active par défaut) : à désactiver. Elle réécrit l'adresse de contact dans le HTML des pages légales, que le navigateur ne retrouve alors plus identique au rendu du serveur (erreur d'hydratation Angular).
-- **Rocket Loader** (désactivé par défaut) : le laisser désactivé, il réécrit les balises `<script>`.
-- Photos (`/api/images/*`) : Cloudflare les garde en cache (un an, réponse `immutable`). Une photo supprimée reste accessible à qui connaît son URL (UUID impossible à deviner) jusqu'à purge manuelle (**Caching → Purge Cache**). Accepté.
-
-## Services Google
-
-Réglages pas à pas (projet Google Cloud, client OAuth, Google Drive, Analytics, Search Console) et problèmes courants : [docs/google.md](docs/google.md).
-
-| Service | Rôle | Adresse |
-| --- | --- | --- |
-| Google Cloud Console, Identifiants | Client OAuth de la connexion admin : URI de retour et origines autorisées | https://console.cloud.google.com/apis/credentials |
-| Google Cloud Console, Audience | Mode « Test » de l'application, adresses admin dans « Utilisateurs test » | https://console.cloud.google.com/auth/audience |
-| Google Analytics 4 | Mesure d'audience, propriété `G-914Y0MV42H` (`front/src/app/core/analytics/analytics.ts`), après accord du visiteur | https://analytics.google.com/ |
-| Google Search Console | Indexation, sitemap, recherches Google qui mènent au site | https://search.google.com/search-console |
-| Google Drive API | Sauvegardes de chaque nuit (portée `drive.file` : le site ne voit que les fichiers qu'il crée) | https://console.cloud.google.com/apis/library/drive.googleapis.com |
-| Test des résultats enrichis | Vérifier les données structurées Recipe (JSON-LD) d'une page | https://search.google.com/test/rich-results |
-
-- Client OAuth : un seul client (`894227614182-d19k….apps.googleusercontent.com`) pour le local et la production. Ses URI de retour doivent contenir les 4 adresses listées dans `devops/.env.example`, à l'identique (`localhost` et `127.0.0.1` sont différents pour Google). Une adresse manquante donne `Erreur 400 : redirect_uri_mismatch` ; « Détails de l'erreur » sur la page de Google montre l'adresse envoyée. Une modification peut mettre quelques minutes à s'appliquer.
-- Analytics : **Rapports → Temps réel** montre une visite dans la minute (site ouvert dans un autre navigateur, cookies acceptés, sans bloqueur de publicité). Les autres rapports arrivent en 24 à 48 h. **Administration → Flux de données → Mesure améliorée** : « Changements de page basés sur les événements de l'historique du navigateur » doit rester désactivé, sinon chaque page est comptée deux fois.
-- Search Console : **Sitemaps** (`sitemap.xml` à l'état « Opération effectuée », nombre d'URL découvertes), **Inspection de l'URL** sur une recette (« Tester l'URL en ligne » : page indexable, recette détectée). Indexation en quelques jours à quelques semaines.
-
-- Google Drive : un seul compte reçoit les sauvegardes pour tout le site, choisi par l'admin qui clique sur « Connecter Google Drive ». Mise en place (API Drive, URI de retour, portée `drive.file`, application « En production ») : [docs/google.md](docs/google.md#2-sauvegarde-de-nuit-sur-google-drive).
-- Le jeton d'accès durable (refresh token) est gardé en base (`google_drive_link`), jamais dans les sauvegardes : il ne sert à rien sans le secret du client OAuth, qui n'est que dans l'environnement. Retiré chez Google à la déconnexion.
-
-## Modèle de données
-
-- `social_link` : platform (liste fixe : YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp, Pinterest), url, position. Éditable depuis le back-office.
-- `site_theme` : une seule ligne (id = 1) : preset (thème de couleurs), display_font, body_font, radius_px (0 à 999), updated_at, updated_by.
-- `appearance_preset` : name (unique, casse et accents ignorés), preset, display_font, body_font, radius_px, created_at, updated_at, updated_by. Valeurs vérifiées par l'application (mêmes enums que `site_theme`), sans contrainte CHECK : ajouter un thème ou une police ne touche pas cette table.
-- `site_content` : une seule ligne : about_title, about_text, about_image_id (facultatif), footer_text, updated_at, updated_by.
-- `search_miss` : term (texte cherché, en minuscules, 100 caractères au plus, clé), count, first_searched_at, last_searched_at. 500 lignes au plus, effacées après 12 mois.
-- `image` : kind (envoyée pour une recette, une catégorie, « À propos », directement dans la galerie, ou photo Pinterest), s3_prefix (`recipes/{uuid}/`, `categories/{uuid}/`, `site/{uuid}/`, `gallery/{uuid}/` ou `pinterest/{uuid}/`), created_at. Filtrable par type et par utilisation dans la galerie.
-- `category` : name, slug (unique), image_id (facultatif, vers `image`).
-- `recipe` : title, slug (unique), intro, status (publiée ou brouillon), servings, prep_minutes, cook_minutes, rest_minutes (repos, facultatif), difficulty (1 à 5 par demi-points, facultative), youtube_video_id (identifiant de 11 caractères, facultatif), tip (« Le conseil de Yona », Markdown, facultatif), mold_shape (`ROUND`, `SQUARE`, `RECTANGLE`), mold_length_cm et mold_width_cm (largeur pour un rectangle seulement ; les trois vides ou cohérents, contrainte CHECK), image_id (facultatif, vers `image`), pinterest_image_id (photo verticale, facultative, vers `image`), featured (booléen), published_at (première publication, gardée si la recette repasse en brouillon ; obligatoire pour une recette publiée), scheduled_at (publication programmée, brouillon seulement), created_at, updated_at (timestamptz, UTC), created_by, updated_by (email de l'admin, texte).
-- `recipe_category` : recipe_id, category_id, position. Clé primaire (recipe_id, position), (recipe_id, category_id) unique. Position 0 : catégorie principale.
-- `tag` : name (unique, casse et accents ignorés), slug (unique).
-- `recipe_tag` : recipe_id, tag_id. Clé primaire (recipe_id, tag_id) ; supprimer un tag le retire de ses recettes (`ON DELETE CASCADE`).
-- `recipe_part` : recipe_id, position, title (facultatif). Au moins une par recette : une recette sans parties en a une seule, sans titre.
-- `ingredient` : name (unique).
-- `recipe_ingredient` : part_id, ingredient_id, quantity, unit, note, position. Clé primaire (part_id, ingredient_id) : un ingrédient une fois par partie, mais possible dans plusieurs parties d'une recette.
-- `recipe_step` : part_id, position, description, duration_minutes, ingredient_positions (`integer[]`, positions dans la liste d'ingrédients de la partie, vide si l'étape ne dit rien).
-- `recipe_trash` : title, slug, status, image_id et pinterest_image_id (`ON DELETE SET NULL` : la photo peut quitter la galerie entre-temps), content (la recette en JSON, comme `RecipeDetail`), deleted_at, deleted_by. Effacée 30 jours après. Rien d'autre ne la référence : aucune requête du site n'a à écarter les recettes supprimées.
-- `glossary_term` : name (unique, casse et accents ignorés), slug (unique, ancre de la page), definition, forms (`text[]`, autres formes), updated_at, updated_by.
-- `push_subscription` : endpoint (unique, adresse du service de notification), p256dh et auth (clés du navigateur), created_at. Supprimé au désabonnement ou quand le service répond 404/410.
-- `web_push_key` : une seule ligne, paire de clés VAPID (P-256, base64url) créée au premier démarrage.
-- `google_drive_link` : une seule ligne, compte Google Drive (email, refresh token, dossier), date et auteur de la connexion, résultat de la dernière sauvegarde.
-
-## Décisions
-
-### Général
-
-- Interface en français uniquement. Mobile first : conception pour écran de téléphone d'abord (environ 90 % du trafic), puis adaptation desktop.
-- Noms de tables, colonnes et code en anglais.
-- Tests unitaires (3.2) sur la logique délicate, là où une régression passerait inaperçue, plutôt qu'une couverture complète. Fichiers à côté du code testé (`*.spec.ts`, `*Test.java`).
-  - Front (`npm test`, Vitest par le builder `@angular/build:unit-test`, jsdom) : addition des ingrédients et adaptation au moule (`recipe-parts`), arrondis et formats (`units`), repérage du glossaire, lecture des filtres de l'URL (plusieurs ingrédients), notes, et le mode cuisine (minuteur qui part bien de 1:00, pause, sonnerie, « + 1 min », mise en place, barre une fois fermé), vibration de la sonnerie.
-  - Backend (`./mvnw test`, JUnit 5, AssertJ, Mockito en agent Java) : textes et slugs, doublons d'ingrédients, liens YouTube, chiffrement Web Push et jeton VAPID (déchiffrés et vérifiés comme le feraient le navigateur et le service de notification), filtre des recettes et ses limites (5 ingrédients au plus). Sans base : les requêtes JPA ne sont pas couvertes.
-  - La restauration d'une sauvegarde reste testée à la main sur une pile Docker jetable (voir SECURITY-REVIEW.md).
-- Pas de commentaires sur le site, ni en v1 ni prévus.
-- Logo en dur dans le projet Angular, photo de l'autrice par défaut aussi (remplaçable dans Préférences). Couleurs, polices et arrondi choisis dans le back-office (`site_theme`).
-- Sans compte visiteur : favoris, liste de courses et notes restent dans le navigateur (`localStorage`), rien n'est envoyé au serveur. Notifications de nouvelle recette : Web Push standard, sans service tiers ni bibliothèque (chiffrement RFC 8291 et signature VAPID RFC 8292 avec le JDK seul, `push/WebPushCrypto.java`) ; envoyées une fois, à la première publication d'une recette (date `published_at`), après validation de la transaction, en arrière-plan (`PushService`).
-- Routage sur un domaine unique : site à la racine, API sous `/api`. Domaine `https://les-creations-de-yona.fr/`, déjà en place. Pour en changer : [docs/changement-de-domaine.md](docs/changement-de-domaine.md).
-- Flyway Community (gratuit) plutôt que Liquibase : migrations SQL simples, base PostgreSQL unique.
-- Erreurs API en ProblemDetail (RFC 9457) : format JSON standard (`type`, `title`, `status`, `detail`), identique pour toutes les erreurs. Ajout d'un code stable et d'un message en français, affichables en toast côté Angular.
-
-### Frontend
-
-- Angular 22 avec signals (`signal`, `computed`, `input()`, `output()`), composants standalone, sans NgModule.
-- Styles en SCSS uniquement, sans Tailwind ni framework CSS. Espacements, breakpoints et animations dans `styles/_variables.scss` ; couleurs, polices et arrondi dans `core/theme/`.
-- Composants d'interface faits maison (boutons, champs, barre de recherche, etc.), sans bibliothèque de composants.
-- Icônes : dessins de Lucide (licence ISC, libre), intégrés au site (`shared/ui/icon/icons.ts`), sans la bibliothèque `@lucide/angular`.
-- Animations sobres et soignées, pensées comme une signature du site, sans effet gratuit :
-  - Entrées de page et de sections : fondu et léger glissement (reveal au scroll via `IntersectionObserver`, une seule fois par élément).
-  - Cartes de recettes : légère élévation et zoom de l'image au survol (et à l'appui sur mobile).
-  - Transitions entre pages : View Transitions API, avec repli sans effet si non supporté. Pas de transition quand seuls les paramètres changent (recherche, filtre, page). La photo de la carte cliquée devient l'image d'en-tête de la recette (`view-transition-name` partagé, posé uniquement sur la carte cliquée).
-  - Micro-interactions : états des boutons, champs et menu, avec des durées courtes (150 à 400 ms) et une courbe d'accélération douce.
-  - Animations en CSS/SCSS (`@keyframes`, `transition`), sans bibliothèque d'animation.
-  - `prefers-reduced-motion` respecté : sans mouvement, les éléments restent visibles immédiatement.
-  - Uniquement des propriétés peu coûteuses (`opacity`, `transform`), pour rester fluide sur téléphone.
-- Services HTTP générés depuis l'OpenAPI du backend. Les DTO marquent les champs facultatifs avec `@Nullable` (JSpecify) : tous les autres sont déclarés obligatoires dans l'OpenAPI, donc non optionnels en TypeScript.
-- Données d'une page chargées par un resolver de route, avant l'affichage. Données communes (catégories, réseaux sociaux) chargées une fois au démarrage. Le serveur et le navigateur affichent donc la même page, et l'hydratation réutilise les réponses du serveur (cache de transfert HTTP) sans rappeler l'API.
-- Styles : les composants lisent des propriétés CSS (`var(--color-accent)`, `var(--radius-md)`). Thème : `core/theme/` (`SiteTheme`) écrit sur `<html>` les couleurs (`light-dark(clair, sombre)`), les polices et l'arrondi chargés depuis `/api/theme` avant le premier rendu : la page rendue par le serveur a déjà le bon thème, sans flash. Clair ou sombre : `ColorScheme` pose `data-color-scheme` sur `<html>`, que `_root.scss` traduit en `color-scheme` ; un script inline de `index.html` (autorisé par son hash dans la CSP) l'applique avant le premier affichage.
-- Thèmes de couleurs : `core/theme/theme-presets.ts`, chacun en version claire et sombre, contrastes vérifiés (texte ≥ 7:1, texte secondaire et accent ≥ 4,5:1). Texte posé sur une photo : `--color-on-image`, toujours clair.
-- Polices : Fontsource (SIL Open Font License), auto-hébergées. `src/styles/_fonts.scss` est généré par `npm run fonts:generate` (sous-ensembles latin et latin étendu seulement) ; le navigateur ne télécharge que les polices utilisées par la page.
-- Icônes de marque (Instagram, TikTok, YouTube, Facebook, X, Threads, Reddit, WhatsApp) : Simple Icons (CC0), Lucide n'en fournissant pas.
-- API indisponible : page d'erreur (HTTP 503) en conservant l'URL demandée. URL inconnue, recette introuvable ou en brouillon : page 404 avec un vrai statut 404. Segment catégorie erroné dans l'URL d'une recette : redirection 301 vers l'URL canonique.
-- SEO déclaré par route (`data.seo`, statique ou calculé après les resolvers), appliqué à chaque navigation par une `TitleStrategy` : titre, description, Open Graph, URL canonique, `robots`, JSON-LD (`Person` sur l'accueil, `Recipe` sur une recette). Résultats de recherche et pages vides en `noindex`.
-- Recherche : combobox ARIA (flèches, Entrée, Échap), suggestions dès 2 caractères, texte tapé mis en évidence sans tenir compte des accents. Filtres et pagination dans l'URL (`q`, `categorie`, `page`, `parPage`), donc partageables.
-- Page recette pensée pour cuisiner avec un téléphone : portions ajustables (quantités recalculées puis arrondies à des valeurs mesurables), ingrédients et étapes à cocher, écran maintenu allumé (Screen Wake Lock, proposé seulement si le navigateur le permet).
-- Étapes en Markdown rendues par `marked` (MIT), puis nettoyées par le sanitizer d'Angular.
-- Back-office (`/admin`) : rendu dans le navigateur uniquement (la session est un cookie), chargé à la demande, protégé par un guard qui renvoie vers la connexion Google sans session. Formulaires en Signal Forms (`@angular/forms/signals`) avec les mêmes règles que l'API, ingrédients et étapes réordonnables par glisser-déposer (`@angular/cdk/drag-drop`, MIT) ou par boutons pour le clavier. Erreurs de l'API affichées en toast avec leur message, confirmation avant suppression, alerte avant de quitter une recette non enregistrée.
-- Modales : composant `yona-dialog` (`shared/ui/dialog`) pour toutes les modales (confirmation, choix dans la galerie, aperçu d'une recette) : `<dialog>` natif ouvert par `showModal()` (focus gardé, Échap, page inerte), en-tête (titre, croix) fixe en haut, actions (`dialogActions`) fixes en bas, seul le contenu défile ; tailles sm, md, lg, full ; fermeture au clic sur le fond. La confirmation n'est chargée qu'avec le back-office. Le menu mobile reste un panneau de navigation à part.
-- Upload des photos par `XMLHttpRequest` (`core/api/image-uploads.ts`) : `fetch`, utilisé par HttpClient, ne mesure pas l'envoi d'un fichier ; XSRF, contournement du service worker et erreurs en toast y sont repris.
-- Listes déroulantes : composant `yona-select` fait maison (pattern ARIA combobox), la liste native d'un `<select>` ne se stylant pas. Champ avec suggestions (ingrédients) : `yona-suggest-input`, pour la même raison avec `<datalist>`.
-
-### Dates
-
-- Stockage en UTC (`timestamptz` côté PostgreSQL, `Instant` côté Java). Affichage en heure de Paris (`Europe/Paris`) côté Angular, qui gère l'heure d'été et d'hiver.
-- `updated_at` enregistré à chaque sauvegarde. `created_by` et `updated_by` renseignés depuis la session admin.
-
-### Auth et sécurité
-
-- Authentification Google OIDC. Allowlist des emails admin dans la variable d'environnement `APP_ADMIN_EMAILS`, sans table utilisateur. Email non autorisé : page d'accès refusé.
-- Google OAuth : deux URL de retour, une pour le local et une pour la production.
-- Session serveur (cookie HttpOnly, Secure, SameSite), expirée après 7 jours d'inactivité, plutôt que JWT. Sessions en mémoire, sans persistance : un redémarrage ou un redéploiement déconnecte l'admin, accepté. Bouton de déconnexion.
-- Autorisation par règles d'URL dans Spring Security : `/api/admin/**` réservé aux admins.
-- Pas de bouton de connexion sur le site public : l'admin passe par `/admin`, via le lien discret « Espace admin » du footer. Ce lien ne donne aucun droit : la protection est côté serveur (Google, liste des admins, rôle exigé sur `/api/admin/**`).
-- Cookies : ceux de Google Analytics (`_ga`, `_ga_…`) seulement si le visiteur accepte la mesure d'audience dans le bandeau (choix gardé 6 mois, script de Google non téléchargé avant). Sinon, cookies techniques seulement, dispensés de consentement : session admin et CSRF (posés uniquement à la connexion d'un admin), et éventuellement `__cf_bm` de Cloudflare. Détail dans la politique de confidentialité.
-
-### Recherche et pagination
-
-- Recherche par JPA Specifications sur titre, catégorie, tag, ingrédients (une sous-requête `EXISTS` par ingrédient : la recette doit les avoir tous), temps total et difficulté, insensible à la casse et aux accents (extension `unaccent`). Sécurisée contre l'injection SQL : valeurs passées en paramètres liés, jamais concaténées. Tri limité à une liste de champs autorisés, `%` et `_` saisis par l'utilisateur échappés.
-- Autocomplétion des titres : endpoint dédié, 5 suggestions maximum.
-- Pagination offset avec `Pageable`. L'accueil appelle la même route avec `size=3`.
-- Recette recherchée par slug seul. Si le segment catégorie de l'URL ne correspond pas, redirection 301 vers l'URL canonique, gérée par Angular SSR qui interroge l'API par slug.
-
-### Recettes
-
-- Création : titre, au moins 1 catégorie, au moins 1 ingrédient et au moins 1 étape obligatoires. Image facultative.
-- Majuscule : la première lettre du titre d'une recette, du nom d'une catégorie, d'un tag, d'un ingrédient et du titre d'une partie est mise en majuscule par le backend, à la création comme à la modification (`Texts.capitalizeFirstLetter`). Ce qui précède la première lettre (emoji, guillemet…) est sauté : « 🍰 tarte » devient « 🍰 Tarte ». Un nom qui commence par un chiffre reste tel quel (« 3 chocolats »). Les noms déjà en base ont été corrigés par la migration Java `V8__capitalize_names` (`back/src/main/java/db/migration/`), avec la même règle.
-- Catégories multiples (10 au plus, chacune une fois). La première est la catégorie principale : elle figure dans l'URL, le bouton « Retour » et le lien « Plus de recettes ». Changer de catégorie principale change l'URL ; l'ancienne redirige en 301 vers la nouvelle.
-- Parties facultatives (10 au plus) : avec plusieurs parties, chacune a un titre et au moins un ingrédient ou une étape ; la recette garde au moins 1 ingrédient et 1 étape au total. Les parties sont réécrites à chaque enregistrement (contraintes de position différées).
-- Statut : publiée ou brouillon. Un brouillon n'est visible que dans le back-office.
-- Date de publication (`published_at`) : posée à la première publication, jamais changée ensuite (une recette repassée en brouillon puis republiée garde la sienne, et ne renvoie pas de notification). Montrée sur les cartes, ordre des listes publiques et de « la plus récente » à l'accueil, `datePublished` du JSON-LD. Recettes publiées avant la 3.1 : leur date de création (migration V9).
-- Publication programmée : brouillon seulement, date à venir (une date inchangée qui vient de passer reste acceptée, le planificateur la publie dans la minute). Une restauration de sauvegarde annule les programmations passées, pour ne rien publier par surprise.
-- Temps total = préparation + repos + cuisson (page recette, filtre « temps », JSON-LD).
-- Moule : la surface (π × r², côté², longueur × largeur) donne le facteur appliqué aux quantités, pour une même hauteur de préparation.
-- Recette à la une (`featured`) : une seule à la fois, uniquement sur une recette publiée. Cocher une recette décoche l'ancienne, dans la même transaction.
-- Champs optionnels : portions, temps de préparation, de repos et de cuisson, difficulté, vidéo YouTube, conseil, moule, durée et ingrédients d'une étape.
-- Difficulté : de 1 à 5 par demi-points (1, 1,5 … 5), affichée en étoiles. Vérifiée par le formulaire, le service et une contrainte CHECK.
-- Vidéo : l'admin colle un lien YouTube (`watch?v=`, `youtu.be`, `shorts`, `embed`, `live`), le backend n'en garde que l'identifiant. Sur le site, la photo de la recette tient lieu de lecteur : rien n'est chargé depuis YouTube avant le clic, puis le lecteur vient de `youtube-nocookie.com` (seule origine autorisée en `frame-src` par la CSP). Mentionné dans la politique de confidentialité.
-- Ingrédients structurés (table dédiée + table de liaison), pas de texte ou HTML libre. Quantité et unité optionnelles, unité en texte libre. Unicité insensible à la casse et aux accents. Suppression bloquée si l'ingrédient est utilisé. Nombre de recettes d'un ingrédient : recettes distinctes, même s'il apparaît dans plusieurs parties.
-- Total des ingrédients (page recette, JSON-LD) : calculé par le front (`pages/recipe/recipe-parts.ts`), quantités de même unité additionnées (casse ignorée), unités différentes juxtaposées (« 150 g + 1 c. à soupe »), puis ajusté aux portions choisies comme les quantités de chaque partie.
-- Étapes en texte ou Markdown rendu côté Angular, jamais de HTML brut en base.
-- Ordre des ingrédients et des étapes : glisser-déposer dans le back-office.
-- Slug : généré depuis le titre, suffixe numérique en cas de doublon. Pas de timestamp.
-- Suppression d'une recette : elle part à la corbeille 30 jours (voir Back-office) ; sa photo reste dans la galerie.
-- « Vous aimerez aussi » : score par recette publiée = 2 × tags communs + catégories communes + 1 si même catégorie principale, puis la plus récente ; une seule requête SQL (`RecipeRepository.findRelatedIds`).
-- Glossaire dans les étapes : repérage côté front (`shared/format/glossary.ts`) après le rendu Markdown, mots entiers seulement (« sabler » n'est pas trouvé dans « ensabler »), accents et majuscules ignorés, formes les plus longues d'abord ; ni dans les liens ni dans le code. Le mot devient un `<dfn class="glossary-term">` avec sa définition en `title` (lue par les lecteurs d'écran), la bulle est un `popover` natif. Navigateurs sans « lookbehind » (Safari avant 16.4) : étapes sans glossaire.
-- Suppression d'une catégorie encore utilisée : bloquée tant qu'elle contient des recettes.
-- Tags : facultatifs, 20 au plus par recette, triés par nom ; la première lettre passe en majuscule, comme les catégories. Un tag utilisé peut être supprimé (retiré de ses recettes).
-- Recherches sans résultat : notées par `GET /api/recipes` quand une recherche `q` ne trouve rien en première page ; le même texte compte une fois par minute (le navigateur rejoue la requête d'une page rendue par le serveur, pour la lecture hors connexion).
-- Réseaux sociaux : plateforme en liste fixe (YouTube, TikTok, Instagram, Facebook, X, Threads, Reddit, WhatsApp, Pinterest), une fois chacune au plus. Ajouter une plateforme : enum `SocialPlatform`, contrainte CHECK (migration Flyway) et icône côté Angular.
-
-### Sauvegarde
-
-- Bouton « Sauvegarder mes données » (`/api/admin/backup`) : télécharge dans le navigateur une archive ZIP contenant le dump PostgreSQL (`pg_dump`, format custom) et une copie de tout le bucket S3 (toutes les images, orphelines comprises).
-- Archive streamée : rien n'est stocké sur le serveur. Contenu : `database.dump` et `images/{clé S3}`. Une erreur survenue pendant le téléchargement coupe la connexion (téléchargement marqué en échec par le navigateur) et est journalisée.
-- Le backend embarque le client `pg_dump` en version 18, identique au serveur.
-- Contenu : `manifest.json` (date, version du site ; absent des sauvegardes d'avant la 2.1.0), `database.dump`, `images/{clé S3}`.
-- Restauration depuis le back-office (`backup/RestoreService.java`) :
-  - L'archive est gardée dans un dossier temporaire du conteneur backend (`/tmp/yona-restore-*`), 20 Go au plus, espace libre vérifié (2,2 fois sa taille). Abandonnée au bout d'une heure sans activité ; nettoyage toutes les 10 minutes.
-  - Analyse : `pg_restore` charge le dump dans une base temporaire `yona_restore_…`, propriété d'un rôle créé pour l'occasion, sans droits d'administration (le SQL d'un fichier envoyé ne s'exécute jamais avec les droits du site) ; Flyway l'amène au schéma actuel (une sauvegarde plus ancienne est mise à niveau, une plus récente refusée) ; mêmes tables et colonnes que le site exigées, aucune vue, fonction, trigger ou règle.
-  - Fusion : ce qui manque est ajouté, rien n'est modifié. Reconnus par leur adresse (slug) pour les recettes, catégories et tags, leur nom pour les ingrédients, tags et préréglages, leur plateforme pour les réseaux sociaux, leur identifiant pour les photos. Les fichiers absents du stockage sont envoyés d'abord, puis la base en une transaction ; une photo n'est ajoutée que si ses deux fichiers sont là. Une recette ajoutée n'est jamais mise à la une si le site en a déjà une.
-  - Remplacement : fichiers manquants ou différents envoyés, puis toutes les tables (sauf l'historique Flyway et les tables propres au serveur) vidées et remplies par `COPY` depuis la base temporaire, en une transaction, séquences recalées ; enfin les fichiers absents de l'archive sont supprimés du stockage.
-  - Tables propres au serveur (`BackupService.SITE_ONLY_TABLES` : `push_subscription`, `web_push_key`, `google_drive_link`) : sauvegardées vides (`pg_dump --exclude-table-data`), jamais touchées par une restauration. Les abonnés, les clés des notifications et le compte Drive restent ceux du site.
-  - Fusion, depuis la 3.1 : mots du glossaire (par nom ou ancre) et ingrédients de chaque étape ajoutés aussi ; la corbeille n'est pas fusionnée.
-- Sauvegarde Google Drive (`drive/`) : l'archive est écrite dans un fichier temporaire (Google demande sa taille), envoyée par morceaux de 16 Mio (envoi « resumable » : un morceau qui échoue repart de là où Google s'est arrêté, 5 fois au plus), puis le fichier temporaire est supprimé. Les sauvegardes au-delà des 7 plus récentes sont supprimées du Drive (définitivement, pas dans la corbeille). Un dossier supprimé ou mis à la corbeille est recréé. Échec (accès retiré, Drive plein, réseau) : noté et affiché dans le back-office, nouvel essai la nuit suivante.
-  - Le rôle PostgreSQL du site doit pouvoir créer des rôles et des bases : c'est le cas de l'utilisateur de l'image `postgres` (superutilisateur), en local comme sur Coolify.
-- Procédure manuelle (base et S3), en secours : [docs/restauration.md](docs/restauration.md), testée sur la stack locale.
-
-### Affichage et SEO
-
-- URL des recettes SEO friendly : `/recettes/{slug-categorie-principale}/{slug-recette}`. JSON-LD : `recipeCategory` liste toutes les catégories, `recipeInstructions` en `HowToSection` (une par partie) pour une recette en parties.
-- Clic sur une catégorie : la page recettes s'ouvre pré-filtrée (`/recettes?categorie={slug}`).
-- Recette sans image : visuel par défaut côté Angular.
-- Accueil : JSON-LD `Person` pour l'auteur, pour compenser l'absence de page à propos dédiée.
-- Texte alternatif des images : titre de la recette. Meta description : extrait de l'intro.
-- Pages d'erreur : 404 pour les URL inconnues, recettes introuvables ou en brouillon, et page d'erreur serveur.
-
-## Images
-
-- Upload passé par le backend. Une image principale par recette et une par catégorie, facultatives. Une même image peut servir à plusieurs recettes et catégories.
-- Sur la recette et sur la catégorie : « Nouvelle photo » (envoi), « Choisir dans la galerie » ou « Retirer » (visuel par défaut). L'ancienne photo n'est jamais supprimée : elle reste dans la galerie, marquée « Non utilisée » si plus rien ne l'affiche.
-- Cohérence base / S3 : S3 n'a pas de transaction, ses fichiers suivent donc l'issue de la transaction PostgreSQL. Un upload est effacé si la transaction échoue, une image supprimée perd ses fichiers une fois la suppression validée. Au pire il reste des fichiers orphelins, jamais un enregistrement sans fichier. La sauvegarde inclut les orphelins.
-- Suppression d'une recette ou d'une catégorie : sa photo reste dans la galerie.
-- Galerie back-office : toutes les images, avec les recettes et catégories qui les affichent, filtrables (utilisées ou non, type d'envoi). Seule la galerie supprime une image (enregistrement et fichiers S3) : les recettes et catégories qui l'affichaient passent au visuel par défaut, après confirmation.
-- Accès : bucket S3 privé, images servies par le backend avec cache HTTP. Seul le backend accède au bucket.
-- Formats : JPEG et PNG, vérifiés sur le contenu réel (magic bytes) et non sur l'extension. HEIC non accepté en v1.
-- Taille max à l'upload : 10 Mo, et 100 mégapixels au plus, lus dans l'en-tête avant tout décodage, pour bloquer les images piégées. Les grandes photos sont décodées en sous-échantillonnant (au moins deux fois la plus grande sortie), pour limiter la mémoire.
-- Paysage : largeur minimale 1200 px, hauteur minimale 800 px, ratio largeur/hauteur d'au moins 4:3. Seule exception, la photo Pinterest d'une recette : verticale, 1000 × 1333 px au moins, hauteur au moins 4/3 de la largeur (2:3 conseillé).
-- Traitement : suppression des métadonnées EXIF (dont la localisation GPS), rotation appliquée selon l'EXIF, pas d'agrandissement.
-- Sorties WebP de 800 px et 1600 px de large, qualité 80. L'original JPEG ou PNG n'est pas conservé.
-- En base : table `image` (type et préfixe S3). Chaque préfixe contient `800.webp` et `1600.webp`. `recipe.image_id`, `recipe.pinterest_image_id`, `category.image_id` et `site_content.about_image_id` pointent vers elle (`ON DELETE SET NULL`), sans contrainte d'unicité. Les identifiants S3 sont dans les variables d'environnement.
-
-## Charte graphique
-
-Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Thème par défaut : « Pâtisserie chic » (version claire ci-dessous). Autres thèmes au choix dans le back-office : Terracotta, Pistache, Myrtille, Caramel, chacun avec sa version sombre.
-
-| Rôle | Couleur | Hex |
-| --- | --- | --- |
-| Fond principal | Almond milk | `#FCF9F5` |
-| Fond secondaire (surfaces, cards, footer) | Blush pale | `#F4E7E6` |
-| Couleur principale (texte) | Dark cocoa | `#36221C` |
-| Boutons et actions principales (liens, à la une) | Warm mocha | `#8C533E` |
-| Accent secondaire (décor : anneau photo, icônes) | Dusty rose | `#D49A99` |
-
-- Contrastes : texte sur fond ≈ 14:1, warm mocha sur almond milk ≈ 5,8:1 (AA). Le dusty rose (≈ 2,2:1) reste en décor, jamais pour du texte.
-- Favicon et icônes de l'application : toque almond milk sur fond warm mocha.
-- Polices par défaut : Fraunces pour les titres, Inter pour le texte. Au choix dans le back-office : titres en Fraunces, Playfair Display, Cormorant Garamond, Dancing Script ou Quicksand ; texte en Inter, Nunito, DM Sans, Source Sans 3 ou Lora. Toutes auto-hébergées, sans appel à Google Fonts, pour ne pas transmettre l'IP des visiteurs à Google.
-- Arrondi des coins : 16 px par défaut, de 0 (coins carrés) à 999 px. Les petits éléments (boutons, puces) prennent le double, pour rester ronds par défaut.
-- Header de recette : dégradé noir transparent, du bas vers le haut.
-
-## Roadmap
-
-- [x] devops : Docker Compose (PostgreSQL 18, SeaweedFS), `.env.example`
-- [x] devops : Dockerfile du backend (avec client `pg_dump` 18), service `back` dans la Compose (profil `app`)
-- [x] devops : Dockerfile du frontend, passerelle locale (Caddy) pour l'application complète
-- [x] devops : Compose de production pour Coolify (`devops/compose.prod.yaml`), passerelle en image autonome
-- [x] devops : premier déploiement sur Coolify, déploiement automatique à chaque commit (webhook GitHub)
-- [x] back : init Spring Boot 4 avec Maven (nettoyage des fichiers inutiles), migration Flyway V1, entités et repositories
-- [x] back : service d'upload S3 (validation, resize, conversion)
-- [x] back : auth Google avec allowlist `APP_ADMIN_EMAILS`, session
-- [x] back : endpoints publics recettes et catégories
-- [x] back : endpoint d'autocomplétion des titres
-- [x] front : init Angular 22 (nettoyage des fichiers inutiles)
-- [x] front : page d'accueil (recette à la une, à propos, 3 dernières recettes, catégories)
-- [x] front : page recettes (filtre par catégorie, recherche)
-- [x] front : navbar avec menu déroulant, menu mobile, footer, pages 404 et erreur serveur
-- [x] front : page recette
-- [x] front : pages mentions légales et politique de confidentialité
-- [x] back : ProblemDetail et springdoc-openapi exposé
-- [x] back : API admin (recettes, catégories, ingrédients, réseaux sociaux)
-- [x] back : API admin galerie images et sauvegarde ZIP
-- [x] front : back-office (guard, intercepteur HTTP, formulaires)
-- [x] front : application installable (PWA), page « Installer l'application »
-- [x] front : génération des services depuis le openapi du backend
-- [x] front : Angular SSR, meta tags, JSON-LD
-- [x] front : sitemap.xml
-- [x] docs : procédure de restauration (dump PostgreSQL et S3)
-- [x] sécurité : en-têtes du serveur SSR (CSP à nonce), documentation de l'API coupée en production, rotation des journaux
-- [x] thèmes : 5 thèmes de couleurs clair et sombre, polices et arrondi choisis dans le back-office, choix Clair / Auto / Sombre du visiteur
-- [x] réseaux sociaux : Facebook, X, Threads, Reddit, WhatsApp
-- [x] back-office : galerie qui garde toutes les photos (filtre « Non utilisées », réutilisation), catégorie créée depuis la recette, ingrédients suggérés par usage, liste des recettes paginée
-- [x] front : bouton « Retour » sur la page recette
-- [x] versions du front et du backend affichées dans le back-office
-- [x] recettes : difficulté en étoiles, vidéo YouTube, bouton « Partager » ; accueil limité aux 3 dernières recettes
-- [x] recettes : parties facultatives (ingrédients et étapes par partie, total des ingrédients), catégories multiples, majuscule automatique (migration V4)
-- [x] envoi de photos depuis la galerie (migration V5)
-- [x] composant de modale commun, galerie paginée, progression des envois de photos, page Statistiques (stockage compris)
-- [x] back-office : aperçu des recettes (brouillons compris), doublons d'ingrédients et fusion, suppressions groupées, filtres catégorie et ingrédient, miniatures, liens filtrés ; site : recherche par ingrédient, catégories en menu déroulant
-- [x] 3.0.0 : tags (migration V7), filtres temps et difficulté, photo Pinterest et bouton « Épingler », favoris, liste de courses, mode cuisine, impression ; restauration d'une sauvegarde (fusion ou remplacement) ; statistiques (recettes à compléter, brouillons oubliés, recettes à rafraîchir, recherches sans résultat, export PDF) ; préréglages d'apparence, 5 thèmes et 5 polices de titres en plus ; photo « À propos » enregistrée avec le bouton ; infobulles à côté des icônes
-- [x] 3.0.0 : majuscule aux ingrédients et aux noms commençant par un emoji (migration V8), « Effacer tous les filtres » sur la page Recettes
-- [x] 3.1.0 : notifications des nouvelles recettes (Web Push), sauvegarde de nuit sur Google Drive, corbeille, publication programmée, « Dupliquer », brouillon gardé dans le navigateur, glossaire, « Le conseil de Yona », temps de repos et « Organiser mon temps », adaptation au moule, « Vous aimerez aussi », ingrédients par étape et sonnerie du mode cuisine, icônes intégrées sans Lucide (migration V9)
-- [x] 3.2.0 : encart des notifications sur l'accueil, dernières recettes avant « À propos » ; mode cuisine : « Mise en place », « + 1 min », minuteurs gardés une fois le mode fermé, minuteur qui part bien de 1:00, vibration légère au rythme de la sonnerie ; « Mes notes » sur chaque recette ; recherche avec plusieurs ingrédients ; « Installer l'application » retiré de la navbar, bandeau d'installation ; page « Nouveautés » (CHANGELOG) dans le back-office ; tests unitaires front (Vitest) et backend (JUnit)
-
-## Points ouverts
-
-- Vérification en ligne : connexion Google, upload d'une photo depuis l'iPhone, sauvegarde ZIP, restauration (d'abord une fusion avec une sauvegarde toute fraîche : rien à ajouter attendu).
-- Après la mise en ligne : déclarer `https://les-creations-de-yona.fr/sitemap.xml` dans Google Search Console.
-- 3.1.0 en ligne : réglages Google Drive (voir « Services Google »), connexion du Drive, puis vérifier une notification de nouvelle recette sur un Android et sur un iPhone avec l'application installée.
-- 3.2.0 : vérifié sur la pile Docker locale (Chrome) : accueil, recherche à plusieurs ingrédients, notes, mise en place, minuteur, « + 1 min », barre des minuteurs, bandeau d'installation (événement du navigateur simulé). Reste à voir sur un vrai Android : la vraie fenêtre d'installation, et la vibration.
+Les contenus du site ne sont pas concernés : recettes, textes, photos, logo et portrait appartiennent à leur autrice et ne peuvent pas être réutilisés sans son accord.

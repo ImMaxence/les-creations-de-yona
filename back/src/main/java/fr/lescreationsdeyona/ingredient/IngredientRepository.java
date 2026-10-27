@@ -36,6 +36,14 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 			order by line.ingredient.name""")
 	List<String> findPublishedNames();
 
+	/** Aisles of the ingredients of the published recipes, those set only. */
+	@Query("""
+			select distinct new fr.lescreationsdeyona.ingredient.IngredientAisle(line.ingredient.name, line.ingredient.aisle)
+			from RecipeIngredient line
+			where line.part.recipe.status = fr.lescreationsdeyona.recipe.RecipeStatus.PUBLISHED
+			and line.ingredient.aisle is not null""")
+	List<IngredientAisle> findPublishedAisles();
+
 	/** Titles of the recipes having two of these ingredients in the same part, which a merge would collide. */
 	@Query(value = """
 			select distinct recipe.title from recipe_ingredient line

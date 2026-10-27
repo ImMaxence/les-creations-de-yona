@@ -28,6 +28,8 @@ export interface RecipeDraft {
   videoUrl: string;
   /** "Le conseil de Yona", Markdown. */
   tip: string;
+  /** Moule à tarte, fouet…: one item per line, as typed. */
+  equipment: string;
   /** Mold the quantities are written for, so that visitors can adapt them to theirs. */
   moldShape: MoldShapeChoice;
   /** Diameter, side or length, in cm. */
@@ -98,6 +100,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       difficulty: null,
       videoUrl: '',
       tip: '',
+      equipment: '',
       moldShape: 'NONE',
       moldLengthCm: null,
       moldWidthCm: null,
@@ -120,6 +123,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
     difficulty: recipe.difficulty ?? null,
     videoUrl: recipe.youtubeVideoId ? youtubeUrl(recipe.youtubeVideoId) : '',
     tip: recipe.tip ?? '',
+    equipment: recipe.equipment.join('\n'),
     moldShape: recipe.mold?.shape ?? 'NONE',
     moldLengthCm: recipe.mold?.lengthCm ?? null,
     moldWidthCm: recipe.mold?.widthCm ?? null,
@@ -158,6 +162,7 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
     difficulty: draft.difficulty ?? undefined,
     videoUrl: blankToUndefined(draft.videoUrl),
     tip: blankToUndefined(draft.tip),
+    equipment: equipmentLines(draft.equipment),
     mold:
       draft.moldShape === 'NONE' || draft.moldLengthCm == null
         ? undefined
@@ -199,6 +204,16 @@ function blankToUndefined(text: string): string | undefined {
   return text.trim() || undefined;
 }
 
+const MAX_EQUIPMENT = 30;
+
+/** One item per line, blank lines left out. */
+function equipmentLines(text: string): string[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 /** Same comparison as the API: "Crème" and "creme" are the same ingredient. */
 function ingredientKey(name: string): string {
   return name.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('fr').trim();
@@ -210,6 +225,15 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
   maxLength(recipe.title, 150, { message: '150 caractères au maximum.' });
   maxLength(recipe.intro, 1000, { message: '1 000 caractères au maximum.' });
   maxLength(recipe.tip, 2000, { message: '2 000 caractères au maximum.' });
+  validate(recipe.equipment, ({ value }) => {
+    const lines = equipmentLines(value());
+    if (lines.length > MAX_EQUIPMENT) {
+      return { kind: 'tooMuchEquipment', message: `${MAX_EQUIPMENT} lignes au maximum.` };
+    }
+    return lines.some((line) => line.length > 100)
+      ? { kind: 'equipmentTooLong', message: '100 caractères au maximum par ligne.' }
+      : undefined;
+  });
   validate(recipe.categoryIds, ({ value }) =>
     value().length === 0 ? { kind: 'noCategory', message: 'Choisissez au moins une catégorie.' } : undefined,
   );

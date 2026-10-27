@@ -29,9 +29,9 @@ describe('KitchenAlarm', () => {
     const alarm = new KitchenAlarm();
     expect(() => {
       alarm.unlock();
-      alarm.schedule(0, 1000);
-      alarm.ringNow(0);
-      alarm.cancel(0);
+      alarm.schedule('tarte#1', 1000);
+      alarm.ringNow('tarte#1');
+      alarm.cancel('tarte#1');
       alarm.close();
     }).not.toThrow();
   });

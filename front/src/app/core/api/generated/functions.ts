@@ -57,6 +57,8 @@ export type { RenameIngredient$Params as RenameIngredient$Params } from './fn/ad
 export { renameIngredient as renameIngredient } from './fn/admin-ingredients/rename-ingredient';
 export type { DeleteIngredient$Params as DeleteIngredient$Params } from './fn/admin-ingredients/delete-ingredient';
 export { deleteIngredient as deleteIngredient } from './fn/admin-ingredients/delete-ingredient';
+export type { SetIngredientAisle$Params as SetIngredientAisle$Params } from './fn/admin-ingredients/set-ingredient-aisle';
+export { setIngredientAisle as setIngredientAisle } from './fn/admin-ingredients/set-ingredient-aisle';
 export type { SearchIngredients$Params as SearchIngredients$Params } from './fn/admin-ingredients/search-ingredients';
 export { searchIngredients as searchIngredients } from './fn/admin-ingredients/search-ingredients';
 export type { CreateIngredient$Params as CreateIngredient$Params } from './fn/admin-ingredients/create-ingredient';
@@ -141,6 +143,8 @@ export type { GetFeaturedRecipe$Params as GetFeaturedRecipe$Params } from './fn/
 export { getFeaturedRecipe as getFeaturedRecipe } from './fn/recipes/get-featured-recipe';
 export type { ListPublishedIngredients$Params as ListPublishedIngredients$Params } from './fn/ingredients/list-published-ingredients';
 export { listPublishedIngredients as listPublishedIngredients } from './fn/ingredients/list-published-ingredients';
+export type { ListIngredientAisles$Params as ListIngredientAisles$Params } from './fn/ingredients/list-ingredient-aisles';
+export { listIngredientAisles as listIngredientAisles } from './fn/ingredients/list-ingredient-aisles';
 export type { GetImage$Params as GetImage$Params } from './fn/images/get-image';
 export { getImage as getImage } from './fn/images/get-image';
 export type { ListGlossary$Params as ListGlossary$Params } from './fn/glossary/list-glossary';

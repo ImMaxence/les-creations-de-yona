@@ -23,4 +23,12 @@ class IngredientController {
 		return ingredientService.publishedNames();
 	}
 
+	@Operation(summary = "Shop aisles of the ingredients of the published recipes, those set in the back-office",
+			description = "Read by the shopping list when shown, which sorts its ingredients by aisle: an aisle set "
+					+ "later applies to the lists already made. An ingredient without aisle is absent.")
+	@GetMapping("/aisles")
+	List<IngredientAisle> listIngredientAisles() {
+		return ingredientService.publishedAisles();
+	}
+
 }

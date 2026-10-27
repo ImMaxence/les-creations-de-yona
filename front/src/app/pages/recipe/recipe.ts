@@ -88,6 +88,8 @@ export default class Recipe {
   );
   protected readonly glossaryMatcher = computed(() => glossaryMatcher(this.glossary()));
   protected readonly mainCategory = computed(() => mainCategory(this.recipe()));
+  /** Its route, for the timers of the cooking mode, found again from any page. */
+  protected readonly recipeLink = computed(() => recipeLink(this.recipe()));
 
   /** Servings chosen by the visitor; back to the recipe's own when the recipe changes. */
   protected readonly servings = linkedSignal(() => this.recipe().servings ?? null);

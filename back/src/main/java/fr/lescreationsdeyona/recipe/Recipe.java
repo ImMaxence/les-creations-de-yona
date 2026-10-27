@@ -71,6 +71,9 @@ public class Recipe {
 	/** "Le conseil de Yona", in Markdown. */
 	private String tip;
 
+	/** Moule à tarte, fouet…: one item per line, in order; null for none. */
+	private String equipment;
+
 	/** Mold the quantities are written for: visitors can adapt them to theirs. */
 	@Enumerated(EnumType.STRING)
 	private MoldShape moldShape;

@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,11 @@ public class IngredientService {
 	/** For the ingredient filter of the public recipes page. */
 	public List<String> publishedNames() {
 		return ingredientRepository.findPublishedNames();
+	}
+
+	/** For the shopping list, sorted by aisle. */
+	public List<IngredientAisle> publishedAisles() {
+		return ingredientRepository.findPublishedAisles();
 	}
 
 	/** Ingredients probably written several ways ("Pomme", "pommes"), each group the most used first. */
@@ -103,6 +109,15 @@ public class IngredientService {
 		}
 		Set<Long> sourceIds = new HashSet<>(ids);
 		sourceIds.remove(target.getId());
+		// The aisle of the merged ones, unless the one kept has its own
+		if (target.getAisle() == null) {
+			ingredientRepository.findAllById(sourceIds)
+				.stream()
+				.map(Ingredient::getAisle)
+				.filter(Objects::nonNull)
+				.findFirst()
+				.ifPresent(target::setAisle);
+		}
 		ingredientRepository.moveLines(target.getId(), sourceIds);
 		ingredientRepository.deleteAllByIdInBatch(sourceIds);
 		return toResponse(target, ingredientRepository.countRecipesUsing(target.getId()));
@@ -134,6 +149,16 @@ public class IngredientService {
 					+ (inUse.size() > 1 ? " sont utilisés" : " est utilisé") + " dans au moins une recette.");
 		}
 		ingredientRepository.deleteAll(ingredients);
+	}
+
+	/** Shelves the ingredients in an aisle, or takes them out of any ({@code aisle} null). */
+	@Transactional
+	public void setAisle(Collection<Long> ids, @Nullable Aisle aisle) {
+		List<Ingredient> ingredients = ingredientRepository.findAllById(ids);
+		if (ingredients.size() != new HashSet<>(ids).size()) {
+			throw new ApiException(ErrorCode.INGREDIENT_NOT_FOUND);
+		}
+		ingredients.forEach(ingredient -> ingredient.setAisle(aisle));
 	}
 
 	/** Used by the recipe form: the admin types a name, an existing ingredient is reused if any. */
@@ -177,7 +202,7 @@ public class IngredientService {
 	}
 
 	private static IngredientResponse toResponse(Ingredient ingredient, long recipeCount) {
-		return new IngredientResponse(ingredient.getId(), ingredient.getName(), recipeCount);
+		return new IngredientResponse(ingredient.getId(), ingredient.getName(), ingredient.getAisle(), recipeCount);
 	}
 
 	/** Like recipe titles and category names: "beurre" is saved as "Beurre", "🧈 beurre" as "🧈 Beurre". */

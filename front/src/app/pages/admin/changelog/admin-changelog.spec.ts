@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { FRONT_VERSION } from '../../../core/version';
 import AdminChangelog, { versionsOf } from './admin-changelog';
 
 describe('versionsOf', () => {
@@ -19,7 +20,8 @@ describe('AdminChangelog', () => {
     const folds = [...element.querySelectorAll<HTMLDetailsElement>('.changelog__version')];
 
     expect(folds.length).toBeGreaterThan(1);
-    expect(folds[0].querySelector('.changelog__title')?.textContent).toBe('Version 3.2.0');
+    // The CHANGELOG begins with the version of package.json: written at each release
+    expect(folds[0].querySelector('.changelog__title')?.textContent).toBe(`Version ${FRONT_VERSION}`);
     expect(folds[0].open).toBe(true);
     expect(folds[0].querySelector('.changelog__body h3')).not.toBeNull();
     expect(folds[1].open).toBe(false);

@@ -1,6 +1,8 @@
 package fr.lescreationsdeyona.ingredient;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,5 +20,9 @@ public class Ingredient {
 	private Long id;
 
 	private String name;
+
+	/** Null until the admin sets it: "Autres" in the shopping list. */
+	@Enumerated(EnumType.STRING)
+	private Aisle aisle;
 
 }

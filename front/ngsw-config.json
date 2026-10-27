@@ -30,6 +30,7 @@
         "/api/glossary",
         "/api/categories",
         "/api/ingredients",
+        "/api/ingredients/aisles",
         "/api/site-content",
         "/api/social-links",
         "/api/theme"

@@ -86,8 +86,14 @@
       (input)="onSearch($event)"
     />
     <yona-select label="Utilisation" [options]="usageOptions" [(value)]="usage" />
+    <yona-select label="Rayon" [options]="aisleFilterOptions" [(value)]="aisleFilter" />
     @if (unusedCount()) {
       <span class="admin-row__meta">{{ unusedCount() }} non utilisé{{ unusedCount() > 1 ? 's' : '' }}</span>
+    }
+    @if (withoutAisleCount()) {
+      <button type="button" class="link-button" (click)="aisleFilter.set(''); usage.set('USED')">
+        {{ withoutAisleCount() }} sans rayon
+      </button>
     }
   </div>
 
@@ -102,6 +108,19 @@
         (cleared)="selection.clear()"
         (deleted)="removeSelected()"
       />
+      @if (selection.size()) {
+        <div class="shelve">
+          <span class="admin-row__meta">Ranger la sélection :</span>
+          <yona-select
+            label="Ranger la sélection dans un rayon"
+            placeholder="Choisir un rayon…"
+            pickOnly
+            [disabled]="shelving()"
+            [options]="aisleOptions"
+            (picked)="setAisle(selection.ids(), $event)"
+          />
+        </div>
+      }
       <ul role="list" class="admin-list">
         @for (ingredient of shown(); track ingredient.id) {
           <li class="admin-row" [class.is-selected]="selection.has(ingredient.id)">
@@ -134,6 +153,14 @@
                 </span>
               </span>
               <div class="admin-row__actions">
+                <yona-select
+                  class="aisle-select"
+                  [label]="'Rayon de ' + ingredient.name"
+                  [options]="aisleOptions"
+                  [value]="aisleOf(ingredient)"
+                  [disabled]="shelving()"
+                  (valueChange)="setAisle([ingredient.id], $event)"
+                />
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + ingredient.name" (click)="startRename(ingredient)">
                   <svg yonaIcon="pencil" [size]="18"></svg>
                 </button>

@@ -717,7 +717,8 @@ export default class AdminRecipeEditor implements UnsavedChanges {
 function readStoredDraft(key: string): StoredDraft | null {
   try {
     const stored = JSON.parse(localStorage.getItem(key) ?? 'null') as StoredDraft | null;
-    return stored?.draft && Array.isArray(stored.draft.parts) ? stored : null;
+    // A draft kept before a field existed (equipment…) gets its empty value
+    return stored?.draft && Array.isArray(stored.draft.parts) ? { ...stored, draft: { ...toDraft(null), ...stored.draft } } : null;
   } catch {
     return null;
   }

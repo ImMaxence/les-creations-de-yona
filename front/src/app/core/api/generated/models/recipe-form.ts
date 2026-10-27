@@ -15,6 +15,11 @@ export interface RecipeForm {
    * From 1 to 5, by half points
    */
   difficulty?: number;
+
+  /**
+   * Equipment needed (moule à tarte, fouet…), in order; absent or empty for none
+   */
+  equipment?: Array<string>;
   featured: boolean;
   intro?: string;
 

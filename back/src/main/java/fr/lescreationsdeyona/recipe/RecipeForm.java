@@ -38,6 +38,8 @@ public record RecipeForm(
 		@Nullable String videoUrl,
 		@Schema(description = "\"Le conseil de Yona\" (tip, storage, variant…), Markdown; blank for none") @Size(max = 2000)
 		@Nullable String tip,
+		@Schema(description = "Equipment needed (moule à tarte, fouet…), in order; absent or empty for none")
+		@Size(max = 30) @Nullable List<@NotBlank @Size(max = 100) String> equipment,
 		@Schema(description = "Mold the quantities are written for; absent for none") @Valid @Nullable Mold mold,
 		@Schema(description = "Drafts only: published by the backend at that time, which must be in the future")
 		@Nullable Instant scheduledAt,

@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.error;
 
 import java.util.List;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +66,16 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	ResponseEntity<Object> handleStorageException(SdkException ex, WebRequest request) {
 		log.error("S3 storage error", ex);
 		return respond(ex, ErrorCode.STORAGE_UNAVAILABLE, request);
+	}
+
+	/**
+	 * A query string Tomcat cannot decode (not UTF-8, as robots send: "?q=Cr%E8me"): the request is
+	 * wrong, not the server. No stack trace in the logs.
+	 */
+	@ExceptionHandler(InvalidParameterException.class)
+	ResponseEntity<Object> handleInvalidParameter(InvalidParameterException ex, WebRequest request) {
+		log.debug("Undecodable request parameter: {}", ex.getMessage());
+		return respond(ex, ErrorCode.BAD_REQUEST, request);
 	}
 
 	@ExceptionHandler(Exception.class)

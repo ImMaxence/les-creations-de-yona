@@ -26,13 +26,13 @@
         </p>
       }
 
-      @if (ringing() !== null) {
+      @if (timers.ringing(); as ringing) {
         <div class="ringing" role="alert">
           <svg yonaIcon="bell-ring" [size]="22"></svg>
-          <span>Étape {{ ringing()! + 1 }} : c'est prêt !</span>
+          <span>{{ ringingLabel() }} : c'est prêt !</span>
           <div class="ringing__actions">
-            <button type="button" class="ringing__more" (click)="addMinute(ringing()!)">+ 1 min</button>
-            <button type="button" class="ringing__stop" (click)="stopRinging()">Arrêter la sonnerie</button>
+            <button type="button" class="ringing__more" (click)="timers.addMinute(ringing.key)">+ 1 min</button>
+            <button type="button" class="ringing__stop" (click)="timers.stopRinging()">Arrêter la sonnerie</button>
           </div>
         </div>
       }
@@ -41,7 +41,17 @@
       <section class="mise-en-place" [hidden]="!miseEnPlace()" aria-labelledby="mise-en-place-title">
         <h3 id="mise-en-place-title" class="mise-en-place__title">Mise en place</h3>
         <p class="mise-en-place__hint">Sortez et pesez tout avant de commencer, en cochant au fur et à mesure.</p>
-        <yona-ingredient-list class="cooking__ingredients" [lines]="ingredients()" />
+        @if (ingredients().length) {
+          <yona-ingredient-list class="cooking__ingredients" [lines]="ingredients()" />
+        }
+        @if (equipment().length) {
+          <section class="mise-en-place__equipment" aria-labelledby="cooking-equipment-title">
+            <h4 id="cooking-equipment-title" class="cooking__needed-title">
+              <svg yonaIcon="utensils-crossed" [size]="14"></svg>Matériel
+            </h4>
+            <yona-ingredient-list class="cooking__ingredients" [lines]="equipmentLines()" />
+          </section>
+        }
         @if (notes()) {
           <aside class="mise-en-place__notes" aria-labelledby="cooking-notes-title">
             <h4 id="cooking-notes-title" class="cooking__needed-title">
@@ -63,14 +73,14 @@
           ></div>
         }
 
-        @if (shown.step.durationMinutes; as minutes) {
-          <div class="timer" [class.is-ringing]="ringing() === index()" [class.is-done]="timerOf(index())?.remainingMs === 0">
+        @if (shown.step.durationMinutes || timerOf(index())) {
+          <div class="timer" [class.is-ringing]="isRinging(index())" [class.is-done]="timerOf(index())?.remainingMs === 0">
             <svg yonaIcon="timer" [size]="28" [strokeWidth]="1.75"></svg>
             <span class="timer__clock" role="timer" aria-live="off">{{ clock(remainingMs(index())) }}</span>
             <button
               type="button"
               class="timer__button"
-              [attr.aria-label]="timerOf(index())?.endsAt ? 'Mettre en pause' : 'Lancer le minuteur de ' + formatMinutes(minutes)"
+              [attr.aria-label]="timerOf(index())?.endsAt ? 'Mettre en pause' : 'Lancer le minuteur'"
               (click)="toggleTimer(index())"
             >
               @if (timerOf(index())?.endsAt) {
@@ -87,20 +97,35 @@
             @if (timerOf(index())?.remainingMs === 0) {
               <strong class="timer__done">C'est prêt !</strong>
               <!-- Not quite done: another minute, without starting over (in the banner while it rings) -->
-              @if (ringing() !== index()) {
+              @if (!isRinging(index())) {
                 <button type="button" class="timer__more" aria-label="Ajouter une minute" (click)="addMinute(index())">+ 1 min</button>
               }
             }
+          </div>
+        } @else {
+          <!-- A step without duration ("Laisser refroidir"): a timer of the minutes chosen -->
+          <div class="timer timer--free" role="group" aria-label="Minuteur libre">
+            <svg yonaIcon="timer" [size]="28" [strokeWidth]="1.75"></svg>
+            <button type="button" class="timer__step" aria-label="Une minute de moins" [disabled]="freeMinutes() <= 1" (click)="changeFreeMinutes(-1)">
+              <svg yonaIcon="minus" [size]="18"></svg>
+            </button>
+            <span class="timer__clock" aria-live="polite">{{ formatMinutes(freeMinutes()) }}</span>
+            <button type="button" class="timer__step" aria-label="Une minute de plus" [disabled]="freeMinutes() >= maxFreeMinutes" (click)="changeFreeMinutes(1)">
+              <svg yonaIcon="plus" [size]="18"></svg>
+            </button>
+            <button type="button" class="timer__button" [attr.aria-label]="'Lancer un minuteur de ' + formatMinutes(freeMinutes())" (click)="toggleTimer(index())">
+              <svg yonaIcon="play" [size]="22"></svg>
+            </button>
           </div>
         }
 
         @if (otherTimers().length) {
           <ul role="list" class="cooking__timers" aria-label="Autres minuteurs">
-            @for (other of otherTimers(); track other.stepIndex) {
+            @for (other of otherTimers(); track other.timer.key) {
               <li>
-                <button type="button" class="chip-timer" [class.is-done]="other.remaining === 0" (click)="goTo(other.stepIndex)">
+                <button type="button" class="chip-timer" [class.is-done]="other.remaining === 0" (click)="openTimer(other.timer)">
                   <svg yonaIcon="timer" [size]="14"></svg>
-                  Étape {{ other.stepIndex + 1 }} : {{ other.remaining === 0 ? 'terminé' : clock(other.remaining) }}
+                  {{ other.label }} : {{ other.remaining === 0 ? 'terminé' : clock(other.remaining) }}
                 </button>
               </li>
             }
@@ -134,7 +159,7 @@
       <button
         type="button"
         class="nav-button"
-        [disabled]="miseEnPlace() || (index() === 0 && !ingredients().length)"
+        [disabled]="miseEnPlace() || (index() === 0 && !hasMiseEnPlace())"
         (click)="go(-1)"
       >
         <svg yonaIcon="chevron-left" [size]="22"></svg>
@@ -157,23 +182,3 @@
   </ng-container>
 </yona-dialog>
 
-<!-- The mode closed while a timer runs: it keeps going, and is still stopped from the page -->
-@if (!open() && (runningTimers().length || ringing() !== null)) {
-  <aside class="timers-bar" aria-label="Minuteurs du mode cuisine">
-    @if (ringing() !== null) {
-      <div class="timers-bar__ringing" role="alert">
-        <svg yonaIcon="bell-ring" [size]="20"></svg>
-        <span class="timers-bar__label">Étape {{ ringing()! + 1 }} : c'est prêt !</span>
-        <button type="button" class="ringing__more" (click)="addMinute(ringing()!)">+ 1 min</button>
-        <button type="button" class="ringing__stop" (click)="stopRinging()">Arrêter</button>
-      </div>
-    }
-    @for (timer of runningTimers(); track timer.stepIndex) {
-      <button type="button" class="timers-bar__timer" (click)="resume(timer.stepIndex)">
-        <svg yonaIcon="timer" [size]="16"></svg>
-        <span class="timers-bar__label">Étape {{ timer.stepIndex + 1 }} : {{ clock(timer.remaining) }}</span>
-        <span class="timers-bar__resume">Reprendre</span>
-      </button>
-    }
-  </aside>
-}

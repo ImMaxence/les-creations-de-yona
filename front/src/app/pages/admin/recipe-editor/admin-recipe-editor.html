@@ -303,6 +303,16 @@
   }
   <yona-field-error [field]="recipeForm.parts" />
 
+  <section class="admin-panel" aria-labelledby="equipment-title">
+    <h3 id="equipment-title" class="editor__title">Matériel (facultatif)</h3>
+    <div class="field">
+      <label class="field__label" for="equipment">Un ustensile par ligne</label>
+      <textarea id="equipment" class="input" rows="4" placeholder="Moule à tarte de 24 cm&#10;Fouet électrique&#10;Poche à douille" [formField]="recipeForm.equipment"></textarea>
+      <span class="field__hint">Affiché sous les ingrédients et dans la « Mise en place » du mode cuisine.</span>
+      <yona-field-error [field]="recipeForm.equipment" />
+    </div>
+  </section>
+
   <section class="admin-panel" aria-labelledby="tip-title">
     <h3 id="tip-title" class="editor__title">Le conseil de Yona (facultatif)</h3>
     <div class="field">

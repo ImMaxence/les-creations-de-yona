@@ -27,37 +27,44 @@
           </span>
         </div>
 
-        <ul role="list" class="items">
-          @for (item of items(); track item.key) {
-            <li>
-              <label class="item" [class.is-done]="item.done">
-                <input type="checkbox" class="visually-hidden" [checked]="item.done" (change)="basket.toggle(item.key)" />
-                <span class="item__box" aria-hidden="true"><svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg></span>
-                <span class="item__text">
-                  @if (item.amount) {
-                    <strong>{{ item.amount }}</strong>
-                  }
-                  {{ item.name }}
-                  @if (item.parts.length) {
-                    <span class="item__recipes">{{ item.parts.join(' · ') }}</span>
-                  }
-                </span>
-              </label>
-            </li>
+        @for (section of sections(); track section.label) {
+          @if (showAisles()) {
+            <h3 class="aisle" [id]="'aisle-' + $index">{{ section.label }}</h3>
           }
-          @for (extra of extras(); track extra.index) {
-            <li class="extra">
-              <label class="item" [class.is-done]="extra.done">
-                <input type="checkbox" class="visually-hidden" [checked]="extra.done" (change)="toggleExtra(extra.text)" />
-                <span class="item__box" aria-hidden="true"><svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg></span>
-                <span class="item__text">{{ extra.text }}</span>
-              </label>
-              <button type="button" class="icon-button" [attr.aria-label]="'Retirer ' + extra.text" (click)="basket.removeExtra(extra.index)">
-                <svg yonaIcon="x" [size]="16"></svg>
-              </button>
-            </li>
-          }
-        </ul>
+          <ul role="list" class="items" [attr.aria-labelledby]="showAisles() ? 'aisle-' + $index : null">
+            @for (item of section.items; track item.key) {
+              <li>
+                <label class="item" [class.is-done]="item.done">
+                  <input type="checkbox" class="visually-hidden" [checked]="item.done" (change)="basket.toggle(item.key)" />
+                  <span class="item__box" aria-hidden="true"><svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg></span>
+                  <span class="item__text">
+                    @if (item.amount) {
+                      <strong>{{ item.amount }}</strong>
+                    }
+                    {{ item.name }}
+                    @if (item.parts.length) {
+                      <span class="item__recipes">{{ item.parts.join(' · ') }}</span>
+                    }
+                  </span>
+                </label>
+              </li>
+            }
+            @if (section.aisle === null) {
+              @for (extra of extras(); track extra.index) {
+                <li class="extra">
+                  <label class="item" [class.is-done]="extra.done">
+                    <input type="checkbox" class="visually-hidden" [checked]="extra.done" (change)="toggleExtra(extra.text)" />
+                    <span class="item__box" aria-hidden="true"><svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg></span>
+                    <span class="item__text">{{ extra.text }}</span>
+                  </label>
+                  <button type="button" class="icon-button" [attr.aria-label]="'Retirer ' + extra.text" (click)="basket.removeExtra(extra.index)">
+                    <svg yonaIcon="x" [size]="16"></svg>
+                  </button>
+                </li>
+              }
+            }
+          </ul>
+        }
 
         <form class="add-item" (submit)="addItem($event)">
           <input

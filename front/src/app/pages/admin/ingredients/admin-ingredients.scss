@@ -135,3 +135,18 @@
   justify-content: flex-end;
   gap: var(--space-4);
 }
+
+// "Ranger la sélection : [rayon]", under the bar of the selection
+.shelve {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+// The aisle of each ingredient, chosen in its row
+.aisle-select {
+  min-width: 11rem;
+  font-size: var(--text-sm);
+}

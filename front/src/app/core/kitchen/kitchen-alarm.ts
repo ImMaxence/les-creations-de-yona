@@ -15,7 +15,7 @@ const BUZZES_MS = [60, 90, 60, 90, 60];
  */
 export class KitchenAlarm {
   private context: AudioContext | null = null;
-  private readonly scheduled = new Map<number, { at: number; notes: OscillatorNode[] }>();
+  private readonly scheduled = new Map<string, { at: number; notes: OscillatorNode[] }>();
 
   /**
    * To call on a tap: browsers, Safari on iPhone above all, only let a page start its sound then.
@@ -45,7 +45,7 @@ export class KitchenAlarm {
   }
 
   /** Rings {@code delayMs} from now; replaces what was scheduled for the same timer. */
-  schedule(id: number, delayMs: number): void {
+  schedule(id: string, delayMs: number): void {
     this.cancel(id);
     const context = this.context;
     if (!context) {
@@ -59,7 +59,7 @@ export class KitchenAlarm {
    * The timer has ended: rings now, unless its scheduled ring has started already. When the audio
    * was suspended meanwhile (phone locked), its schedule fell behind: it rings now instead.
    */
-  ringNow(id: number): void {
+  ringNow(id: string): void {
     const context = this.context;
     const planned = this.scheduled.get(id);
     if (!context || (planned && planned.at <= context.currentTime + 0.5)) {
@@ -68,7 +68,7 @@ export class KitchenAlarm {
     this.schedule(id, 0);
   }
 
-  cancel(id: number): void {
+  cancel(id: string): void {
     const planned = this.scheduled.get(id);
     if (!planned) {
       return;

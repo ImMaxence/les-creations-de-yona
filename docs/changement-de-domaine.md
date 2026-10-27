@@ -26,7 +26,7 @@ Prévoir un mot aux visiteurs (réseaux sociaux, encart sur le site) avant la ba
 | `front/src/app/pages/legal/legal-notice.html` | nom du site dans les mentions légales |
 | `front/src/app/pages/legal/legal.ts` | `LEGAL_PAGES_UPDATED_ON` (date de mise à jour) |
 | `back/src/main/resources/application.yaml` | valeur par défaut de `PUSH_SUBJECT` (ou la variable dans Coolify) |
-| `devops/.env.example`, `devops/compose.prod.yaml` (commentaire), `ReadMe.md`, `docs/google.md` | adresses d'exemple et documentation |
+| `devops/.env.example`, `devops/compose.prod.yaml` (commentaire), `docs/production.md`, `docs/google.md` | adresses d'exemple et documentation |
 
 Pour vérifier qu'il n'en reste pas : chercher `les-creations-de-yona.fr` dans tout le dépôt, en dehors de `CHANGELOG.md`, qui raconte le passé.
 

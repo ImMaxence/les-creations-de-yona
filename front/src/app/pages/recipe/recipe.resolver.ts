@@ -94,6 +94,7 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
       recipeIngredient: totalIngredients(recipe.parts, 1).map((ingredient) =>
         [ingredient.amount, ingredient.name, ingredient.note && `(${ingredient.note})`].filter(Boolean).join(' '),
       ),
+      tool: recipe.equipment.length ? recipe.equipment.map((item) => ({ '@type': 'HowToTool', name: item })) : undefined,
       recipeInstructions: hasParts(recipe.parts)
         ? recipe.parts.map((part) => ({
             '@type': 'HowToSection',

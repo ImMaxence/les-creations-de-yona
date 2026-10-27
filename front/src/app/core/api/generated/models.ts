@@ -16,6 +16,8 @@ export type { GlossaryTermResponse } from './models/glossary-term-response';
 export type { ImageChoice } from './models/image-choice';
 export type { Images } from './models/images';
 export type { IncompleteRecipe } from './models/incomplete-recipe';
+export type { IngredientAisle } from './models/ingredient-aisle';
+export type { IngredientAisleForm } from './models/ingredient-aisle-form';
 export type { IngredientForm } from './models/ingredient-form';
 export type { IngredientLine } from './models/ingredient-line';
 export type { IngredientMergeForm } from './models/ingredient-merge-form';

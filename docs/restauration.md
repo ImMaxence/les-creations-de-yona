@@ -1,6 +1,6 @@
 # Restaurer une sauvegarde
 
-Depuis la version 2.1.0, le back-office restaure lui-même une archive (page Sauvegarde, « Restaurer une sauvegarde ») : fusion de ce qui manque, ou remplacement complet. C'est la voie normale ; voir le README (« Sauvegarde »).
+Depuis la version 2.1.0, le back-office restaure lui-même une archive (page Sauvegarde, « Restaurer une sauvegarde ») : fusion de ce qui manque, ou remplacement complet. C'est la voie normale ; voir [architecture.md](architecture.md) (« Sauvegarde »).
 
 La procédure manuelle ci-dessous reste le secours quand le back-office n'est pas utilisable : backend qui ne démarre plus, connexion Google impossible, nouveau serveur encore vide d'admin. Elle remet le site dans l'état d'une archive téléchargée depuis le back-office (bouton « Sauvegarder mes données »), après une perte de données, une fausse manipulation ou pour remonter le site sur un nouveau serveur. Une archive de la 2.1.0 contient aussi un `manifest.json` (date et version), sans effet ici.
 

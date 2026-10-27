@@ -219,9 +219,11 @@ class RestoredData {
 
 	private Map<Long, Long> mergeIngredients(JdbcClient scratch, JdbcClient site, Added added) {
 		Map<Long, Long> ids = new HashMap<>();
-		for (Map<String, Object> row : scratch.sql("select id, name from ingredient").query().listOfRows()) {
-			added.ingredients += site.sql("insert into ingredient (name) values (:name) on conflict (name) do nothing")
+		for (Map<String, Object> row : scratch.sql("select id, name, aisle from ingredient").query().listOfRows()) {
+			// An ingredient already on the site keeps its aisle; one added comes with the backup's
+			added.ingredients += site.sql("insert into ingredient (name, aisle) values (:name, :aisle) on conflict (name) do nothing")
 				.param("name", row.get("name"))
+				.param("aisle", row.get("aisle"))
 				.update();
 			// The column collation ignores case and accents: finds the site's spelling too.
 			Long siteId = site.sql("select id from ingredient where name = :name").param("name", row.get("name"))

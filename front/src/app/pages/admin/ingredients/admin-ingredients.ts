@@ -10,10 +10,12 @@ import { findSimilarIngredients } from '../../../core/api/generated/fn/admin-ing
 import { mergeIngredients } from '../../../core/api/generated/fn/admin-ingredients/merge-ingredients';
 import { renameIngredient } from '../../../core/api/generated/fn/admin-ingredients/rename-ingredient';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
+import { setIngredientAisle } from '../../../core/api/generated/fn/admin-ingredients/set-ingredient-aisle';
 import { IngredientResponse } from '../../../core/api/generated/models/ingredient-response';
 import { SimilarIngredients } from '../../../core/api/generated/models/similar-ingredients';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
+import { AISLES, Aisle } from '../../../shared/format/aisles';
 import { Button } from '../../../shared/ui/button/button';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
@@ -25,12 +27,15 @@ const MAX_NAME_LENGTH = 100;
 
 type UsageFilter = 'ALL' | 'USED' | 'UNUSED';
 
+/** An aisle, or none (''): the ingredients still to shelve. */
+type AisleFilter = Aisle | '' | 'ALL';
+
 /** For a group of similar ingredients: keep one of them, or replace them all by a new name. */
 type MergeChoice = { keptId: number } | { newName: string };
 
 /**
  * Ingredients are created from the recipes; here they are renamed, merged when written several
- * ways, or deleted.
+ * ways, put in a shop aisle (which sorts the shopping list), or deleted.
  */
 @Component({
   selector: 'yona-admin-ingredients',
@@ -64,13 +69,28 @@ export default class AdminIngredients {
     { value: 'UNUSED', label: 'Non utilisés' },
   ];
   protected readonly usage = signal<UsageFilter>('ALL');
+  /** The aisle of a row; '' for none. */
+  protected readonly aisleOptions: SelectOption<Aisle | ''>[] = [{ value: '', label: 'Sans rayon' }, ...AISLES];
+  protected readonly aisleFilterOptions: SelectOption<AisleFilter>[] = [
+    { value: 'ALL', label: 'Tous les rayons' },
+    { value: '', label: 'Sans rayon' },
+    ...AISLES,
+  ];
+  protected readonly aisleFilter = signal<AisleFilter>('ALL');
   protected readonly shown = computed(() => {
-    const ingredients = this.ingredients.value() ?? [];
     const usage = this.usage();
-    return usage === 'ALL'
-      ? ingredients
-      : ingredients.filter((ingredient) => (usage === 'USED') === ingredient.recipeCount > 0);
+    const aisle = this.aisleFilter();
+    return (this.ingredients.value() ?? []).filter(
+      (ingredient) =>
+        (usage === 'ALL' || (usage === 'USED') === ingredient.recipeCount > 0) &&
+        (aisle === 'ALL' || (ingredient.aisle ?? '') === aisle),
+    );
   });
+  /** Used in a recipe but not shelved yet: they fall in "Autres" in the shopping lists. */
+  protected readonly withoutAisleCount = computed(
+    () => (this.ingredients.value() ?? []).filter((ingredient) => ingredient.recipeCount > 0 && !ingredient.aisle).length,
+  );
+  protected readonly shelving = signal(false);
   protected readonly unusedCount = computed(
     () => (this.ingredients.value() ?? []).filter((ingredient) => ingredient.recipeCount === 0).length,
   );
@@ -137,6 +157,29 @@ export default class AdminIngredients {
       this.toaster.success('Ingrédient supprimé.');
       if (this.selection.has(ingredient.id)) {
         this.selection.toggle(ingredient.id);
+      }
+      this.ingredients.reload();
+    }
+  }
+
+  protected aisleOf(ingredient: IngredientResponse): Aisle | '' {
+    return ingredient.aisle ?? '';
+  }
+
+  /** One row, or the selection: saved at once, the list read again. */
+  protected async setAisle(ids: number[], aisle: Aisle | '' | undefined): Promise<void> {
+    if (!ids.length || aisle === undefined) {
+      return;
+    }
+    this.shelving.set(true);
+    const saved = await attempt(
+      this.api.invoke(setIngredientAisle, { body: { ingredientIds: ids, aisle: aisle || undefined } }),
+    );
+    this.shelving.set(false);
+    if (saved.ok) {
+      if (ids.length > 1) {
+        this.toaster.success(`${ids.length} ingrédients rangés.`);
+        this.selection.clear();
       }
       this.ingredients.reload();
     }

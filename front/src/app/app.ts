@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CookieBanner } from './core/analytics/cookie-banner';
+import { TimersBar } from './core/kitchen/timers-bar';
 import { InstallBanner } from './core/pwa/install-banner';
 import { AdminSession } from './core/auth/admin-session';
 import { Footer } from './core/layout/footer/footer';
@@ -17,7 +18,7 @@ import { Toasts } from './core/notifications/toasts';
 
 @Component({
   selector: 'yona-root',
-  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts, CookieBanner, InstallBanner],
+  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts, CookieBanner, InstallBanner, TimersBar],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

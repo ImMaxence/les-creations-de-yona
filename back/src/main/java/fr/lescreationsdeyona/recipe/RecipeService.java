@@ -21,7 +21,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -373,6 +375,7 @@ public class RecipeService {
 		recipe.setDifficulty(halfPoints(form.difficulty()));
 		recipe.setYoutubeVideoId(youtubeVideoId(form.videoUrl()));
 		recipe.setTip(StringUtils.hasText(form.tip()) ? form.tip().strip() : null);
+		recipe.setEquipment(equipment(form.equipment()));
 		RecipeForm.Mold mold = form.mold();
 		recipe.setMoldShape(mold == null ? null : mold.shape());
 		recipe.setMoldLengthCm(mold == null ? null : mold.lengthCm());
@@ -492,6 +495,21 @@ public class RecipeService {
 		}
 	}
 
+	/** One item per line, trimmed, each once (case ignored); null for none. */
+	static @Nullable String equipment(@Nullable List<String> items) {
+		if (items == null) {
+			return null;
+		}
+		Map<String, String> byKey = new LinkedHashMap<>();
+		for (String item : items) {
+			String line = item.replaceAll("\\s+", " ").strip();
+			if (!line.isEmpty()) {
+				byKey.putIfAbsent(line.toLowerCase(Locale.ROOT), Texts.capitalizeFirstLetter(line));
+			}
+		}
+		return byKey.isEmpty() ? null : String.join("\n", byKey.values());
+	}
+
 	/** The form that would save {@code recipe} again: duplicate, restore from the trash. */
 	private static RecipeForm formOf(RecipeDetail recipe, String title, RecipeStatus status, List<Long> categoryIds,
 			List<Long> tagIds) {
@@ -499,7 +517,7 @@ public class RecipeService {
 		return new RecipeForm(title, recipe.intro(), status, false, categoryIds, tagIds, recipe.servings(),
 				recipe.prepMinutes(), recipe.cookMinutes(), recipe.restMinutes(), recipe.difficulty(),
 				recipe.youtubeVideoId() == null ? null : "https://www.youtube.com/watch?v=" + recipe.youtubeVideoId(),
-				recipe.tip(), mold == null ? null : new RecipeForm.Mold(mold.shape(), mold.lengthCm(), mold.widthCm()),
+				recipe.tip(), recipe.equipment(), mold == null ? null : new RecipeForm.Mold(mold.shape(), mold.lengthCm(), mold.widthCm()),
 				null,
 				recipe.parts().stream().map(part -> new RecipeForm.Part(part.title(),
 						part.ingredients().stream()

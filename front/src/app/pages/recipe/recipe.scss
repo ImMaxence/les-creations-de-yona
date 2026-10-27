@@ -418,6 +418,31 @@
   color: var(--color-accent);
 }
 
+// "Matériel": what to get out of the cupboards, under the ingredients
+.equipment {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.equipment__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+
+  svg {
+    color: var(--color-accent);
+  }
+}
+
+.equipment__list {
+  display: grid;
+  gap: var(--space-1);
+  padding-left: 1.25em;
+  color: var(--color-text);
+}
+
 // Printed: the recipe on paper, photo smaller, ingredients then steps, nothing interactive
 @media print {
   .hero {

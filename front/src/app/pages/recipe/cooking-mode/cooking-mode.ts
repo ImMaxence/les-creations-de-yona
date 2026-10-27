@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, model, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Step } from '../../../core/api/generated/models/step';
+import { KitchenTimer, KitchenTimers, formatClock, timerKey } from '../../../core/kitchen/kitchen-timers';
 import { GlossaryMatcher, GlossaryPipe, NO_GLOSSARY } from '../../../shared/format/glossary';
 import { MarkdownPipe } from '../../../shared/format/markdown.pipe';
 import { parisClock } from '../../../shared/format/paris-time';
@@ -9,7 +21,6 @@ import { GlossaryPopover } from '../../../shared/ui/glossary-popover/glossary-po
 import { Icon } from '../../../shared/ui/icon/icon';
 import { IngredientList } from '../ingredient-list/ingredient-list';
 import { ShownIngredient } from '../recipe-parts';
-import { KitchenAlarm } from './kitchen-alarm';
 
 /** A part of the recipe as the page shows it: its ingredients already adjusted to the servings. */
 export interface CookingPart {
@@ -26,26 +37,19 @@ interface CookingStep {
   step: Step;
 }
 
-/** A countdown of a step: running while endsAt is set; done once it reached 0. */
-interface StepTimer {
-  totalMs: number;
-  remainingMs: number;
-  endsAt: number | null;
-}
-
-const TICK_MS = 250;
 const SWIPE_PX = 60;
-/** "+ 1 min": the cake is not quite done. */
-const EXTRA_MS = 60_000;
+/** Free timer of a step without duration ("Laisser refroidir"): its first value, and its limits. */
+const FREE_MINUTES = 5;
+const MAX_FREE_MINUTES = 600;
 
 /**
  * Cooking mode: one step per screen in large type, to follow the recipe with a phone on the
- * counter. It opens on the "mise en place", every ingredient to tick off once out and weighed.
- * The ingredients the step needs are shown with it, when the recipe says which. Steps with a
- * duration get a timer, which keeps running while moving to another step or once the mode is
- * closed (a bar on the page then shows it), and rings (sound and vibration) at the end until
- * stopped. The screen is kept on while the mode is open, where the browser allows it. Arrow keys
- * and swipes move between steps.
+ * counter. It opens on the "mise en place", every ingredient (and the equipment) to get out and
+ * weigh. The ingredients the step needs are shown with it, when the recipe says which. Steps with
+ * a duration get a timer; the others a free one, of the minutes the visitor chooses. Timers belong
+ * to the visit (KitchenTimers): they keep running on another step, another recipe or once the mode
+ * is closed, and ring (sound and vibration) at the end until stopped. The screen is kept on while
+ * the mode is open, where the browser allows it. Arrow keys and swipes move between steps.
  */
 @Component({
   selector: 'yona-cooking-mode',
@@ -57,9 +61,14 @@ const EXTRA_MS = 60_000;
 })
 export class CookingMode {
   readonly title = input.required<string>();
+  /** The recipe's slug and route: its timers are found again from any page. */
+  readonly slug = input.required<string>();
+  readonly link = input.required<string[]>();
   readonly parts = input.required<CookingPart[]>();
   /** The ingredients of the whole recipe, shown when it has a single part. */
   readonly ingredients = input.required<ShownIngredient[]>();
+  /** Moule à tarte, fouet…: shown with the mise en place. */
+  readonly equipment = input<string[]>([]);
   /** Preparation, rest and cooking: "prête vers…" from the moment the mode starts. */
   readonly totalMinutes = input(0);
   readonly glossary = input<GlossaryMatcher>(NO_GLOSSARY);
@@ -68,6 +77,9 @@ export class CookingMode {
   readonly open = model(false);
 
   protected readonly formatMinutes = formatMinutes;
+  protected readonly clock = formatClock;
+  protected readonly maxFreeMinutes = MAX_FREE_MINUTES;
+  protected readonly timers = inject(KitchenTimers);
   protected readonly steps = computed<CookingStep[]>(() =>
     this.parts().flatMap((part, partIndex) =>
       part.steps.map((step, index) => ({ part, partIndex, number: index + 1, step })),
@@ -92,54 +104,69 @@ export class CookingMode {
         .filter((line): line is ShownIngredient => !!line) ?? []
     );
   });
+  /** The equipment, ticked off like the ingredients. */
+  protected readonly equipmentLines = computed<ShownIngredient[]>(() =>
+    this.equipment().map((name) => ({ name, amount: null, note: null, parts: [] })),
+  );
+  /** Something to get out before starting: the mise en place is worth a screen. */
+  protected readonly hasMiseEnPlace = computed(() => this.ingredients().length > 0 || this.equipment().length > 0);
 
   /** "Commencé à 14:02 · prête vers 15:32": set when the mode starts. */
   protected readonly schedule = signal<{ startedAt: string; readyAt: string } | null>(null);
+  /** Minutes of the free timer, chosen before starting it; back to 5 on another step. */
+  protected readonly freeMinutes = signal(FREE_MINUTES);
 
-  private readonly now = signal(Date.now());
-  private readonly timers = signal<ReadonlyMap<number, StepTimer>>(new Map());
-  /** Timers running or finished on other steps, to come back to them. */
-  protected readonly otherTimers = computed(() =>
-    [...this.timers().entries()]
-      .filter(([stepIndex, timer]) => stepIndex !== this.index() && (timer.endsAt !== null || timer.remainingMs === 0))
-      .map(([stepIndex]) => ({ stepIndex, remaining: this.remainingMs(stepIndex) })),
-  );
-  /** Once the mode is closed: the timers still running, shown in a bar on the page. */
-  protected readonly runningTimers = computed(() =>
-    [...this.timers().entries()]
-      .filter(([, timer]) => timer.endsAt !== null)
-      .map(([stepIndex]) => ({ stepIndex, remaining: this.remainingMs(stepIndex) })),
-  );
-  protected readonly ringing = signal<number | null>(null);
+  /** Timers running or finished elsewhere, this recipe's other steps or another recipe's. */
+  protected readonly otherTimers = computed(() => {
+    const here = timerKey(this.slug(), this.index());
+    return this.timers
+      .list()
+      .filter((timer) => timer.key !== here && (timer.endsAt !== null || timer.remainingMs === 0))
+      .map((timer) => ({ timer, label: this.labelOf(timer), remaining: this.timers.remainingMs(timer) }));
+  });
+  protected readonly ringingLabel = computed(() => {
+    const ringing = this.timers.ringing();
+    return ringing ? this.labelOf(ringing) : null;
+  });
 
-  private ticker: ReturnType<typeof setInterval> | undefined;
   private wakeLock: WakeLockSentinel | null = null;
-  private readonly alarm = new KitchenAlarm();
   private swipeStartX: number | null = null;
 
   constructor() {
     effect(() => {
-      if (this.open()) {
+      const open = this.open();
+      untracked(() => this.timers.modeOpen.set(open));
+      if (open) {
         void this.keepScreenOn();
       } else {
         void this.wakeLock?.release();
         this.wakeLock = null;
       }
     });
+    // "Reprendre" in the bar of the pages, for this recipe
+    effect(() => {
+      const request = this.timers.resumeRequest();
+      if (request?.slug === this.slug()) {
+        untracked(() => {
+          this.timers.resumeRequest.set(null);
+          this.resume(request.stepIndex);
+        });
+      }
+    });
     inject(DestroyRef).onDestroy(() => {
-      clearInterval(this.ticker);
+      this.timers.modeOpen.set(false);
       void this.wakeLock?.release();
-      this.alarm.close();
     });
   }
 
-  /** From the mise en place (when there are ingredients), or from the step given. */
+  /** From the mise en place (when there is something to get out), or from the step given. */
   start(stepIndex = 0): void {
     this.index.set(Math.min(stepIndex, Math.max(0, this.steps().length - 1)));
-    this.miseEnPlace.set(stepIndex === 0 && this.ingredients().length > 0);
+    this.miseEnPlace.set(stepIndex === 0 && this.hasMiseEnPlace());
     this.showIngredients.set(false);
+    this.freeMinutes.set(FREE_MINUTES);
     // Opened by a tap: the moment to let the timers ring later
-    this.alarm.unlock();
+    this.timers.unlock();
     const total = this.totalMinutes();
     const now = new Date();
     this.schedule.set(
@@ -148,9 +175,9 @@ export class CookingMode {
     this.open.set(true);
   }
 
-  /** Back in the mode, from the bar of the page: where it was left, the schedule kept. */
+  /** Back in the mode, from a timer: at its step, the schedule kept. */
   protected resume(stepIndex: number): void {
-    this.alarm.unlock();
+    this.timers.unlock();
     this.goTo(stepIndex);
     this.open.set(true);
   }
@@ -166,7 +193,8 @@ export class CookingMode {
     if (next >= 0 && next < this.steps().length) {
       this.index.set(next);
       this.showIngredients.set(false);
-    } else if (next < 0 && this.ingredients().length) {
+      this.freeMinutes.set(FREE_MINUTES);
+    } else if (next < 0 && this.hasMiseEnPlace()) {
       this.miseEnPlace.set(true);
     }
   }
@@ -174,15 +202,16 @@ export class CookingMode {
   protected goTo(stepIndex: number): void {
     this.index.set(stepIndex);
     this.miseEnPlace.set(false);
-    this.stopRinging();
+    this.freeMinutes.set(FREE_MINUTES);
+    this.timers.stopRinging();
   }
 
-  /** "Arrêter la sonnerie": the timer stays at 0, shown as done. */
-  protected stopRinging(): void {
-    const ringing = this.ringing();
-    if (ringing !== null) {
-      this.alarm.cancel(ringing);
-      this.silence();
+  /** A timer of the list: this recipe's, at its step; another recipe's, on its page. */
+  protected openTimer(timer: KitchenTimer): void {
+    if (timer.slug === this.slug()) {
+      this.goTo(timer.stepIndex);
+    } else {
+      this.timers.resume(timer);
     }
   }
 
@@ -212,119 +241,52 @@ export class CookingMode {
     }
   }
 
-  // Timers
+  // Timers of this recipe's steps
 
-  protected timerOf(stepIndex: number): StepTimer | undefined {
-    return this.timers().get(stepIndex);
+  protected timerOf(stepIndex: number): KitchenTimer | undefined {
+    return this.timers.get(this.slug(), stepIndex);
   }
 
   protected remainingMs(stepIndex: number): number {
-    const timer = this.timers().get(stepIndex);
-    if (!timer) {
-      return (this.steps()[stepIndex]?.step.durationMinutes ?? 0) * 60_000;
-    }
-    return timer.endsAt === null ? timer.remainingMs : Math.max(0, timer.endsAt - this.now());
+    const timer = this.timerOf(stepIndex);
+    return timer ? this.timers.remainingMs(timer) : this.durationMs(stepIndex);
   }
 
-  protected clock(ms: number): string {
-    const seconds = Math.ceil(ms / 1000);
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const rest = String(seconds % 60).padStart(2, '0');
-    return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${rest}` : `${minutes}:${rest}`;
+  protected isRinging(stepIndex: number): boolean {
+    return this.timers.ringing()?.key === timerKey(this.slug(), stepIndex);
   }
 
   protected toggleTimer(stepIndex: number): void {
-    // A tap: browsers only let a page play sound after the visitor acted
-    this.alarm.unlock();
-    // The clock shown is the one of the last tick, up to a quarter of a second old: brought up to
-    // date, or a 1:00 timer would first show 1:01
-    const now = Date.now();
-    this.now.set(now);
-    const minutes = this.steps()[stepIndex]?.step.durationMinutes ?? 0;
-    const timer = this.timers().get(stepIndex) ?? { totalMs: minutes * 60_000, remainingMs: minutes * 60_000, endsAt: null };
-    const running = timer.endsAt !== null;
-    const remainingMs = running ? Math.max(0, timer.endsAt! - now) : timer.remainingMs || timer.totalMs;
-    this.setTimer(stepIndex, { ...timer, remainingMs, endsAt: running ? null : now + remainingMs });
-    if (running) {
-      this.alarm.cancel(stepIndex);
-    } else {
-      this.alarm.schedule(stepIndex, remainingMs);
-      if (this.ringing() === stepIndex) {
-        this.silence();
-      }
-    }
-    this.tick();
+    this.timers.toggle(
+      { slug: this.slug(), title: this.title(), link: this.link(), stepIndex },
+      this.durationMs(stepIndex),
+    );
   }
 
-  /** "+ 1 min" on a timer that has ended (or is ending): it rings again a minute later. */
   protected addMinute(stepIndex: number): void {
-    this.alarm.unlock();
-    const now = Date.now();
-    this.now.set(now);
-    const timer = this.timers().get(stepIndex);
-    const left = timer?.endsAt != null ? Math.max(0, timer.endsAt - now) : (timer?.remainingMs ?? 0);
-    const remainingMs = left + EXTRA_MS;
-    this.setTimer(stepIndex, { totalMs: timer?.totalMs ?? EXTRA_MS, remainingMs, endsAt: now + remainingMs });
-    this.alarm.schedule(stepIndex, remainingMs);
-    if (this.ringing() === stepIndex) {
-      this.silence();
-    }
-    this.tick();
+    this.timers.addMinute(timerKey(this.slug(), stepIndex));
   }
 
   protected resetTimer(stepIndex: number): void {
-    const timers = new Map(this.timers());
-    timers.delete(stepIndex);
-    this.timers.set(timers);
-    this.alarm.cancel(stepIndex);
-    if (this.ringing() === stepIndex) {
-      this.silence();
-    }
+    this.timers.reset(timerKey(this.slug(), stepIndex));
   }
 
-  /** The banner and the vibration stop; the sound is the alarm's. */
-  private silence(): void {
-    this.ringing.set(null);
-    this.alarm.stopVibrating();
+  /** + and − of the free timer: a minute at a time up to 10 minutes, five beyond. */
+  protected changeFreeMinutes(direction: 1 | -1): void {
+    this.freeMinutes.update((minutes) => {
+      const step = (direction > 0 ? minutes >= 10 : minutes > 10) ? 5 : 1;
+      return Math.min(MAX_FREE_MINUTES, Math.max(1, minutes + direction * step));
+    });
   }
 
-  private setTimer(stepIndex: number, timer: StepTimer): void {
-    this.timers.set(new Map(this.timers()).set(stepIndex, timer));
+  /** The step's own duration, or the free timer's. */
+  private durationMs(stepIndex: number): number {
+    return (this.steps()[stepIndex]?.step.durationMinutes ?? this.freeMinutes()) * 60_000;
   }
 
-  /** Runs while a timer does; shows each one as ringing once, at its end. */
-  private tick(): void {
-    if (this.ticker !== undefined) {
-      return;
-    }
-    this.ticker = setInterval(() => {
-      const now = Date.now();
-      this.now.set(now);
-      let running = false;
-      for (const [stepIndex, timer] of this.timers()) {
-        if (timer.endsAt === null) {
-          continue;
-        }
-        if (timer.endsAt <= now) {
-          this.setTimer(stepIndex, { ...timer, remainingMs: 0, endsAt: null });
-          this.ring(stepIndex);
-        } else {
-          running = true;
-        }
-      }
-      if (!running) {
-        clearInterval(this.ticker);
-        this.ticker = undefined;
-      }
-    }, TICK_MS);
-  }
-
-  /** The sound was scheduled when the timer started: only played here if it fell behind. */
-  private ring(stepIndex: number): void {
-    this.ringing.set(stepIndex);
-    this.alarm.vibrate();
-    this.alarm.ringNow(stepIndex);
+  /** "Étape 3", or "Tarte au citron · étape 3" for another recipe. */
+  private labelOf(timer: KitchenTimer): string {
+    return timer.slug === this.slug() ? `Étape ${timer.stepIndex + 1}` : `${timer.title} · étape ${timer.stepIndex + 1}`;
   }
 
   private async keepScreenOn(): Promise<void> {
