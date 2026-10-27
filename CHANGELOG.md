@@ -2,6 +2,18 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste. Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.5.2 - 2026-10-27
+
+Front 3.5.2, backend 3.5.2. Pas de migration de base.
+
+### Corrigé
+
+- **Liste des recettes du back-office vide**, avec le message « Ce tri n'est pas autorisé » : depuis la 3.5.0, la liste demande ses recettes triées (et départagées par leur identifiant), mais le serveur n'acceptait encore que les tris du site public. Tous les tris de la liste marchent de nouveau, dont « Les plus vues ».
+
+### Technique
+
+- Test des tris de la liste du back-office, et de ceux refusés au site public (les vues) : 66 tests backend.
+
 ## 3.5.1 - 2026-10-27
 
 Front 3.5.1, backend 3.5.1. Pas de migration de base.

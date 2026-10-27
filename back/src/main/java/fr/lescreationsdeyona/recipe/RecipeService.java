@@ -144,7 +144,7 @@ public class RecipeService {
 
 	public Page<RecipeAdminSummary> searchAll(RecipeFilter filter, Pageable pageable) {
 		return recipeRepository
-			.findAll(RecipeSpecifications.matching(filter), Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
+			.findAll(RecipeSpecifications.matching(filter), Pageables.requireSortedOn(pageable, ADMIN_SORTABLE_PROPERTIES))
 			.map(recipeMapper::toAdminSummary);
 	}
 
