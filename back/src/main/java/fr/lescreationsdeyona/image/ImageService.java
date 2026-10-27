@@ -4,6 +4,10 @@ import fr.lescreationsdeyona.common.Pageables;
 import fr.lescreationsdeyona.content.SiteContentRepository;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.trash.TrashBin;
+import fr.lescreationsdeyona.trash.TrashItem;
+import fr.lescreationsdeyona.trash.TrashKind;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +36,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * leaves orphan files at worst, never a record without files.
  * <p>
  * Uploaded images are kept until deleted from the gallery, even when no recipe or category shows
- * them any more: the admin sorts them out there, and can show one again.
+ * them any more: the admin sorts them out there, and can show one again. A deleted image goes to
+ * the trash for 30 days: its record leaves the image table, its files stay until it is erased.
  */
 @Service
 @RequiredArgsConstructor
@@ -48,6 +53,8 @@ public class ImageService {
 	private final ImageStorage imageStorage;
 
 	private final SiteContentRepository siteContentRepository;
+
+	private final TrashBin trashBin;
 
 	/**
 	 * {@code used}: true for images shown somewhere, false for unused ones, null for all.
@@ -126,19 +133,91 @@ public class ImageService {
 		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of(), false);
 	}
 
-	/** The recipes and categories showing it fall back to the default visual ({@code ON DELETE SET NULL}). */
+	/**
+	 * Moved to the trash, kept 30 days: the recipes and categories showing it fall back to the
+	 * default visual ({@code ON DELETE SET NULL}) and get it back on restore.
+	 */
 	@Transactional
 	public void delete(UUID id) {
 		Image image = get(id);
-		String folder = image.getS3Prefix();
+		List<GalleryImage.RecipeUsage> recipes = imageRepository.findRecipeUsages(List.of(id));
+		List<GalleryImage.RecipeUsage> pinterest = imageRepository.findPinterestUsages(List.of(id));
+		List<GalleryImage.CategoryUsage> categories = imageRepository.findCategoryUsages(List.of(id));
+		boolean aboutPage = id.equals(siteContentRepository.findAboutImageId().orElse(null));
+		List<String> shownOn = new ArrayList<>();
+		Stream.concat(recipes.stream(), pinterest.stream()).map(GalleryImage.RecipeUsage::title).distinct().forEach(shownOn::add);
+		categories.forEach(category -> shownOn.add(category.name()));
+		if (aboutPage) {
+			shownOn.add("À propos");
+		}
+		TrashedImage.Links links = new TrashedImage.Links(recipes.stream().map(GalleryImage.RecipeUsage::id).toList(),
+				pinterest.stream().map(GalleryImage.RecipeUsage::id).toList(),
+				categories.stream().map(GalleryImage.CategoryUsage::id).toList(), aboutPage);
+		trashBin.put(new TrashBin.Entry(TrashKind.IMAGE, trashedTitle(shownOn), null, null, null, null,
+				new TrashedImage(image.getId(), image.getKind(), image.getS3Prefix(), image.getCreatedAt()), links, null));
 		imageRepository.delete(image);
-		onCompletion(TransactionSynchronization.STATUS_COMMITTED, () -> imageStorage.deleteFolder(folder));
 	}
 
-	/** All or none, in a single transaction: files are removed once every deletion is committed. */
+	/** All or none, in a single transaction. */
 	@Transactional
 	public void deleteAll(Collection<UUID> ids) {
 		new HashSet<>(ids).forEach(this::delete);
+	}
+
+	/**
+	 * Back in the gallery from the trash, with the same URL, and on the recipes, categories and
+	 * "À propos" that showed it and have no other photo since. Returns the number of places it is
+	 * back on.
+	 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public int restoreFromTrash(TrashItem trashed) {
+		TrashedImage kept = trashBin.content(trashed, TrashedImage.class);
+		// A backup restored meanwhile ("Ajouter ce qui manque") may have put it back already
+		if (!imageRepository.existsById(kept.id())) {
+			imageRepository.insertRestored(kept.id(), kept.kind().name(), kept.s3Prefix(), kept.createdAt());
+		}
+		TrashedImage.Links links = trashBin.links(trashed, TrashedImage.Links.class, TrashedImage.Links.NONE);
+		int shown = 0;
+		if (!links.recipeIds().isEmpty()) {
+			shown += imageRepository.showOnRecipes(kept.id(), links.recipeIds());
+		}
+		if (!links.pinterestRecipeIds().isEmpty()) {
+			shown += imageRepository.showOnPinterest(kept.id(), links.pinterestRecipeIds());
+		}
+		if (!links.categoryIds().isEmpty()) {
+			shown += imageRepository.showOnCategories(kept.id(), links.categoryIds());
+		}
+		if (links.aboutPage()) {
+			shown += imageRepository.showOnAboutPage(kept.id());
+		}
+		return shown;
+	}
+
+	/** Erased from the trash: its files go once the erasure is committed, unless it is back in the gallery. */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void eraseFromTrash(TrashItem trashed) {
+		TrashedImage kept = trashBin.content(trashed, TrashedImage.class);
+		if (!imageRepository.existsById(kept.id())) {
+			onCompletion(TransactionSynchronization.STATUS_COMMITTED, () -> imageStorage.deleteFolder(kept.s3Prefix()));
+		}
+	}
+
+	/** Its 800 px file, for the trash of the back-office. */
+	public ImageStorage.StoredFile openFromTrash(TrashItem trashed) {
+		return imageStorage.open(trashBin.content(trashed, TrashedImage.class).s3Prefix() + "800.webp");
+	}
+
+	/** "Photo de « Tarte fine »", "Photo de « Tarte fine » et 2 autres", "Photo non utilisée". */
+	private static String trashedTitle(List<String> shownOn) {
+		if (shownOn.isEmpty()) {
+			return "Photo non utilisée";
+		}
+		String first = "Photo de « " + shownOn.getFirst() + " »";
+		return switch (shownOn.size()) {
+			case 1 -> first;
+			case 2 -> first + " et 1 autre";
+			default -> first + " et " + (shownOn.size() - 1) + " autres";
+		};
 	}
 
 	private static void onCompletion(int expectedStatus, Runnable cleanup) {

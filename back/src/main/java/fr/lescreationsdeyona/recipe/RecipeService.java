@@ -13,9 +13,13 @@ import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientService;
+import fr.lescreationsdeyona.menu.MenuService;
 import fr.lescreationsdeyona.tag.Tag;
 import fr.lescreationsdeyona.tag.TagResponse;
 import fr.lescreationsdeyona.tag.TagService;
+import fr.lescreationsdeyona.trash.TrashBin;
+import fr.lescreationsdeyona.trash.TrashItem;
+import fr.lescreationsdeyona.trash.TrashKind;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,7 +39,6 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -43,7 +46,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.StringUtils;
-import tools.jackson.databind.json.JsonMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +53,10 @@ import tools.jackson.databind.json.JsonMapper;
 public class RecipeService {
 
 	private static final Set<String> SORTABLE_PROPERTIES = Set.of("title", "createdAt", "updatedAt", "publishedAt");
+
+	/** The back-office list also sorts by views, and by id to keep equal titles or counts in a stable order. */
+	private static final Set<String> ADMIN_SORTABLE_PROPERTIES = Set.of("title", "createdAt", "updatedAt", "publishedAt",
+			"viewCount", "id");
 
 	private static final int SUGGESTION_LIMIT = 5;
 
@@ -62,8 +68,6 @@ public class RecipeService {
 
 	private final RecipeRepository recipeRepository;
 
-	private final RecipeTrashRepository trashRepository;
-
 	private final CategoryRepository categoryRepository;
 
 	private final IngredientService ingredientService;
@@ -72,13 +76,13 @@ public class RecipeService {
 
 	private final TagService tagService;
 
+	private final MenuService menuService;
+
+	private final TrashBin trashBin;
+
 	private final RecipeMapper recipeMapper;
 
 	private final ApplicationEventPublisher events;
-
-	private final AuditorAware<String> auditor;
-
-	private final JsonMapper jsonMapper;
 
 	// Public site: published recipes only.
 
@@ -119,6 +123,16 @@ public class RecipeService {
 			.stream()
 			.collect(Collectors.toMap(Recipe::getId, Function.identity()));
 		return ids.stream().map(recipesById::get).filter(Objects::nonNull).map(recipeMapper::toCard).toList();
+	}
+
+	/**
+	 * A visit of a published recipe page, sent once per visit by the browser; nothing about the
+	 * visitor is kept. Does nothing for a draft or an unknown slug. Written without the entity, so
+	 * that updated_at stays the date of the last change made by the admin.
+	 */
+	@Transactional
+	public void recordView(String slug) {
+		recipeRepository.incrementViewCount(slug);
 	}
 
 	private Recipe findPublished(String slug) {
@@ -212,17 +226,19 @@ public class RecipeService {
 	}
 
 	/**
-	 * Created again from the trash, as it was: same URL if still free, same dates, its photos if
-	 * still in the gallery, its categories and tags that still exist. Never featured again, and no
-	 * notification: it was already published.
+	 * Created again from the trash, as it was: same URL if still free, same dates and views, its
+	 * photos if still in the gallery, its categories and tags that still exist (a category deleted
+	 * then restored meanwhile is found by its URL). Never featured again, and no notification: it
+	 * was already published. Its menus are given back by {@link MenuService#addBack}.
 	 */
 	@Transactional
-	public RecipeDetail restoreFromTrash(long trashId) {
-		RecipeTrash trashed = trashRepository.findById(trashId)
-			.orElseThrow(() -> new ApiException(ErrorCode.TRASHED_RECIPE_NOT_FOUND));
-		RecipeDetail kept = jsonMapper.readValue(trashed.getContent(), RecipeDetail.class);
-		List<Long> categoryIds = ids(kept.categories(), CategoryResponse::id).stream()
-			.filter(categoryRepository::existsById)
+	public RecipeDetail restoreFromTrash(TrashItem trashed) {
+		RecipeDetail kept = trashBin.content(trashed, RecipeDetail.class);
+		List<Long> categoryIds = kept.categories().stream()
+			.map(category -> categoryRepository.existsById(category.id()) ? Optional.of(category.id())
+					: categoryRepository.findBySlug(category.slug()).map(Category::getId))
+			.flatMap(Optional::stream)
+			.distinct()
 			.toList();
 		if (categoryIds.isEmpty()) {
 			throw new ApiException(ErrorCode.TRASHED_RECIPE_CATEGORIES_GONE);
@@ -236,10 +252,9 @@ public class RecipeService {
 		recipe.setImage(trashed.getImage());
 		recipe.setPinterestImage(trashed.getPinterestImage());
 		long id = recipeRepository.saveAndFlush(recipe).getId();
-		trashRepository.delete(trashed);
 		recipeRepository.restoreDates(id, kept.createdAt(), kept.publishedAt() != null || kept.status() != RecipeStatus.PUBLISHED
 				? kept.publishedAt()
-				: Instant.now());
+				: Instant.now(), trashed.getViewCount() == null ? 0 : trashed.getViewCount());
 		return get(id);
 	}
 
@@ -311,21 +326,15 @@ public class RecipeService {
 		return recipeMapper.toDetail(saved);
 	}
 
-	/** The recipe as the back-office edits it, in JSON: everything needed to create it again. */
+	/**
+	 * The recipe as the back-office edits it, in JSON: everything needed to create it again, with
+	 * its views and the menus it leaves.
+	 */
 	private void trash(List<Recipe> recipes) {
-		Instant now = Instant.now();
-		String deletedBy = auditor.getCurrentAuditor().orElse("");
 		for (Recipe recipe : recipes) {
-			RecipeTrash trashed = new RecipeTrash();
-			trashed.setTitle(recipe.getTitle());
-			trashed.setSlug(recipe.getSlug());
-			trashed.setStatus(recipe.getStatus());
-			trashed.setImage(recipe.getImage());
-			trashed.setPinterestImage(recipe.getPinterestImage());
-			trashed.setContent(jsonMapper.writeValueAsString(recipeMapper.toDetail(recipe)));
-			trashed.setDeletedAt(now);
-			trashed.setDeletedBy(deletedBy);
-			trashRepository.save(trashed);
+			trashBin.put(new TrashBin.Entry(TrashKind.RECIPE, recipe.getTitle(), recipe.getSlug(), recipe.getStatus(),
+					recipe.getImage(), recipe.getPinterestImage(), recipeMapper.toDetail(recipe),
+					new RecipeLinks(menuService.placesOf(recipe.getId())), recipe.getViewCount()));
 		}
 		recipeRepository.deleteAll(recipes);
 	}

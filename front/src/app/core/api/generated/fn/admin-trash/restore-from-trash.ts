@@ -7,14 +7,16 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { TrashedRecipe } from '../../models/trashed-recipe';
+import { TrashRestored } from '../../models/trash-restored';
 
-export interface ListTrashedRecipes$Params {
+export interface RestoreFromTrash$Params {
+  id: number;
 }
 
-export function listTrashedRecipes(http: HttpClient, rootUrl: string, params?: ListTrashedRecipes$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<TrashedRecipe>>> {
-  const rb = new RequestBuilder(rootUrl, listTrashedRecipes.PATH, 'get');
+export function restoreFromTrash(http: HttpClient, rootUrl: string, params: RestoreFromTrash$Params, context?: HttpContext): Observable<StrictHttpResponse<TrashRestored>> {
+  const rb = new RequestBuilder(rootUrl, restoreFromTrash.PATH, 'post');
   if (params) {
+    rb.path('id', params.id, {});
   }
 
   return http.request(
@@ -22,9 +24,9 @@ export function listTrashedRecipes(http: HttpClient, rootUrl: string, params?: L
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<TrashedRecipe>>;
+      return r as StrictHttpResponse<TrashRestored>;
     })
   );
 }
 
-listTrashedRecipes.PATH = '/api/admin/recipe-trash';
+restoreFromTrash.PATH = '/api/admin/trash/{id}/restore';

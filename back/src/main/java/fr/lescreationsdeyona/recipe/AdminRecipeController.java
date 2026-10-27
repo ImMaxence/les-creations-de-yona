@@ -42,7 +42,8 @@ class AdminRecipeController {
 
 	private final ImageProcessor imageProcessor;
 
-	@Operation(summary = "All recipes, drafts included", description = "Sort on title, createdAt or updatedAt.")
+	@Operation(summary = "All recipes, drafts included",
+			description = "Sort on title, createdAt, updatedAt, publishedAt or viewCount; id as a second sort keeps equal ones in order.")
 	@GetMapping
 	PageResponse<RecipeAdminSummary> searchRecipes(
 			@Parameter(description = "Part of the title, case and accents ignored")

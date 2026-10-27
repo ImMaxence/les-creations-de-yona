@@ -2,6 +2,37 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste. Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.5.0 - 2026-10-27
+
+Front 3.5.0, backend 3.5.0. Migration de base : V12.
+
+### Ajouté, pour les visiteurs
+
+- **« Télécharger l'application »** : un grand bouton en haut de la page « Installer l'application ». Sur Android et sur ordinateur (Chrome, Edge), un appui ouvre la fenêtre d'installation du navigateur et l'application rejoint l'écran d'accueil. Sur iPhone et iPad, Apple ne laisse aucun site s'installer d'un seul bouton : il affiche les deux gestes à faire dans Safari. Ouverte depuis Instagram, TikTok ou Facebook, la page dit d'abord de passer dans le vrai navigateur, ces applications ne sachant pas installer de site.
+
+### Ajouté, dans le back-office
+
+- **Nombre de vues des recettes** : chaque recette compte ses visites sur le site, une fois par visite. Les visites des admins connectés ne comptent pas. Visible dans la liste des recettes.
+- **Statistiques** : « Recettes les plus vues » (les 10 premières, liées à leur page d'édition) et le total des vues.
+- **Trier la liste des recettes** : dernières modifiées (comme avant), dernières créées, plus anciennes, titre de A à Z ou de Z à A, les plus vues. Le tri reste dans l'adresse, comme les filtres.
+- **La corbeille garde aussi les catégories, les menus et les photos**, 30 jours comme les recettes, avec un filtre par type. Restaurés, ils reviennent à leur place :
+  - une recette retrouve ses vues et ses menus (à sa place dans chaque menu qui existe encore et a de la place) ;
+  - une catégorie retrouve son nom, son adresse et sa photo ;
+  - un menu retrouve ses recettes qui existent encore, dans l'ordre ;
+  - une photo revient dans la galerie, et sur les recettes, catégories et « À propos » qui l'affichaient, s'ils n'ont pas reçu d'autre photo entre-temps. Ses fichiers ne sont effacés du stockage qu'avec elle, au bout des 30 jours ou à « Effacer définitivement ».
+
+### Modifié
+
+- Supprimer une catégorie, un menu ou une photo les met à la corbeille, au lieu de les effacer tout de suite.
+- Une recette restaurée retrouve aussi une catégorie mise à la corbeille puis restaurée entre-temps (par son adresse).
+
+### Technique
+
+- API : `POST /api/recipes/{slug}/views` (public, sans jeton CSRF), `/api/admin/trash` (remplace `/api/admin/recipe-trash` ; `GET …/{id}/image` pour une photo à la corbeille), tri `createdAt`, `viewCount` et `id` sur `/api/admin/recipes`, champs `createdAt` et `viewCount` des recettes du back-office, `mostViewedRecipes`, `recipes.views` et `trashedItems` (au lieu de `trashedRecipes`) dans les statistiques.
+- Migration V12 : colonne `recipe.view_count` ; la table `recipe_trash` devient `trash_item`, avec le type (`kind`), les emplacements à rendre (`links`) et les vues.
+- Politique de confidentialité : le comptage des vues (anonyme, sans cookie).
+- Tests : 64 tests backend, 63 tests front.
+
 ## 3.4.0 - 2026-10-27
 
 Front 3.4.0, backend 3.4.0. Migration de base : V11.

@@ -10,9 +10,13 @@ import fr.lescreationsdeyona.menu.MenuResponses.MenuDetail;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuRecipe;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuSummary;
 import fr.lescreationsdeyona.recipe.Recipe;
+import fr.lescreationsdeyona.recipe.RecipeLinks;
 import fr.lescreationsdeyona.recipe.RecipeMapper;
 import fr.lescreationsdeyona.recipe.RecipeRepository;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
+import fr.lescreationsdeyona.trash.TrashBin;
+import fr.lescreationsdeyona.trash.TrashItem;
+import fr.lescreationsdeyona.trash.TrashKind;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,11 +34,16 @@ import org.springframework.util.StringUtils;
 @Transactional(readOnly = true)
 public class MenuService {
 
+	/** Recipes of a menu, at most (see MenuForm). */
+	private static final int MAX_RECIPES = 12;
+
 	private final MenuRepository menuRepository;
 
 	private final RecipeRepository recipeRepository;
 
 	private final RecipeMapper recipeMapper;
+
+	private final TrashBin trashBin;
 
 	// Public site: published menus, their published recipes only
 
@@ -89,9 +98,68 @@ public class MenuService {
 		return save(menu, title, form);
 	}
 
+	/** Moved to the trash, kept 30 days; its recipes stay. */
 	@Transactional
 	public void delete(long id) {
-		menuRepository.delete(find(id));
+		Menu menu = find(id);
+		trashBin.put(TrashBin.Entry.of(TrashKind.MENU, menu.getTitle(), menu.getSlug(),
+				menu.getRecipes().stream().map(Recipe::getImage).filter(Objects::nonNull).findFirst().orElse(null),
+				new TrashedMenu(menu.getTitle(), menu.getSlug(), menu.getIntro(), menu.isPublished(), menu.getCreatedAt(),
+						menu.getRecipes().stream().map(recipe -> new TrashedMenu.RecipeRef(recipe.getId(), recipe.getSlug())).toList())));
+		menuRepository.delete(menu);
+	}
+
+	/**
+	 * Created again from the trash: same URL if still free, its recipes that still exist, in order.
+	 * Refused when another menu has taken its title meanwhile.
+	 */
+	@Transactional
+	public AdminMenu restoreFromTrash(TrashItem trashed) {
+		TrashedMenu kept = trashBin.content(trashed, TrashedMenu.class);
+		if (menuRepository.findByTitle(kept.title()).isPresent()) {
+			throw new ApiException(ErrorCode.MENU_ALREADY_EXISTS);
+		}
+		Menu menu = new Menu();
+		menu.setTitle(kept.title());
+		menu.setSlug(menuRepository.existsBySlug(kept.slug())
+				? Slugs.uniqueSlug(kept.title(), "menu", menuRepository::existsBySlug)
+				: kept.slug());
+		menu.setIntro(kept.intro());
+		menu.setPublished(kept.published());
+		kept.recipes().stream()
+			.map(ref -> recipeRepository.findById(ref.id()).or(() -> recipeRepository.findBySlug(ref.slug())))
+			.flatMap(Optional::stream)
+			.distinct()
+			.forEach(menu.getRecipes()::add);
+		long id = menuRepository.saveAndFlush(menu).getId();
+		menuRepository.restoreCreatedAt(id, kept.createdAt());
+		return get(id);
+	}
+
+	/** The menus showing a recipe, and its place in each: kept with it in the trash. */
+	public List<RecipeLinks.MenuPlace> placesOf(long recipeId) {
+		return menuRepository.findPlacesOf(recipeId);
+	}
+
+	/**
+	 * A recipe taken out of the trash goes back to its place in the menus that still exist and still
+	 * have room. Returns the number of menus it is back in.
+	 */
+	@Transactional
+	public int addBack(long recipeId, List<RecipeLinks.MenuPlace> places) {
+		Recipe recipe = recipeRepository.getReferenceById(recipeId);
+		int added = 0;
+		for (RecipeLinks.MenuPlace place : places) {
+			Optional<Menu> found = menuRepository.findById(place.menuId());
+			if (found.isEmpty() || found.get().getRecipes().size() >= MAX_RECIPES
+					|| found.get().getRecipes().stream().anyMatch(other -> other.getId() == recipeId)) {
+				continue;
+			}
+			List<Recipe> recipes = found.get().getRecipes();
+			recipes.add(Math.min(place.position(), recipes.size()), recipe);
+			added++;
+		}
+		return added;
 	}
 
 	private AdminMenu save(Menu menu, String title, MenuForm form) {

@@ -10,6 +10,19 @@ interface BeforeInstallPromptEvent extends Event {
 export type DevicePlatform = 'ios' | 'android' | 'desktop';
 
 /**
+ * Browsers built into social apps, which cannot install a site: the visitor coming from a link
+ * on Instagram or TikTok has to open the page in Safari or Chrome first.
+ */
+const IN_APP_BROWSERS: [RegExp, string][] = [
+  [/Instagram/, 'Instagram'],
+  [/FBAN|FBAV|FB_IAB/, 'Facebook'],
+  [/musical_ly|BytedanceWebview|TikTok/i, 'TikTok'],
+  [/Pinterest/, 'Pinterest'],
+  [/Snapchat/, 'Snapchat'],
+  [/\bLine\//, 'Line'],
+];
+
+/**
  * Installation of the site as an app (PWA). Chrome, Edge and Android browsers offer their own
  * install prompt, kept here to be shown from a button; Safari has none, the install page explains
  * the manual steps instead.
@@ -24,6 +37,8 @@ export class InstallPrompt {
   /** Opened as an installed app, or just installed. */
   readonly installed = signal(false);
   readonly platform = signal<DevicePlatform | null>(null);
+  /** The social app whose built-in browser shows the site ("Instagram"), null in a real browser. */
+  readonly inAppBrowser = signal<string | null>(null);
 
   /** Starts listening as soon as the app boots: the browser sends its prompt only once. */
   listen(): void {
@@ -43,6 +58,7 @@ export class InstallPrompt {
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
     this.installed.set(standalone);
     this.platform.set(detectPlatform());
+    this.inAppBrowser.set(IN_APP_BROWSERS.find(([pattern]) => pattern.test(navigator.userAgent))?.[1] ?? null);
   }
 
   async prompt(): Promise<void> {

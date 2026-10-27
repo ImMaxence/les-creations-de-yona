@@ -51,7 +51,7 @@ class AdminMenuController {
 		return menuService.update(id, form);
 	}
 
-	@Operation(summary = "Delete a menu; its recipes stay")
+	@Operation(summary = "Move a menu to the trash, kept 30 days; its recipes stay")
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteMenu(@PathVariable long id) {

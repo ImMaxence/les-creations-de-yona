@@ -133,12 +133,12 @@ export default class AdminMenus {
 
   protected async remove(menu: MenuSummary): Promise<void> {
     const confirmed = await this.confirm.ask({
-      title: 'Supprimer le menu ?',
-      message: `« ${menu.title} » disparaîtra du site. Ses recettes restent.`,
-      confirmLabel: 'Supprimer',
+      title: 'Mettre le menu à la corbeille ?',
+      message: `« ${menu.title} » disparaît du site et reste 30 jours dans la corbeille, d'où il peut être restauré. Ses recettes restent.`,
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteMenu, { id: menu.id }))).ok) {
-      this.toaster.success('Menu supprimé.');
+      this.toaster.success('Menu mis à la corbeille.');
       if (this.draft()?.id === menu.id) {
         this.draft.set(null);
       }

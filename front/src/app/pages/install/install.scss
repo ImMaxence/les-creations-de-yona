@@ -35,8 +35,51 @@
   color: var(--color-text-muted);
 }
 
-.install__button {
+// The one thing to do on this page: large, full width on a phone
+.install__cta {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: stretch;
+  width: 100%;
+  max-width: 26rem;
   margin-top: var(--space-3);
+}
+
+.install__button {
+  min-height: 3.75rem;
+  padding-inline: var(--space-6);
+  font-size: var(--text-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.install__fine {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.install__warning {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  font-size: var(--text-sm);
+
+  > svg {
+    flex: none;
+    margin-top: 0.15rem;
+    color: var(--color-accent);
+  }
+}
+
+.install__hint {
+  max-width: 40rem;
+  font-weight: 600;
+
+  &:empty {
+    display: none;
+  }
 }
 
 .install__status {
@@ -116,6 +159,11 @@
 .guide {
   display: grid;
   gap: var(--space-4);
+  scroll-margin-top: var(--space-8);
+
+  &:focus {
+    outline: none;
+  }
 
   h2 {
     font-size: var(--text-2xl);

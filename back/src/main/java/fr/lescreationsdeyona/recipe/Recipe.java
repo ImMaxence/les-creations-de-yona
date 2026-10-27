@@ -99,6 +99,14 @@ public class Recipe {
 	/** A draft published by the backend at that time (see ScheduledPublication). */
 	private Instant scheduledAt;
 
+	/**
+	 * Visits of its page, counted by the database alone (RecipeRepository.incrementViewCount):
+	 * never written by the entity, so that saving a recipe cannot overwrite views counted meanwhile.
+	 */
+	@Setter(AccessLevel.NONE)
+	@Column(insertable = false, updatable = false)
+	private long viewCount;
+
 	// Collections are modified in place: replacing them would break orphan removal.
 
 	/** At least one; the first one is the main category, in the URL of the recipe. */

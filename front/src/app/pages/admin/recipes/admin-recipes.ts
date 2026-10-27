@@ -29,6 +29,18 @@ import { ADMIN_RECIPES_QUERY } from './admin-recipes-query';
 import { Icon } from '../../../shared/ui/icon/icon';
 
 type StatusFilter = 'ALL' | 'DRAFT' | 'PUBLISHED';
+type SortOrder = 'modification' | 'creation' | 'anciennes' | 'titre' | 'titre-inverse' | 'vues';
+
+/** Sent to the API; the id keeps equal titles or counts in the same order from one page to the next. */
+const SORTS: Record<SortOrder, string[]> = {
+  modification: ['updatedAt,desc', 'id,desc'],
+  creation: ['createdAt,desc', 'id,desc'],
+  anciennes: ['createdAt,asc', 'id,asc'],
+  titre: ['title,asc', 'id,asc'],
+  'titre-inverse': ['title,desc', 'id,desc'],
+  vues: ['viewCount,desc', 'id,desc'],
+};
+const DEFAULT_SORT: SortOrder = 'modification';
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
@@ -36,8 +48,8 @@ const ALL_CATEGORIES = '';
 const ALL_TAGS = '';
 
 /**
- * Every recipe, drafts included, the last modified first (the API's default order). Filters and
- * page live in the URL: back from editing a recipe, the admin finds the same list, and the
+ * Every recipe, drafts included, the last modified first unless another order is chosen (creation,
+ * title, views). Filters, order and page live in the URL: back from editing a recipe, the admin finds the same list, and the
  * categories, tags and ingredients pages link to the recipes using one of them.
  */
 @Component({
@@ -64,6 +76,7 @@ export default class AdminRecipes {
   readonly tag = input<string>();
   readonly idIngredient = input<string>();
   readonly photo = input<string>();
+  readonly tri = input<string>();
   readonly page = input<string>();
 
   private readonly api = inject(Api);
@@ -79,6 +92,14 @@ export default class AdminRecipes {
     { value: 'PUBLISHED', label: 'Publiées' },
     { value: 'DRAFT', label: 'Brouillons' },
   ];
+  protected readonly sortOptions: SelectOption<SortOrder>[] = [
+    { value: 'modification', label: 'Dernières modifiées' },
+    { value: 'creation', label: 'Dernières créées' },
+    { value: 'anciennes', label: 'Plus anciennes' },
+    { value: 'titre', label: 'Titre, de A à Z' },
+    { value: 'titre-inverse', label: 'Titre, de Z à A' },
+    { value: 'vues', label: 'Les plus vues' },
+  ];
   private readonly categories = inject(SiteData).categories;
   protected readonly categoryOptions = computed<SelectOption<string>[]>(() => [
     { value: ALL_CATEGORIES, label: 'Toutes les catégories' },
@@ -88,6 +109,12 @@ export default class AdminRecipes {
   protected readonly status = computed<StatusFilter>(() =>
     this.statut() === 'PUBLISHED' || this.statut() === 'DRAFT' ? (this.statut() as StatusFilter) : 'ALL',
   );
+  protected readonly sort = computed<SortOrder>(() => {
+    const sort = this.tri();
+    return sort && sort in SORTS ? (sort as SortOrder) : DEFAULT_SORT;
+  });
+  /** The creation date when the list is sorted by it, else the last change. */
+  protected readonly showsCreation = computed(() => this.sort() === 'creation' || this.sort() === 'anciennes');
   protected readonly category = computed(() => this.categorie() ?? ALL_CATEGORIES);
   protected readonly tagSlug = computed(() => this.tag() ?? ALL_TAGS);
   private readonly tags = resource({ loader: () => this.api.invoke(listAdminTags) });
@@ -116,6 +143,7 @@ export default class AdminRecipes {
       imageId: this.imageId(),
       page: this.currentPage() - 1,
       size: PAGE_SIZE,
+      sort: SORTS[this.sort()],
     }),
     loader: ({ params }) => this.api.invoke(searchRecipes, params),
   });
@@ -184,6 +212,15 @@ export default class AdminRecipes {
     this.updateQuery({ [ADMIN_RECIPES_QUERY.status]: status && status !== 'ALL' ? status : null });
   }
 
+  protected changeSort(sort: SortOrder | undefined): void {
+    this.updateQuery({ [ADMIN_RECIPES_QUERY.sort]: sort && sort !== DEFAULT_SORT ? sort : null });
+  }
+
+  /** "1 vue", "1 234 vues". */
+  protected views(count: number): string {
+    return `${count.toLocaleString('fr-FR')} vue${count > 1 ? 's' : ''}`;
+  }
+
   protected changeCategory(slug: string | undefined): void {
     this.updateQuery({ [ADMIN_RECIPES_QUERY.category]: slug || null });
   }
@@ -200,8 +237,13 @@ export default class AdminRecipes {
     this.updateQuery({ [ADMIN_RECIPES_QUERY.ingredientId]: id === undefined ? null : String(id) });
   }
 
+  /** The order chosen stays: it is not a filter. */
   protected clearFilters(): void {
-    void this.router.navigate([], { relativeTo: this.route, replaceUrl: true });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: this.sort() === DEFAULT_SORT ? {} : { [ADMIN_RECIPES_QUERY.sort]: this.sort() },
+      replaceUrl: true,
+    });
   }
 
   /** A new draft with the same content, opened in the editor. */

@@ -14,11 +14,16 @@ import fr.lescreationsdeyona.menu.MenuResponses.MenuRecipe;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuSummary;
 import fr.lescreationsdeyona.recipe.Recipe;
 import fr.lescreationsdeyona.recipe.RecipeMapper;
+import fr.lescreationsdeyona.recipe.RecipeLinks.MenuPlace;
 import fr.lescreationsdeyona.recipe.RecipeRepository;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
+import fr.lescreationsdeyona.trash.TrashBin;
+import fr.lescreationsdeyona.trash.TrashItem;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 class MenuServiceTest {
 
@@ -26,7 +31,10 @@ class MenuServiceTest {
 
 	private final RecipeRepository recipeRepository = mock(RecipeRepository.class);
 
-	private final MenuService service = new MenuService(menuRepository, recipeRepository, mock(RecipeMapper.class));
+	private final TrashBin trashBin = mock(TrashBin.class);
+
+	private final MenuService service = new MenuService(menuRepository, recipeRepository, mock(RecipeMapper.class),
+			trashBin);
 
 	private static Recipe recipe(long id, String title, RecipeStatus status) {
 		Recipe recipe = new Recipe();
@@ -115,6 +123,83 @@ class MenuServiceTest {
 		assertThatThrownBy(() -> service.getPublished("brouillons")).isInstanceOf(ApiException.class)
 			.extracting("code")
 			.isEqualTo(ErrorCode.MENU_NOT_FOUND);
+	}
+
+	@Test
+	void putsARestoredRecipeBackAtItsPlace() {
+		Recipe tart = recipe(2, "Tarte", RecipeStatus.PUBLISHED);
+		Menu autumn = menu(1, "Automne", true, recipe(1, "Velouté", RecipeStatus.PUBLISHED),
+				recipe(3, "Bûche", RecipeStatus.PUBLISHED));
+		when(recipeRepository.getReferenceById(2L)).thenReturn(tart);
+		when(menuRepository.findById(1L)).thenReturn(Optional.of(autumn));
+		when(menuRepository.findById(5L)).thenReturn(Optional.empty());
+
+		int added = service.addBack(2, List.of(new MenuPlace(1L, 1), new MenuPlace(5L, 0)));
+
+		assertThat(added).isEqualTo(1);
+		assertThat(autumn.getRecipes()).extracting(Recipe::getTitle).containsExactly("Velouté", "Tarte", "Bûche");
+	}
+
+	@Test
+	void leavesAFullMenuAsItIs() {
+		Menu full = menu(1, "Buffet", true);
+		for (long id = 10; id < 22; id++) {
+			full.getRecipes().add(recipe(id, "Recette " + id, RecipeStatus.PUBLISHED));
+		}
+		when(recipeRepository.getReferenceById(2L)).thenReturn(recipe(2, "Tarte", RecipeStatus.PUBLISHED));
+		when(menuRepository.findById(1L)).thenReturn(Optional.of(full));
+
+		assertThat(service.addBack(2, List.of(new MenuPlace(1L, 0)))).isZero();
+		assertThat(full.getRecipes()).hasSize(12);
+	}
+
+	@Test
+	void restoresAMenuWithItsRecipesFoundByIdOrByAddress() {
+		TrashItem trashed = new TrashItem();
+		when(trashBin.content(trashed, TrashedMenu.class)).thenReturn(new TrashedMenu("Menu de Noël", "menu-de-noel", null,
+				true, Instant.parse("2026-10-01T10:00:00Z"), List.of(new TrashedMenu.RecipeRef(1L, "buche"),
+						new TrashedMenu.RecipeRef(2L, "tarte"), new TrashedMenu.RecipeRef(3L, "gone"))));
+		when(menuRepository.findByTitle("Menu de Noël")).thenReturn(Optional.empty());
+		Recipe log = recipe(1, "Bûche", RecipeStatus.PUBLISHED);
+		// The tart was put in the trash and restored meanwhile: a new id, the same address
+		Recipe tart = recipe(8, "Tarte", RecipeStatus.PUBLISHED);
+		when(recipeRepository.findById(1L)).thenReturn(Optional.of(log));
+		when(recipeRepository.findById(2L)).thenReturn(Optional.empty());
+		when(recipeRepository.findBySlug("tarte")).thenReturn(Optional.of(tart));
+		when(recipeRepository.findById(3L)).thenReturn(Optional.empty());
+		when(recipeRepository.findBySlug("gone")).thenReturn(Optional.empty());
+		when(menuRepository.saveAndFlush(any())).thenAnswer(call -> {
+			Menu menu = call.getArgument(0);
+			menu.setId(4L);
+			when(menuRepository.findById(4L)).thenReturn(Optional.of(menu));
+			return menu;
+		});
+
+		AdminMenu menu = service.restoreFromTrash(trashed);
+
+		assertThat(menu.slug()).isEqualTo("menu-de-noel");
+		assertThat(menu.recipes()).extracting(MenuRecipe::title).containsExactly("Bûche", "Tarte");
+	}
+
+	@Test
+	void refusesToRestoreAMenuWhoseTitleIsTaken() {
+		TrashItem trashed = new TrashItem();
+		when(trashBin.content(trashed, TrashedMenu.class)).thenReturn(new TrashedMenu("Goûter", "gouter", null, false,
+				Instant.now(), List.of()));
+		when(menuRepository.findByTitle("Goûter")).thenReturn(Optional.of(menu(2, "Goûter", false)));
+
+		assertThatThrownBy(() -> service.restoreFromTrash(trashed)).isInstanceOf(ApiException.class)
+			.extracting("code")
+			.isEqualTo(ErrorCode.MENU_ALREADY_EXISTS);
+	}
+
+	@Test
+	void readsBackAMenuOfTheTrash() {
+		JsonMapper json = JsonMapper.builder().build();
+		TrashedMenu menu = new TrashedMenu("Goûter", "gouter", null, true, Instant.parse("2026-10-01T10:00:00Z"),
+				List.of(new TrashedMenu.RecipeRef(1L, "tarte")));
+
+		assertThat(json.readValue(json.writeValueAsString(menu), TrashedMenu.class)).isEqualTo(menu);
 	}
 
 }

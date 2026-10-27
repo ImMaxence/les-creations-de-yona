@@ -9,5 +9,6 @@ export const ADMIN_RECIPES_QUERY = {
   tag: 'tag',
   ingredientId: 'idIngredient',
   image: 'photo',
+  sort: 'tri',
   page: 'page',
 } as const;

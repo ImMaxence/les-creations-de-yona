@@ -7,26 +7,25 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { RecipeDetail } from '../../models/recipe-detail';
 
-export interface RestoreTrashedRecipe$Params {
+export interface GetTrashedImage$Params {
   id: number;
 }
 
-export function restoreTrashedRecipe(http: HttpClient, rootUrl: string, params: RestoreTrashedRecipe$Params, context?: HttpContext): Observable<StrictHttpResponse<RecipeDetail>> {
-  const rb = new RequestBuilder(rootUrl, restoreTrashedRecipe.PATH, 'post');
+export function getTrashedImage(http: HttpClient, rootUrl: string, params: GetTrashedImage$Params, context?: HttpContext): Observable<StrictHttpResponse<Blob>> {
+  const rb = new RequestBuilder(rootUrl, getTrashedImage.PATH, 'get');
   if (params) {
     rb.path('id', params.id, {});
   }
 
   return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
+    rb.build({ responseType: 'blob', accept: 'image/webp', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<RecipeDetail>;
+      return r as StrictHttpResponse<Blob>;
     })
   );
 }
 
-restoreTrashedRecipe.PATH = '/api/admin/recipe-trash/{id}/restore';
+getTrashedImage.PATH = '/api/admin/trash/{id}/image';

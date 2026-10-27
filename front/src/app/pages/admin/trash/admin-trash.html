@@ -1,55 +1,71 @@
 <section class="admin-section" aria-labelledby="trash-title">
   <div class="admin-section__head">
     <h2 id="trash-title">Corbeille</h2>
-    @if (recipes.value()?.length) {
+    @if (items.value()?.length) {
       <button yonaButton variant="secondary" type="button" (click)="emptyTrash()"><svg yonaIcon="trash"></svg>Vider la corbeille</button>
     }
   </div>
   <p class="field__hint">
-    Une recette supprimée quitte le site et reste ici 30 jours, puis elle est effacée. Restaurée, elle revient telle
-    qu'elle était : même adresse si elle est libre, mêmes dates, ses photos si elles sont encore dans la galerie.
+    Une recette, une catégorie, un menu ou une photo supprimés quittent le site et restent ici 30 jours, puis ils sont
+    effacés. Restaurés, ils reviennent tels qu'ils étaient : même adresse si elle est libre, mêmes dates, et à leur place.
+    Une recette retrouve ses photos, ses vues et ses menus ; une photo, les recettes et catégories qui l'affichaient (si
+    aucune autre n'a été choisie entre-temps).
   </p>
 
-  @if (recipes.value(); as list) {
+  @if (items.value(); as list) {
     @if (list.length) {
+      @if (kindOptions().length > 2) {
+        <div class="admin-toolbar">
+          <yona-select label="Type" [options]="kindOptions()" [(value)]="kind" />
+        </div>
+      }
       <ul role="list" class="admin-list">
-        @for (recipe of list; track recipe.id) {
+        @for (item of shown(); track item.id) {
           <li class="admin-row">
-            <yona-cover-image class="admin-thumb" [imageId]="recipe.imageId" [alt]="''" sizes="4rem" />
+            @if (item.kind === 'IMAGE') {
+              <img class="admin-thumb" [src]="trashedImageUrl(item)" alt="" width="64" height="48" loading="lazy" />
+            } @else {
+              <yona-cover-image class="admin-thumb" [imageId]="item.imageId" [alt]="''" sizes="4rem" />
+            }
             <div class="admin-row__main">
-              <span class="admin-row__title">{{ recipe.title }}</span>
+              <span class="admin-row__title">{{ item.title }}</span>
               <span class="admin-row__meta">
-                <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'">
-                  {{ recipe.status === 'PUBLISHED' ? 'Était publiée' : 'Brouillon' }}
-                </span>
-                <span>Supprimée le {{ recipe.deletedAt | parisDate }}{{ recipe.deletedBy ? ' par ' + recipe.deletedBy : '' }}</span>
-                <span>· {{ daysLeft(recipe) }}</span>
+                <span class="admin-label">{{ kinds[item.kind].label }}</span>
+                @if (item.status) {
+                  <span class="badge" [class.badge--published]="item.status === 'PUBLISHED'">
+                    {{ item.status === 'PUBLISHED' ? 'Était publiée' : 'Brouillon' }}
+                  </span>
+                }
+                <span>Supprimé{{ kinds[item.kind].feminine ? 'e' : '' }} le {{ item.deletedAt | parisDate }}{{ item.deletedBy ? ' par ' + item.deletedBy : '' }}</span>
+                <span>· {{ daysLeft(item) }}</span>
               </span>
             </div>
             <div class="admin-row__actions">
               <button
                 type="button"
                 class="icon-button"
-                [disabled]="busyId() === recipe.id"
-                [attr.aria-label]="'Restaurer « ' + recipe.title + ' »'"
-                (click)="restore(recipe)"
+                [disabled]="busyId() === item.id"
+                [attr.aria-label]="'Restaurer « ' + item.title + ' »'"
+                (click)="restore(item)"
               >
                 <svg yonaIcon="undo-2" [size]="18"></svg>
               </button>
-              <button
-                type="button"
-                class="icon-button"
-                [disabled]="busyId() === recipe.id"
-                [attr.aria-label]="'Restaurer et modifier « ' + recipe.title + ' »'"
-                (click)="restoreAndOpen(recipe)"
-              >
-                <svg yonaIcon="pencil" [size]="18"></svg>
-              </button>
+              @if (kinds[item.kind].editLink) {
+                <button
+                  type="button"
+                  class="icon-button"
+                  [disabled]="busyId() === item.id"
+                  [attr.aria-label]="'Restaurer et modifier « ' + item.title + ' »'"
+                  (click)="restoreAndOpen(item)"
+                >
+                  <svg yonaIcon="pencil" [size]="18"></svg>
+                </button>
+              }
               <button
                 type="button"
                 class="icon-button icon-button--danger"
-                [attr.aria-label]="'Effacer définitivement « ' + recipe.title + ' »'"
-                (click)="erase(recipe)"
+                [attr.aria-label]="'Effacer définitivement « ' + item.title + ' »'"
+                (click)="erase(item)"
               >
                 <svg yonaIcon="x" [size]="18"></svg>
               </button>
@@ -63,7 +79,7 @@
         <a class="link-button" routerLink="/admin/recettes">Retour aux recettes</a>
       </div>
     }
-  } @else if (recipes.isLoading()) {
+  } @else if (items.isLoading()) {
     <p class="admin-empty">Chargement de la corbeille…</p>
   }
 </section>

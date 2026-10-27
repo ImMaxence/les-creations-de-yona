@@ -148,14 +148,14 @@ export default class AdminGallery {
   protected async remove(image: GalleryImage): Promise<void> {
     const usedBy = this.usedBy(image);
     const confirmed = await this.confirm.ask({
-      title: "Supprimer l'image ?",
+      title: "Mettre l'image à la corbeille ?",
       message: usedBy.length
-        ? `Elle disparaîtra de ${usedBy.map((name) => `« ${name} »`).join(', ')}, qui afficheront le visuel par défaut.`
-        : "Elle n'est utilisée nulle part. Elle sera supprimée définitivement.",
-      confirmLabel: 'Supprimer',
+        ? `Elle disparaîtra de ${usedBy.map((name) => `« ${name} »`).join(', ')}, qui afficheront le visuel par défaut. Elle reste 30 jours dans la corbeille : restaurée, elle y revient.`
+        : "Elle n'est utilisée nulle part. Elle reste 30 jours dans la corbeille, d'où elle peut être restaurée.",
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteImage, { id: image.id }))).ok) {
-      this.toaster.success('Image supprimée.');
+      this.toaster.success('Image mise à la corbeille.');
       if (this.selection.has(image.id)) {
         this.selection.toggle(image.id);
       }
@@ -168,10 +168,10 @@ export default class AdminGallery {
   protected async removeSelected(): Promise<void> {
     const count = this.selection.size();
     const confirmed = await this.confirm.ask({
-      title: count > 1 ? `Supprimer ${count} images ?` : "Supprimer l'image ?",
+      title: count > 1 ? `Mettre ${count} images à la corbeille ?` : "Mettre l'image à la corbeille ?",
       message:
-        'Elles seront supprimées définitivement. Les recettes et catégories qui en affichent une passeront au visuel par défaut.',
-      confirmLabel: 'Supprimer',
+        'Les recettes et catégories qui en affichent une passeront au visuel par défaut. Elles restent 30 jours dans la corbeille, d\'où elles peuvent être restaurées.',
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed) {
       return;
@@ -180,7 +180,7 @@ export default class AdminGallery {
     const deletion = await attempt(this.api.invoke(deleteImages, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} images supprimées.` : 'Image supprimée.');
+      this.toaster.success(count > 1 ? `${count} images mises à la corbeille.` : 'Image mise à la corbeille.');
       this.selection.clear();
       this.images.reload();
       await this.siteData.load();

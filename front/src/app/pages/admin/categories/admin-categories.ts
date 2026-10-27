@@ -147,14 +147,14 @@ export default class AdminCategories {
 
   protected async remove(category: CategoryResponse): Promise<void> {
     const confirmed = await this.confirm.ask({
-      title: 'Supprimer la catégorie ?',
-      message: `« ${category.name} » sera supprimée, sa photo restera dans la galerie. Impossible tant qu'elle contient des recettes.`,
-      confirmLabel: 'Supprimer',
+      title: 'Mettre la catégorie à la corbeille ?',
+      message: `« ${category.name} » quitte le site et reste 30 jours dans la corbeille, sa photo reste dans la galerie. Impossible tant qu'elle contient des recettes.`,
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed || !(await attempt(this.api.invoke(deleteCategory, { id: category.id }))).ok) {
       return;
     }
-    this.toaster.success('Catégorie supprimée.');
+    this.toaster.success('Catégorie mise à la corbeille.');
     if (this.selection.has(category.id)) {
       this.selection.toggle(category.id);
     }
@@ -165,10 +165,10 @@ export default class AdminCategories {
   protected async removeSelected(): Promise<void> {
     const count = this.selection.size();
     const confirmed = await this.confirm.ask({
-      title: count > 1 ? `Supprimer ${count} catégories ?` : 'Supprimer la catégorie ?',
+      title: count > 1 ? `Mettre ${count} catégories à la corbeille ?` : 'Mettre la catégorie à la corbeille ?',
       message:
-        "Leurs photos resteront dans la galerie. Impossible si l'une d'elles contient encore des recettes : rien n'est alors supprimé.",
-      confirmLabel: 'Supprimer',
+        "Elles restent 30 jours dans la corbeille, leurs photos dans la galerie. Impossible si l'une d'elles contient encore des recettes : rien n'est alors supprimé.",
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed) {
       return;
@@ -177,7 +177,7 @@ export default class AdminCategories {
     const deletion = await attempt(this.api.invoke(deleteCategories, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} catégories supprimées.` : 'Catégorie supprimée.');
+      this.toaster.success(count > 1 ? `${count} catégories mises à la corbeille.` : 'Catégorie mise à la corbeille.');
       this.selection.clear();
       await this.siteData.load();
     }

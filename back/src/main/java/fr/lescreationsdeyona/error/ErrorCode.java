@@ -38,9 +38,11 @@ public enum ErrorCode {
 	MOLD_INVALID(HttpStatus.BAD_REQUEST, "Indiquez le diamètre d'un moule rond, le côté d'un moule carré, ou la longueur et la largeur d'un moule rectangulaire."),
 	SCHEDULED_RECIPE_MUST_BE_DRAFT(HttpStatus.BAD_REQUEST, "Seul un brouillon peut être programmé : la recette est déjà publiée."),
 	SCHEDULED_AT_PAST(HttpStatus.BAD_REQUEST, "La date de publication programmée est déjà passée."),
-	TRASHED_RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette recette n'est plus dans la corbeille."),
 	TRASHED_RECIPE_CATEGORIES_GONE(HttpStatus.CONFLICT, "Les catégories de cette recette ont toutes été supprimées : recréez-en une avant de la restaurer."),
 	VIDEO_URL_INVALID(HttpStatus.BAD_REQUEST, "Ce lien n'est pas une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…)."),
+
+	// Trash
+	TRASH_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce n'est plus dans la corbeille."),
 
 	// Categories
 	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Catégorie introuvable."),

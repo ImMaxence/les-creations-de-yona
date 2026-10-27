@@ -27,6 +27,7 @@
     <yona-select label="Catégorie" [options]="categoryOptions()" [value]="category()" (valueChange)="changeCategory($event)" />
     <yona-select label="Tag" [options]="tagOptions()" [value]="tagSlug()" (valueChange)="changeTag($event)" />
     <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="changeStatus($event)" />
+    <yona-select label="Trier" [options]="sortOptions" [value]="sort()" (valueChange)="changeSort($event)" />
   </div>
 
   @if (imageId(); as image) {
@@ -76,7 +77,14 @@
                   <span class="badge badge--featured"><svg yonaIcon="star" [size]="12"></svg>À la une</span>
                 }
                 <span>{{ categoryNames(recipe.categories) }}</span>
-                <span>· modifiée le {{ recipe.updatedAt | parisDate }}</span>
+                @if (showsCreation()) {
+                  <span>· créée le {{ recipe.createdAt | parisDate }}</span>
+                } @else {
+                  <span>· modifiée le {{ recipe.updatedAt | parisDate }}</span>
+                }
+                @if (recipe.status === 'PUBLISHED' || recipe.viewCount) {
+                  <span>· {{ views(recipe.viewCount) }}</span>
+                }
               </span>
             </div>
             <div class="admin-row__actions">

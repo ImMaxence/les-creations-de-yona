@@ -8,6 +8,7 @@ export interface RecipeAdminSummary {
    * At least one; the first one is the main category, in the recipe URL
    */
   categories: Array<CategoryResponse>;
+  createdAt: string;
   featured: boolean;
   id: number;
   imageId?: string;
@@ -20,4 +21,9 @@ export interface RecipeAdminSummary {
   status: 'DRAFT' | 'PUBLISHED';
   title: string;
   updatedAt: string;
+
+  /**
+   * Visits of its page on the site, the admins' own left out
+   */
+  viewCount: number;
 }

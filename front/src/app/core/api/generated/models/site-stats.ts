@@ -10,6 +10,7 @@ import { NamedCount } from '../models/named-count';
 import { Recipes } from '../models/recipes';
 import { SearchMiss } from '../models/search-miss';
 import { Storage } from '../models/storage';
+import { ViewedRecipe } from '../models/viewed-recipe';
 export interface SiteStats {
   categories: number;
   computedAt: string;
@@ -25,6 +26,11 @@ export interface SiteStats {
    */
   incompleteRecipes: Array<IncompleteRecipe>;
   ingredients: Ingredients;
+
+  /**
+   * The 10 published recipes the most viewed, among those viewed at least once
+   */
+  mostViewedRecipes: Array<ViewedRecipe>;
 
   /**
    * Browsers notified of new recipes
@@ -64,7 +70,7 @@ export interface SiteStats {
   topIngredients: Array<NamedCount>;
 
   /**
-   * Recipes in the trash, erased 30 days after their deletion
+   * Recipes, categories, menus and photos in the trash, erased 30 days after their deletion
    */
-  trashedRecipes: number;
+  trashedItems: number;
 }

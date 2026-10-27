@@ -52,7 +52,8 @@
       <div><dt>Avec une vidéo</dt><dd>{{ data.recipes.withVideo }}</dd></div>
       <div><dt>En plusieurs parties</dt><dd>{{ data.recipes.inParts }}</dd></div>
       <div><dt>Publications programmées</dt><dd>{{ data.recipes.scheduled }}</dd></div>
-      <div><dt>Dans la corbeille</dt><dd>{{ data.trashedRecipes }}</dd></div>
+      <div><dt>Vues des recettes</dt><dd>{{ data.recipes.views.toLocaleString('fr-FR') }}</dd></div>
+      <div><dt>Dans la corbeille</dt><dd>{{ data.trashedItems }}</dd></div>
       <div><dt>Mots du glossaire</dt><dd>{{ data.glossaryTerms }}</dd></div>
       <div><dt>Abonnés aux nouvelles recettes</dt><dd>{{ data.notificationSubscribers }}</dd></div>
       <div>
@@ -120,6 +121,31 @@
     }
 
     <div class="charts">
+      <!-- Most viewed recipes -->
+      <section class="admin-panel chart chart--wide" aria-labelledby="most-viewed-title">
+        <h3 id="most-viewed-title" class="chart__title">Recettes les plus vues</h3>
+        <p class="chart__subtitle">
+          Les 10 recettes publiées les plus ouvertes sur le site, une fois par visite. Vos propres visites, connecté·e au
+          back-office, ne comptent pas.
+        </p>
+        @if (mostViewed().length) {
+          <ol role="list" class="bars">
+            @for (bar of mostViewed(); track bar.recipeId) {
+              <li class="bar">
+                <a class="bar__label" [routerLink]="['/admin/recettes', bar.recipeId]">{{ bar.label }}</a>
+                <span class="bar__track"><span class="bar__fill" [style.width.%]="bar.share * 100"></span></span>
+                <span class="bar__value">{{ bar.count.toLocaleString('fr-FR') }}</span>
+              </li>
+            }
+          </ol>
+        } @else {
+          <p class="admin-empty">
+            <svg yonaIcon="eye" [size]="20"></svg>
+            Aucune vue pour le moment : elles sont comptées depuis la version 3.5.0.
+          </p>
+        }
+      </section>
+
       <!-- Recipes created per month -->
       <section class="admin-panel chart chart--wide" aria-labelledby="months-title">
         <h3 id="months-title" class="chart__title">Recettes créées par mois</h3>

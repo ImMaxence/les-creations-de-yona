@@ -46,14 +46,14 @@ class AdminCategoryController {
 		return categoryService.rename(id, form);
 	}
 
-	@Operation(summary = "Delete several categories, all or none; refused while one still contains recipes")
+	@Operation(summary = "Move several categories to the trash, all or none; refused while one still contains recipes")
 	@DeleteMapping
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteCategories(@RequestParam @NotEmpty @Size(max = 100) List<Long> ids) {
 		categoryService.deleteAll(ids);
 	}
 
-	@Operation(summary = "Delete a category; refused while it still contains recipes. Its photo stays in the gallery")
+	@Operation(summary = "Move a category to the trash, kept 30 days; refused while it still contains recipes. Its photo stays in the gallery")
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteCategory(@PathVariable long id) {

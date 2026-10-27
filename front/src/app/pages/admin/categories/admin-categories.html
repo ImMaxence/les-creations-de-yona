@@ -24,6 +24,7 @@
       [count]="selection.size()"
       [allShown]="selection.hasAll(categoryIds())"
       [busy]="deleting()"
+      deleteLabel="Mettre à la corbeille"
       (toggleAll)="selection.toggleAll(categoryIds())"
       (cleared)="selection.clear()"
       (deleted)="removeSelected()"
@@ -70,7 +71,7 @@
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + category.name" (click)="startRename(category)">
                   <svg yonaIcon="pencil" [size]="18"></svg>
                 </button>
-                <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + category.name" (click)="remove(category)">
+                <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Mettre « ' + category.name + ' » à la corbeille'" (click)="remove(category)">
                   <svg yonaIcon="trash" [size]="18"></svg>
                 </button>
               </div>

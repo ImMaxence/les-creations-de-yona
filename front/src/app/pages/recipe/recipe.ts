@@ -1,6 +1,17 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { RecipeViews } from '../../core/analytics/recipe-views';
 import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
 import { Mold } from '../../core/api/generated/models/mold';
 import { RecipeCard as RecipeCardModel } from '../../core/api/generated/models/recipe-card';
@@ -129,6 +140,7 @@ export default class Recipe {
   private readonly favorites = inject(Favorites);
   private readonly shoppingList = inject(ShoppingList);
   private readonly recipeNotes = inject(RecipeNotes);
+  private readonly recipeViews = inject(RecipeViews);
 
   /** "Mes notes", shown again in the cooking mode. */
   protected readonly notes = computed(() => this.recipeNotes.of(this.recipe().slug));
@@ -150,6 +162,18 @@ export default class Recipe {
     }
     return `https://www.pinterest.com/pin/create/button/?${params}`;
   });
+
+  constructor() {
+    // A view of the site's page, not of the back-office preview, which shows this page too
+    effect(() => {
+      const slug = this.recipe().slug;
+      untracked(() => {
+        if (!this.router.url.startsWith('/admin')) {
+          this.recipeViews.count(slug);
+        }
+      });
+    });
+  }
 
   protected toggleFavorite(): void {
     const added = this.favorites.toggle(this.recipe());

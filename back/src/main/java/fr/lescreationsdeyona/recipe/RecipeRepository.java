@@ -19,6 +19,8 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 
 	boolean existsBySlug(String slug);
 
+	Optional<Recipe> findBySlug(String slug);
+
 	boolean existsByCategoriesId(long categoryId);
 
 	/** Unfeatures every recipe but {@code keptId} (all of them when null). */
@@ -51,8 +53,14 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 
 	/** Written without the auditing of the entity, which would date the restored recipe of today. */
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
-	@Query(value = "update recipe set created_at = :createdAt, published_at = :publishedAt where id = :id",
+	@Query(value = "update recipe set created_at = :createdAt, published_at = :publishedAt, view_count = :viewCount where id = :id",
 			nativeQuery = true)
-	void restoreDates(long id, Instant createdAt, @Nullable Instant publishedAt);
+	void restoreDates(long id, Instant createdAt, @Nullable Instant publishedAt, long viewCount);
+
+	/** One more visit of a published recipe; updated_at is left alone. */
+	@Modifying
+	@Query(value = "update recipe set view_count = view_count + 1 where slug = :slug and status = 'PUBLISHED'",
+			nativeQuery = true)
+	int incrementViewCount(String slug);
 
 }

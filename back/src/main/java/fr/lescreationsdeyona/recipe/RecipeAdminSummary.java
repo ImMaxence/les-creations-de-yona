@@ -12,6 +12,7 @@ public record RecipeAdminSummary(Long id, String title, String slug, RecipeStatu
 		@Nullable UUID imageId,
 		@Schema(description = "At least one; the first one is the main category, in the recipe URL")
 		List<CategoryResponse> categories,
-		Instant updatedAt,
+		Instant createdAt, Instant updatedAt,
+		@Schema(description = "Visits of its page on the site, the admins' own left out") long viewCount,
 		@Schema(description = "A draft to be published at that time") @Nullable Instant scheduledAt) {
 }

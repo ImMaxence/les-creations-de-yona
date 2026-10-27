@@ -12,6 +12,8 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 		@Schema(description = "Every category, the fullest first; a recipe counts in each of its categories")
 		List<NamedCount> recipesPerCategory,
 		@Schema(description = "The 8 ingredients in the most recipes") List<NamedCount> topIngredients,
+		@Schema(description = "The 10 published recipes the most viewed, among those viewed at least once")
+		List<ViewedRecipe> mostViewedRecipes,
 		@Schema(description = "Recipes created each month, the last 12 months (Paris time), oldest first")
 		List<MonthCount> recipesPerMonth,
 		Storage storage,
@@ -24,7 +26,8 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 		@Schema(description = "What visitors searched for without finding any recipe, the most searched first (30 at most)")
 		List<SearchMissService.SearchMiss> searchMisses,
 		@Schema(description = "Browsers notified of new recipes") long notificationSubscribers,
-		@Schema(description = "Recipes in the trash, erased 30 days after their deletion") long trashedRecipes,
+		@Schema(description = "Recipes, categories, menus and photos in the trash, erased 30 days after their deletion")
+		long trashedItems,
 		@Schema(description = "Words of the glossary") long glossaryTerms,
 		Instant computedAt) {
 
@@ -38,9 +41,13 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 	public record DatedRecipe(Long id, String title, Instant updatedAt) {
 	}
 
+	public record ViewedRecipe(Long id, String title, long viewCount) {
+	}
+
 	public record Recipes(long total, long published, long drafts, long withoutPhoto, long withVideo,
 			@Schema(description = "With several parts, or a titled one") long inParts, long createdLast30Days,
 			@Schema(description = "Drafts with a scheduled publication") long scheduled,
+			@Schema(description = "Visits of the recipe pages, the admins' own left out") long views,
 			@Nullable Instant lastUpdate) {
 	}
 

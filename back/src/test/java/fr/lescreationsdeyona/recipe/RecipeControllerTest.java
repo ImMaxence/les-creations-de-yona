@@ -19,6 +19,7 @@ import java.util.Set;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -115,6 +116,20 @@ class RecipeControllerTest {
 				String.class, List.class, Integer.class, DifficultyLevel.class, Pageable.class);
 		Object[] arguments = { null, null, null, ingredients, null, null, firstPage };
 		return VALIDATION.getValidator().forExecutables().validateParameters(controller, list, arguments);
+	}
+
+	@Test
+	void countsTheViewOfAVisitor() {
+		controller.recordRecipeView("tarte-fine", null);
+
+		verify(recipeService).recordView("tarte-fine");
+	}
+
+	@Test
+	void leavesTheAdminsOwnVisitsOut() {
+		controller.recordRecipeView("tarte-fine", new TestingAuthenticationToken("yona", null, "ROLE_ADMIN"));
+
+		verify(recipeService, never()).recordView(anyString());
 	}
 
 }

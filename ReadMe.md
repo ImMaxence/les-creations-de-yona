@@ -2,15 +2,27 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 3.4.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 3.5.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+
+![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
 | Accueil | Recettes | Back-office |
 | --- | --- | --- |
 | ![Accueil sur ordinateur](docs/captures/pc-accueil.png) | ![Recettes sur ordinateur](docs/captures/pc-recettes.png) | ![Back-office sur ordinateur](docs/captures/pc-administration.png) |
 
-| Installer l'application | Notifications | Glossaire |
+Sur téléphone, là où se lisent la plupart des recettes :
+
+| Une recette | Ingrédients et portions | Mode cuisine |
 | --- | --- | --- |
-| ![Installer l'application sur téléphone](docs/captures/telephone-installer.png) | ![Notifications sur téléphone](docs/captures/telephone-notifications.png) | ![Glossaire sur téléphone](docs/captures/telephone-glossaire.png) |
+| ![Recette sur téléphone](docs/captures/telephone-recette.png) | ![Ingrédients sur téléphone](docs/captures/telephone-ingredients.png) | ![Mode cuisine sur téléphone](docs/captures/telephone-mode-cuisine.png) |
+
+| Liste de courses | Thème sombre | Installer l'application |
+| --- | --- | --- |
+| ![Liste de courses sur téléphone](docs/captures/telephone-liste-de-courses.png) | ![Accueil en thème sombre sur téléphone](docs/captures/telephone-sombre.png) | ![Installer l'application sur téléphone](docs/captures/telephone-installer.png) |
+
+| Notifications | Glossaire |
+| --- | --- |
+| ![Notifications sur téléphone](docs/captures/telephone-notifications.png) | ![Glossaire sur téléphone](docs/captures/telephone-glossaire.png) |
 
 ## Ce que fait le site
 
@@ -20,14 +32,15 @@ Version 3.4.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 - Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page et après un rechargement.
 - Menus composés par Yona (« Menu de Noël », « Goûter d'anniversaire »), toutes leurs recettes à la liste de courses en un geste.
 - Favoris, liste de courses rangée par rayon, notes personnelles : gardés dans le navigateur.
-- Application installable, lisible hors connexion, notifications des nouvelles recettes.
+- Application installable d'un bouton (« Télécharger l'application » ; sur iPhone, les deux gestes expliqués), lisible hors connexion, notifications des nouvelles recettes.
 - Glossaire de pâtisserie, mots expliqués d'un appui dans les étapes.
 
 **Pour Yona (back-office, connexion Google)**
 
-- Éditeur de recettes (parties, étapes minutées, matériel, conseil, publication programmée, brouillon gardé), aperçu, corbeille.
+- Éditeur de recettes (parties, étapes minutées, matériel, conseil, publication programmée, brouillon gardé), aperçu, liste triable (modification, création, titre, vues).
+- Corbeille de 30 jours pour les recettes, catégories, menus et photos, qui reviennent à leur place une fois restaurés.
 - Galerie de photos, catégories, tags, menus, ingrédients (doublons, rayons), glossaire.
-- Apparence (thèmes, polices), statistiques, sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
+- Apparence (thèmes, polices), statistiques (dont le nombre de vues et les recettes les plus vues), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
 
 Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).
 

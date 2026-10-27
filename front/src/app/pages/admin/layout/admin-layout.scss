@@ -368,6 +368,12 @@ textarea.input {
   border-radius: var(--radius-sm);
 }
 
+// A deleted photo, served by the trash rather than the gallery
+img.admin-thumb {
+  height: auto;
+  object-fit: cover;
+}
+
 // Tables (statistics, restore) -------------------------------------------------
 
 .admin-table {

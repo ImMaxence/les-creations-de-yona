@@ -33,6 +33,8 @@ interface Bar {
   label: string;
   count: number;
   share: number;
+  /** The recipe it stands for, linked from its label. */
+  recipeId?: number;
 }
 
 /**
@@ -82,6 +84,13 @@ export default class AdminStats {
   });
   protected readonly categories = computed(() => bars(this.stats.value()?.recipesPerCategory ?? []));
   protected readonly ingredients = computed(() => bars(this.stats.value()?.topIngredients ?? []));
+  protected readonly mostViewed = computed(() => {
+    const recipes = this.stats.value()?.mostViewedRecipes ?? [];
+    return bars(recipes.map((recipe) => ({ name: recipe.title, count: recipe.viewCount }))).map((bar, index) => ({
+      ...bar,
+      recipeId: recipes[index].id,
+    }));
+  });
 
   /** Shares of the disk: the photos, everything else used, and the free room. */
   protected readonly storage = computed(() => {

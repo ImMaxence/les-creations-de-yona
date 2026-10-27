@@ -8,14 +8,12 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface EraseTrashedRecipe$Params {
-  id: number;
+export interface EmptyTrash$Params {
 }
 
-export function eraseTrashedRecipe(http: HttpClient, rootUrl: string, params: EraseTrashedRecipe$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, eraseTrashedRecipe.PATH, 'delete');
+export function emptyTrash(http: HttpClient, rootUrl: string, params?: EmptyTrash$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, emptyTrash.PATH, 'delete');
   if (params) {
-    rb.path('id', params.id, {});
   }
 
   return http.request(
@@ -28,4 +26,4 @@ export function eraseTrashedRecipe(http: HttpClient, rootUrl: string, params: Er
   );
 }
 
-eraseTrashedRecipe.PATH = '/api/admin/recipe-trash/{id}';
+emptyTrash.PATH = '/api/admin/trash';

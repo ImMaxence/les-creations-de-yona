@@ -8,6 +8,9 @@ import fr.lescreationsdeyona.image.ImageKind;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.recipe.RecipeRepository;
+import fr.lescreationsdeyona.trash.TrashBin;
+import fr.lescreationsdeyona.trash.TrashItem;
+import fr.lescreationsdeyona.trash.TrashKind;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +34,8 @@ public class CategoryService {
 
 	private final ImageService imageService;
 
+	private final TrashBin trashBin;
+
 	public List<CategoryResponse> list() {
 		return categoryRepository.findAll(Sort.by("name")).stream().map(categoryMapper::toResponse).toList();
 	}
@@ -50,17 +55,17 @@ public class CategoryService {
 		return categoryMapper.toResponse(category);
 	}
 
-	/** Refused while it still contains recipes. Its photo stays in the gallery. */
+	/** Refused while it still contains recipes. Moved to the trash, kept 30 days; its photo stays in the gallery. */
 	@Transactional
 	public void delete(long id) {
 		Category category = find(id);
 		if (recipeRepository.existsByCategoriesId(id)) {
 			throw new ApiException(ErrorCode.CATEGORY_IN_USE);
 		}
-		categoryRepository.delete(category);
+		trash(List.of(category));
 	}
 
-	/** All or none: refused while one of them still contains recipes, naming those. */
+	/** All or none: refused while one of them still contains recipes, naming those. Moved to the trash. */
 	@Transactional
 	public void deleteAll(Collection<Long> ids) {
 		List<Category> categories = categoryRepository.findAllById(ids);
@@ -75,7 +80,26 @@ public class CategoryService {
 			throw new ApiException(ErrorCode.CATEGORY_IN_USE, "Suppression annulée : " + String.join(", ", inUse)
 					+ (inUse.size() > 1 ? " contiennent" : " contient") + " encore des recettes.");
 		}
-		categoryRepository.deleteAll(categories);
+		trash(categories);
+	}
+
+	/**
+	 * Created again from the trash: same name, same URL if still free, its photo if still in the
+	 * gallery and not shown by another category meanwhile. The recipes of the trash that were in it
+	 * find it again by its URL.
+	 */
+	@Transactional
+	public CategoryResponse restoreFromTrash(TrashItem trashed) {
+		CategoryResponse kept = trashBin.content(trashed, CategoryResponse.class);
+		Category category = new Category();
+		category.setName(kept.name());
+		category.setSlug(categoryRepository.existsBySlug(kept.slug())
+				? Slugs.uniqueSlug(kept.name(), "categorie", categoryRepository::existsBySlug)
+				: kept.slug());
+		if (trashed.getImage() != null && !categoryRepository.existsByImageId(trashed.getImage().getId())) {
+			category.setImage(trashed.getImage());
+		}
+		return categoryMapper.toResponse(categoryRepository.saveAndFlush(category));
 	}
 
 	/** "Modifier la photo": the new image is shown, the previous one stays in the gallery. */
@@ -92,6 +116,14 @@ public class CategoryService {
 		Category category = find(id);
 		category.setImage(imageId == null ? null : imageService.getLandscape(imageId));
 		return categoryMapper.toResponse(categoryRepository.saveAndFlush(category));
+	}
+
+	private void trash(List<Category> categories) {
+		for (Category category : categories) {
+			trashBin.put(TrashBin.Entry.of(TrashKind.CATEGORY, category.getName(), category.getSlug(), category.getImage(),
+					categoryMapper.toResponse(category)));
+		}
+		categoryRepository.deleteAll(categories);
 	}
 
 	private Category find(long id) {

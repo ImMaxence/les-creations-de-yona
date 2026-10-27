@@ -7,6 +7,7 @@ import {
   inject,
   linkedSignal,
   signal,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 import { DevicePlatform, InstallPrompt } from '../../core/pwa/install-prompt';
@@ -44,14 +45,41 @@ export default class Install {
     this.hydrated() ? (this.installPrompt.platform() ?? 'ios') : 'ios',
   );
 
+  protected readonly inAppBrowser = computed(() => (this.hydrated() ? this.installPrompt.inAppBrowser() : null));
+  /** Shown under the big button when the browser cannot install in one tap: the steps follow. */
+  protected readonly guideHint = signal<string | null>(null);
+
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('tabButton');
+  private readonly guide = viewChild.required<ElementRef<HTMLElement>>('guide');
 
   constructor() {
     afterNextRender(() => this.hydrated.set(true));
   }
 
-  protected install(): void {
-    void this.installPrompt.prompt();
+  /**
+   * "Télécharger l'application": the browser's own install window where it has one (Chrome, Edge,
+   * Android), the app then lands on the home screen. Safari has none, nor any way for a site to
+   * open it: the steps for the visitor's device are shown instead, two taps.
+   */
+  protected async install(): Promise<void> {
+    if (this.canPrompt()) {
+      this.guideHint.set(null);
+      await this.installPrompt.prompt();
+      return;
+    }
+    const platform = this.installPrompt.platform() ?? 'desktop';
+    this.activeTab.set(platform);
+    const app = this.inAppBrowser();
+    this.guideHint.set(
+      app
+        ? `Vous êtes dans le navigateur d'${app}, qui ne sait pas installer d'application : ouvrez d'abord cette page dans ${platform === 'ios' ? 'Safari' : 'Chrome'}, puis suivez les étapes ci-dessous.`
+        : platform === 'ios'
+          ? "Sur iPhone et iPad, Apple ne permet pas l'installation en un seul bouton : deux gestes dans Safari suffisent, expliqués ci-dessous."
+          : 'Votre navigateur ne propose pas encore l’installation directe : suivez les étapes ci-dessous, cela prend dix secondes.',
+    );
+    const guide = this.guide().nativeElement;
+    guide.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    guide.focus({ preventScroll: true });
   }
 
   /** ARIA tabs: arrows move between tabs, Home and End go to the first and last one. */

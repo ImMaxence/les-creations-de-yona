@@ -14,12 +14,26 @@
         <svg yonaIcon="circle-check" [size]="20"></svg>
         L'application est installée sur cet appareil.
       </p>
-    } @else if (canPrompt()) {
-      <button yonaButton type="button" class="install__button" animate.enter="install__status--enter" (click)="install()">
-        <svg yonaIcon="download"></svg>
-        Installer maintenant
-      </button>
+    } @else {
+      <div class="install__cta enter" style="--delay: 220ms">
+        <button yonaButton type="button" class="install__button" (click)="install()">
+          <svg yonaIcon="download" [size]="22"></svg>
+          Télécharger l'application
+        </button>
+        <p class="install__fine">Gratuite, sans store ni compte : elle rejoint votre écran d'accueil.</p>
+        @if (inAppBrowser(); as app) {
+          <p class="install__warning" animate.enter="install__status--enter">
+            <svg yonaIcon="circle-alert" [size]="18"></svg>
+            <span>
+              Ouverte depuis {{ app }} : ouvrez d'abord cette page dans votre navigateur (menu
+              <span class="key"><svg yonaIcon="ellipsis-vertical" [size]="16"></svg></span> puis « Ouvrir dans le
+              navigateur »), {{ app }} ne sait pas installer d'application.
+            </span>
+          </p>
+        }
+      </div>
     }
+    <p class="install__hint" aria-live="polite">{{ guideHint() }}</p>
   </header>
 
   <ul role="list" class="benefits enter" style="--delay: 240ms">
@@ -53,7 +67,7 @@
     </div>
   </section>
 
-  <section class="guide" aria-labelledby="guide-title">
+  <section #guide class="guide" aria-labelledby="guide-title" tabindex="-1">
     <h2 id="guide-title">Comment faire ?</h2>
     <p class="guide__intro">
       Gratuit, sans passer par un store, et sans aucun compte à créer. Choisissez votre appareil :
@@ -105,7 +119,7 @@
             <li>Touchez <strong>Installer l'application</strong> (ou <strong>Ajouter à l'écran d'accueil</strong>).</li>
             <li>Confirmez avec <strong>Installer</strong> : l'application rejoint vos autres applications.</li>
           </ol>
-          <p class="panel__note">Si le bouton « Installer maintenant » apparaît en haut de cette page, il fait tout en un seul geste.</p>
+          <p class="panel__note">Avec Chrome, le bouton « Télécharger l'application » en haut de cette page fait tout en un seul geste.</p>
         }
         @case ('desktop') {
           <ol role="list" class="steps" animate.enter="steps--enter">

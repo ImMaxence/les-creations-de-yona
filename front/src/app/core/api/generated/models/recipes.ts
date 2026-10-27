@@ -17,6 +17,11 @@ export interface Recipes {
    */
   scheduled: number;
   total: number;
+
+  /**
+   * Visits of the recipe pages, the admins' own left out
+   */
+  views: number;
   withVideo: number;
   withoutPhoto: number;
 }

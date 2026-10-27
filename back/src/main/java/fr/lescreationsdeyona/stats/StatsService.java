@@ -29,6 +29,8 @@ public class StatsService {
 
 	private static final int TOP_INGREDIENTS = 8;
 
+	private static final int MOST_VIEWED_RECIPES = 10;
+
 	private static final int INCOMPLETE_RECIPES = 100;
 
 	private static final int DATED_RECIPES = 50;
@@ -43,9 +45,9 @@ public class StatsService {
 
 	public SiteStats compute() {
 		return new SiteStats(recipes(), jdbc.sql("select count(*) from category").query(Long.class).single(),
-				ingredients(), images(), recipesPerCategory(), topIngredients(), recipesPerMonth(), storage(),
+				ingredients(), images(), recipesPerCategory(), topIngredients(), mostViewedRecipes(), recipesPerMonth(), storage(),
 				incompleteRecipes(), datedRecipes("DRAFT", "30 days"), datedRecipes("PUBLISHED", "12 months"),
-				searchMissService.top(SEARCH_MISSES), count("push_subscription"), count("recipe_trash"),
+				searchMissService.top(SEARCH_MISSES), count("push_subscription"), count("trash_item"),
 				count("glossary_term"), Instant.now());
 	}
 
@@ -121,13 +123,14 @@ public class StatsService {
 						group by recipe_id having count(*) > 1 or bool_or(title is not null))) as in_parts,
 					count(*) filter (where created_at >= now() - interval '30 days') as created_last_30_days,
 					count(*) filter (where scheduled_at is not null) as scheduled,
+					coalesce(sum(view_count), 0) as views,
 					max(updated_at) as last_update
 				from recipe""")
 			.query((row, index) -> {
 				OffsetDateTime lastUpdate = row.getObject("last_update", OffsetDateTime.class);
 				return new SiteStats.Recipes(row.getLong("total"), row.getLong("published"), row.getLong("drafts"),
 						row.getLong("without_photo"), row.getLong("with_video"), row.getLong("in_parts"),
-						row.getLong("created_last_30_days"), row.getLong("scheduled"),
+						row.getLong("created_last_30_days"), row.getLong("scheduled"), row.getLong("views"),
 						lastUpdate == null ? null : lastUpdate.toInstant());
 			})
 			.single();
@@ -172,6 +175,18 @@ public class StatsService {
 				group by i.id, i.name order by recipes desc, i.name limit :limit""")
 			.param("limit", TOP_INGREDIENTS)
 			.query((row, index) -> new SiteStats.NamedCount(row.getString("name"), row.getLong("recipes")))
+			.list();
+	}
+
+	/** Published only: a draft is viewed by the admins alone, whose visits are not counted. */
+	private List<SiteStats.ViewedRecipe> mostViewedRecipes() {
+		return jdbc.sql("""
+				select id, title, view_count from recipe
+				where status = 'PUBLISHED' and view_count > 0
+				order by view_count desc, title limit :limit""")
+			.param("limit", MOST_VIEWED_RECIPES)
+			.query((row, index) -> new SiteStats.ViewedRecipe(row.getLong("id"), row.getString("title"),
+					row.getLong("view_count")))
 			.list();
 	}
 
