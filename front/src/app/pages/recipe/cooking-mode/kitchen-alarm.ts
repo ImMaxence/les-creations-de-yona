@@ -5,6 +5,8 @@ const REPEAT_EVERY_S = 1.5;
 /** Half a minute of ringing, unless stopped earlier. */
 const REPEATS = 20;
 const VOLUME = 0.7;
+/** Three short buzzes with each ring, in ms: light and jerky, felt without being harsh. */
+const BUZZES_MS = [60, 90, 60, 90, 60];
 
 /**
  * The ring of the cooking mode timers, with the Web Audio API. Each ring is scheduled on the audio
@@ -82,10 +84,27 @@ export class KitchenAlarm {
     this.scheduled.delete(id);
   }
 
+  /**
+   * Buzzes with the rhythm of the ring, for as long, where the browser can (Android; not Safari on
+   * iPhone). Unlike the sound, it cannot be scheduled ahead: started when the timer is seen ended.
+   */
+  vibrate(): void {
+    const pause = REPEAT_EVERY_S * 1000 - BUZZES_MS.reduce((sum, ms) => sum + ms, 0);
+    const pattern = Array.from({ length: REPEATS }, () => [...BUZZES_MS, pause]).flat();
+    // Ends on a buzz, not a pause
+    pattern.pop();
+    navigator.vibrate?.(pattern);
+  }
+
+  stopVibrating(): void {
+    navigator.vibrate?.(0);
+  }
+
   close(): void {
     for (const id of [...this.scheduled.keys()]) {
       this.cancel(id);
     }
+    this.stopVibrating();
     void this.context?.close();
     this.context = null;
   }

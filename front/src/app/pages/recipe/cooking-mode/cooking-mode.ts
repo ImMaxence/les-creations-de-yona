@@ -151,7 +151,7 @@ export class CookingMode {
     const ringing = this.ringing();
     if (ringing !== null) {
       this.alarm.cancel(ringing);
-      this.ringing.set(null);
+      this.silence();
     }
   }
 
@@ -206,17 +206,21 @@ export class CookingMode {
   protected toggleTimer(stepIndex: number): void {
     // A tap: browsers only let a page play sound after the visitor acted
     this.alarm.unlock();
+    // The clock shown is the one of the last tick, up to a quarter of a second old: brought up to
+    // date, or a 1:00 timer would first show 1:01
+    const now = Date.now();
+    this.now.set(now);
     const minutes = this.steps()[stepIndex]?.step.durationMinutes ?? 0;
     const timer = this.timers().get(stepIndex) ?? { totalMs: minutes * 60_000, remainingMs: minutes * 60_000, endsAt: null };
     const running = timer.endsAt !== null;
-    const remainingMs = running ? Math.max(0, timer.endsAt! - Date.now()) : timer.remainingMs || timer.totalMs;
-    this.setTimer(stepIndex, { ...timer, remainingMs, endsAt: running ? null : Date.now() + remainingMs });
+    const remainingMs = running ? Math.max(0, timer.endsAt! - now) : timer.remainingMs || timer.totalMs;
+    this.setTimer(stepIndex, { ...timer, remainingMs, endsAt: running ? null : now + remainingMs });
     if (running) {
       this.alarm.cancel(stepIndex);
     } else {
       this.alarm.schedule(stepIndex, remainingMs);
       if (this.ringing() === stepIndex) {
-        this.ringing.set(null);
+        this.silence();
       }
     }
     this.tick();
@@ -228,8 +232,14 @@ export class CookingMode {
     this.timers.set(timers);
     this.alarm.cancel(stepIndex);
     if (this.ringing() === stepIndex) {
-      this.ringing.set(null);
+      this.silence();
     }
+  }
+
+  /** The banner and the vibration stop; the sound is the alarm's. */
+  private silence(): void {
+    this.ringing.set(null);
+    this.alarm.stopVibrating();
   }
 
   private setTimer(stepIndex: number, timer: StepTimer): void {
@@ -266,7 +276,7 @@ export class CookingMode {
   /** The sound was scheduled when the timer started: only played here if it fell behind. */
   private ring(stepIndex: number): void {
     this.ringing.set(stepIndex);
-    navigator.vibrate?.([300, 150, 300, 150, 300]);
+    this.alarm.vibrate();
     this.alarm.ringNow(stepIndex);
   }
 

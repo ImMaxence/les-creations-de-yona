@@ -15,7 +15,13 @@ import { Icon } from '../icon/icon';
   template: `
     @switch (notifications.state()) {
       @case ('off') {
-        <button type="button" class="notify" [disabled]="notifications.busy()" (click)="notifications.subscribe()">
+        <button
+          type="button"
+          class="notify"
+          [class.is-prominent]="prominent()"
+          [disabled]="notifications.busy()"
+          (click)="notifications.subscribe()"
+        >
           <svg yonaIcon="bell" [size]="18"></svg>
           Me prévenir des nouvelles recettes
         </button>
@@ -59,6 +65,8 @@ import { Icon } from '../icon/icon';
 export class NotifyButton {
   /** On iPhone, explain that installing the app comes first (the footer keeps quiet about it). */
   readonly showInstallHint = input(false);
+  /** Filled with the accent and larger, to stand out (home page); outlined by default. */
+  readonly prominent = input(false);
 
   protected readonly notifications = inject(NewRecipeNotifications);
   protected readonly installPath = INSTALL_PATH;

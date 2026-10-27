@@ -171,6 +171,41 @@
   }
 }
 
+// New recipe notifications ----------------------------------------------------
+
+// Under "À propos": a card of its own, centered on phones, in a row from tablets
+.notify {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  max-width: 52rem;
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  text-align: center;
+
+  @include m.from(md) {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-5) var(--space-6);
+    text-align: start;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+
+  p {
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+  }
+}
+
+.notify__icon {
+  color: var(--color-accent);
+}
+
 // Latest recipes --------------------------------------------------------------
 
 // Three latest recipes: on two columns (tablets), the first one takes the whole row rather than

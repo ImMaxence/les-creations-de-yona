@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NewRecipeNotifications } from '../../core/pwa/new-recipe-notifications';
 import { SiteData } from '../../core/site/site-data';
 import { categoryNames } from '../../shared/format/categories';
 import { Reveal } from '../../shared/motion/reveal';
@@ -8,12 +9,13 @@ import { RECIPES_PATH, categoryQueryParams, recipeLink } from '../../shared/rout
 import { Button } from '../../shared/ui/button/button';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
+import { NotifyButton } from '../../shared/ui/notify-button/notify-button';
 import { HomeData } from './home.resolver';
 import { Icon } from '../../shared/ui/icon/icon';
 
 @Component({
   selector: 'yona-home',
-  imports: [Icon, RouterLink, Button, CoverImage, RecipeCard, Reveal],
+  imports: [Icon, RouterLink, Button, CoverImage, NotifyButton, RecipeCard, Reveal],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +25,8 @@ export default class Home {
   readonly data = input.required<HomeData>();
 
   private readonly siteData = inject(SiteData);
+  private readonly notifications = inject(NewRecipeNotifications);
+  protected readonly showNotify = computed(() => !['unknown', 'unsupported'].includes(this.notifications.state()));
   protected readonly categories = this.siteData.categories;
   protected readonly content = this.siteData.content;
   /** A blank line in the text written in the back-office starts a new paragraph. */

@@ -38,6 +38,18 @@
     opacity: 0.6;
   }
 
+  &.is-prominent {
+    padding: var(--space-3) var(--space-5);
+    box-shadow: var(--shadow-sm);
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+    font-size: var(--text-base);
+
+    @include m.hover {
+      background-color: var(--color-accent-strong);
+    }
+  }
+
   &.is-on {
     box-shadow: inset 0 0 0 1px var(--color-accent);
     color: var(--color-accent-strong);

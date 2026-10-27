@@ -65,6 +65,18 @@
   </div>
 </section>
 
+<!-- Only where notifications can work, or on iPhone where installing the app comes first -->
+@if (showNotify()) {
+  <section class="container notify" yonaReveal aria-labelledby="notify-title">
+    <svg class="notify__icon" yonaIcon="bell-ring" [size]="28" [strokeWidth]="1.75"></svg>
+    <div class="notify__text">
+      <h2 id="notify-title">Ne ratez aucune nouvelle recette</h2>
+      <p>Une notification à chaque recette publiée, même le site fermé. Sans compte ni e-mail, et ça s'arrête d'un appui.</p>
+    </div>
+    <yona-notify-button [showInstallHint]="true" [prominent]="true" />
+  </section>
+}
+
 <section class="container latest" aria-labelledby="latest-title">
   <header class="section-head" yonaReveal>
     <p class="eyebrow">Fraîchement publiées</p>
