@@ -1,0 +1,13 @@
+/* Unit tests (ng test): Vitest, in Node.js with jsdom. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

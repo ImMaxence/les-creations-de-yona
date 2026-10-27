@@ -35,13 +35,17 @@ interface StepTimer {
 
 const TICK_MS = 250;
 const SWIPE_PX = 60;
+/** "+ 1 min": the cake is not quite done. */
+const EXTRA_MS = 60_000;
 
 /**
  * Cooking mode: one step per screen in large type, to follow the recipe with a phone on the
- * counter. The ingredients the step needs are shown with it, when the recipe says which. Steps
- * with a duration get a timer, which keeps running while moving to another step, and rings (sound
- * and vibration) at the end until stopped. The screen is kept on while the mode is open, where the
- * browser allows it. Arrow keys and swipes move between steps.
+ * counter. It opens on the "mise en place", every ingredient to tick off once out and weighed.
+ * The ingredients the step needs are shown with it, when the recipe says which. Steps with a
+ * duration get a timer, which keeps running while moving to another step or once the mode is
+ * closed (a bar on the page then shows it), and rings (sound and vibration) at the end until
+ * stopped. The screen is kept on while the mode is open, where the browser allows it. Arrow keys
+ * and swipes move between steps.
  */
 @Component({
   selector: 'yona-cooking-mode',
@@ -59,6 +63,8 @@ export class CookingMode {
   /** Preparation, rest and cooking: "prête vers…" from the moment the mode starts. */
   readonly totalMinutes = input(0);
   readonly glossary = input<GlossaryMatcher>(NO_GLOSSARY);
+  /** The visitor's own notes on the recipe, shown with the mise en place. */
+  readonly notes = input('');
   readonly open = model(false);
 
   protected readonly formatMinutes = formatMinutes;
@@ -68,6 +74,8 @@ export class CookingMode {
     ),
   );
   protected readonly index = signal(0);
+  /** The screen before the first step: every ingredient of the recipe, to tick off. */
+  protected readonly miseEnPlace = signal(false);
   protected readonly current = computed(() => this.steps()[this.index()] ?? null);
   protected readonly showIngredients = signal(false);
   protected readonly hasParts = computed(() => this.parts().length > 1 || !!this.parts()[0]?.title);
@@ -96,6 +104,12 @@ export class CookingMode {
       .filter(([stepIndex, timer]) => stepIndex !== this.index() && (timer.endsAt !== null || timer.remainingMs === 0))
       .map(([stepIndex]) => ({ stepIndex, remaining: this.remainingMs(stepIndex) })),
   );
+  /** Once the mode is closed: the timers still running, shown in a bar on the page. */
+  protected readonly runningTimers = computed(() =>
+    [...this.timers().entries()]
+      .filter(([, timer]) => timer.endsAt !== null)
+      .map(([stepIndex]) => ({ stepIndex, remaining: this.remainingMs(stepIndex) })),
+  );
   protected readonly ringing = signal<number | null>(null);
 
   private ticker: ReturnType<typeof setInterval> | undefined;
@@ -119,9 +133,10 @@ export class CookingMode {
     });
   }
 
-  /** From the start, or from the step given. */
+  /** From the mise en place (when there are ingredients), or from the step given. */
   start(stepIndex = 0): void {
     this.index.set(Math.min(stepIndex, Math.max(0, this.steps().length - 1)));
+    this.miseEnPlace.set(stepIndex === 0 && this.ingredients().length > 0);
     this.showIngredients.set(false);
     // Opened by a tap: the moment to let the timers ring later
     this.alarm.unlock();
@@ -133,16 +148,32 @@ export class CookingMode {
     this.open.set(true);
   }
 
+  /** Back in the mode, from the bar of the page: where it was left, the schedule kept. */
+  protected resume(stepIndex: number): void {
+    this.alarm.unlock();
+    this.goTo(stepIndex);
+    this.open.set(true);
+  }
+
   protected go(delta: number): void {
+    if (this.miseEnPlace()) {
+      if (delta > 0) {
+        this.miseEnPlace.set(false);
+      }
+      return;
+    }
     const next = this.index() + delta;
     if (next >= 0 && next < this.steps().length) {
       this.index.set(next);
       this.showIngredients.set(false);
+    } else if (next < 0 && this.ingredients().length) {
+      this.miseEnPlace.set(true);
     }
   }
 
   protected goTo(stepIndex: number): void {
     this.index.set(stepIndex);
+    this.miseEnPlace.set(false);
     this.stopRinging();
   }
 
@@ -222,6 +253,22 @@ export class CookingMode {
       if (this.ringing() === stepIndex) {
         this.silence();
       }
+    }
+    this.tick();
+  }
+
+  /** "+ 1 min" on a timer that has ended (or is ending): it rings again a minute later. */
+  protected addMinute(stepIndex: number): void {
+    this.alarm.unlock();
+    const now = Date.now();
+    this.now.set(now);
+    const timer = this.timers().get(stepIndex);
+    const left = timer?.endsAt != null ? Math.max(0, timer.endsAt - now) : (timer?.remainingMs ?? 0);
+    const remainingMs = left + EXTRA_MS;
+    this.setTimer(stepIndex, { totalMs: timer?.totalMs ?? EXTRA_MS, remainingMs, endsAt: now + remainingMs });
+    this.alarm.schedule(stepIndex, remainingMs);
+    if (this.ringing() === stepIndex) {
+      this.silence();
     }
     this.tick();
   }

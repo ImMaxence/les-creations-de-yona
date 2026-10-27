@@ -18,9 +18,6 @@
       <li>
         <yona-category-menu [categories]="siteData.categories()" />
       </li>
-      <li>
-        <a class="nav__link" [routerLink]="installPath" routerLinkActive="is-active">Installer l'application</a>
-      </li>
       @if (adminSession.isAdmin()) {
         <li>
           <a class="nav__link" routerLink="/admin" routerLinkActive="is-active">Administration</a>

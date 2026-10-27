@@ -63,13 +63,64 @@
   animation: ring 0.6s var(--ease-out) 3;
 }
 
-.ringing__stop {
+.ringing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
   margin-left: auto;
+}
+
+.ringing__stop,
+.ringing__more {
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-pill);
   background-color: var(--color-on-accent);
   color: var(--color-accent-strong);
   font-weight: 700;
+}
+
+// Second to "Arrêter": outlined
+.ringing__more {
+  box-shadow: inset 0 0 0 2px var(--color-on-accent);
+  background-color: transparent;
+  color: var(--color-on-accent);
+}
+
+// Before the first step: the whole recipe's ingredients, to get out and weigh
+.mise-en-place {
+  display: grid;
+  gap: var(--space-3);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.mise-en-place__title {
+  font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+}
+
+.mise-en-place__hint {
+  color: var(--color-text-muted);
+}
+
+.mise-en-place__notes {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+
+  h4 {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  p {
+    white-space: pre-line;
+  }
 }
 
 .cooking__needed {
@@ -162,6 +213,88 @@
   color: var(--color-text);
 }
 
+.timer__more {
+  min-height: 2.75rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+  color: var(--color-accent-strong);
+  font-weight: 700;
+  transition: transform var(--duration-fast) var(--ease-out);
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// Mode closed, a timer still running: at the bottom of the recipe page, above its content
+.timers-bar {
+  position: fixed;
+  right: var(--space-3);
+  bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  left: var(--space-3);
+  z-index: 30;
+  display: grid;
+  gap: var(--space-2);
+  max-width: 26rem;
+  margin-inline: auto;
+  animation: bar-in var(--duration-slow) var(--ease-out);
+
+  @media print {
+    display: none;
+  }
+}
+
+@keyframes bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+.timers-bar__ringing,
+.timers-bar__timer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.timers-bar__ringing {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  animation: ring 0.6s var(--ease-out) 3;
+
+  .ringing__more {
+    margin-left: auto;
+  }
+}
+
+.timers-bar__timer {
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+  color: var(--color-text);
+  text-align: start;
+
+  svg {
+    color: var(--color-accent);
+  }
+}
+
+.timers-bar__label {
+  flex: 1;
+}
+
+.timers-bar__resume {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+}
+
 .cooking__timers {
   display: flex;
   flex-wrap: wrap;
@@ -238,7 +371,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cooking__step,
-  .timer.is-ringing {
+  .timer.is-ringing,
+  .timers-bar,
+  .timers-bar__ringing {
     animation: none;
   }
 }

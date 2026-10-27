@@ -83,7 +83,7 @@ public class RecipeService {
 	/** Published recipes only, whatever {@code filter.status()}; no back-office criteria. */
 	public Page<RecipeCard> searchPublished(RecipeFilter filter, Pageable pageable) {
 		RecipeFilter published = new RecipeFilter(filter.titleQuery(), filter.categorySlug(), filter.tagSlug(),
-				filter.ingredientName(), null, null, RecipeStatus.PUBLISHED, filter.maxMinutes(), filter.difficulty());
+				filter.ingredientNames(), null, null, RecipeStatus.PUBLISHED, filter.maxMinutes(), filter.difficulty());
 		return recipeRepository
 			.findAll(RecipeSpecifications.matching(published), Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toCard);

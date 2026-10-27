@@ -134,11 +134,12 @@
       stockage, demandé par vous, est dispensé de consentement.
     </p>
 
-    <h2>Favoris et liste de courses</h2>
+    <h2>Favoris, liste de courses et notes</h2>
     <p>
-      Les recettes mises en favori (le cœur) et votre liste de courses sont gardées dans votre
-      navigateur seulement (stockage local, clés <strong>yona-favorites</strong> et
-      <strong>yona-shopping-list</strong>). Elles ne sont jamais envoyées au site, ne sont liées à aucune
+      Les recettes mises en favori (le cœur), votre liste de courses et vos notes sur les recettes
+      (« Mes notes ») sont gardées dans votre navigateur seulement (stockage local, clés
+      <strong>yona-favorites</strong>, <strong>yona-shopping-list</strong> et
+      <strong>yona-recipe-notes</strong>). Elles ne sont jamais envoyées au site, ne sont liées à aucune
       donnée personnelle et disparaissent si vous les videz ou effacez les données du site. Ce stockage,
       demandé par vous, est dispensé de consentement. Partager votre liste (WhatsApp, messages…) n'envoie
       son texte qu'à l'application que vous choisissez.
@@ -149,7 +150,10 @@
       Si vous <a [routerLink]="installPath">installez l'application</a>, votre appareil garde en mémoire
       les pages et recettes déjà consultées, pour les afficher plus vite et hors connexion. Ces
       fichiers restent sur votre appareil, ne contiennent aucune donnée personnelle et disparaissent
-      si vous désinstallez l'application ou videz les données du site.
+      si vous désinstallez l'application ou videz les données du site. Si vous répondez « Plus tard » à
+      la proposition d'installer l'application, la date de ce choix est gardée dans votre navigateur
+      (stockage local, clé <strong>yona-install-banner-dismissed</strong>) pour ne pas la reproposer
+      avant un mois.
     </p>
 
     <h2>Notifications des nouvelles recettes</h2>

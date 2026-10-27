@@ -185,6 +185,8 @@
       </aside>
     }
 
+    <yona-recipe-notes class="no-print" yonaReveal [slug]="recipe().slug" />
+
     @if (recipe().youtubeVideoId; as videoId) {
       <section class="video" yonaReveal aria-labelledby="video-title">
         <h2 id="video-title">La recette en vidéo</h2>
@@ -227,4 +229,5 @@
   [ingredients]="ingredients()"
   [totalMinutes]="totalMinutes()"
   [glossary]="glossaryMatcher()"
+  [notes]="notes()"
 />

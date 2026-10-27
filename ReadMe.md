@@ -2,7 +2,7 @@
 
 Blog de cuisine : recettes, catégories, recherche. Projet monorepo.
 
-Dernière mise à jour : 2026-10-26 (version 3.1.0). Historique des versions : [CHANGELOG.md](CHANGELOG.md).
+Dernière mise à jour : 2026-10-27 (version 3.2.0). Historique des versions : [CHANGELOG.md](CHANGELOG.md).
 
 ## Périmètre v1
 
@@ -10,13 +10,14 @@ Dernière mise à jour : 2026-10-26 (version 3.1.0). Historique des versions : [
 
 - Accueil (`/`) :
   - Recette à la une : grande card en haut (image, titre, catégories). Champ `featured`, une seule à la fois ; si aucune, la plus récente publiée.
+  - Les 3 dernières recettes, toutes catégories confondues, bouton « Voir plus » vers `/recettes` : juste sous la recette à la une, pour qui revient sur le site.
   - À propos : présentation de l'autrice, titre, texte et photo modifiables dans le back-office (Préférences) ; sans photo choisie, celle du projet Angular.
   - « Ne ratez aucune nouvelle recette » : encart sous « À propos », bouton des notifications mis en avant (plein, plus grand). Absent là où les notifications ne peuvent pas marcher ; sur iPhone, le lien vers l'installation de l'application.
-  - Les 3 dernières recettes, toutes catégories confondues, bouton « Voir plus » vers `/recettes`.
   - Toutes les catégories, avec image, cliquables vers `/recettes?categorie={slug}` (grille de 2 sur téléphone, 4 au-delà).
 - Recettes (`/recettes`) :
   - Grille de cards de même taille (une par ligne sur téléphone avec une photo moins haute, 2 puis 3 colonnes) : image, date de publication, titre (tronqué avec ellipsis), catégories. Les dernières publiées en premier.
   - Recherche par titre avec autocomplétion, ingrédient et catégorie choisis dans des menus déroulants (celui des ingrédients se filtre en tapant ; seuls les ingrédients des recettes publiées y figurent), recherche lancée dès le choix (une recette apparaît dans chacune de ses catégories). Filtres combinables, dans l'URL (`q`, `ingredient`, `categorie`).
+  - « Qu'est-ce que je peux faire avec… » : plusieurs ingrédients à la fois, 5 au plus. Chaque ingrédient choisi s'ajoute aux autres en puce (retiré d'un appui), le menu se vide pour le suivant (« Et aussi… ») ; seules les recettes qui les ont tous sortent. Dans l'URL, `ingredient` répété (`?ingredient=Œufs&ingredient=Chocolat`) ; les anciens liens à un seul ingrédient marchent toujours.
   - « Plus de filtres » (repliés sur téléphone, sauf s'ils sont utilisés) : tag, temps total (prêt en 15 min, 30 min, 1 h au plus ; préparation + repos + cuisson, une recette sans temps de préparation ni de cuisson est écartée) et difficulté (facile 1 à 2 étoiles, moyenne 2,5 à 3,5, difficile 4 à 5). Dans l'URL : `tag`, `temps`, `difficulte`. Pages filtrées ainsi en `noindex`.
   - « Effacer tous les filtres » dès qu'un filtre est actif (recherche comprise) : retour à toutes les recettes, en gardant le nombre par page.
   - Une recherche par titre sans aucun résultat est notée, anonymement, pour la page Statistiques (voir « Recherches sans résultat »).
@@ -30,16 +31,18 @@ Dernière mise à jour : 2026-10-26 (version 3.1.0). Historique des versions : [
   - Moule (si la recette en indique un) : « Pour un moule rond de 20 cm », puis « Adapter à mon moule » (rond, carré ou rectangle, en cm) : les quantités suivent la surface du moule (même hauteur), avec le facteur affiché (« × 1,44 ») et les portions approximatives ; « Revenir au moule de la recette ».
   - Mots du glossaire soulignés en pointillé dans les étapes (première occurrence de chaque mot par étape) : un appui ou Entrée affiche la définition dans une bulle, avec un lien « Tout le glossaire ».
   - « Le conseil de Yona » : encadré facultatif après les étapes (astuce, conservation, variante…), en Markdown.
+  - « Mes notes » : champ libre du visiteur sous le conseil (« 10 min de plus dans mon four », « moins de sucre »), 2 000 caractères, gardé à chaque frappe dans le navigateur seulement (`localStorage`, clé `yona-recipe-notes`, 200 recettes au plus : la note écrite il y a le plus longtemps part la première ; une note vidée est oubliée). Rappelé dans le mode cuisine. Pas imprimé.
   - « Vous aimerez aussi » : 3 recettes publiées proches (tags communs d'abord, puis catégories), sinon les dernières.
   - Ingrédients, étapes, vidéo YouTube en bas de page si la recette en a une (chargée seulement au clic), date de dernière mise à jour.
   - Recette en parties (la pâte, la garniture…) : la liste « Ingrédients » est le total de toutes les parties (quantités d'une même unité additionnées, parties concernées indiquées sous chaque ingrédient), puis « Préparation » détaille chaque partie (ses ingrédients et ses étapes), avec un sommaire cliquable des parties.
   - « Ajouter à ma liste de courses » sous les ingrédients, avec les portions choisies (ajoutée de nouveau, la recette est mise à jour).
-  - Mode cuisine : plein écran, une étape par écran en gros caractères, partie et numéro d'étape, barre de progression, « Commencé à 14:02 · prête vers 15:32 » ; flèches du clavier ou glissement du doigt pour changer d'étape. Les ingrédients de l'étape (choisis dans le back-office) s'affichent avec elle, « Tous les ingrédients » de la partie (ou de la recette) restent à portée de main. Une étape qui a une durée a un minuteur (lecture, pause, remise à zéro) qui continue pendant qu'on change d'étape ; à la fin, une sonnerie (trois notes, toutes les 1,5 s pendant 30 s, synthétisées par le navigateur, sans fichier son), une vibration légère et saccadée au même rythme (trois petites secousses ; Android, Safari sur iPhone ne sait pas vibrer) et un bandeau « C'est prêt ! » avec « Arrêter la sonnerie ». La sonnerie est programmée sur l'horloge audio dès le lancement du minuteur : elle sonne à l'heure même si le navigateur ralentit la page ; sur iPhone, elle passe outre le mode silencieux. Mots du glossaire expliqués comme sur la page. Écran maintenu allumé pendant le mode, si le navigateur le permet.
+  - Mode cuisine : plein écran, une étape par écran en gros caractères, partie et numéro d'étape, barre de progression, « Commencé à 14:02 · prête vers 15:32 » ; flèches du clavier ou glissement du doigt pour changer d'étape. Il s'ouvre sur la « Mise en place » (si la recette a des ingrédients) : tous les ingrédients de la recette à cocher une fois sortis et pesés, et « Mes notes » s'il y en a ; « C'est parti » passe à l'étape 1, « Précédente » depuis l'étape 1 y revient (les ingrédients cochés le restent). Les ingrédients de l'étape (choisis dans le back-office) s'affichent avec elle, « Tous les ingrédients » de la partie (ou de la recette) restent à portée de main. Une étape qui a une durée a un minuteur (lecture, pause, remise à zéro) qui continue pendant qu'on change d'étape, et même une fois le mode fermé : une barre en bas de la page de la recette montre alors les minuteurs en cours (« Étape 3 : 4:12 · Reprendre », qui rouvre le mode à cette étape), puis « C'est prêt ! » avec « + 1 min » et « Arrêter ». À la fin, une sonnerie (trois notes, toutes les 1,5 s pendant 30 s, synthétisées par le navigateur, sans fichier son), une vibration légère et saccadée au même rythme (trois petites secousses ; Android, Safari sur iPhone ne sait pas vibrer) et un bandeau « C'est prêt ! » avec « Arrêter la sonnerie » et « + 1 min » (à côté du minuteur terminé une fois la sonnerie arrêtée) : le gâteau pas tout à fait cuit, le minuteur repart pour une minute et sonnera de nouveau, sans tout remettre à zéro. La sonnerie est programmée sur l'horloge audio dès le lancement du minuteur : elle sonne à l'heure même si le navigateur ralentit la page ; sur iPhone, elle passe outre le mode silencieux. Mots du glossaire expliqués comme sur la page. Écran maintenu allumé pendant le mode, si le navigateur le permet.
   - Épingler : simple lien vers la page d'épinglage de Pinterest (adresse, photo et titre de la recette), sans aucun script de Pinterest ; photo verticale de la recette si elle en a une, sinon sa photo.
   - Impression : feuille de style d'impression (photo réduite, ingrédients puis étapes, sans boutons ni en-tête du site, couleurs claires).
 - Glossaire (`/glossaire`) : les mots de pâtisserie par lettre (« É » rangé sous « E »), raccourcis A–Z, chaque mot avec son ancre (`/glossaire#chemiser`), mise en évidence à l'arrivée depuis une recette. Données structurées `DefinedTermSet`. En `noindex` tant qu'il est vide.
 - Erreurs : 404 (URL inconnue, recette introuvable ou en brouillon) et erreur serveur.
-- Installer l'application (`/installer`) : bouton d'installation quand le navigateur le propose, guide pas à pas pour iPhone/iPad, Android et ordinateur.
+- Installer l'application (`/installer`) : bouton d'installation quand le navigateur le propose, guide pas à pas pour iPhone/iPad, Android et ordinateur. Liée depuis le pied de page et le menu mobile (plus depuis la navbar : on n'installe qu'une fois).
+- Bandeau « Les recettes à portée de main » en bas de l'écran, seulement quand le navigateur peut installer l'application tout de suite (Chrome, Edge, Android ; jamais sur iPhone, qui demande des étapes à la main) : « Installer » ouvre la fenêtre du navigateur, « Plus tard » le cache un mois (date gardée dans `localStorage`, clé `yona-install-banner-dismissed` ; un refus dans la fenêtre du navigateur compte pareil). Attend la réponse au bandeau des cookies ; ni dans l'administration, ni sur la page d'installation, ni une fois installée.
 - Mes favoris (`/favoris`) : recettes marquées du cœur, gardées dans le navigateur seulement (`localStorage`, clé `yona-favorites`, 200 au plus), sous forme de cards : lisibles hors connexion dans l'application installée. Pas de compte.
 - Ma liste de courses (`/liste-de-courses`) : ingrédients des recettes ajoutées, les mêmes additionnés (même calcul que le total d'une recette en parties, recettes concernées sous chaque ingrédient), à cocher (cochés en bas), articles libres en plus, partage par WhatsApp, feuille de partage ou copie du texte, liste vidée sur confirmation. Gardée dans le navigateur (clé `yona-shopping-list`). Ces deux pages sont en `noindex`, et leur contenu n'apparaît qu'une fois la page chargée dans le navigateur (le serveur ne le connaît pas).
 
@@ -51,9 +54,9 @@ Dernière mise à jour : 2026-10-26 (version 3.1.0). Historique des versions : [
 
 ### Navigation
 
-- Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), installer l'application, administration (admins seulement). Icônes cœur (favoris) et panier (liste de courses) avec leur nombre d'éléments, aussi sur téléphone à côté du menu.
+- Navbar : accueil, recettes, catégories en menu déroulant (environ 10 au maximum), administration (admins seulement). Icônes cœur (favoris) et panier (liste de courses) avec leur nombre d'éléments, aussi sur téléphone à côté du menu.
 - Menu mobile : bouton hamburger, panneau plein écran avec les mêmes entrées, plus « Mes favoris », « Ma liste de courses » et « Glossaire ».
-- Footer sur toutes les pages : réseaux sociaux, « Me prévenir des nouvelles recettes », « Glossaire de pâtisserie », mentions légales, politique de confidentialité, lien discret « Espace admin ».
+- Footer sur toutes les pages : réseaux sociaux, « Me prévenir des nouvelles recettes », « Glossaire de pâtisserie », « Installer l'application », mentions légales, politique de confidentialité, lien discret « Espace admin ».
 - Affichage Clair / Auto / Sombre au choix du visiteur : icône dans la navbar, trois boutons dans le menu mobile. « Auto » (par défaut) suit le réglage du système. Choix gardé dans le navigateur (`localStorage`), appliqué avant le premier affichage.
 
 ### Back-office (`/admin`)
@@ -96,7 +99,7 @@ Dernière mise à jour : 2026-10-26 (version 3.1.0). Historique des versions : [
 
 - Mentions légales (`/mentions-legales`) et politique de confidentialité (`/politique-de-confidentialite`), liées depuis le footer.
 - Mentions légales : certaines images d'illustration sont générées par IA (Google Gemini), comme l'exige la transparence sur les contenus générés. à titre non professionnel (adresse communiquée sur demande, art. 6, III, 2 LCEN). Hébergement : auto-hébergé à Aix-en-Provence, derrière Cloudflare. Crédits : les 25 polices proposées (licence SIL Open Font License), à tenir à jour avec `theme-fonts.ts`. Contact et texte dans `front/src/app/pages/legal/`.
-- Politique de confidentialité : mesure d'audience Google Analytics sur consentement, recherches sans résultat (texte seul, 12 mois), favoris et liste de courses (stockage local), bouton « Épingler » (simple lien), notifications des nouvelles recettes (adresse d'abonnement et clés seulement, sur consentement), sauvegardes envoyées sur le Google Drive d'un administrateur (sans les abonnements).
+- Politique de confidentialité : mesure d'audience Google Analytics sur consentement, recherches sans résultat (texte seul, 12 mois), favoris, liste de courses et notes (stockage local), « Plus tard » du bandeau d'installation (stockage local), bouton « Épingler » (simple lien), notifications des nouvelles recettes (adresse d'abonnement et clés seulement, sur consentement), sauvegardes envoyées sur le Google Drive d'un administrateur (sans les abonnements).
 
 ### SEO
 
@@ -162,7 +165,10 @@ Prérequis : JDK 25. Les services Docker Compose doivent tourner.
 ```bash
 cd back
 ./mvnw spring-boot:run   # Windows : .\mvnw.cmd spring-boot:run
+./mvnw test              # tests unitaires (sans base ni Docker)
 ```
+
+- Tests unitaires sans JDK sur la machine : `docker run --rm -v "$PWD:/build" -v yona-m2:/root/.m2 -w /build eclipse-temurin:25.0.4.1_1-jdk-resolute ./mvnw --batch-mode test` depuis `back/` (sous Git Bash, préfixer par `MSYS_NO_PATHCONV=1` et utiliser `$(pwd -W)`).
 
 - Lit les identifiants de `devops/.env` (lancement depuis `back/`). En production, mêmes clés en variables d'environnement, plus `POSTGRES_HOST` et `S3_ENDPOINT` (par défaut `http://localhost:8333`).
 - Flyway applique les migrations de `back/src/main/resources/db/migration` au démarrage. Hibernate vérifie seulement que les entités correspondent au schéma (`ddl-auto: validate`).
@@ -183,6 +189,7 @@ cd front
 npm ci
 npm start              # http://localhost:4200, avec SSR, /api relayé vers le backend (proxy.conf.json)
 npm run build          # build de production (navigateur + serveur SSR) dans dist/
+npm test               # tests unitaires (Vitest, dans Node.js avec jsdom), sans backend
 npm run api:generate   # régénère le client API depuis http://localhost:8080/api/docs
 npm run fonts:generate # régénère src/styles/_fonts.scss après une mise à jour d'un paquet @fontsource-variable
 ```
@@ -229,7 +236,7 @@ scripts/       génération de styles/_fonts.scss (npm run fonts:generate)
 
 | Accès | Routes |
 | --- | --- |
-| Public (GET) | `/api/recipes` (recherche, filtres `category`, `tag`, `ingredient` (nom exact, accents ignorés), `maxMinutes` (1 à 1440, repos compris), `difficulty` (`EASY`, `MEDIUM`, `HARD`), pagination, tri par défaut `publishedAt,desc` ; une recherche `q` sans résultat est notée), `/api/ingredients` (ingrédients des recettes publiées), `/api/recipes/{slug}`, `/api/recipes/{slug}/related` (3 recettes proches), `/api/glossary`, `/api/notifications/public-key` (clé VAPID), `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/tags` (avec le nombre de recettes publiées), `/api/social-links`, `/api/site-content`, `/api/theme`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
+| Public (GET) | `/api/recipes` (recherche, filtres `category`, `tag`, `ingredient` (nom exact, accents ignorés ; répété pour plusieurs ingrédients, tous exigés, 5 au plus, 100 caractères chacun), `maxMinutes` (1 à 1440, repos compris), `difficulty` (`EASY`, `MEDIUM`, `HARD`), pagination, tri par défaut `publishedAt,desc` ; une recherche `q` sans résultat est notée), `/api/ingredients` (ingrédients des recettes publiées), `/api/recipes/{slug}`, `/api/recipes/{slug}/related` (3 recettes proches), `/api/glossary`, `/api/notifications/public-key` (clé VAPID), `/api/featured-recipe`, `/api/recipe-suggestions?q=`, `/api/categories`, `/api/tags` (avec le nombre de recettes publiées), `/api/social-links`, `/api/site-content`, `/api/theme`, `/api/images/{imageId}/800.webp` et `/1600.webp` |
 | Admin | `/api/admin/me`, `/api/admin/stats` (statistiques et stockage), `/api/admin/recipes`, `POST /api/admin/recipes/preview` (aperçu sans enregistrement), `/api/admin/categories`, `/api/admin/ingredients`, `GET /api/admin/ingredients/similar`, `POST /api/admin/ingredients/merge`, `DELETE` sur `/api/admin/recipes`, `/categories`, `/ingredients` et `/images` avec `?ids=` (suppression groupée, tout ou rien), `/api/admin/social-links`, `PUT /api/admin/recipes/{id}/image` et `PUT /api/admin/categories/{id}/image` (nouvelle photo, multipart, champ `file`), `PUT …/{id}/image-choice` (photo de la galerie, ou `null` pour la retirer), `/api/admin/images` (galerie, filtres `kind`, `portrait` et `used` ; `POST` multipart pour y ajouter une photo), `PUT /api/admin/recipes/{id}/pinterest-image` et `…/pinterest-image-choice` (photo verticale), `/api/admin/tags` (`DELETE` avec `?ids=`), `PUT /api/admin/theme`, `/api/admin/appearance-presets`, `/api/admin/site-content`, `DELETE /api/admin/search-misses` (`?term=`, ou toutes), `/api/admin/version` (version du backend), `/api/admin/backup`, `/api/admin/restore` (`POST` pour commencer, `PUT …/{id}/chunks/{index}` en `application/octet-stream`, `GET …/{id}` pour l'état, `POST …/{id}/apply` avec `MERGE` ou `REPLACE` + `REMPLACER`, `DELETE …/{id}`), `POST /api/admin/recipes/{id}/duplicate`, `/api/admin/recipe-trash` (`GET`, `DELETE` pour vider, `POST …/{id}/restore`, `DELETE …/{id}`), `/api/admin/glossary` (`POST`, `PUT …/{id}`, `DELETE` avec `?ids=`), `/api/admin/drive` (`GET` l'état, `POST …/backup` maintenant, `DELETE` pour déconnecter ; `GET …/connect` et `…/callback` ouverts par le navigateur, hors OpenAPI) |
 | Public (écriture) | `POST /api/notifications/subscriptions` (corps de `PushSubscription.toJSON()`), `DELETE /api/notifications/subscriptions?endpoint=` : sans jeton CSRF (les visiteurs n'en ont pas), seuls les services de notification des navigateurs acceptés (Google, Mozilla, Apple, Microsoft), 20 000 abonnements au plus |
 | Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
@@ -316,10 +323,13 @@ Réglages pas à pas (projet Google Cloud, client OAuth, Google Drive, Analytics
 
 - Interface en français uniquement. Mobile first : conception pour écran de téléphone d'abord (environ 90 % du trafic), puis adaptation desktop.
 - Noms de tables, colonnes et code en anglais.
-- Pas de tests automatisés, ni backend ni frontend (la restauration a été testée à la main sur une pile Docker jetable, voir SECURITY-REVIEW.md). À l'init du back et du front, supprimer les fichiers générés inutiles (tests unitaires, configuration Prettier, etc.).
+- Tests unitaires (3.2) sur la logique délicate, là où une régression passerait inaperçue, plutôt qu'une couverture complète. Fichiers à côté du code testé (`*.spec.ts`, `*Test.java`).
+  - Front (`npm test`, Vitest par le builder `@angular/build:unit-test`, jsdom) : addition des ingrédients et adaptation au moule (`recipe-parts`), arrondis et formats (`units`), repérage du glossaire, lecture des filtres de l'URL (plusieurs ingrédients), notes, et le mode cuisine (minuteur qui part bien de 1:00, pause, sonnerie, « + 1 min », mise en place, barre une fois fermé), vibration de la sonnerie.
+  - Backend (`./mvnw test`, JUnit 5, AssertJ, Mockito en agent Java) : textes et slugs, doublons d'ingrédients, liens YouTube, chiffrement Web Push et jeton VAPID (déchiffrés et vérifiés comme le feraient le navigateur et le service de notification), filtre des recettes et ses limites (5 ingrédients au plus). Sans base : les requêtes JPA ne sont pas couvertes.
+  - La restauration d'une sauvegarde reste testée à la main sur une pile Docker jetable (voir SECURITY-REVIEW.md).
 - Pas de commentaires sur le site, ni en v1 ni prévus.
 - Logo en dur dans le projet Angular, photo de l'autrice par défaut aussi (remplaçable dans Préférences). Couleurs, polices et arrondi choisis dans le back-office (`site_theme`).
-- Sans compte visiteur : favoris et liste de courses restent dans le navigateur (`localStorage`), rien n'est envoyé au serveur. Notifications de nouvelle recette : Web Push standard, sans service tiers ni bibliothèque (chiffrement RFC 8291 et signature VAPID RFC 8292 avec le JDK seul, `push/WebPushCrypto.java`) ; envoyées une fois, à la première publication d'une recette (date `published_at`), après validation de la transaction, en arrière-plan (`PushService`).
+- Sans compte visiteur : favoris, liste de courses et notes restent dans le navigateur (`localStorage`), rien n'est envoyé au serveur. Notifications de nouvelle recette : Web Push standard, sans service tiers ni bibliothèque (chiffrement RFC 8291 et signature VAPID RFC 8292 avec le JDK seul, `push/WebPushCrypto.java`) ; envoyées une fois, à la première publication d'une recette (date `published_at`), après validation de la transaction, en arrière-plan (`PushService`).
 - Routage sur un domaine unique : site à la racine, API sous `/api`. Domaine `https://les-creations-de-yona.fr/`, déjà en place. Pour en changer : [docs/changement-de-domaine.md](docs/changement-de-domaine.md).
 - Flyway Community (gratuit) plutôt que Liquibase : migrations SQL simples, base PostgreSQL unique.
 - Erreurs API en ProblemDetail (RFC 9457) : format JSON standard (`type`, `title`, `status`, `detail`), identique pour toutes les erreurs. Ajout d'un code stable et d'un message en français, affichables en toast côté Angular.
@@ -370,7 +380,7 @@ Réglages pas à pas (projet Google Cloud, client OAuth, Google Drive, Analytics
 
 ### Recherche et pagination
 
-- Recherche par JPA Specifications sur titre, catégorie, tag, ingrédient, temps total et difficulté, insensible à la casse et aux accents (extension `unaccent`). Sécurisée contre l'injection SQL : valeurs passées en paramètres liés, jamais concaténées. Tri limité à une liste de champs autorisés, `%` et `_` saisis par l'utilisateur échappés.
+- Recherche par JPA Specifications sur titre, catégorie, tag, ingrédients (une sous-requête `EXISTS` par ingrédient : la recette doit les avoir tous), temps total et difficulté, insensible à la casse et aux accents (extension `unaccent`). Sécurisée contre l'injection SQL : valeurs passées en paramètres liés, jamais concaténées. Tri limité à une liste de champs autorisés, `%` et `_` saisis par l'utilisateur échappés.
 - Autocomplétion des titres : endpoint dédié, 5 suggestions maximum.
 - Pagination offset avec `Pageable`. L'accueil appelle la même route avec `size=3`.
 - Recette recherchée par slug seul. Si le segment catégorie de l'URL ne correspond pas, redirection 301 vers l'URL canonique, gérée par Angular SSR qui interroge l'API par slug.
@@ -503,9 +513,11 @@ Ambiance pâtisserie chic, chaleureuse, lisible sur téléphone. Thème par déf
 - [x] 3.0.0 : tags (migration V7), filtres temps et difficulté, photo Pinterest et bouton « Épingler », favoris, liste de courses, mode cuisine, impression ; restauration d'une sauvegarde (fusion ou remplacement) ; statistiques (recettes à compléter, brouillons oubliés, recettes à rafraîchir, recherches sans résultat, export PDF) ; préréglages d'apparence, 5 thèmes et 5 polices de titres en plus ; photo « À propos » enregistrée avec le bouton ; infobulles à côté des icônes
 - [x] 3.0.0 : majuscule aux ingrédients et aux noms commençant par un emoji (migration V8), « Effacer tous les filtres » sur la page Recettes
 - [x] 3.1.0 : notifications des nouvelles recettes (Web Push), sauvegarde de nuit sur Google Drive, corbeille, publication programmée, « Dupliquer », brouillon gardé dans le navigateur, glossaire, « Le conseil de Yona », temps de repos et « Organiser mon temps », adaptation au moule, « Vous aimerez aussi », ingrédients par étape et sonnerie du mode cuisine, icônes intégrées sans Lucide (migration V9)
+- [x] 3.2.0 : encart des notifications sur l'accueil, dernières recettes avant « À propos » ; mode cuisine : « Mise en place », « + 1 min », minuteurs gardés une fois le mode fermé, minuteur qui part bien de 1:00, vibration légère au rythme de la sonnerie ; « Mes notes » sur chaque recette ; recherche avec plusieurs ingrédients ; « Installer l'application » retiré de la navbar, bandeau d'installation ; tests unitaires front (Vitest) et backend (JUnit)
 
 ## Points ouverts
 
 - Vérification en ligne : connexion Google, upload d'une photo depuis l'iPhone, sauvegarde ZIP, restauration (d'abord une fusion avec une sauvegarde toute fraîche : rien à ajouter attendu).
 - Après la mise en ligne : déclarer `https://les-creations-de-yona.fr/sitemap.xml` dans Google Search Console.
 - 3.1.0 en ligne : réglages Google Drive (voir « Services Google »), connexion du Drive, puis vérifier une notification de nouvelle recette sur un Android et sur un iPhone avec l'application installée.
+- 3.2.0 : vérifié sur la pile Docker locale (Chrome) : accueil, recherche à plusieurs ingrédients, notes, mise en place, minuteur, « + 1 min », barre des minuteurs, bandeau d'installation (événement du navigateur simulé). Reste à voir sur un vrai Android : la vraie fenêtre d'installation, et la vibration.

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, Scroll } from '@angular/router';
 import { filter } from 'rxjs';
@@ -14,10 +14,12 @@ import { Select, SelectOption } from '../../shared/ui/select/select';
 import {
   DEFAULT_PAGE_SIZE,
   DifficultyFilter,
+  MAX_INGREDIENTS,
   PAGE_SIZES,
   RECIPES_QUERY,
   RecipesPageData,
   TIME_FILTERS,
+  sameName,
 } from './recipes.resolver';
 import { Icon } from '../../shared/ui/icon/icon';
 
@@ -69,7 +71,7 @@ export default class Recipes {
     () =>
       this.filters().search !== '' ||
       this.filters().category !== null ||
-      this.filters().ingredient !== '' ||
+      this.filters().ingredients.length > 0 ||
       this.moreFiltersCount() > 0,
   );
   /** "Effacer tous les filtres": every recipe again, keeping only the number per page chosen. */
@@ -98,15 +100,26 @@ export default class Recipes {
     { value: '', label: 'Toutes les catégories' },
     ...this.categories().map((category) => ({ value: category.slug, label: category.name })),
   ]);
-  /** Ingredients of the published recipes; choosing one applies the filter at once. */
+  /**
+   * Ingredients of the published recipes, but those already chosen; choosing one adds it to the
+   * filter at once, and the list is ready for the next.
+   */
   protected readonly ingredientOptions = computed<SelectOption<string>[]>(() => {
-    const names = this.data().ingredients;
-    const chosen = this.filters().ingredient;
-    // An old link may name an ingredient no longer in any recipe: still shown as chosen
-    const all = chosen && !names.some((name) => name.toLocaleLowerCase('fr') === chosen.toLocaleLowerCase('fr'))
-      ? [...names, chosen]
-      : names;
-    return [{ value: '', label: 'Tous les ingrédients' }, ...all.map((name) => ({ value: name, label: name }))];
+    const chosen = this.filters().ingredients;
+    return this.data()
+      .ingredients.filter((name) => !chosen.some((known) => sameName(known, name)))
+      .map((name) => ({ value: name, label: name }));
+  });
+  protected readonly maxIngredients = MAX_INGREDIENTS;
+  /** The one just picked, until the page shows it among the chosen: back to the placeholder then. */
+  protected readonly ingredientPick = linkedSignal<string[], string | undefined>({
+    source: () => this.filters().ingredients,
+    computation: () => undefined,
+  });
+  /** « œufs » et « chocolat ». */
+  protected readonly ingredientsLabel = computed(() => {
+    const quoted = this.filters().ingredients.map((name) => `« ${name} »`);
+    return quoted.length > 1 ? `${quoted.slice(0, -1).join(', ')} et ${quoted.at(-1)}` : (quoted[0] ?? '');
   });
   protected readonly countLabel = computed(() => {
     const count = this.result().totalElements;
@@ -129,8 +142,15 @@ export default class Recipes {
     this.updateQuery({ [RECIPES_QUERY.difficulty]: difficulty ?? null, [RECIPES_QUERY.page]: null });
   }
 
-  protected changeIngredient(name: string | undefined): void {
-    this.updateQuery({ [RECIPES_QUERY.ingredient]: name || null, [RECIPES_QUERY.page]: null });
+  protected addIngredient(name: string | undefined): void {
+    if (name) {
+      this.updateQuery({ [RECIPES_QUERY.ingredient]: [...this.filters().ingredients, name], [RECIPES_QUERY.page]: null });
+    }
+  }
+
+  protected removeIngredient(name: string): void {
+    const rest = this.filters().ingredients.filter((known) => known !== name);
+    this.updateQuery({ [RECIPES_QUERY.ingredient]: rest.length ? rest : null, [RECIPES_QUERY.page]: null });
   }
 
   protected search(search: string): void {
@@ -166,7 +186,7 @@ export default class Recipes {
     });
   }
 
-  private updateQuery(queryParams: Record<string, string | number | null>): void {
+  private updateQuery(queryParams: Record<string, string | string[] | number | null>): void {
     this.router.navigate([RECIPES_PATH], { queryParams, queryParamsHandling: 'merge' });
   }
 }

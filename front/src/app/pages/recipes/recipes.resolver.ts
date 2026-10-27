@@ -25,6 +25,9 @@ export const RECIPES_QUERY = {
   pageSize: 'parPage',
 } as const;
 
+/** "Qu'est-ce que je peux faire avec…": ingredients combined, at most (as the API). */
+export const MAX_INGREDIENTS = 5;
+
 /** "Prêt en…": preparation and cooking together, at most. */
 export const TIME_FILTERS = [15, 30, 60] as const;
 
@@ -39,8 +42,8 @@ export type DifficultyFilter = keyof typeof DIFFICULTY_FILTERS;
 export interface RecipeFilters {
   search: string;
   category: string | null;
-  /** Name of one of its ingredients, chosen in the list. */
-  ingredient: string;
+  /** Names of ingredients it must all have, chosen in the list one by one. */
+  ingredients: string[];
   /** Slug of one of its tags. */
   tag: string | null;
   /** Ready in at most this many minutes. */
@@ -69,13 +72,29 @@ export function readFilters(params: ParamMap): RecipeFilters {
   return {
     search: (params.get(RECIPES_QUERY.search) ?? '').trim().slice(0, 100),
     category: params.get(RECIPES_QUERY.category) || null,
-    ingredient: (params.get(RECIPES_QUERY.ingredient) ?? '').trim().slice(0, 100),
+    ingredients: readIngredients(params.getAll(RECIPES_QUERY.ingredient)),
     tag: params.get(RECIPES_QUERY.tag) || null,
     maxMinutes: (TIME_FILTERS as readonly number[]).includes(time) ? time : null,
     difficulty: difficulty && difficulty in DIFFICULTY_FILTERS ? (difficulty as DifficultyFilter) : null,
     page: Number.isInteger(page) && page >= 1 ? page : 1,
     pageSize: (PAGE_SIZES as readonly number[]).includes(pageSize) ? pageSize : DEFAULT_PAGE_SIZE,
   };
+}
+
+/** Repeated in the URL (?ingredient=Œufs&ingredient=Chocolat): blanks and repeats dropped. */
+function readIngredients(values: string[]): string[] {
+  const names: string[] = [];
+  for (const value of values) {
+    const name = value.trim().slice(0, 100);
+    if (name && !names.some((known) => sameName(known, name))) {
+      names.push(name);
+    }
+  }
+  return names.slice(0, MAX_INGREDIENTS);
+}
+
+export function sameName(a: string, b: string): boolean {
+  return a.toLocaleLowerCase('fr') === b.toLocaleLowerCase('fr');
 }
 
 export const recipesResolver: ResolveFn<RecipesPageData> = async (route) => {
@@ -85,7 +104,7 @@ export const recipesResolver: ResolveFn<RecipesPageData> = async (route) => {
     api.invoke(listPublishedRecipes, {
       q: filters.search || undefined,
       category: filters.category ?? undefined,
-      ingredient: filters.ingredient || undefined,
+      ingredient: filters.ingredients.length ? filters.ingredients : undefined,
       tag: filters.tag ?? undefined,
       maxMinutes: filters.maxMinutes ?? undefined,
       difficulty: filters.difficulty ? DIFFICULTY_FILTERS[filters.difficulty] : undefined,
@@ -125,7 +144,7 @@ export function recipesSeo(route: ActivatedRouteSnapshot): PageSeo {
     // Search results and pages past the end are not worth indexing
     noIndex:
       filters.search !== '' ||
-      filters.ingredient !== '' ||
+      filters.ingredients.length > 0 ||
       filters.tag !== null ||
       filters.maxMinutes !== null ||
       filters.difficulty !== null ||

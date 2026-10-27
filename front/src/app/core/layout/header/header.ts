@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
-import { INSTALL_PATH, RECIPES_PATH } from '../../../shared/routing/links';
+import { RECIPES_PATH } from '../../../shared/routing/links';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { CategoryMenu } from '../category-menu/category-menu';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
@@ -30,7 +30,6 @@ export class Header {
   protected readonly siteData = inject(SiteData);
   protected readonly adminSession = inject(AdminSession);
   protected readonly recipesPath = RECIPES_PATH;
-  protected readonly installPath = INSTALL_PATH;
 
   protected readonly scrolled = signal(false);
   /** Hidden while reading down the page, back as soon as the reader scrolls up. */

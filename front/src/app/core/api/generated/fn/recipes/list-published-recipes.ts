@@ -27,9 +27,9 @@ export interface ListPublishedRecipes$Params {
   tag?: string;
 
 /**
- * Name of one of its ingredients (GET /api/ingredients), case and accents ignored
+ * Names of ingredients it must all have (GET /api/ingredients), case and accents ignored; repeated for several, 5 at most
  */
-  ingredient?: string;
+  ingredient?: Array<string>;
 
 /**
  * Preparation, rest and cooking together at most this long, in minutes

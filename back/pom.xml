@@ -13,7 +13,7 @@
 	<groupId>fr.lescreationsdeyona</groupId>
 	<artifactId>back</artifactId>
 	<!-- Semantic version, shown in the back-office: bump it with front/package.json at each release. -->
-	<version>3.1.0</version>
+	<version>3.2.0</version>
 	<name>back</name>
 	<description>API of the Les créations de Yona cooking blog</description>
 
@@ -124,6 +124,12 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<!-- Unit tests (./mvnw test): JUnit 5, AssertJ, Mockito. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -166,6 +172,26 @@
 							<version>${lombok-mapstruct-binding.version}</version>
 						</path>
 					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+			<!-- ${org.mockito:mockito-core:jar}: the path of the jar, for the agent below. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<!-- Mockito as an agent: the JDK will soon refuse agents attached on the fly. -->
+					<argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
 				</configuration>
 			</plugin>
 		</plugins>

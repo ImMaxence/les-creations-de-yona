@@ -31,6 +31,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 class RecipeController {
 
+	/** "Qu'est-ce que je peux faire avec…": ingredients combined in one search, at most. */
+	static final int MAX_INGREDIENTS = 5;
+
 	private final RecipeService recipeService;
 
 	private final SearchMissService searchMissService;
@@ -47,15 +50,17 @@ class RecipeController {
 			@RequestParam(required = false) @Nullable String category,
 			@Parameter(description = "Tag slug")
 			@RequestParam(required = false) @Nullable String tag,
-			@Parameter(description = "Name of one of its ingredients (GET /api/ingredients), case and accents ignored")
-			@RequestParam(required = false) @Size(max = 100) @Nullable String ingredient,
+			@Parameter(description = "Names of ingredients it must all have (GET /api/ingredients), case and accents "
+					+ "ignored; repeated for several, " + MAX_INGREDIENTS + " at most")
+			@RequestParam(required = false) @Size(max = MAX_INGREDIENTS) @Nullable List<@Size(max = 100) String> ingredient,
 			@Parameter(description = "Preparation, rest and cooking together at most this long, in minutes")
 			@RequestParam(required = false) @Min(1) @Max(1440) @Nullable Integer maxMinutes,
 			@RequestParam(required = false) @Nullable DifficultyLevel difficulty,
 			@ParameterObject @PageableDefault(size = 12, sort = "publishedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		Page<RecipeCard> recipes = recipeService.searchPublished(
-				new RecipeFilter(q, category, tag, ingredient, null, null, null, maxMinutes, difficulty), pageable);
+				new RecipeFilter(q, category, tag, ingredient == null ? List.of() : ingredient, null, null, null,
+						maxMinutes, difficulty), pageable);
 		if (recipes.isEmpty() && pageable.getPageNumber() == 0 && StringUtils.hasText(q)) {
 			searchMissService.record(q);
 		}

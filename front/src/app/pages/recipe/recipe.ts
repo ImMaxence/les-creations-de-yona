@@ -6,6 +6,7 @@ import { Mold } from '../../core/api/generated/models/mold';
 import { RecipeCard as RecipeCardModel } from '../../core/api/generated/models/recipe-card';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Favorites } from '../../core/kitchen/favorites';
+import { RecipeNotes } from '../../core/kitchen/recipe-notes';
 import { ShoppingList } from '../../core/kitchen/shopping-list';
 import { Toaster } from '../../core/notifications/toaster';
 import { absoluteUrl } from '../../core/seo/page-seo';
@@ -32,6 +33,7 @@ import { YoutubeVideo } from '../../shared/ui/youtube-video/youtube-video';
 import { CookingMode } from './cooking-mode/cooking-mode';
 import { IngredientList } from './ingredient-list/ingredient-list';
 import { RecipeIngredients } from './ingredients/recipe-ingredients';
+import { RecipeNotesEditor } from './notes/recipe-notes';
 import { RecipePlanner } from './planner/recipe-planner';
 import { hasParts, moldArea, shownIngredients, totalIngredients } from './recipe-parts';
 import { RecipeSteps } from './steps/recipe-steps';
@@ -53,6 +55,7 @@ import { Icon } from '../../shared/ui/icon/icon';
     MarkdownPipe,
     RecipeCard,
     RecipeIngredients,
+    RecipeNotesEditor,
     RecipePlanner,
     RecipeSteps,
     Reveal,
@@ -123,7 +126,10 @@ export default class Recipe {
   private readonly toaster = inject(Toaster);
   private readonly favorites = inject(Favorites);
   private readonly shoppingList = inject(ShoppingList);
+  private readonly recipeNotes = inject(RecipeNotes);
 
+  /** "Mes notes", shown again in the cooking mode. */
+  protected readonly notes = computed(() => this.recipeNotes.of(this.recipe().slug));
   protected readonly isFavorite = computed(() => this.favorites.list().some((card) => card.slug === this.recipe().slug));
   protected readonly inShoppingList = computed(() =>
     this.shoppingList.recipes().some((recipe) => recipe.slug === this.recipe().slug),

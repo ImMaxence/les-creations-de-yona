@@ -5,7 +5,8 @@
       <p class="footer__tagline">{{ siteData.content().footerText }}</p>
       <div class="footer__extras">
         <yona-notify-button />
-        <a class="footer__glossary" [routerLink]="glossaryPath"><svg yonaIcon="book-a" [size]="18"></svg>Glossaire de pâtisserie</a>
+        <a class="footer__link" [routerLink]="glossaryPath"><svg yonaIcon="book-a" [size]="18"></svg>Glossaire de pâtisserie</a>
+        <a class="footer__link" [routerLink]="installPath"><svg yonaIcon="smartphone" [size]="18"></svg>Installer l'application</a>
       </div>
     </div>
 

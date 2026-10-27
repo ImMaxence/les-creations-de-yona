@@ -44,6 +44,33 @@
   display: block;
 }
 
+// The ingredients combined in the search, each removed with a tap: a row of their own
+.chosen-ingredients {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: var(--space-2);
+}
+
+.chosen-ingredients__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2.25rem;
+  background-color: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+  color: var(--color-accent-strong);
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-surface));
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
 // Tag, time and difficulty: a row of their own; on phones, behind "Plus de filtres"
 .more-toggle {
   display: inline-flex;

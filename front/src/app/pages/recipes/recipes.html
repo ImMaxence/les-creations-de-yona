@@ -9,8 +9,8 @@
       @if (filters().search) {
         pour « {{ filters().search }} »
       }
-      @if (filters().ingredient) {
-        avec « {{ filters().ingredient }} »
+      @if (filters().ingredients.length) {
+        avec {{ ingredientsLabel() }}
       }
       @if (activeTag(); as tag) {
         · {{ tag.name }}
@@ -25,16 +25,37 @@
       (suggestionPicked)="openRecipe($event)"
     />
 
+    <!-- "Qu'est-ce que je peux faire avec…": each ingredient picked is added to the others -->
     <yona-select
       class="tool-select"
-      label="Filtrer par ingrédient"
-      placeholder="Avec un ingrédient…"
+      [label]="filters().ingredients.length ? 'Ajouter un ingrédient' : 'Filtrer par ingrédient'"
+      [placeholder]="
+        filters().ingredients.length >= maxIngredients
+          ? maxIngredients + ' ingrédients au plus'
+          : filters().ingredients.length
+            ? 'Et aussi…'
+            : 'Avec un ingrédient…'
+      "
       size="large"
       searchable
+      [disabled]="filters().ingredients.length >= maxIngredients"
       [options]="ingredientOptions()"
-      [value]="filters().ingredient"
-      (valueChange)="changeIngredient($event)"
+      [(value)]="ingredientPick"
+      (valueChange)="addIngredient($event)"
     />
+
+    @if (filters().ingredients.length) {
+      <ul role="list" class="chosen-ingredients" aria-label="Ingrédients choisis">
+        @for (name of filters().ingredients; track name) {
+          <li>
+            <button type="button" class="chip chosen-ingredients__chip" [attr.aria-label]="'Retirer ' + name" (click)="removeIngredient(name)">
+              {{ name }}
+              <svg yonaIcon="x" [size]="14"></svg>
+            </button>
+          </li>
+        }
+      </ul>
+    }
 
     <yona-select
       class="tool-select"

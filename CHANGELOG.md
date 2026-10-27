@@ -2,6 +2,37 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste. Les versions antérieures à 3.1.0 sont résumées dans la roadmap du [ReadMe](ReadMe.md#roadmap).
 
+## 3.2.0 - 2026-10-27
+
+Front 3.2.0 (dont les retours publiés en front 3.1.1), backend 3.2.0. Pas de migration de base.
+
+### Ajouté, pour les visiteurs
+
+- **« Qu'est-ce que je peux faire avec… »** : recherche avec plusieurs ingrédients à la fois (5 au plus), ajoutés un par un en puces ; seules les recettes qui les ont tous sortent.
+- **Mes notes** sur chaque recette (« 10 min de plus dans mon four »), gardées dans le navigateur seulement, sans compte, et rappelées dans le mode cuisine.
+- **Mode cuisine** :
+  - écran **« Mise en place »** avant la première étape : tous les ingrédients à cocher une fois sortis et pesés ;
+  - **« + 1 min »** quand le minuteur sonne : le gâteau pas tout à fait cuit, il repart pour une minute sans tout remettre à zéro ;
+  - les minuteurs continuent **une fois le mode fermé** : une barre en bas de la recette les montre, avec « Reprendre », puis « + 1 min » et « Arrêter » quand ils sonnent ;
+  - vibration légère et saccadée au rythme de la sonnerie (Android).
+- **Bandeau d'installation** de l'application, seulement quand le navigateur peut l'installer tout de suite ; « Plus tard » le cache un mois.
+- Accueil : encart « Ne ratez aucune nouvelle recette » avec le bouton des notifications mis en avant.
+
+### Modifié
+
+- Accueil : les dernières recettes juste sous la recette à la une, « À propos » et les notifications après.
+- « Installer l'application » quitte la navbar pour le pied de page (toujours dans le menu mobile).
+- Politique de confidentialité : notes et choix « Plus tard » du bandeau d'installation, gardés dans le navigateur.
+- API : `GET /api/recipes` accepte `ingredient` répété (tous exigés) ; un seul `ingredient` marche comme avant.
+
+### Corrigé
+
+- Mode cuisine : un minuteur d'une minute affichait d'abord 1:01 (et la reprise après une pause quelques secondes de trop) ; il part bien de 1:00.
+
+### Technique
+
+- Tests unitaires : front avec Vitest (`npm test`), backend avec JUnit 5, AssertJ et Mockito (`./mvnw test`). Voir « Décisions » dans le ReadMe pour ce qu'ils couvrent.
+
 ## 3.1.0 - 2026-10-26
 
 Front 3.1.0, backend 3.1.0. Migration de base : V9.

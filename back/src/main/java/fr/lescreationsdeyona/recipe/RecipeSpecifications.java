@@ -42,10 +42,12 @@ final class RecipeSpecifications {
 		if (StringUtils.hasText(titleQuery)) {
 			criteria.add(titleContains(titleQuery.strip()));
 		}
-		String ingredientName = filter.ingredientName();
-		if (StringUtils.hasText(ingredientName)) {
-			String name = ingredientName.strip();
-			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("name"), name)));
+		// Each one: "œufs + chocolat" finds the recipes having both
+		for (String ingredientName : filter.ingredientNames()) {
+			if (StringUtils.hasText(ingredientName)) {
+				String name = ingredientName.strip();
+				criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("name"), name)));
+			}
 		}
 		UUID imageId = filter.imageId();
 		if (imageId != null) {
