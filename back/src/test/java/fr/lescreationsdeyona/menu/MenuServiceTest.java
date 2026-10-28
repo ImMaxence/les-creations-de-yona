@@ -128,7 +128,7 @@ class MenuServiceTest {
 	}
 
 	@Test
-	void showsItsOwnPhotoOrElseThatOfItsFirstRecipeWithOne() {
+	void showsItsOwnPhotoOnlyNotThatOfARecipe() {
 		Recipe soup = recipe(1, "Velouté", RecipeStatus.PUBLISHED);
 		Recipe tart = recipe(2, "Tarte", RecipeStatus.PUBLISHED);
 		Image tartPhoto = photo();
@@ -139,8 +139,7 @@ class MenuServiceTest {
 		christmas.setImage(menuPhoto);
 		when(menuRepository.findByPublishedTrueOrderByUpdatedAtDesc()).thenReturn(List.of(autumn, christmas));
 
-		assertThat(service.listPublished()).extracting(MenuSummary::imageId)
-			.containsExactly(tartPhoto.getId(), menuPhoto.getId());
+		assertThat(service.listPublished()).extracting(MenuSummary::imageId).containsExactly(null, menuPhoto.getId());
 	}
 
 	@Test

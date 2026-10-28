@@ -18,13 +18,11 @@
   }
 }
 
+// Its photo above the title on a phone, beside it on a wide screen
 .menu__head {
   display: grid;
   gap: var(--space-5);
-}
 
-// With its photo: above the title on a phone, beside it on a wide screen
-.menu__head--photo {
   @include m.from(lg) {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;

@@ -23,7 +23,6 @@ import fr.lescreationsdeyona.trash.TrashKind;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -70,7 +69,7 @@ public class MenuService {
 		if (recipes.isEmpty()) {
 			throw new ApiException(ErrorCode.MENU_NOT_FOUND);
 		}
-		return new MenuDetail(menu.getTitle(), menu.getSlug(), menu.getIntro(), imageId(shownImage(menu, recipes)),
+		return new MenuDetail(menu.getTitle(), menu.getSlug(), menu.getIntro(), imageId(menu.getImage()),
 				recipes.stream().map(recipeMapper::toCard).toList(), menu.getUpdatedAt());
 	}
 
@@ -113,7 +112,7 @@ public class MenuService {
 		return toAdmin(menuRepository.saveAndFlush(menu));
 	}
 
-	/** A photo of the gallery on a menu, or none: it then shows the photo of its first recipe. */
+	/** A photo of the gallery on a menu, or none: it then shows the default visual. */
 	@Transactional
 	public AdminMenu chooseImage(long id, @Nullable UUID imageId) {
 		Menu menu = find(id);
@@ -126,7 +125,7 @@ public class MenuService {
 	public void delete(long id) {
 		Menu menu = find(id);
 		trashBin.put(TrashBin.Entry.of(TrashKind.MENU, menu.getTitle(), menu.getSlug(),
-				shownImage(menu, menu.getRecipes()),
+				menu.getImage(),
 				new TrashedMenu(menu.getTitle(), menu.getSlug(), menu.getIntro(), menu.isPublished(), menu.getCreatedAt(),
 						menu.getRecipes().stream().map(recipe -> new TrashedMenu.RecipeRef(recipe.getId(), recipe.getSlug())).toList(),
 						imageId(menu.getImage()))));
@@ -212,13 +211,7 @@ public class MenuService {
 	private MenuSummary summary(Menu menu, boolean publishedOnly) {
 		List<Recipe> recipes = publishedOnly ? published(menu) : menu.getRecipes();
 		return new MenuSummary(menu.getId(), menu.getTitle(), menu.getSlug(), menu.getIntro(), menu.isPublished(),
-				recipes.size(), imageId(shownImage(menu, recipes)), menu.getUpdatedAt());
-	}
-
-	/** Chosen for it, or else the photo of its first recipe that has one. */
-	private static @Nullable Image shownImage(Menu menu, List<Recipe> recipes) {
-		return menu.getImage() != null ? menu.getImage()
-				: recipes.stream().map(Recipe::getImage).filter(Objects::nonNull).findFirst().orElse(null);
+				recipes.size(), imageId(menu.getImage()), menu.getUpdatedAt());
 	}
 
 	private static @Nullable UUID imageId(@Nullable Image image) {

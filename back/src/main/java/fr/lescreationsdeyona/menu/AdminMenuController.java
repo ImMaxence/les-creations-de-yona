@@ -66,7 +66,7 @@ class AdminMenuController {
 		return menuService.replaceImage(id, imageProcessor.process(file));
 	}
 
-	@Operation(summary = "Show an image of the gallery on a menu, or none (the photo of its first recipe)")
+	@Operation(summary = "Show an image of the gallery on a menu, or none (default visual)")
 	@PutMapping("/{id}/image-choice")
 	AdminMenu chooseMenuImage(@PathVariable long id, @RequestBody ImageChoice choice) {
 		return menuService.chooseImage(id, choice.imageId());

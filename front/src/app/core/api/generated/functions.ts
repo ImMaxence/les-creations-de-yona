@@ -141,6 +141,10 @@ export type { EraseFromTrash$Params as EraseFromTrash$Params } from './fn/admin-
 export { eraseFromTrash as eraseFromTrash } from './fn/admin-trash/erase-from-trash';
 export type { EraseSeveralFromTrash$Params as EraseSeveralFromTrash$Params } from './fn/admin-trash/erase-several-from-trash';
 export { eraseSeveralFromTrash as eraseSeveralFromTrash } from './fn/admin-trash/erase-several-from-trash';
+export type { GetRecipeAiStatus$Params as GetRecipeAiStatus$Params } from './fn/admin-recipe-ai/get-recipe-ai-status';
+export { getRecipeAiStatus as getRecipeAiStatus } from './fn/admin-recipe-ai/get-recipe-ai-status';
+export type { FillRecipeWithAi$Params as FillRecipeWithAi$Params } from './fn/admin-recipe-ai/fill-recipe-with-ai';
+export { fillRecipeWithAi as fillRecipeWithAi } from './fn/admin-recipe-ai/fill-recipe-with-ai';
 export type { ListImages$Params as ListImages$Params } from './fn/admin-images/list-images';
 export { listImages as listImages } from './fn/admin-images/list-images';
 export type { UploadImage$Params as UploadImage$Params } from './fn/admin-images/upload-image';

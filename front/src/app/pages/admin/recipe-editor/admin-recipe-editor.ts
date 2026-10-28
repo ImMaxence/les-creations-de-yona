@@ -27,6 +27,7 @@ import { attempt } from '../../../core/api/attempt';
 import { ImageUploads } from '../../../core/api/image-uploads';
 import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
 import { createRecipe } from '../../../core/api/generated/fn/admin-recipes/create-recipe';
+import { getRecipeAiStatus } from '../../../core/api/generated/fn/admin-recipe-ai/get-recipe-ai-status';
 import { duplicateRecipe } from '../../../core/api/generated/fn/admin-recipes/duplicate-recipe';
 import { previewRecipe } from '../../../core/api/generated/fn/admin-recipes/preview-recipe';
 import { chooseRecipeImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-image';
@@ -37,6 +38,7 @@ import { createTag } from '../../../core/api/generated/fn/admin-tags/create-tag'
 import { listAdminTags } from '../../../core/api/generated/fn/admin-tags/list-admin-tags';
 import { updateRecipe } from '../../../core/api/generated/fn/admin-recipes/update-recipe';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
+import { RecipeAiDraft } from '../../../core/api/generated/models/recipe-ai-draft';
 import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
@@ -58,10 +60,13 @@ import {
   emptyIngredient,
   emptyPart,
   emptyStep,
+  fromAiDraft,
+  hasContent,
   recipeSchema,
   toDraft,
   toRecipeForm,
 } from './recipe-draft';
+import { RecipeAiDialog } from './recipe-ai-dialog';
 import { UnsavedChanges } from './unsaved-changes.guard';
 import { Icon } from '../../../shared/ui/icon/icon';
 
@@ -123,6 +128,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     Dialog,
     FieldError,
     ImageUpload,
+    RecipeAiDialog,
     RecipePreview,
     Select,
     SuggestInput,
@@ -245,6 +251,18 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     return this.unsaved() ? `${status} · modifications pas encore enregistrées` : status;
   });
   protected readonly newCategoryName = signal('');
+  /** "Remplir avec l'IA": greyed out, with the reason, when it cannot work (no key, quota used…). */
+  protected readonly aiStatus = resource({ loader: () => this.api.invoke(getRecipeAiStatus) });
+  protected readonly aiOpen = signal(false);
+  /** The form was filled by the AI and not saved since: a banner asks to check it. */
+  protected readonly aiFilled = signal(false);
+  protected readonly aiTitle = computed(() => {
+    const status = this.aiStatus.value();
+    if (!status || status.available) {
+      return 'Remplir le formulaire depuis le texte ou la photo d’une recette';
+    }
+    return status.availableAgainAt ? `${status.reason} (vers ${parisDateTime(status.availableAgainAt)})` : (status.reason ?? '');
+  });
 
   constructor() {
     // On opening (and on moving to another recipe): a form typed earlier and never saved
@@ -614,6 +632,25 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     this.slotPending(slot).set(imageId ? { imageId } : null);
   }
 
+  /** The recipe read by the AI replaces what was typed, after confirmation. */
+  protected async fillWithAi(ai: RecipeAiDraft): Promise<void> {
+    const replace =
+      !hasContent(this.draft()) ||
+      (await this.confirm.ask({
+        title: 'Remplacer le contenu du formulaire ?',
+        message:
+          'La recette lue par l’IA remplace le titre, les ingrédients, les étapes et les autres champs déjà remplis. La photo et la publication ne changent pas',
+        confirmLabel: 'Remplacer',
+      }));
+    if (!replace) {
+      return;
+    }
+    this.draft.set(fromAiDraft(this.draft(), ai));
+    this.usesParts.set(hasParts(ai.parts));
+    this.aiFilled.set(true);
+    this.toaster.success('Formulaire rempli par l’IA : relisez-le avant d’enregistrer');
+  }
+
   protected async save(): Promise<void> {
     await submit(this.recipeForm, async () => {
       this.saving.set(true);
@@ -625,6 +662,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
           this.draft.set(toDraft(updated));
           this.savedSnapshot.set(JSON.stringify(this.draft()));
           removeStoredDraft(this.storageKey());
+          this.aiFilled.set(false);
           this.toaster.success('Recette enregistrée');
         } else {
           const created = await this.api.invoke(createRecipe, { body });

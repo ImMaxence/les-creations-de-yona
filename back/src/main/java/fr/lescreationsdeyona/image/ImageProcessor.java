@@ -95,6 +95,11 @@ public class ImageProcessor {
 		}
 	}
 
+	/** "image/jpeg" or "image/png", from the first bytes of the file; any other format is refused. */
+	public static String mediaType(byte[] content) {
+		return "image/" + detectFormat(content);
+	}
+
 	/** Image I/O format name, from the first bytes of the file. */
 	private static String detectFormat(byte[] content) {
 		if (startsWith(content, JPEG_SIGNATURE)) {

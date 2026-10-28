@@ -26,7 +26,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * "Menu de Noël", "Goûter d'anniversaire": a few recipes put together by the admin, on a page of
- * their own. Its photo is the one chosen for it, or else the one of its first recipe.
+ * their own, with the photo chosen for it (the default visual without one).
  */
 @Entity
 @EntityListeners(AuditingEntityListener.class)
@@ -49,7 +49,7 @@ public class Menu {
 	/** Shown on the site; its draft recipes are not, even then. */
 	private boolean published;
 
-	/** Chosen for it; without one, the photo of its first recipe that has one. */
+	/** Chosen for it; without one, the site shows its default visual. */
 	@ManyToOne(fetch = FetchType.LAZY)
 	private Image image;
 

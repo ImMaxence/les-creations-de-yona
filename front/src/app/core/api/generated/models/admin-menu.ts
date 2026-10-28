@@ -6,7 +6,7 @@ export interface AdminMenu {
   id: number;
 
   /**
-   * Photo chosen for it; null when it shows that of its first recipe
+   * Photo chosen for it; null for the default visual
    */
   imageId?: string;
   intro?: string;

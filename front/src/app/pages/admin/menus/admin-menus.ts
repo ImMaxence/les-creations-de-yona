@@ -35,14 +35,14 @@ interface MenuDraft {
   intro: string;
   published: boolean;
   recipes: MenuRecipe[];
-  /** Chosen for it; null: the photo of its first recipe. Saved at once, apart from the form. */
+  /** Chosen for it; null: the default visual. Saved at once, apart from the form. */
   imageId: string | null;
 }
 
 /**
  * "Menus": a few recipes put together for an occasion ("Menu de Noël"), shown on the site once
- * published, with its published recipes only. Its photo is the one chosen for it, or else the one
- * of its first recipe; chosen once the menu exists.
+ * published, with its published recipes only. Its photo, chosen once the menu exists, or else the
+ * default visual.
  */
 @Component({
   selector: 'yona-admin-menus',

@@ -2,6 +2,16 @@
   <div class="admin-section__head">
     <h2>{{ isNew() ? 'Nouvelle recette' : draft().title || 'Recette sans titre' }}</h2>
     <div class="editor__head-actions">
+      <button
+        yonaButton
+        variant="secondary"
+        type="button"
+        [disabled]="aiStatus.value()?.available !== true"
+        [title]="aiTitle()"
+        (click)="aiOpen.set(true)"
+      >
+        <svg yonaIcon="sparkles"></svg>Remplir avec l'IA
+      </button>
       <button yonaButton variant="secondary" type="button" [disabled]="previewing()" (click)="openPreview()"><svg yonaIcon="eye"></svg>Aperçu</button>
       @if (!isNew()) {
         <button yonaButton variant="ghost" type="button" [disabled]="duplicating()" (click)="duplicate()"><svg yonaIcon="copy-plus"></svg>Dupliquer</button>
@@ -11,6 +21,31 @@
       }
     </div>
   </div>
+
+  @if (aiStatus.value(); as status) {
+    @if (!status.available) {
+      <p class="field__hint ai-unavailable">
+        <svg yonaIcon="sparkles" [size]="14"></svg>
+        Remplir avec l'IA : {{ aiTitle() }}
+      </p>
+    }
+  }
+
+  @if (aiFilled()) {
+    <div class="admin-panel recovered" role="status">
+      <svg yonaIcon="sparkles" [size]="22" [strokeWidth]="1.75"></svg>
+      <div>
+        <p class="recovered__title">Remplie par l'IA : relisez tout avant d'enregistrer</p>
+        <p class="field__hint">
+          Quantités, temps et étapes peuvent contenir des erreurs. Vérifiez aussi les catégories et les tags proposés, et
+          ajoutez la photo
+        </p>
+      </div>
+      <div class="recovered__actions">
+        <button yonaButton variant="ghost" type="button" (click)="aiFilled.set(false)">J'ai compris</button>
+      </div>
+    </div>
+  }
 
   @if (recovered()) {
     <div class="admin-panel recovered" role="status">
@@ -336,6 +371,8 @@
     </button>
   </div>
 </form>
+
+<yona-recipe-ai-dialog [(open)]="aiOpen" (filled)="fillWithAi($event)" (unavailable)="aiStatus.reload()" />
 
 <yona-dialog size="full" title="Aperçu" [subtitle]="previewStatus()" [(open)]="previewOpen">
   @if (preview(); as recipe) {

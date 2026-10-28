@@ -83,6 +83,8 @@ await part('Accueil (ordinateur)', async () => {
   await banner.waitFor({ timeout: 3000 }).catch(() => {});
   check('Bandeau d’installation', await banner.isVisible());
   await banner.getByRole('button', { name: 'Plus tard' }).click();
+  // Caché au rendu suivant, pas dans l'instant
+  await banner.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => {});
   const dismissed = await page.evaluate(() => localStorage.getItem('yona-install-banner-dismissed'));
   check('« Plus tard » le cache et note la date', !(await banner.isVisible()) && !!dismissed);
   await page.context().close();

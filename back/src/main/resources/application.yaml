@@ -74,6 +74,12 @@ app:
   push:
     # Contact given to the push services with each notification (VAPID "sub"): an https URL or mailto:.
     subject: ${PUSH_SUBJECT:https://les-creations-de-yona.fr}
+  gemini:
+    # "Remplir avec l'IA" in the recipe editor. Without a key, its button stays greyed out.
+    api-key: ${GEMINI_API_KEY:}
+    # Free tier: Flash models only. Tried in order, the next one when a model is overloaded.
+    models: ${GEMINI_MODELS:gemini-flash-latest,gemini-flash-lite-latest}
+    timeout: 45s
 
 springdoc:
   # Without it, responses are documented as */* and the generated front client reads them as Blob.

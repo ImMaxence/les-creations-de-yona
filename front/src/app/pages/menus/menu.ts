@@ -13,7 +13,7 @@ import { Icon } from '../../shared/ui/icon/icon';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
 
 /**
- * A menu: its photo (chosen for it, or else its first recipe's), its recipes, in the order Yona chose, all added to the shopping list at once (each for
+ * A menu: its photo (the default visual without one), its recipes, in the order Yona chose, all added to the shopping list at once (each for
  * the servings of its recipe; changed later on its own page).
  */
 @Component({
@@ -21,16 +21,14 @@ import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
   imports: [Button, CoverImage, Icon, RecipeCard, Reveal, RouterLink],
   template: `
     <article class="container menu">
-      <header class="menu__head" [class.menu__head--photo]="menu().imageId">
-        @if (menu().imageId; as imageId) {
-          <yona-cover-image
-            class="menu__photo enter"
-            [imageId]="imageId"
-            [alt]="menu().title"
-            sizes="(width >= 64rem) 36rem, 100vw"
-            priority
-          />
-        }
+      <header class="menu__head">
+        <yona-cover-image
+          class="menu__photo enter"
+          [imageId]="menu().imageId"
+          [alt]="menu().imageId ? menu().title : ''"
+          sizes="(width >= 64rem) 36rem, 100vw"
+          priority
+        />
         <div class="menu__heading">
           <a class="eyebrow enter" [routerLink]="menusPath">Menus</a>
           <h1 class="enter" style="--delay: 60ms">{{ menu().title }}</h1>

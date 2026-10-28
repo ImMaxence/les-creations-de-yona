@@ -5,7 +5,7 @@ import { menuLink } from '../../shared/routing/links';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { Icon } from '../../shared/ui/icon/icon';
 
-/** A menu in a grid (page of the menus, home page): the photo of its first recipe, its title, its size. */
+/** A menu in a grid (page of the menus, home page): its photo (the default visual without one), its title, its size. */
 @Component({
   selector: 'yona-menu-card',
   imports: [CoverImage, Icon, RouterLink],

@@ -2,6 +2,25 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste (règle complète et fichiers à mettre à jour : [docs/developpement.md](docs/developpement.md#monter-la-version)). Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.8.0 - 2026-10-28
+
+Front 3.8.0, backend 3.8.0. Pas de migration de base.
+
+### Ajouté, dans le back-office
+
+- **« Remplir avec l'IA »** dans l'éditeur de recette : collez le texte d'une recette (notes, message, page recopiée) ou envoyez sa photo (recette manuscrite, capture d'écran), et Gemini, l'IA de Google, remplit le formulaire : titre, portions, temps, ingrédients, étapes (avec leurs durées et leurs ingrédients), matériel, moule, conseil, et des catégories et tags choisis parmi ceux du site. Les ingrédients déjà connus gardent leur nom. **Rien n'est enregistré** : relisez, ajoutez la photo, puis enregistrez comme d'habitude. Un formulaire déjà rempli n'est remplacé qu'après confirmation ; la photo et la publication ne changent pas. Gratuit (offre gratuite de Google).
+- Le bouton est grisé, avec la raison, quand il ne peut pas marcher : pas de clé, clé refusée, ou demandes gratuites du jour épuisées (avec l'heure de reprise). Gemini est parfois surchargé : le message dit alors de réessayer dans quelques minutes, et un second modèle est essayé avant d'abandonner.
+
+### Modifié
+
+- **Menus sans photo** : le visuel par défaut, comme une recette sans photo (sur la carte et en haut de la page du menu), au lieu de la photo de leur première recette. Choisissez une photo pour chaque menu dans le back-office.
+- Politique de confidentialité : le texte ou la photo d'une recette envoyés à Gemini par un administrateur. Aucune donnée des visiteurs n'y part.
+
+### Technique
+
+- Backend `ai/` : `GET /api/admin/recipe-ai` (état, sans quota), `POST /api/admin/recipe-ai` (multipart `text` et/ou `image`). API REST Gemini (`generateContent`, réponse imposée par un schéma JSON), modèles `gemini-flash-latest` puis `gemini-flash-lite-latest` (`GEMINI_MODELS`), 45 s chacun ; réponse vérifiée champ par champ (`RecipeAiReader`). Variable `GEMINI_API_KEY` (facultative) dans les deux fichiers Docker Compose et `.env.example`. Détail : [docs/ia.md](docs/ia.md).
+- 68 tests front, 86 tests backend (aucun n'appelle Google). Parcours Chrome : la vérification « Plus tard » du bandeau d'installation attend le rendu suivant (elle échouait parfois).
+
 ## 3.7.0 - 2026-10-28
 
 Front 3.7.0, backend 3.7.0. Migration de base : V13.

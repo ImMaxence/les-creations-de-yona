@@ -140,9 +140,8 @@ public class ImageService {
 	}
 
 	/**
-	 * Moved to the trash, kept 30 days: the recipes and categories showing it fall back to the
-	 * default visual ({@code ON DELETE SET NULL}), the menus to the photo of their first recipe; all
-	 * get it back on restore.
+	 * Moved to the trash, kept 30 days: the recipes, categories and menus showing it fall back to
+	 * the default visual ({@code ON DELETE SET NULL}) and get it back on restore.
 	 */
 	@Transactional
 	public void delete(UUID id) {

@@ -75,6 +75,19 @@ public enum ErrorCode {
 	// Social links
 	DUPLICATE_SOCIAL_PLATFORM(HttpStatus.BAD_REQUEST, "Chaque réseau social ne peut apparaître qu'une seule fois"),
 
+	// "Remplir avec l'IA" (Gemini)
+	AI_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "Le remplissage par IA n'est pas configuré : il manque la clé Gemini (GEMINI_API_KEY)"),
+	AI_KEY_REFUSED(HttpStatus.SERVICE_UNAVAILABLE, "Google refuse la clé Gemini : vérifiez-la dans Google AI Studio"),
+	AI_DAILY_QUOTA(HttpStatus.TOO_MANY_REQUESTS, "Les demandes gratuites à Gemini sont épuisées pour aujourd'hui : réessayez demain matin"),
+	AI_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Trop de demandes à Gemini en une minute : réessayez dans un instant"),
+	AI_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Gemini est indisponible pour le moment (très demandé) : réessayez dans quelques minutes"),
+	AI_BUSY(HttpStatus.CONFLICT, "Une recette est déjà en cours de lecture par l'IA : attendez la fin"),
+	AI_INPUT_REQUIRED(HttpStatus.BAD_REQUEST, "Collez le texte d'une recette ou envoyez une photo"),
+	AI_TEXT_TOO_LONG(HttpStatus.BAD_REQUEST, "Le texte dépasse 20 000 caractères"),
+	AI_NOT_A_RECIPE(HttpStatus.BAD_REQUEST, "L'IA n'a pas trouvé de recette dans ce texte ou cette photo"),
+	AI_BLOCKED(HttpStatus.BAD_REQUEST, "Gemini a refusé de lire ce contenu"),
+	AI_BAD_RESPONSE(HttpStatus.BAD_GATEWAY, "La réponse de Gemini est illisible : réessayez"),
+
 	// Images
 	IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Image introuvable"),
 	IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "Aucune image n'a été envoyée"),

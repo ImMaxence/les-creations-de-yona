@@ -1,4 +1,5 @@
 import { applyEach, max, maxLength, min, required, schema, validate } from '@angular/forms/signals';
+import { RecipeAiDraft } from '../../../core/api/generated/models/recipe-ai-draft';
 import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
 import { RecipeForm } from '../../../core/api/generated/models/recipe-form';
 import { fromParisInput, toParisInput } from '../../../shared/format/paris-time';
@@ -142,6 +143,60 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
         ingredientKeys: step.ingredientPositions.map((position) => `${p}-${position}`),
       })),
     })),
+  };
+}
+
+/** Something typed already: filling the form with the AI would replace it. */
+export function hasContent(draft: RecipeDraft): boolean {
+  return (
+    !!draft.title.trim() ||
+    draft.parts.some(
+      (part) =>
+        part.ingredients.some((line) => line.name.trim()) || part.steps.some((step) => step.description.trim()),
+    )
+  );
+}
+
+/**
+ * The form filled with the recipe read by the AI: its content replaces the form's; publication
+ * (status, scheduling, featured), video and photos stay as they were; categories and tags only
+ * when it found some on the site.
+ */
+export function fromAiDraft(current: RecipeDraft, ai: RecipeAiDraft): RecipeDraft {
+  return {
+    ...current,
+    title: ai.title ?? '',
+    intro: ai.intro ?? '',
+    categoryIds: ai.categoryIds.length ? ai.categoryIds : current.categoryIds,
+    tagIds: ai.tagIds.length ? ai.tagIds : current.tagIds,
+    servings: ai.servings ?? null,
+    prepMinutes: ai.prepMinutes ?? null,
+    cookMinutes: ai.cookMinutes ?? null,
+    restMinutes: ai.restMinutes ?? null,
+    difficulty: ai.difficulty ?? null,
+    tip: ai.tip ?? '',
+    equipment: ai.equipment.join('\n'),
+    moldShape: ai.mold?.shape ?? 'NONE',
+    moldLengthCm: ai.mold?.lengthCm ?? null,
+    moldWidthCm: ai.mold?.widthCm ?? null,
+    parts: ai.parts.map((part) => {
+      const keys = part.ingredients.map(() => newKey());
+      return {
+        title: part.title ?? '',
+        ingredients: part.ingredients.map((line, index) => ({
+          key: keys[index]!,
+          name: line.name,
+          quantity: line.quantity ?? null,
+          unit: line.unit ?? '',
+          note: line.note ?? '',
+        })),
+        steps: part.steps.map((step) => ({
+          description: step.description,
+          durationMinutes: step.durationMinutes ?? null,
+          ingredientKeys: step.ingredientPositions.flatMap((position) => keys[position] ?? []),
+        })),
+      };
+    }),
   };
 }
 
