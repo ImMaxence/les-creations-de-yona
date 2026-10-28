@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.menu;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
@@ -51,6 +54,8 @@ public class MenuService {
 
 	private final TrashBin trashBin;
 
+	private final AuditLog auditLog;
+
 	// Public site: published menus, their published recipes only
 
 	/** The latest updated first; a menu without published recipe is left out. */
@@ -91,7 +96,9 @@ public class MenuService {
 		}
 		Menu menu = new Menu();
 		menu.setSlug(Slugs.uniqueSlug(title, "menu", menuRepository::existsBySlug));
-		return save(menu, title, form);
+		AdminMenu created = save(menu, title, form);
+		auditLog.record(AuditAction.CREATED, AuditKind.MENU, created.title(), created.id());
+		return created;
 	}
 
 	@Transactional
@@ -101,6 +108,7 @@ public class MenuService {
 		if (menuRepository.findByTitle(title).filter(other -> !other.getId().equals(id)).isPresent()) {
 			throw new ApiException(ErrorCode.MENU_ALREADY_EXISTS);
 		}
+		auditLog.record(AuditAction.UPDATED, AuditKind.MENU, title, id);
 		return save(menu, title, form);
 	}
 

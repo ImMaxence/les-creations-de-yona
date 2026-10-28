@@ -7,16 +7,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { RecipeSuggestion } from '../../models/recipe-suggestion';
+import { UnreadCount } from '../../models/unread-count';
 
-export interface SuggestRecipeTitles$Params {
-  q: string;
+export interface CountUnreadFeedback$Params {
 }
 
-export function suggestRecipeTitles(http: HttpClient, rootUrl: string, params: SuggestRecipeTitles$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<RecipeSuggestion>>> {
-  const rb = new RequestBuilder(rootUrl, suggestRecipeTitles.PATH, 'get');
+export function countUnreadFeedback(http: HttpClient, rootUrl: string, params?: CountUnreadFeedback$Params, context?: HttpContext): Observable<StrictHttpResponse<UnreadCount>> {
+  const rb = new RequestBuilder(rootUrl, countUnreadFeedback.PATH, 'get');
   if (params) {
-    rb.query('q', params.q, {});
   }
 
   return http.request(
@@ -24,9 +22,9 @@ export function suggestRecipeTitles(http: HttpClient, rootUrl: string, params: S
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<RecipeSuggestion>>;
+      return r as StrictHttpResponse<UnreadCount>;
     })
   );
 }
 
-suggestRecipeTitles.PATH = '/api/recipe-suggestions';
+countUnreadFeedback.PATH = '/api/admin/feedback/unread';

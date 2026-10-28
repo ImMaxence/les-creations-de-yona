@@ -82,14 +82,14 @@ export default class AdminTags {
 
   protected async remove(tag: TagSummary): Promise<void> {
     const confirmed = await this.confirm.ask({
-      title: 'Supprimer le tag ?',
+      title: 'Mettre le tag à la corbeille ?',
       message: tag.recipeCount
-        ? `« ${tag.name} » sera retiré de ${tag.recipeCount > 1 ? `ses ${tag.recipeCount} recettes` : 'sa recette'}, qui restent en ligne`
-        : `« ${tag.name} » sera supprimé`,
-      confirmLabel: 'Supprimer',
+        ? `« ${tag.name} » sera retiré de ${tag.recipeCount > 1 ? `ses ${tag.recipeCount} recettes` : 'sa recette'}, qui restent en ligne. Restauré depuis la corbeille (30 jours), il y revient`
+        : `« ${tag.name} » reste 30 jours dans la corbeille, d'où il peut être restauré`,
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteTags, { ids: [tag.id] }))).ok) {
-      this.toaster.success('Tag supprimé');
+      this.toaster.success('Tag mis à la corbeille');
       if (this.selection.has(tag.id)) {
         this.selection.toggle(tag.id);
       }
@@ -100,9 +100,9 @@ export default class AdminTags {
   protected async removeSelected(): Promise<void> {
     const count = this.selection.size();
     const confirmed = await this.confirm.ask({
-      title: count > 1 ? `Supprimer ${count} tags ?` : 'Supprimer le tag ?',
-      message: 'Ils seront retirés de leurs recettes, qui restent en ligne',
-      confirmLabel: 'Supprimer',
+      title: count > 1 ? `Mettre ${count} tags à la corbeille ?` : 'Mettre le tag à la corbeille ?',
+      message: 'Ils seront retirés de leurs recettes, qui restent en ligne. Restaurés depuis la corbeille (30 jours), ils y reviennent',
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed) {
       return;
@@ -111,7 +111,7 @@ export default class AdminTags {
     const deletion = await attempt(this.api.invoke(deleteTags, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} tags supprimés` : 'Tag supprimé');
+      this.toaster.success(count > 1 ? `${count} tags mis à la corbeille` : 'Tag mis à la corbeille');
       this.selection.clear();
       this.tags.reload();
     }

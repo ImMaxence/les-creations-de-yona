@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.category;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
@@ -36,6 +39,8 @@ public class CategoryService {
 
 	private final TrashBin trashBin;
 
+	private final AuditLog auditLog;
+
 	public List<CategoryResponse> list() {
 		return categoryRepository.findAll(Sort.by("name")).stream().map(categoryMapper::toResponse).toList();
 	}
@@ -45,13 +50,16 @@ public class CategoryService {
 		Category category = new Category();
 		category.setName(Texts.capitalizeFirstLetter(form.name().strip()));
 		category.setSlug(Slugs.uniqueSlug(category.getName(), "categorie", categoryRepository::existsBySlug));
-		return categoryMapper.toResponse(categoryRepository.save(category));
+		Category saved = categoryRepository.save(category);
+		auditLog.record(AuditAction.CREATED, AuditKind.CATEGORY, saved.getName(), saved.getId());
+		return categoryMapper.toResponse(saved);
 	}
 
 	@Transactional
 	public CategoryResponse rename(long id, CategoryForm form) {
 		Category category = find(id);
 		category.setName(Texts.capitalizeFirstLetter(form.name().strip()));
+		auditLog.record(AuditAction.UPDATED, AuditKind.CATEGORY, category.getName(), id);
 		return categoryMapper.toResponse(category);
 	}
 

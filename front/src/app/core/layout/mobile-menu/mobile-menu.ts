@@ -23,6 +23,7 @@ import { ShoppingList } from '../../kitchen/shopping-list';
 import { SiteData } from '../../site/site-data';
 import {
   FAVORITES_PATH,
+  FEEDBACK_PATH,
   GLOSSARY_PATH,
   INSTALL_PATH,
   MENUS_PATH,
@@ -68,6 +69,7 @@ export class MobileMenu {
   protected readonly menusPath = MENUS_PATH;
   protected readonly installPath = INSTALL_PATH;
   protected readonly glossaryPath = GLOSSARY_PATH;
+  protected readonly feedbackPath = FEEDBACK_PATH;
   protected readonly favoritesPath = FAVORITES_PATH;
   protected readonly shoppingListPath = SHOPPING_LIST_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;

@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.content;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.image.Image;
 import fr.lescreationsdeyona.image.ImageKind;
 import fr.lescreationsdeyona.image.ImageService;
@@ -19,6 +22,8 @@ public class SiteContentService {
 
 	private final ImageService imageService;
 
+	private final AuditLog auditLog;
+
 	public SiteContentResponse get() {
 		return toResponse(find());
 	}
@@ -29,6 +34,13 @@ public class SiteContentService {
 		content.setAboutTitle(form.aboutTitle().strip());
 		content.setAboutText(form.aboutText().strip());
 		content.setFooterText(form.footerText().strip());
+		content.setLatestEyebrow(form.latestEyebrow().strip());
+		content.setLatestTitle(form.latestTitle().strip());
+		content.setMenusEyebrow(form.menusEyebrow().strip());
+		content.setMenusTitle(form.menusTitle().strip());
+		content.setCategoriesEyebrow(form.categoriesEyebrow().strip());
+		content.setCategoriesTitle(form.categoriesTitle().strip());
+		auditLog.record(AuditAction.UPDATED, AuditKind.SITE_CONTENT, "Textes du site", null);
 		return toResponse(siteContentRepository.saveAndFlush(content));
 	}
 
@@ -37,6 +49,7 @@ public class SiteContentService {
 	public SiteContentResponse replaceAboutImage(ProcessedImage processed) {
 		SiteContent content = find();
 		content.setAboutImage(imageService.create(ImageKind.SITE, processed));
+		auditLog.record(AuditAction.UPDATED, AuditKind.SITE_CONTENT, "Photo « À propos »", null);
 		return toResponse(siteContentRepository.saveAndFlush(content));
 	}
 
@@ -45,6 +58,7 @@ public class SiteContentService {
 	public SiteContentResponse chooseAboutImage(@Nullable UUID imageId) {
 		SiteContent content = find();
 		content.setAboutImage(imageId == null ? null : imageService.getLandscape(imageId));
+		auditLog.record(AuditAction.UPDATED, AuditKind.SITE_CONTENT, "Photo « À propos »", null);
 		return toResponse(siteContentRepository.saveAndFlush(content));
 	}
 
@@ -57,7 +71,9 @@ public class SiteContentService {
 	private static SiteContentResponse toResponse(SiteContent content) {
 		Image image = content.getAboutImage();
 		return new SiteContentResponse(content.getAboutTitle(), content.getAboutText(),
-				image == null ? null : image.getId(), content.getFooterText());
+				image == null ? null : image.getId(), content.getFooterText(), content.getLatestEyebrow(),
+				content.getLatestTitle(), content.getMenusEyebrow(), content.getMenusTitle(), content.getCategoriesEyebrow(),
+				content.getCategoriesTitle());
 	}
 
 }

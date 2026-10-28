@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  afterNextRender,
+  booleanAttribute,
   computed,
   inject,
   input,
@@ -13,23 +15,37 @@ import {
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, distinctUntilChanged, from, map, of, switchMap } from 'rxjs';
 import { Api } from '../../../core/api/generated/api';
-import { suggestRecipeTitles } from '../../../core/api/generated/fn/recipes/suggest-recipe-titles';
-import { RecipeSuggestion } from '../../../core/api/generated/models/recipe-suggestion';
+import { suggest } from '../../../core/api/generated/fn/search/suggest';
+import { SearchSuggestions } from '../../../core/api/generated/models/search-suggestions';
+import { SearchChoice, SearchPick, servingsIn } from '../../search/search-target';
 import { Icon } from '../icon/icon';
+import { IconName } from '../icon/icons';
 
 const MIN_QUERY_LENGTH = 2;
 const SUGGESTION_DELAY_MS = 200;
 
 interface HighlightedSuggestion {
-  suggestion: RecipeSuggestion;
+  pick: SearchPick;
   parts: { text: string; match: boolean }[];
+  /** Place in the whole list, for the arrows of the keyboard. */
+  index: number;
 }
+
+interface SuggestionGroup {
+  label: string;
+  icon: IconName;
+  items: HighlightedSuggestion[];
+}
+
+const NO_SUGGESTIONS: SearchSuggestions = { recipes: [], categories: [], tags: [], menus: [], ingredients: [] };
 
 let nextId = 0;
 
 /**
- * Recipe search with title autocompletion, following the ARIA combobox pattern: arrows move in
- * the suggestions, Enter opens the active one or searches the typed text, Escape closes.
+ * Search of the site, following the ARIA combobox pattern: arrows move in the suggestions, Enter
+ * opens the active one or searches the typed text, Escape closes. Suggestions by kind: recipes
+ * mentioning each word, then the categories, tags, menus and ingredients of that name.
+ * {@code inline}: the suggestions push the content down instead of floating over it (in a dialog).
  */
 @Component({
   selector: 'yona-search-box',
@@ -41,9 +57,13 @@ let nextId = 0;
 export class SearchBox {
   /** Search currently applied to the page. */
   readonly value = input('');
+  readonly inline = input(false, { transform: booleanAttribute });
+  readonly large = input(false, { transform: booleanAttribute });
+  /** Focused as soon as shown (the search dialog). */
+  readonly autofocus = input(false, { transform: booleanAttribute });
   // Not named "search": that is also a native DOM event of <input type="search">, which bubbles
   readonly searchSubmitted = output<string>();
-  readonly suggestionPicked = output<RecipeSuggestion>();
+  readonly picked = output<SearchChoice>();
 
   protected readonly listboxId = `search-suggestions-${nextId++}`;
   protected readonly query = linkedSignal(() => this.value());
@@ -62,23 +82,47 @@ export class SearchBox {
       distinctUntilChanged(),
       switchMap((query) =>
         query.length < MIN_QUERY_LENGTH
-          ? of([])
-          : from(this.api.invoke(suggestRecipeTitles, { q: query })).pipe(catchError(() => of([]))),
+          ? of(NO_SUGGESTIONS)
+          : from(this.api.invoke(suggest, { q: query })).pipe(catchError(() => of(NO_SUGGESTIONS))),
       ),
     ),
-    { initialValue: [] },
+    { initialValue: NO_SUGGESTIONS },
   );
 
-  protected readonly highlighted = computed<HighlightedSuggestion[]>(() =>
-    this.suggestions().map((suggestion) => ({
-      suggestion,
-      parts: highlight(suggestion.title, this.typed().trim()),
-    })),
-  );
+  protected readonly groups = computed<SuggestionGroup[]>(() => {
+    const found = this.suggestions();
+    const query = this.typed().trim();
+    let index = 0;
+    const group = (label: string, icon: IconName, picks: SearchPick[]): SuggestionGroup => ({
+      label,
+      icon,
+      items: picks.map((pick) => ({ pick, parts: highlight(pick.label, query), index: index++ })),
+    });
+    return [
+      group(
+        'Recettes',
+        'book-open',
+        found.recipes.map((recipe) => ({ kind: 'recipe', label: recipe.title, slug: recipe.slug, categorySlug: recipe.categorySlug })),
+      ),
+      group('Catégories', 'layout-grid', found.categories.map((category) => ({ kind: 'category', label: category.name, slug: category.slug }))),
+      group('Tags', 'tag', found.tags.map((tag) => ({ kind: 'tag', label: tag.name, slug: tag.slug }))),
+      group('Menus', 'utensils-crossed', found.menus.map((menu) => ({ kind: 'menu', label: menu.name, slug: menu.slug }))),
+      group('Ingrédients', 'carrot', found.ingredients.map((name) => ({ kind: 'ingredient', label: name }))),
+    ].filter((each) => each.items.length > 0);
+  });
+  private readonly highlighted = computed(() => this.groups().flatMap((each) => each.items));
   protected readonly expanded = computed(() => this.focused() && this.highlighted().length > 0);
   protected readonly activeOptionId = computed(() =>
     this.expanded() && this.activeIndex() >= 0 ? `${this.listboxId}-${this.activeIndex()}` : null,
   );
+
+  constructor() {
+    afterNextRender(() => {
+      if (this.autofocus()) {
+        this.input().nativeElement.focus();
+      }
+    });
+  }
 
   protected onInput(event: Event): void {
     const query = (event.target as HTMLInputElement).value;
@@ -114,7 +158,7 @@ export class SearchBox {
     event.preventDefault();
     const active = this.activeIndex();
     if (this.expanded() && active >= 0) {
-      this.choose(this.highlighted()[active].suggestion);
+      this.choose(this.highlighted()[active].pick);
       return;
     }
     this.focused.set(false);
@@ -122,9 +166,9 @@ export class SearchBox {
     this.searchSubmitted.emit(this.query().trim());
   }
 
-  protected choose(suggestion: RecipeSuggestion): void {
+  protected choose(pick: SearchPick): void {
     this.focused.set(false);
-    this.suggestionPicked.emit(suggestion);
+    this.picked.emit({ pick, servings: servingsIn(this.query()) });
   }
 
   protected clear(): void {

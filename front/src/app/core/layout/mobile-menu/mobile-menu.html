@@ -74,6 +74,11 @@
           >Installer l'application <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
         ></a>
       </li>
+      <li class="stagger" style="--i: 2">
+        <a [routerLink]="feedbackPath" routerLinkActive="is-active"
+          >Donner mon avis <svg yonaIcon="chevron-right" [size]="20" aria-hidden="true"></svg
+        ></a>
+      </li>
       @if (adminSession.isAdmin()) {
         <li class="stagger" style="--i: 2">
           <a routerLink="/admin" routerLinkActive="is-active"

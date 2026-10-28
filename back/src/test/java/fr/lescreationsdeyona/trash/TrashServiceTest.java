@@ -9,15 +9,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.category.CategoryService;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.glossary.GlossaryService;
 import fr.lescreationsdeyona.image.ImageService;
+import fr.lescreationsdeyona.ingredient.IngredientService;
 import fr.lescreationsdeyona.menu.MenuService;
 import fr.lescreationsdeyona.recipe.RecipeDetail;
 import fr.lescreationsdeyona.recipe.RecipeLinks;
 import fr.lescreationsdeyona.recipe.RecipeService;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
+import fr.lescreationsdeyona.tag.TagService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -35,8 +39,11 @@ class TrashServiceTest {
 
 	private final ImageService imageService = mock(ImageService.class);
 
+	private final TagService tagService = mock(TagService.class);
+
 	private final TrashService service = new TrashService(trashRepository, trashBin, recipeService,
-			mock(CategoryService.class), menuService, imageService);
+			mock(CategoryService.class), menuService, imageService, tagService, mock(IngredientService.class),
+			mock(GlossaryService.class), mock(AuditLog.class));
 
 	private static TrashItem item(long id, TrashKind kind) {
 		TrashItem item = new TrashItem();

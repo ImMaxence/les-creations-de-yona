@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.backup;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageStorage;
@@ -69,6 +72,8 @@ public class RestoreService {
 
 	private final JdbcClient siteJdbc;
 
+	private final AuditLog auditLog;
+
 	private final ExecutorService worker = Executors.newSingleThreadExecutor(Thread.ofPlatform()
 		.name("restore")
 		.daemon(true)
@@ -77,11 +82,12 @@ public class RestoreService {
 	private @Nullable Session session;
 
 	RestoreService(ScratchDatabases scratchDatabases, RestoredData restoredData, ImageStorage imageStorage,
-			JdbcClient siteJdbc) {
+			JdbcClient siteJdbc, AuditLog auditLog) {
 		this.scratchDatabases = scratchDatabases;
 		this.restoredData = restoredData;
 		this.imageStorage = imageStorage;
 		this.siteJdbc = siteJdbc;
+		this.auditLog = auditLog;
 	}
 
 	/** Mutable state of the restore in progress, guarded by the service's lock. */
@@ -214,6 +220,9 @@ public class RestoreService {
 		}
 		current.state = RestoreStatus.State.APPLYING;
 		current.touchedAt = Instant.now();
+		// Written now, by the admin's request: the restore itself runs in the background
+		auditLog.record(AuditAction.IMPORTED, AuditKind.BACKUP, mode == RestoreStatus.Mode.MERGE
+				? "Sauvegarde restaurée (ajouter ce qui manque)" : "Sauvegarde restaurée (tout remplacer)", null);
 		worker.execute(() -> run(current, () -> {
 			RestoreStatus.Report report = mode == RestoreStatus.Mode.MERGE ? merge(current) : replace(current);
 			synchronized (this) {

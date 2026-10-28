@@ -5,6 +5,7 @@ import { SiteData } from '../../site/site-data';
 import { Reveal } from '../../../shared/motion/reveal';
 import {
   ADMIN_PATH,
+  FEEDBACK_PATH,
   GLOSSARY_PATH,
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
@@ -30,5 +31,6 @@ export class Footer {
   protected readonly adminPath = ADMIN_PATH;
   protected readonly glossaryPath = GLOSSARY_PATH;
   protected readonly installPath = INSTALL_PATH;
+  protected readonly feedbackPath = FEEDBACK_PATH;
   protected readonly year = new Date().getFullYear();
 }

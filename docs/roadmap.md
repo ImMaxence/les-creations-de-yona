@@ -45,6 +45,7 @@ Les versions passées, résumées (le détail depuis la 3.1.0 est dans le [CHANG
 - [x] 3.1.0 : notifications des nouvelles recettes (Web Push), sauvegarde de nuit sur Google Drive, corbeille, publication programmée, « Dupliquer », brouillon gardé dans le navigateur, glossaire, « Le conseil de Yona », temps de repos et « Organiser mon temps », adaptation au moule, « Vous aimerez aussi », ingrédients par étape et sonnerie du mode cuisine, icônes intégrées sans Lucide (migration V9)
 - [x] 3.2.0 : encart des notifications sur l'accueil, dernières recettes avant « À propos » ; mode cuisine : « Mise en place », « + 1 min », minuteurs gardés une fois le mode fermé, minuteur qui part bien de 1:00, vibration légère au rythme de la sonnerie ; « Mes notes » sur chaque recette ; recherche avec plusieurs ingrédients ; « Installer l'application » retiré de la navbar, bandeau d'installation ; page « Nouveautés » (CHANGELOG) dans le back-office ; tests unitaires front (Vitest) et backend (JUnit)
 - [x] 3.3.0 : minuteurs gardés sur tout le site, minuteur libre ; liste de courses par rayon (rayon des ingrédients dans le back-office) ; matériel des recettes ; réponse 400 aux adresses mal encodées ; parcours dans Chrome (`e2e/`) ; documentation découpée (`docs/`), captures d'écran, licence MIT (migration V10)
+- [x] 3.9.0 : recherche dans tout le site (loupe, accueil, mots dans les titres, catégories, tags et ingrédients, suggestions par type, quantités pour « 8 personnes »), « Donner mon avis » et page Retours, historique du back-office (6 mois), titres de l'accueil modifiables, corbeille pour les tags, ingrédients et mots du glossaire, « Effacer les filtres » (migration V14)
 - [x] 3.8.1 : documentation des réseaux d'entreprise (Bot Fight Mode n'est pas à désactiver à l'aveugle)
 - [x] 3.8.0 : « Remplir avec l'IA » dans l'éditeur de recette (Gemini, offre gratuite), visuel par défaut pour les menus sans photo
 - [x] 3.7.0 : photo des menus (migration V13), hors connexion immédiat (pages servies depuis l'appareil, plus d'erreur « Forbidden »), application déjà installée reconnue depuis le navigateur, glossaire du back-office trié, étapes des recettes complétées pour Google, pages non gardées par les proxys ; étude IA (Gemini)
@@ -56,6 +57,8 @@ Les versions passées, résumées (le détail depuis la 3.1.0 est dans le [CHANG
 - [x] 3.4.0 : menus composés par Yona (pages, accueil, back-office ; migration V11), minuteurs retrouvés après un rechargement, accessibilité (axe) et Lighthouse dans le parcours Chrome, compression par la passerelle, corrections d'accessibilité (repère de l'en-tête, titres de la page Recettes, étiquette des notes)
 
 ## Points ouverts
+
+- 3.9.0 en ligne : chercher « petit déjeuner », « chocolat », « tarte 8 personnes » depuis l'accueil et la loupe ; envoyer un message depuis « Donner mon avis » et le voir dans Retours ; vérifier l'historique après quelques modifications ; ajuster les titres de l'accueil dans Préférences.
 
 - 3.8.0 en ligne : ajouter `GEMINI_API_KEY` dans Coolify puis redéployer, essayer « Remplir avec l'IA » avec un texte et une photo ; choisir une photo pour les menus qui n'en ont pas (ils montrent le visuel par défaut).
 

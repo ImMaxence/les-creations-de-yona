@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.theme;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.util.List;
@@ -16,6 +19,8 @@ public class AppearancePresetService {
 
 	private final AppearancePresetRepository repository;
 
+	private final AuditLog auditLog;
+
 	public List<AppearancePresetResponse> list() {
 		return repository.findAll(Sort.by("name")).stream().map(AppearancePresetService::toResponse).toList();
 	}
@@ -28,7 +33,9 @@ public class AppearancePresetService {
 		}
 		AppearancePreset preset = new AppearancePreset();
 		apply(preset, name, form.theme());
-		return toResponse(repository.saveAndFlush(preset));
+		AppearancePreset saved = repository.saveAndFlush(preset);
+		auditLog.record(AuditAction.CREATED, AuditKind.APPEARANCE, "Préréglage « " + name + " »", saved.getId());
+		return toResponse(saved);
 	}
 
 	/** Renamed, or given the look being edited. */
@@ -41,6 +48,7 @@ public class AppearancePresetService {
 			throw new ApiException(ErrorCode.APPEARANCE_PRESET_NAME_TAKEN);
 		}
 		apply(preset, name, form.theme());
+		auditLog.record(AuditAction.UPDATED, AuditKind.APPEARANCE, "Préréglage « " + name + " »", id);
 		return toResponse(repository.saveAndFlush(preset));
 	}
 
@@ -49,6 +57,7 @@ public class AppearancePresetService {
 		AppearancePreset preset = repository.findById(id)
 			.orElseThrow(() -> new ApiException(ErrorCode.APPEARANCE_PRESET_NOT_FOUND));
 		repository.delete(preset);
+		auditLog.record(AuditAction.DELETED, AuditKind.APPEARANCE, "Préréglage « " + preset.getName() + " »", null);
 	}
 
 	private static void apply(AppearancePreset preset, String name, ThemeForm theme) {

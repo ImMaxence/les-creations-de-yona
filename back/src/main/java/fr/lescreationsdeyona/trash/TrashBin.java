@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.trash;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.image.Image;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
 import java.time.Instant;
@@ -25,6 +28,8 @@ public class TrashBin {
 	private final AuditorAware<String> auditor;
 
 	private final JsonMapper jsonMapper;
+
+	private final AuditLog auditLog;
 
 	/** What a trashed thing is, beside its content. */
 	public record Entry(TrashKind kind, String title, @Nullable String slug, @Nullable RecipeStatus status,
@@ -52,6 +57,12 @@ public class TrashBin {
 		item.setDeletedAt(Instant.now());
 		item.setDeletedBy(auditor.getCurrentAuditor().orElse(""));
 		trashRepository.save(item);
+		auditLog.record(AuditAction.TRASHED, auditKind(entry.kind()), entry.title(), null);
+	}
+
+	/** Same names on both sides. */
+	static AuditKind auditKind(TrashKind kind) {
+		return AuditKind.valueOf(kind.name());
 	}
 
 	public <T> T content(TrashItem item, Class<T> type) {

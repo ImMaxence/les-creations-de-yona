@@ -261,6 +261,7 @@ export default class AdminRecipes {
 
   /** The order chosen stays: it is not a filter. */
   protected clearFilters(): void {
+    this.search.set('');
     this.keepScroll();
     void this.router.navigate([], {
       relativeTo: this.route,

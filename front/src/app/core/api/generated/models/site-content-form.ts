@@ -8,5 +8,15 @@ export interface SiteContentForm {
    */
   aboutText: string;
   aboutTitle: string;
+  categoriesEyebrow: string;
+  categoriesTitle: string;
   footerText: string;
+
+  /**
+   * Home page, above "Dernières recettes"
+   */
+  latestEyebrow: string;
+  latestTitle: string;
+  menusEyebrow: string;
+  menusTitle: string;
 }

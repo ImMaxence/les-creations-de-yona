@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 3.8.1 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 3.9.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -20,25 +20,27 @@ Sur téléphone, là où se lisent la plupart des recettes :
 | --- | --- | --- |
 | ![Liste de courses sur téléphone](docs/captures/telephone-liste-de-courses.png) | ![Accueil en thème sombre sur téléphone](docs/captures/telephone-sombre.png) | ![Installer l'application sur téléphone](docs/captures/telephone-installer.png) |
 
-| Notifications | Glossaire |
-| --- | --- |
-| ![Notifications sur téléphone](docs/captures/telephone-notifications.png) | ![Glossaire sur téléphone](docs/captures/telephone-glossaire.png) |
+| Notifications | Notification reçue | Glossaire |
+| --- | --- | --- |
+| ![Notifications sur téléphone](docs/captures/telephone-notifications.png) | ![Notification d'une nouvelle recette sur l'écran verrouillé d'un iPhone](docs/captures/telephone-notification-recue.jpg) | ![Glossaire sur téléphone](docs/captures/telephone-glossaire.png) |
 
 ## Ce que fait le site
 
 **Pour les visiteurs, sans compte**
 
-- Recettes avec recherche (titre, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté), portions et moule ajustables, « Organiser mon temps ».
+- Recettes avec recherche partout (loupe de l'en-tête et grande barre sur l'accueil : chaque mot cherché dans les titres, catégories, tags et ingrédients, suggestions par type, « tarte 8 personnes » ouvre les recettes pour 8), filtres (plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté), portions et moule ajustables, « Organiser mon temps ».
 - Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page et après un rechargement.
 - Menus composés par Yona (« Menu de Noël », « Goûter d'anniversaire »), chacun avec sa photo (visuel par défaut sans photo), toutes leurs recettes à la liste de courses en un geste.
 - Favoris, liste de courses rangée par rayon, notes personnelles : gardés dans le navigateur.
 - Application installable d'un bouton (« Télécharger l'application » ; sur iPhone, les deux gestes expliqués), lisible hors connexion, notifications des nouvelles recettes.
 - Glossaire de pâtisserie, mots expliqués d'un appui dans les étapes.
+- « Donner mon avis » : un message à Yona, lu dans le back-office.
 
 **Pour Yona (back-office, connexion Google)**
 
 - Éditeur de recettes (parties, étapes minutées, matériel, conseil, publication programmée, brouillon gardé), « Remplir avec l'IA » (Gemini lit un texte collé ou la photo d'une recette), aperçu, liste triable (modification, création, titre, vues).
-- Corbeille de 30 jours pour les recettes, catégories, menus et photos, qui reviennent à leur place une fois restaurés.
+- Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients et mots du glossaire, qui reviennent à leur place une fois restaurés.
+- Historique de 6 mois (qui a fait quoi, et quand), retours des visiteurs, titres de l'accueil modifiables.
 - Galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
 - Apparence (thèmes, polices), statistiques (dont le nombre de vues et les recettes les plus vues), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
 

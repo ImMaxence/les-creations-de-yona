@@ -4,6 +4,9 @@ import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
 import { MENUS_PATH, RECIPES_PATH } from '../../../shared/routing/links';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
+import { Dialog } from '../../../shared/ui/dialog/dialog';
+import { Icon } from '../../../shared/ui/icon/icon';
+import { SiteSearch } from '../../../shared/ui/site-search/site-search';
 import { CategoryMenu } from '../category-menu/category-menu';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
 import { KitchenLinks } from '../kitchen-links/kitchen-links';
@@ -16,7 +19,7 @@ const SCROLL_DIRECTION_THRESHOLD_PX = 6;
 
 @Component({
   selector: 'yona-header',
-  imports: [RouterLink, RouterLinkActive, BrandLogo, CategoryMenu, ColorSchemeSwitch, KitchenLinks, MobileMenu],
+  imports: [RouterLink, RouterLinkActive, BrandLogo, CategoryMenu, ColorSchemeSwitch, Dialog, Icon, KitchenLinks, MobileMenu, SiteSearch],
   templateUrl: './header.html',
   styleUrl: './header.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +37,7 @@ export class Header {
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly menusPath = MENUS_PATH;
 
+  protected readonly searchOpen = signal(false);
   protected readonly scrolled = signal(false);
   /** Hidden while reading down the page, back as soon as the reader scrolls up. */
   protected readonly hidden = signal(false);

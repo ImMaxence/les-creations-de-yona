@@ -31,19 +31,23 @@ class SecurityConfig {
 
 	private static final String RECIPE_VIEWS = "/api/recipes/*/views";
 
+	/** "Donner mon avis": sent by visitors, who have no CSRF token. */
+	private static final String FEEDBACK = "/api/feedback";
+
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http, AdminOidcUserService adminOidcUserService,
 			ProblemDetailSecurityHandler problemDetailSecurityHandler,
 			@Value("${springdoc.api-docs.enabled}") boolean apiDocsEnabled) {
 		http.authorizeHttpRequests(requests -> {
 			requests.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
-				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/recipe-suggestions", "/api/menus", "/api/menus/*",
+				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/search-suggestions", "/api/menus", "/api/menus/*",
 						"/api/ingredients", "/api/ingredients/aisles", "/api/site-content", "/api/categories/**", "/api/tags", "/api/social-links/**",
 						"/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key")
 				.permitAll()
 				.requestMatchers(HttpMethod.POST, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.DELETE, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.POST, RECIPE_VIEWS).permitAll()
+				.requestMatchers(HttpMethod.POST, FEEDBACK).permitAll()
 				.requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll();
 			// Local runs only: in production the documentation is off and its URLs are denied like any other.
 			if (apiDocsEnabled) {
@@ -66,7 +70,7 @@ class SecurityConfig {
 			// Visitors have no CSRF token. Forging a request could only subscribe a push service address or
 			// remove one, or count a view, which grants nothing.
 			.csrf(csrf -> csrf
-				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS, RECIPE_VIEWS)
+				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS, RECIPE_VIEWS, FEEDBACK)
 				.csrfTokenRepository(csrfTokenRepository())
 				.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
 			// Login always lands on /admin: no need to remember the request, nor to open a session for it.

@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { RecipeSuggestion } from '../../core/api/generated/models/recipe-suggestion';
 import { SiteData } from '../../core/site/site-data';
 import { Reveal } from '../../shared/motion/reveal';
 import { keepScrollThroughNextNavigation } from '../../shared/routing/kept-scroll';
-import { RECIPES_PATH, recipeLink } from '../../shared/routing/links';
+import { RECIPES_PATH } from '../../shared/routing/links';
+import { SearchChoice, searchTarget, servingsIn } from '../../shared/search/search-target';
 import { Button } from '../../shared/ui/button/button';
 import { Pagination } from '../../shared/ui/pagination/pagination';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
@@ -41,6 +41,8 @@ import { Icon } from '../../shared/ui/icon/icon';
 export default class Recipes {
   /** From recipesResolver, run again on every query parameter change. */
   readonly data = input.required<RecipesPageData>();
+  /** ?portions=8, from a suggestion of the search: carried to the recipes opened. */
+  readonly portions = input<string>();
 
   private readonly router = inject(Router);
   /** A change of page size keeps the visitor where they are; a change of page goes to the top. */
@@ -53,6 +55,11 @@ export default class Recipes {
   }));
 
   protected readonly filters = computed(() => this.data().filters);
+  /** "tarte 8 personnes": each recipe opens with its quantities for 8. */
+  protected readonly servings = computed(() => {
+    const asked = Number(this.portions());
+    return asked >= 1 && asked <= 50 ? asked : servingsIn(this.filters().search);
+  });
   protected readonly result = computed(() => this.data().result);
   protected readonly activeCategory = computed(
     () => this.categories().find((category) => category.slug === this.filters().category) ?? null,
@@ -155,8 +162,10 @@ export default class Recipes {
     this.updateQuery({ [RECIPES_QUERY.search]: search || null, [RECIPES_QUERY.page]: null });
   }
 
-  protected openRecipe(suggestion: RecipeSuggestion): void {
-    this.router.navigate(recipeLink({ slug: suggestion.slug, categories: [{ slug: suggestion.categorySlug }] }));
+  /** A recipe, a category, a tag, an ingredient or a menu suggested by the search. */
+  protected open(choice: SearchChoice): void {
+    const { commands, queryParams } = searchTarget(choice.pick, choice.servings);
+    this.router.navigate(commands, { queryParams });
   }
 
   protected changePageSize(pageSize: number | undefined): void {

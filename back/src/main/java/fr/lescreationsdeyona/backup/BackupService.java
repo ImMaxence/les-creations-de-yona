@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.backup;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageStorage;
@@ -47,11 +50,12 @@ public class BackupService {
 	private static final Logger log = LoggerFactory.getLogger(BackupService.class);
 
 	/**
-	 * Notification subscriptions, the site's notification keys and the Google Drive link: what
-	 * belongs to this server rather than to the site's content.
+	 * Notification subscriptions, the site's notification keys, the Google Drive link, the history of
+	 * the back-office and the visitors' messages (their emails do not leave the server): what belongs
+	 * to this server rather than to the site's content.
 	 */
 	public static final List<String> SITE_ONLY_TABLES = List.of("push_subscription", "web_push_key",
-			"google_drive_link");
+			"google_drive_link", "audit_event", "feedback");
 
 	private static final DateTimeFormatter FILE_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
 
@@ -65,9 +69,12 @@ public class BackupService {
 
 	private final ObjectProvider<BuildProperties> buildProperties;
 
+	private final AuditLog auditLog;
+
 	/** Starts {@code pg_dump} right away, so that a missing client is still reported as an error. */
 	public StreamingResponseBody start() {
 		Process pgDump = startPgDump();
+		auditLog.record(AuditAction.EXPORTED, AuditKind.BACKUP, "Sauvegarde téléchargée", null);
 		return output -> {
 			try {
 				writeArchive(pgDump, output);

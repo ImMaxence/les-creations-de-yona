@@ -28,6 +28,11 @@
     <yona-select label="Tag" [options]="tagOptions()" [value]="tagSlug()" (valueChange)="changeTag($event)" />
     <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="changeStatus($event)" />
     <yona-select label="Trier" [options]="sortOptions" [value]="sort()" (valueChange)="changeSort($event)" />
+    @if (hasFilters()) {
+      <button yonaButton variant="ghost" type="button" class="admin-toolbar__clear" (click)="clearFilters()">
+        <svg yonaIcon="x"></svg>Effacer les filtres
+      </button>
+    }
   </div>
 
   @if (imageId(); as image) {

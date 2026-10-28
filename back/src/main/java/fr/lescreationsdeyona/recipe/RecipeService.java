@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.recipe;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.category.CategoryRepository;
 import fr.lescreationsdeyona.category.CategoryResponse;
@@ -84,11 +87,13 @@ public class RecipeService {
 
 	private final ApplicationEventPublisher events;
 
+	private final AuditLog auditLog;
+
 	// Public site: published recipes only.
 
 	/** Published recipes only, whatever {@code filter.status()}; no back-office criteria. */
 	public Page<RecipeCard> searchPublished(RecipeFilter filter, Pageable pageable) {
-		RecipeFilter published = new RecipeFilter(filter.titleQuery(), filter.categorySlug(), filter.tagSlug(),
+		RecipeFilter published = new RecipeFilter(null, filter.text(), filter.categorySlug(), filter.tagSlug(),
 				filter.ingredientNames(), null, null, RecipeStatus.PUBLISHED, filter.maxMinutes(), filter.difficulty());
 		return recipeRepository
 			.findAll(RecipeSpecifications.matching(published), Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
@@ -102,9 +107,10 @@ public class RecipeService {
 			.map(recipeMapper::toCard);
 	}
 
-	public List<RecipeSuggestion> suggestTitles(String titleQuery) {
+	/** Published recipes mentioning each word typed (title, category, tag, ingredient), by title. */
+	public List<RecipeSuggestion> suggest(String text) {
 		return recipeRepository
-			.findBy(RecipeSpecifications.matching(RecipeFilter.publishedTitled(titleQuery)),
+			.findBy(RecipeSpecifications.matching(RecipeFilter.publishedText(text)),
 					query -> query.sortBy(Sort.by("title")).limit(SUGGESTION_LIMIT).all())
 			.stream()
 			.map(recipeMapper::toSuggestion)
@@ -157,7 +163,9 @@ public class RecipeService {
 		Recipe recipe = new Recipe();
 		recipe.setSlug(Slugs.uniqueSlug(form.title(), "recette", recipeRepository::existsBySlug));
 		boolean firstPublication = apply(form, recipe);
-		return saveAndAnnounce(recipe, firstPublication);
+		RecipeDetail created = saveAndAnnounce(recipe, firstPublication);
+		auditLog.record(AuditAction.CREATED, AuditKind.RECIPE, created.title(), created.id());
+		return created;
 	}
 
 	@Transactional
@@ -167,6 +175,7 @@ public class RecipeService {
 		// Changing only ingredients or steps leaves the recipe row untouched, and auditing would then
 		// skip updated_at: touching it makes every save count as an update.
 		recipe.setUpdatedAt(Instant.now());
+		auditLog.record(AuditAction.UPDATED, AuditKind.RECIPE, recipe.getTitle(), id);
 		return saveAndAnnounce(recipe, firstPublication);
 	}
 
@@ -206,7 +215,9 @@ public class RecipeService {
 				ids(detail.tags(), TagResponse::id)), copy);
 		copy.setImage(source.getImage());
 		copy.setPinterestImage(source.getPinterestImage());
-		return recipeMapper.toDetail(recipeRepository.saveAndFlush(copy));
+		Recipe saved = recipeRepository.saveAndFlush(copy);
+		auditLog.record(AuditAction.CREATED, AuditKind.RECIPE, saved.getTitle(), saved.getId());
+		return recipeMapper.toDetail(saved);
 	}
 
 	/** Moved to the trash, kept 30 days; its photo stays in the gallery. */
@@ -227,8 +238,8 @@ public class RecipeService {
 
 	/**
 	 * Created again from the trash, as it was: same URL if still free, same dates and views, its
-	 * photos if still in the gallery, its categories and tags that still exist (a category deleted
-	 * then restored meanwhile is found by its URL). Never featured again, and no notification: it
+	 * photos if still in the gallery, its categories and tags that still exist (a category or a tag
+	 * deleted then restored meanwhile is found by its URL). Never featured again, and no notification: it
 	 * was already published. Its menus are given back by {@link MenuService#addBack}.
 	 */
 	@Transactional
@@ -243,7 +254,7 @@ public class RecipeService {
 		if (categoryIds.isEmpty()) {
 			throw new ApiException(ErrorCode.TRASHED_RECIPE_CATEGORIES_GONE);
 		}
-		List<Long> tagIds = tagService.existingIds(ids(kept.tags(), TagResponse::id));
+		List<Long> tagIds = tagService.stillExisting(kept.tags());
 		Recipe recipe = new Recipe();
 		recipe.setSlug(recipeRepository.existsBySlug(trashed.getSlug())
 				? Slugs.uniqueSlug(kept.title(), "recette", recipeRepository::existsBySlug)
@@ -279,6 +290,7 @@ public class RecipeService {
 		}
 		recipe.setUpdatedAt(now);
 		saveAndAnnounce(recipe, firstPublication);
+		auditLog.record(AuditAction.PUBLISHED, AuditKind.RECIPE, recipe.getTitle(), id);
 	}
 
 	/** "Modifier la photo": the new image is shown, the previous one stays in the gallery. */

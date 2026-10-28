@@ -100,6 +100,7 @@
   @if (ingredients.value()) {
     @if (shown().length) {
       <yona-bulk-bar
+        deleteLabel="Mettre à la corbeille"
         [shownLabel]="shown().length + ' affichés'"
         [count]="selection.size()"
         [allShown]="selection.hasAll(shownIds())"

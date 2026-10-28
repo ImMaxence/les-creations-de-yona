@@ -13,12 +13,13 @@ import { NotifyButton } from '../../shared/ui/notify-button/notify-button';
 import { MenuCard } from '../menus/menu-card';
 import { HomeData } from './home.resolver';
 import { Icon } from '../../shared/ui/icon/icon';
+import { SiteSearch } from '../../shared/ui/site-search/site-search';
 
 const HOME_MENUS_COUNT = 3;
 
 @Component({
   selector: 'yona-home',
-  imports: [Icon, RouterLink, Button, CoverImage, MenuCard, NotifyButton, RecipeCard, Reveal],
+  imports: [Icon, RouterLink, Button, CoverImage, MenuCard, NotifyButton, RecipeCard, Reveal, SiteSearch],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

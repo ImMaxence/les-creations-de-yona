@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.theme;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ThemeService {
 
 	private final SiteThemeRepository siteThemeRepository;
+
+	private final AuditLog auditLog;
 
 	public ThemeResponse get() {
 		return toResponse(find());
@@ -22,6 +27,7 @@ public class ThemeService {
 		theme.setDisplayFont(form.displayFont());
 		theme.setBodyFont(form.bodyFont());
 		theme.setRadiusPx(form.radiusPx());
+		auditLog.record(AuditAction.UPDATED, AuditKind.APPEARANCE, "Apparence du site", null);
 		return toResponse(siteThemeRepository.saveAndFlush(theme));
 	}
 

@@ -1,8 +1,14 @@
 package fr.lescreationsdeyona.ingredient;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.trash.TrashBin;
+import fr.lescreationsdeyona.trash.TrashItem;
+import fr.lescreationsdeyona.trash.TrashKind;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -25,6 +31,10 @@ import org.springframework.util.StringUtils;
 public class IngredientService {
 
 	private final IngredientRepository ingredientRepository;
+
+	private final TrashBin trashBin;
+
+	private final AuditLog auditLog;
 
 	/** All ingredients, or those whose name contains {@code query} (case and accents ignored), by name. */
 	public List<IngredientResponse> search(@Nullable String query) {
@@ -68,7 +78,9 @@ public class IngredientService {
 		if (ingredientRepository.existsByName(name)) {
 			throw new ApiException(ErrorCode.INGREDIENT_ALREADY_EXISTS);
 		}
-		return toResponse(ingredientRepository.save(newIngredient(name)), 0);
+		Ingredient created = ingredientRepository.save(newIngredient(name));
+		auditLog.record(AuditAction.CREATED, AuditKind.INGREDIENT, name, created.getId());
+		return toResponse(created, 0);
 	}
 
 	@Transactional
@@ -82,6 +94,7 @@ public class IngredientService {
 			throw new ApiException(ErrorCode.INGREDIENT_ALREADY_EXISTS);
 		}
 		ingredient.setName(name);
+		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, name, id);
 		return toResponse(ingredient, ingredientRepository.countRecipesUsing(id));
 	}
 
@@ -118,21 +131,25 @@ public class IngredientService {
 				.findFirst()
 				.ifPresent(target::setAisle);
 		}
+		List<String> merged = ingredientRepository.findAllById(sourceIds).stream().map(Ingredient::getName).toList();
 		ingredientRepository.moveLines(target.getId(), sourceIds);
 		ingredientRepository.deleteAllByIdInBatch(sourceIds);
+		auditLog.record(AuditAction.MERGED, AuditKind.INGREDIENT, target.getName() + " (avec " + String.join(", ", merged) + ")",
+				target.getId());
 		return toResponse(target, ingredientRepository.countRecipesUsing(target.getId()));
 	}
 
+	/** To the trash for 30 days; refused while a recipe uses it. */
 	@Transactional
 	public void delete(long id) {
 		Ingredient ingredient = find(id);
 		if (ingredientRepository.countRecipesUsing(id) > 0) {
 			throw new ApiException(ErrorCode.INGREDIENT_IN_USE);
 		}
-		ingredientRepository.delete(ingredient);
+		trash(List.of(ingredient));
 	}
 
-	/** All or none: refused while a recipe uses one of them, naming those. */
+	/** All or none, to the trash for 30 days: refused while a recipe uses one of them, naming those. */
 	@Transactional
 	public void deleteAll(Collection<Long> ids) {
 		List<Ingredient> ingredients = ingredientRepository.findAllById(ids);
@@ -148,6 +165,26 @@ public class IngredientService {
 			throw new ApiException(ErrorCode.INGREDIENT_IN_USE, "Suppression annulée : " + quoted(inUse)
 					+ (inUse.size() > 1 ? " sont utilisés" : " est utilisé") + " dans au moins une recette");
 		}
+		trash(ingredients);
+	}
+
+	/** Created again from the trash, with its aisle; refused when another ingredient has taken its name. */
+	@Transactional
+	public IngredientResponse restoreFromTrash(TrashItem trashed) {
+		TrashedIngredient kept = trashBin.content(trashed, TrashedIngredient.class);
+		if (ingredientRepository.existsByName(kept.name())) {
+			throw new ApiException(ErrorCode.INGREDIENT_ALREADY_EXISTS);
+		}
+		Ingredient ingredient = newIngredient(kept.name());
+		ingredient.setAisle(kept.aisle());
+		return toResponse(ingredientRepository.save(ingredient), 0);
+	}
+
+	private void trash(List<Ingredient> ingredients) {
+		for (Ingredient ingredient : ingredients) {
+			trashBin.put(TrashBin.Entry.of(TrashKind.INGREDIENT, ingredient.getName(), null, null,
+					new TrashedIngredient(ingredient.getName(), ingredient.getAisle())));
+		}
 		ingredientRepository.deleteAll(ingredients);
 	}
 
@@ -159,6 +196,8 @@ public class IngredientService {
 			throw new ApiException(ErrorCode.INGREDIENT_NOT_FOUND);
 		}
 		ingredients.forEach(ingredient -> ingredient.setAisle(aisle));
+		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, ingredients.size() == 1 ? ingredients.getFirst().getName()
+				: ingredients.size() + " ingrédients", ingredients.size() == 1 ? ingredients.getFirst().getId() : null);
 	}
 
 	/** Used by the recipe form: the admin types a name, an existing ingredient is reused if any. */

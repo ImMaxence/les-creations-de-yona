@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.drive;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.backup.BackupService;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
@@ -57,15 +60,19 @@ public class DriveBackupService {
 
 	private final AuditorAware<String> auditor;
 
+	private final AuditLog auditLog;
+
 	private final AtomicBoolean running = new AtomicBoolean();
 
 	private final ExecutorService worker = Executors.newSingleThreadExecutor(Thread.ofVirtual().name("drive-backup").factory());
 
-	DriveBackupService(DriveLinkStore store, GoogleDrive drive, BackupService backupService, AuditorAware<String> auditor) {
+	DriveBackupService(DriveLinkStore store, GoogleDrive drive, BackupService backupService, AuditorAware<String> auditor,
+			AuditLog auditLog) {
 		this.store = store;
 		this.drive = drive;
 		this.backupService = backupService;
 		this.auditor = auditor;
+		this.auditLog = auditLog;
 	}
 
 	public DriveStatus status() {
@@ -97,12 +104,16 @@ public class DriveBackupService {
 		String folderId = drive.createFolder(tokens.accessToken(), FOLDER_NAME);
 		store.find().ifPresent(previous -> drive.revoke(previous.refreshToken()));
 		store.connect(tokens.email(), tokens.refreshToken(), folderId, auditor.getCurrentAuditor().orElse(""));
+		auditLog.record(AuditAction.CONNECTED, AuditKind.GOOGLE_DRIVE, tokens.email(), null);
 		log.info("Google Drive backups connected to {}", tokens.email());
 	}
 
 	/** The backups already on the Drive stay there. */
 	public void disconnect() {
-		store.find().ifPresent(link -> drive.revoke(link.refreshToken()));
+		store.find().ifPresent(link -> {
+			drive.revoke(link.refreshToken());
+			auditLog.record(AuditAction.DISCONNECTED, AuditKind.GOOGLE_DRIVE, link.accountEmail(), null);
+		});
 		store.disconnect();
 	}
 
@@ -114,6 +125,7 @@ public class DriveBackupService {
 		if (!running.compareAndSet(false, true)) {
 			throw new ApiException(ErrorCode.DRIVE_BACKUP_RUNNING);
 		}
+		auditLog.record(AuditAction.EXPORTED, AuditKind.GOOGLE_DRIVE, "Sauvegarde envoyée sur Google Drive", null);
 		worker.execute(this::backUpAndRelease);
 	}
 

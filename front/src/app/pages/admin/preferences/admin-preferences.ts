@@ -13,11 +13,27 @@ import { Button } from '../../../shared/ui/button/button';
 import { FieldError } from '../../../shared/ui/field-error/field-error';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 
-interface ContentDraft {
-  aboutTitle: string;
-  aboutText: string;
-  footerText: string;
-}
+/** The texts of the site edited here; the photo has its own way. */
+const TEXT_KEYS = [
+  'aboutTitle',
+  'aboutText',
+  'footerText',
+  'latestEyebrow',
+  'latestTitle',
+  'menusEyebrow',
+  'menusTitle',
+  'categoriesEyebrow',
+  'categoriesTitle',
+] as const;
+
+type ContentDraft = Record<(typeof TEXT_KEYS)[number], string>;
+
+/** Home page sections whose small line and heading are edited here, with the hints shown. */
+const HOME_SECTIONS = [
+  { key: 'latest', name: 'Dernières recettes', eyebrow: 'latestEyebrow', title: 'latestTitle' },
+  { key: 'menus', name: 'Menus', eyebrow: 'menusEyebrow', title: 'menusTitle' },
+  { key: 'categories', name: 'Catégories', eyebrow: 'categoriesEyebrow', title: 'categoriesTitle' },
+] as const;
 
 /** A photo chosen but not saved yet: a file to send, an image of the gallery, or none (null). */
 type PendingImage = { file: File; previewUrl: string } | { imageId: string | null };
@@ -30,10 +46,17 @@ const contentSchema = schema<ContentDraft>((content) => {
   maxLength(content.aboutText, 1500, { message: '1 500 caractères au maximum' });
   required(content.footerText, { message: "Le pied de page a besoin d'un texte" });
   maxLength(content.footerText, 200, { message: '200 caractères au maximum' });
+  for (const section of HOME_SECTIONS) {
+    required(content[section.eyebrow], { message: 'Écrivez quelques mots' });
+    maxLength(content[section.eyebrow], 60, { message: '60 caractères au maximum' });
+    required(content[section.title], { message: 'Donnez un titre à la section' });
+    maxLength(content[section.title], 80, { message: '80 caractères au maximum' });
+  }
 });
 
 /**
- * Texts and photo of the site: the "À propos" section of the home page and the footer. The
+ * Texts and photo of the site: the "À propos" section of the home page, the headings of its other
+ * sections, and the footer. The
  * site's name and icon are not editable: they stay in the code, for search engines and the
  * installed app. Nothing reaches the site before "Enregistrer", the photo included: until then it
  * is only previewed here.
@@ -52,15 +75,7 @@ export default class AdminPreferences {
   private readonly siteData = inject(SiteData);
 
   /** The saved texts, unchanged when only the photo changes: texts being edited are then kept. */
-  private readonly savedTexts = computed<ContentDraft>(
-    () => {
-      const { aboutTitle, aboutText, footerText } = this.siteData.content();
-      return { aboutTitle, aboutText, footerText };
-    },
-    {
-      equal: (a, b) => a.aboutTitle === b.aboutTitle && a.aboutText === b.aboutText && a.footerText === b.footerText,
-    },
-  );
+  private readonly savedTexts = computed<ContentDraft>(() => pickTexts(this.siteData.content()), { equal: sameTexts });
   protected readonly draft = linkedSignal<ContentDraft>(() => ({ ...this.savedTexts() }));
   protected readonly contentForm = form(this.draft, contentSchema);
   private readonly pendingImage = signal<PendingImage | null>(null);
@@ -76,13 +91,8 @@ export default class AdminPreferences {
     const pending = this.pendingImage();
     return pending && 'file' in pending ? pending.previewUrl : null;
   });
-  private readonly textsChanged = computed(() => {
-    const saved = this.savedTexts();
-    const draft = this.draft();
-    return (
-      draft.aboutTitle !== saved.aboutTitle || draft.aboutText !== saved.aboutText || draft.footerText !== saved.footerText
-    );
-  });
+  private readonly textsChanged = computed(() => !sameTexts(this.draft(), this.savedTexts()));
+  protected readonly homeSections = HOME_SECTIONS;
   protected readonly unsaved = computed(() => this.textsChanged() || this.pendingImage() !== null);
 
   protected readonly saving = signal(false);
@@ -155,4 +165,12 @@ export default class AdminPreferences {
     }
     this.pendingImage.set(image);
   }
+}
+
+function pickTexts(content: ContentDraft): ContentDraft {
+  return Object.fromEntries(TEXT_KEYS.map((key) => [key, content[key]])) as ContentDraft;
+}
+
+function sameTexts(a: ContentDraft, b: ContentDraft): boolean {
+  return TEXT_KEYS.every((key) => a[key] === b[key]);
 }

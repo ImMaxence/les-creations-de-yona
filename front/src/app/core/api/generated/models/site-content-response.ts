@@ -13,5 +13,15 @@ export interface SiteContentResponse {
    */
   aboutText: string;
   aboutTitle: string;
+  categoriesEyebrow: string;
+  categoriesTitle: string;
   footerText: string;
+
+  /**
+   * Home page sections: the small line above each heading, and the heading
+   */
+  latestEyebrow: string;
+  latestTitle: string;
+  menusEyebrow: string;
+  menusTitle: string;
 }

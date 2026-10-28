@@ -149,12 +149,12 @@ export default class AdminIngredients {
 
   protected async remove(ingredient: IngredientResponse): Promise<void> {
     const confirmed = await this.confirm.ask({
-      title: "Supprimer l'ingrédient ?",
-      message: `« ${ingredient.name} » sera supprimé. Impossible tant qu'une recette l'utilise`,
-      confirmLabel: 'Supprimer',
+      title: "Mettre l'ingrédient à la corbeille ?",
+      message: `« ${ingredient.name} » reste 30 jours dans la corbeille, d'où il peut être restauré. Impossible tant qu'une recette l'utilise`,
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (confirmed && (await attempt(this.api.invoke(deleteIngredient, { id: ingredient.id }))).ok) {
-      this.toaster.success('Ingrédient supprimé');
+      this.toaster.success('Ingrédient mis à la corbeille');
       if (this.selection.has(ingredient.id)) {
         this.selection.toggle(ingredient.id);
       }
@@ -189,9 +189,9 @@ export default class AdminIngredients {
   protected async removeSelected(): Promise<void> {
     const count = this.selection.size();
     const confirmed = await this.confirm.ask({
-      title: count > 1 ? `Supprimer ${count} ingrédients ?` : "Supprimer l'ingrédient ?",
-      message: "Impossible si l'un d'eux est encore dans une recette : rien n'est alors supprimé",
-      confirmLabel: 'Supprimer',
+      title: count > 1 ? `Mettre ${count} ingrédients à la corbeille ?` : "Mettre l'ingrédient à la corbeille ?",
+      message: "Ils restent 30 jours dans la corbeille. Impossible si l'un d'eux est encore dans une recette : rien n'est alors supprimé",
+      confirmLabel: 'Mettre à la corbeille',
     });
     if (!confirmed) {
       return;
@@ -200,7 +200,7 @@ export default class AdminIngredients {
     const deletion = await attempt(this.api.invoke(deleteIngredients, { ids: this.selection.ids() }));
     this.deleting.set(false);
     if (deletion.ok) {
-      this.toaster.success(count > 1 ? `${count} ingrédients supprimés` : 'Ingrédient supprimé');
+      this.toaster.success(count > 1 ? `${count} ingrédients mis à la corbeille` : 'Ingrédient mis à la corbeille');
       this.selection.clear();
       this.ingredients.reload();
     }

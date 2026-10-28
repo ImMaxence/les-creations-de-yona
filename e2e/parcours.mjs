@@ -292,7 +292,7 @@ await part('Minuteurs après un rechargement (horloge maîtrisée)', async () =>
 });
 
 await part('Accessibilité (axe, téléphone)', async () => {
-  const paths = ['/', '/recettes', new URL(recipeUrl(recipe)).pathname, '/glossaire', '/installer', '/liste-de-courses', '/favoris'];
+  const paths = ['/', '/recettes', new URL(recipeUrl(recipe)).pathname, '/glossaire', '/installer', '/liste-de-courses', '/favoris', '/donner-mon-avis'];
   if (menus.length) {
     paths.push('/menus', `/menus/${menus[0].slug}`);
   }

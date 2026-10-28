@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.Image;
@@ -39,7 +40,7 @@ class MenuServiceTest {
 	private final ImageService imageService = mock(ImageService.class);
 
 	private final MenuService service = new MenuService(menuRepository, recipeRepository, mock(RecipeMapper.class),
-			imageService, trashBin);
+			imageService, trashBin, mock(AuditLog.class));
 
 	private static Image photo() {
 		Image image = mock(Image.class);

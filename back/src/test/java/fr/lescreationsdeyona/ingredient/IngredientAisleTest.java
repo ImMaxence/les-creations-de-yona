@@ -7,7 +7,9 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ApiException;
+import fr.lescreationsdeyona.trash.TrashBin;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -17,7 +19,7 @@ class IngredientAisleTest {
 
 	private final IngredientRepository repository = mock(IngredientRepository.class);
 
-	private final IngredientService service = new IngredientService(repository);
+	private final IngredientService service = new IngredientService(repository, mock(TrashBin.class), mock(AuditLog.class));
 
 	private static Ingredient ingredient(long id, String name, Aisle aisle) {
 		Ingredient ingredient = new Ingredient();

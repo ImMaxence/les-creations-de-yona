@@ -4,13 +4,13 @@
 export interface TrashRestored {
 
   /**
-   * The recipe, category or menu created again; absent for a photo
+   * What was created again (recipe, category, menu, tag, ingredient, word); absent for a photo
    */
   id?: number;
-  kind: 'RECIPE' | 'CATEGORY' | 'MENU' | 'IMAGE';
+  kind: 'RECIPE' | 'CATEGORY' | 'MENU' | 'IMAGE' | 'TAG' | 'INGREDIENT' | 'GLOSSARY_TERM';
 
   /**
-   * Menus a recipe is back in; recipes, categories and "À propos" a photo is back on
+   * Menus a recipe is back in; recipes, categories, menus and "À propos" a photo is back on; recipes a tag is back on
    */
   placesBack: number;
 

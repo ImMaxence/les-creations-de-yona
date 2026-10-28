@@ -16,6 +16,12 @@ const DEFAULT_CONTENT: SiteContentResponse = {
   aboutText:
     "Je m'appelle Yona, je relève un grand défi en me lançant dans une aventure extraordinaire : faire de ma passion un métier et obtenir mon CAP Pâtisserie !",
   footerText: 'Des recettes maison, à partager sans modération',
+  latestEyebrow: 'Fraîchement publiées',
+  latestTitle: 'Dernières recettes',
+  menusEyebrow: 'Pour chaque occasion',
+  menusTitle: 'Nos menus',
+  categoriesEyebrow: "Envie d'une douceur ?",
+  categoriesTitle: 'Catégories',
 };
 
 /**

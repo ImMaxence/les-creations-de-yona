@@ -45,6 +45,26 @@
     </div>
   </section>
 
+  <section class="admin-panel" aria-labelledby="home-sections-title">
+    <h3 id="home-sections-title" class="preferences__title">Titres de l'accueil</h3>
+    <p class="field__hint">La petite ligne au-dessus de chaque titre, et le titre, pour les sections de la page d'accueil</p>
+    @for (section of homeSections; track section.key) {
+      <fieldset class="home-section">
+        <legend class="field__label">{{ section.name }}</legend>
+        <div class="field">
+          <label class="field__label" [for]="section.key + '-eyebrow'">Petite ligne</label>
+          <input [id]="section.key + '-eyebrow'" class="input" [formField]="contentForm[section.eyebrow]" />
+          <yona-field-error [field]="contentForm[section.eyebrow]" />
+        </div>
+        <div class="field">
+          <label class="field__label" [for]="section.key + '-title'">Titre</label>
+          <input [id]="section.key + '-title'" class="input" [formField]="contentForm[section.title]" />
+          <yona-field-error [field]="contentForm[section.title]" />
+        </div>
+      </fieldset>
+    }
+  </section>
+
   <section class="admin-panel" aria-labelledby="footer-title">
     <h3 id="footer-title" class="preferences__title">Pied de page</h3>
     <div class="field">

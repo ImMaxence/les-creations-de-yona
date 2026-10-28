@@ -105,6 +105,12 @@
       cette connexion.
     </p>
     <p>
+      Le back-office garde un historique de ce qui y est fait (création, modification ou suppression
+      d'une recette, d'une catégorie, d'un réglage…) avec l'adresse email de l'administrateur qui l'a
+      fait et l'heure. Cet historique est effacé au bout de six mois. Il ne quitte pas le serveur : il
+      ne figure pas dans les sauvegardes.
+    </p>
+    <p>
       Les sauvegardes du site (recettes, photos, réglages, recherches sans résultat) peuvent être
       envoyées chaque nuit sur le Google Drive d'un administrateur, où les sept plus récentes sont
       gardées. Elles ne contiennent pas les abonnements aux notifications.
@@ -216,6 +222,17 @@
       techniques sur votre navigateur, et peut enregistrer des données sur votre appareil pendant la
       lecture, selon <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">sa
       politique de confidentialité</a>. Ce clic vaut consentement, pour cette vidéo seulement.
+    </p>
+
+    <h2>Vos messages (« Donner mon avis »)</h2>
+    <p>
+      Si vous écrivez depuis la page <a [routerLink]="feedbackPath">Donner mon avis</a>, le site garde
+      votre message, l'adresse de la page d'où vous venez et, seulement si vous la donnez, votre adresse
+      email, pour pouvoir vous répondre. Ces informations ne sont lues que par les administrateurs du
+      site, ne sont transmises à personne et sont effacées au bout de douze mois au plus (plus tôt si
+      le message est supprimé). Elles ne figurent pas dans les sauvegardes. Pour limiter les envois
+      automatiques, l'adresse IP de l'expéditeur est retenue une heure dans la mémoire du serveur, sans
+      jamais être enregistrée.
     </p>
 
     <h2>Vos droits</h2>

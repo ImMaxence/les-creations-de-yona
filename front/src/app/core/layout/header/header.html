@@ -31,7 +31,17 @@
     </ul>
   </nav>
 
+  <button type="button" class="search-toggle" aria-label="Rechercher" aria-haspopup="dialog" (click)="searchOpen.set(true)">
+    <svg yonaIcon="search" [size]="20"></svg>
+  </button>
   <yona-kitchen-links class="kitchen-links" />
   <yona-color-scheme-switch class="scheme-switch" />
   <yona-mobile-menu class="mobile-menu" />
 </div>
+
+<!-- The search of the whole site, from any page: suggestions under the field, the dialog grows with them -->
+<yona-dialog title="Rechercher" [(open)]="searchOpen">
+  @if (searchOpen()) {
+    <yona-site-search inline autofocus (navigated)="searchOpen.set(false)" />
+  }
+</yona-dialog>

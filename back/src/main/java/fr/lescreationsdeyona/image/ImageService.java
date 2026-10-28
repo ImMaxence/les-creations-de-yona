@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.image;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Pageables;
 import fr.lescreationsdeyona.content.SiteContentRepository;
 import fr.lescreationsdeyona.error.ApiException;
@@ -55,6 +58,8 @@ public class ImageService {
 	private final SiteContentRepository siteContentRepository;
 
 	private final TrashBin trashBin;
+
+	private final AuditLog auditLog;
 
 	/**
 	 * {@code used}: true for images shown somewhere, false for unused ones, null for all.
@@ -135,6 +140,7 @@ public class ImageService {
 	@Transactional
 	public GalleryImage upload(ProcessedImage processed) {
 		Image image = create(ImageKind.GALLERY, processed);
+		auditLog.record(AuditAction.CREATED, AuditKind.IMAGE, "Photo ajoutée à la galerie", null);
 		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of(), List.of(),
 				false);
 	}

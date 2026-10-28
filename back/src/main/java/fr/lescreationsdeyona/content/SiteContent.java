@@ -44,6 +44,19 @@ public class SiteContent {
 
 	private String footerText;
 
+	/** Home page sections: the small line above each heading, and the heading. */
+	private String latestEyebrow;
+
+	private String latestTitle;
+
+	private String menusEyebrow;
+
+	private String menusTitle;
+
+	private String categoriesEyebrow;
+
+	private String categoriesTitle;
+
 	@LastModifiedDate
 	private Instant updatedAt;
 

@@ -7,6 +7,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * Recipe search criteria, each one optional, all combined.
  *
+ * @param titleQuery part of the title (back-office)
+ * @param text what a visitor typed (public site): each of its words in the title, a category, a tag
+ *     or an ingredient, see {@link fr.lescreationsdeyona.common.SearchWords}
  * @param ingredientNames names of ingredients it must all have, in any part (case and accents
  *     ignored by the column collation); empty for any
  * @param ingredientId one of its ingredients (back-office)
@@ -14,7 +17,7 @@ import org.jspecify.annotations.Nullable;
  * @param maxMinutes preparation, rest and cooking together at most this long; a recipe giving
  *     neither preparation nor cooking time is left out
  */
-record RecipeFilter(@Nullable String titleQuery, @Nullable String categorySlug, @Nullable String tagSlug,
+record RecipeFilter(@Nullable String titleQuery, @Nullable String text, @Nullable String categorySlug, @Nullable String tagSlug,
 		List<String> ingredientNames, @Nullable Long ingredientId, @Nullable UUID imageId,
 		@Nullable RecipeStatus status, @Nullable Integer maxMinutes, @Nullable DifficultyLevel difficulty) {
 
@@ -22,8 +25,8 @@ record RecipeFilter(@Nullable String titleQuery, @Nullable String categorySlug, 
 		ingredientNames = List.copyOf(ingredientNames);
 	}
 
-	static RecipeFilter publishedTitled(String titleQuery) {
-		return new RecipeFilter(titleQuery, null, null, List.of(), null, null, RecipeStatus.PUBLISHED, null, null);
+	static RecipeFilter publishedText(String text) {
+		return new RecipeFilter(null, text, null, null, List.of(), null, null, RecipeStatus.PUBLISHED, null, null);
 	}
 
 }

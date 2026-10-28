@@ -1,16 +1,24 @@
 package fr.lescreationsdeyona.trash;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.category.CategoryResponse;
 import fr.lescreationsdeyona.category.CategoryService;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.glossary.GlossaryService;
+import fr.lescreationsdeyona.glossary.GlossaryTermResponse;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ImageStorage;
+import fr.lescreationsdeyona.ingredient.IngredientResponse;
+import fr.lescreationsdeyona.ingredient.IngredientService;
 import fr.lescreationsdeyona.menu.MenuResponses.AdminMenu;
 import fr.lescreationsdeyona.menu.MenuService;
 import fr.lescreationsdeyona.recipe.RecipeDetail;
 import fr.lescreationsdeyona.recipe.RecipeLinks;
 import fr.lescreationsdeyona.recipe.RecipeService;
+import fr.lescreationsdeyona.tag.TagService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -24,7 +32,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The trash of the back-office: deleted recipes, categories, menus and photos are kept 30 days (see
+ * The trash of the back-office: deleted recipes, categories, menus, photos, tags, ingredients and
+ * words of the glossary are kept 30 days (see
  * {@link TrashBin}), then erased every night. Each one is restored by the service that deleted it.
  */
 @Service
@@ -47,6 +56,14 @@ public class TrashService {
 	private final MenuService menuService;
 
 	private final ImageService imageService;
+
+	private final TagService tagService;
+
+	private final IngredientService ingredientService;
+
+	private final GlossaryService glossaryService;
+
+	private final AuditLog auditLog;
 
 	/** The last deleted first. */
 	public List<TrashedItem> list() {
@@ -82,8 +99,21 @@ public class TrashService {
 				yield new TrashRestored(TrashKind.MENU, menu.title(), menu.id(), null, menu.recipes().size());
 			}
 			case IMAGE -> new TrashRestored(TrashKind.IMAGE, item.getTitle(), null, null, imageService.restoreFromTrash(item));
+			case TAG -> {
+				TagService.TagRestored tag = tagService.restoreFromTrash(item);
+				yield new TrashRestored(TrashKind.TAG, tag.tag().name(), tag.tag().id(), null, tag.recipesBack());
+			}
+			case INGREDIENT -> {
+				IngredientResponse ingredient = ingredientService.restoreFromTrash(item);
+				yield new TrashRestored(TrashKind.INGREDIENT, ingredient.name(), ingredient.id(), null, 0);
+			}
+			case GLOSSARY_TERM -> {
+				GlossaryTermResponse term = glossaryService.restoreFromTrash(item);
+				yield new TrashRestored(TrashKind.GLOSSARY_TERM, term.name(), term.id(), null, 0);
+			}
 		};
 		trashRepository.delete(item);
+		auditLog.record(AuditAction.RESTORED, TrashBin.auditKind(item.getKind()), restored.title(), restored.id());
 		return restored;
 	}
 
@@ -99,7 +129,9 @@ public class TrashService {
 	/** For good, before its 30 days. A recipe's or a category's photo stays in the gallery; a photo's files go. */
 	@Transactional
 	public void erase(long id) {
-		erase(List.of(find(id)));
+		TrashItem item = find(id);
+		erase(List.of(item));
+		auditLog.record(AuditAction.ERASED, TrashBin.auditKind(item.getKind()), item.getTitle(), null);
 	}
 
 	/** Several at once, all or none: an id no longer in the trash cancels the whole erasure. */
@@ -110,13 +142,16 @@ public class TrashService {
 			throw new ApiException(ErrorCode.TRASH_ITEM_NOT_FOUND);
 		}
 		erase(items);
+		items.forEach(item -> auditLog.record(AuditAction.ERASED, TrashBin.auditKind(item.getKind()), item.getTitle(), null));
 	}
 
 	/** "Vider la corbeille". */
 	@Transactional
 	public void eraseAll() {
+		long count = trashRepository.count();
 		erase(trashRepository.findByKind(TrashKind.IMAGE));
 		trashRepository.deleteAllInBatch();
+		auditLog.record(AuditAction.ERASED, AuditKind.TRASH, count > 1 ? count + " éléments" : count + " élément", null);
 	}
 
 	/** Every night, what was deleted more than 30 days ago. */

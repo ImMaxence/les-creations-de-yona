@@ -97,10 +97,10 @@ class RecipeControllerTest {
 	@Test
 	void copiesTheIngredientsOfAFilter() {
 		List<String> names = new ArrayList<>(List.of("Œufs"));
-		RecipeFilter filter = new RecipeFilter(null, null, null, names, null, null, null, null, null);
+		RecipeFilter filter = new RecipeFilter(null, null, null, null, names, null, null, null, null, null);
 		names.add("Chocolat");
 		assertThat(filter.ingredientNames()).containsExactly("Œufs");
-		assertThat(RecipeFilter.publishedTitled("tarte").ingredientNames()).isEmpty();
+		assertThat(RecipeFilter.publishedText("tarte").ingredientNames()).isEmpty();
 	}
 
 	private RecipeFilter searchedFilter() {

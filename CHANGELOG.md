@@ -2,6 +2,38 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste (règle complète et fichiers à mettre à jour : [docs/developpement.md](docs/developpement.md#monter-la-version)). Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.9.0 - 2026-10-28
+
+Front 3.9.0, backend 3.9.0. Migration de base : V14.
+
+### Ajouté, pour les visiteurs
+
+- **Recherche dans tout le site** : une loupe dans l'en-tête de chaque page (aussi sur téléphone), et une grande barre « Que voulez-vous cuisiner ? » sur l'accueil. Chaque mot tapé est cherché dans les titres, mais aussi dans les catégories, les tags et les ingrédients : « petit déjeuner » trouve la catégorie, « chocolat dessert » une recette au chocolat dans les desserts. Majuscules, accents, tirets et pluriels ne comptent pas. Pendant la saisie, les suggestions sont rangées par type : recettes, catégories, tags, menus, ingrédients.
+- **« tarte 8 personnes »** : le nombre de personnes n'est pas cherché, mais chaque recette ouverte depuis les résultats affiche directement ses quantités pour 8.
+- **« Donner mon avis »** (pied de page, menu du téléphone) : un message à Yona, avec un e-mail facultatif pour recevoir une réponse.
+
+### Ajouté, dans le back-office
+
+- **Retours** : les messages des visiteurs, les nouveaux comptés à côté de « Retours » dans le menu. Répondre (ouvre la messagerie), marquer comme lu, supprimer. Effacés au bout de 12 mois.
+- **Historique** : ce qui a été fait dans le back-office, par qui et quand (création, modification, corbeille, restauration, apparence, préférences, sauvegardes…), filtrable par type, avec un lien vers ce qui existe encore. Gardé 6 mois.
+- **Titres de l'accueil** (Préférences) : la petite ligne et le titre des sections « Dernières recettes », « Menus » et « Catégories » (« Envie d'une douceur ? », « Fraîchement publiées », « Pour chaque occasion »…).
+- **La corbeille garde aussi les tags, les ingrédients et les mots du glossaire**, 30 jours. Un tag restauré revient sur ses recettes ; un ingrédient revient avec son rayon.
+- **Recettes : « Effacer les filtres »**, dans la barre des filtres dès qu'un filtre ou une recherche est actif.
+
+### Modifié
+
+- Supprimer un tag, un ingrédient ou un mot du glossaire les met à la corbeille, au lieu de les effacer tout de suite.
+- ReadMe : la capture d'une notification reçue sur un iPhone.
+- Politique de confidentialité : les messages « Donner mon avis » (e-mail facultatif, effacés au bout de 12 mois, adresse IP gardée une heure en mémoire seulement) et l'historique du back-office (e-mail de l'admin, 6 mois).
+- Les vues des recettes restent visibles dans le back-office seulement.
+
+### Technique
+
+- API : `GET /api/search-suggestions` (remplace `/api/recipe-suggestions`), recherche `q` de `/api/recipes` par mots (`SearchWords`) ; `POST /api/feedback` (public, sans jeton CSRF, champ piège, 5 par heure et par adresse, 500 non lus au plus) ; `/api/admin/feedback`, `/api/admin/history`. Les tables `audit_event` et `feedback` sont propres au serveur : sauvegardées vides, jamais restaurées.
+- Migration V14 : titres de l'accueil dans `site_content`, types `TAG`, `INGREDIENT`, `GLOSSARY_TERM` dans la corbeille, tables `audit_event` et `feedback`. Effacements de nuit : historique à 4 h 45, messages à 4 h 50.
+- Parcours Chrome : la session simulée répond aussi au compteur des retours ; « Donner mon avis » passe l'accessibilité (axe).
+- 71 tests front, 97 tests backend.
+
 ## 3.8.1 - 2026-10-28
 
 Front 3.8.1, backend 3.8.1. Pas de migration de base.

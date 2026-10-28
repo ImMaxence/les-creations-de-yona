@@ -22,7 +22,7 @@
     <yona-search-box
       [value]="filters().search"
       (searchSubmitted)="search($event)"
-      (suggestionPicked)="openRecipe($event)"
+      (picked)="open($event)"
     />
 
     <!-- "Qu'est-ce que je peux faire avec…": each ingredient picked is added to the others -->
@@ -125,7 +125,7 @@
         <!-- Cards appearing after a filter change fade in; cards already shown stay put -->
         @for (recipe of result().content; track recipe.slug; let i = $index) {
           <li yonaReveal [revealDelay]="(i % 3) * 90" animate.enter="card-enter" [style.--i]="i">
-            <yona-recipe-card [recipe]="recipe" [priority]="i === 0" />
+            <yona-recipe-card [recipe]="recipe" [priority]="i === 0" [servings]="servings()" />
           </li>
         }
       </ul>

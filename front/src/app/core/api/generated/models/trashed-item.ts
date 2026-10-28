@@ -15,7 +15,7 @@ export interface TrashedItem {
    * Photo shown next to it, still in the gallery; a deleted photo is shown by GET /api/admin/trash/{id}/image
    */
   imageId?: string;
-  kind: 'RECIPE' | 'CATEGORY' | 'MENU' | 'IMAGE';
+  kind: 'RECIPE' | 'CATEGORY' | 'MENU' | 'IMAGE' | 'TAG' | 'INGREDIENT' | 'GLOSSARY_TERM';
 
   /**
    * A recipe's only

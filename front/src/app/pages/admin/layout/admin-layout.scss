@@ -84,6 +84,20 @@
   }
 }
 
+// Unread messages, beside "Retours"
+.nav-count {
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
 .admin-section {
   display: grid;
   gap: var(--space-5);

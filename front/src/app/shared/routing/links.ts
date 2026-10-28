@@ -9,6 +9,7 @@ export const SHOPPING_LIST_PATH = '/liste-de-courses';
 export const LEGAL_NOTICE_PATH = '/mentions-legales';
 export const PRIVACY_POLICY_PATH = '/politique-de-confidentialite';
 export const ADMIN_PATH = '/admin';
+export const FEEDBACK_PATH = '/donner-mon-avis';
 
 /** The first category of a recipe: the one in its URL, and its "Retour" link. */
 export function mainCategory<T>(recipe: { categories: T[] }): T {

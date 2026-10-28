@@ -58,6 +58,8 @@ export async function answerCookies(page) {
 export async function fakeAdmin(page, version = 'locale') {
   await page.route('**/api/admin/me', (route) => route.fulfill({ json: { email: 'yona@example.fr', name: 'Yona' } }));
   await page.route('**/api/admin/version', (route) => route.fulfill({ json: { version } }));
+  // Le compteur des retours non lus, demandé par le menu du back-office
+  await page.route('**/api/admin/feedback/unread', (route) => route.fulfill({ json: { count: 0 } }));
 }
 
 /** La recette la plus utile au parcours : des ingrédients et une étape minutée, sinon la première. */

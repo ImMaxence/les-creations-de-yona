@@ -113,6 +113,16 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./backup/admin-backup'),
         title: 'Sauvegarde · Back-office',
       },
+      {
+        path: 'retours',
+        loadComponent: () => import('./feedback/admin-feedback'),
+        title: 'Retours · Back-office',
+      },
+      {
+        path: 'historique',
+        loadComponent: () => import('./history/admin-history'),
+        title: 'Historique · Back-office',
+      },
     ],
   },
 ];

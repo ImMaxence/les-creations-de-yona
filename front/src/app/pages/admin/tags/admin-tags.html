@@ -21,6 +21,7 @@
   @if (tags.value(); as list) {
     @if (list.length) {
       <yona-bulk-bar
+        deleteLabel="Mettre à la corbeille"
         [count]="selection.size()"
         [allShown]="selection.hasAll(tagIds())"
         [busy]="deleting()"

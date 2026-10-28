@@ -1,4 +1,4 @@
-<a class="card" [routerLink]="link()" (click)="onClick($event)">
+<a class="card" [routerLink]="link()" [queryParams]="linkParams()" (click)="onClick($event)">
   <yona-cover-image
     class="card__image"
     [style.view-transition-name]="imageTransitionName()"

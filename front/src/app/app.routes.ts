@@ -58,6 +58,17 @@ export const routes: Routes = [
       } satisfies RouteSeo,
     },
   },
+  {
+    path: 'donner-mon-avis',
+    loadComponent: () => import('./pages/feedback/feedback'),
+    data: {
+      [SEO_DATA_KEY]: {
+        title: 'Donner mon avis',
+        description: 'Une idée de recette, une amélioration du site, un souci rencontré : écrivez à Yona',
+        noIndex: true,
+      } satisfies RouteSeo,
+    },
+  },
   // Kept in the visitor's browser: nothing for search engines
   {
     path: 'favoris',

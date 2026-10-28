@@ -1,6 +1,7 @@
 @use 'mixins' as m;
 
 :host {
+  position: relative;
   display: block;
 }
 
@@ -72,6 +73,8 @@
 
 .suggestions {
   position: absolute;
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
   top: calc(100% + var(--space-2));
   inset-inline: 0;
   z-index: 5;
@@ -82,6 +85,37 @@
   box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
   list-style: none;
   transform-origin: top center;
+}
+
+.suggestions--inline {
+  position: static;
+  margin-top: var(--space-3);
+  box-shadow: 0 0 0 1px var(--color-line);
+}
+
+.suggestions__group + .suggestions__group {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-line);
+}
+
+.suggestions__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+// Home page: the search put forward
+.search--large .search__input {
+  min-height: 3.75rem;
+  font-size: var(--text-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .suggestions--enter {

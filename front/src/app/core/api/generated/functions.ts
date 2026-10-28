@@ -89,6 +89,14 @@ export type { CreateGlossaryTerm$Params as CreateGlossaryTerm$Params } from './f
 export { createGlossaryTerm as createGlossaryTerm } from './fn/admin-glossary/create-glossary-term';
 export type { DeleteGlossaryTerms$Params as DeleteGlossaryTerms$Params } from './fn/admin-glossary/delete-glossary-terms';
 export { deleteGlossaryTerms as deleteGlossaryTerms } from './fn/admin-glossary/delete-glossary-terms';
+export type { MarkFeedbackRead$Params as MarkFeedbackRead$Params } from './fn/admin-feedback/mark-feedback-read';
+export { markFeedbackRead as markFeedbackRead } from './fn/admin-feedback/mark-feedback-read';
+export type { ListFeedback$Params as ListFeedback$Params } from './fn/admin-feedback/list-feedback';
+export { listFeedback as listFeedback } from './fn/admin-feedback/list-feedback';
+export type { DeleteFeedback$Params as DeleteFeedback$Params } from './fn/admin-feedback/delete-feedback';
+export { deleteFeedback as deleteFeedback } from './fn/admin-feedback/delete-feedback';
+export type { CountUnreadFeedback$Params as CountUnreadFeedback$Params } from './fn/admin-feedback/count-unread-feedback';
+export { countUnreadFeedback as countUnreadFeedback } from './fn/admin-feedback/count-unread-feedback';
 export type { RenameCategory$Params as RenameCategory$Params } from './fn/admin-categories/rename-category';
 export { renameCategory as renameCategory } from './fn/admin-categories/rename-category';
 export type { DeleteCategory$Params as DeleteCategory$Params } from './fn/admin-categories/delete-category';
@@ -117,8 +125,6 @@ export type { GetPublishedRecipe$Params as GetPublishedRecipe$Params } from './f
 export { getPublishedRecipe as getPublishedRecipe } from './fn/recipes/get-published-recipe';
 export type { ListRelatedRecipes$Params as ListRelatedRecipes$Params } from './fn/recipes/list-related-recipes';
 export { listRelatedRecipes as listRelatedRecipes } from './fn/recipes/list-related-recipes';
-export type { SuggestRecipeTitles$Params as SuggestRecipeTitles$Params } from './fn/recipes/suggest-recipe-titles';
-export { suggestRecipeTitles as suggestRecipeTitles } from './fn/recipes/suggest-recipe-titles';
 export type { GetFeaturedRecipe$Params as GetFeaturedRecipe$Params } from './fn/recipes/get-featured-recipe';
 export { getFeaturedRecipe as getFeaturedRecipe } from './fn/recipes/get-featured-recipe';
 export type { SubscribeToNotifications$Params as SubscribeToNotifications$Params } from './fn/notifications/subscribe-to-notifications';
@@ -127,6 +133,8 @@ export type { UnsubscribeFromNotifications$Params as UnsubscribeFromNotification
 export { unsubscribeFromNotifications as unsubscribeFromNotifications } from './fn/notifications/unsubscribe-from-notifications';
 export type { GetPushPublicKey$Params as GetPushPublicKey$Params } from './fn/notifications/get-push-public-key';
 export { getPushPublicKey as getPushPublicKey } from './fn/notifications/get-push-public-key';
+export type { SendFeedback$Params as SendFeedback$Params } from './fn/feedback/send-feedback';
+export { sendFeedback as sendFeedback } from './fn/feedback/send-feedback';
 export type { RestoreFromTrash$Params as RestoreFromTrash$Params } from './fn/admin-trash/restore-from-trash';
 export { restoreFromTrash as restoreFromTrash } from './fn/admin-trash/restore-from-trash';
 export type { RestoreSeveralFromTrash$Params as RestoreSeveralFromTrash$Params } from './fn/admin-trash/restore-several-from-trash';
@@ -167,6 +175,8 @@ export type { ListSocialLinks$Params as ListSocialLinks$Params } from './fn/soci
 export { listSocialLinks as listSocialLinks } from './fn/social-links/list-social-links';
 export type { GetSiteContent$Params as GetSiteContent$Params } from './fn/site-content/get-site-content';
 export { getSiteContent as getSiteContent } from './fn/site-content/get-site-content';
+export type { Suggest$Params as Suggest$Params } from './fn/search/suggest';
+export { suggest as suggest } from './fn/search/suggest';
 export type { ListMenus$Params as ListMenus$Params } from './fn/menus/list-menus';
 export { listMenus as listMenus } from './fn/menus/list-menus';
 export type { GetMenu$Params as GetMenu$Params } from './fn/menus/get-menu';
@@ -187,6 +197,8 @@ export type { GetStats$Params as GetStats$Params } from './fn/admin-stats/get-st
 export { getStats as getStats } from './fn/admin-stats/get-stats';
 export type { GetCurrentAdmin$Params as GetCurrentAdmin$Params } from './fn/authentication/get-current-admin';
 export { getCurrentAdmin as getCurrentAdmin } from './fn/authentication/get-current-admin';
+export type { ListHistory$Params as ListHistory$Params } from './fn/admin-history/list-history';
+export { listHistory as listHistory } from './fn/admin-history/list-history';
 export type { DownloadBackup$Params as DownloadBackup$Params } from './fn/admin-backup/download-backup';
 export { downloadBackup as downloadBackup } from './fn/admin-backup/download-backup';
 export type { DeleteSearchMisses$Params as DeleteSearchMisses$Params } from './fn/admin-search-misses/delete-search-misses';

@@ -23,11 +23,12 @@ import org.springframework.stereotype.Service;
 public class TrashBatchService {
 
 	/**
-	 * What others need first: a photo before what showed it, a category before its recipes, a
-	 * recipe before its menus. Restored together, they find each other again.
+	 * What others need first: a photo before what showed it, a category, a tag or an ingredient
+	 * before its recipes, a recipe before its menus and tags. Restored together, they find each other
+	 * again.
 	 */
-	private static final List<TrashKind> RESTORE_ORDER = List.of(TrashKind.IMAGE, TrashKind.CATEGORY, TrashKind.RECIPE,
-			TrashKind.MENU);
+	private static final List<TrashKind> RESTORE_ORDER = List.of(TrashKind.IMAGE, TrashKind.CATEGORY, TrashKind.INGREDIENT,
+			TrashKind.GLOSSARY_TERM, TrashKind.RECIPE, TrashKind.TAG, TrashKind.MENU);
 
 	private static final Logger log = LoggerFactory.getLogger(TrashBatchService.class);
 

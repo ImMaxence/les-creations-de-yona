@@ -30,16 +30,19 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** Failures named in the toast after a restore of several things; the others are counted. */
 const NAMED_FAILURES = 3;
 
-/** How each kind is named, and agreed with ("restaurée", "restauré"). */
-const KINDS: Record<Kind, { label: string; feminine: boolean; editLink?: string }> = {
-  RECIPE: { label: 'Recette', feminine: true, editLink: '/admin/recettes' },
-  CATEGORY: { label: 'Catégorie', feminine: true },
-  MENU: { label: 'Menu', feminine: false },
-  IMAGE: { label: 'Photo', feminine: true },
+/** How each kind is named, in the plural too, and agreed with ("restaurée", "restauré"). */
+const KINDS: Record<Kind, { label: string; plural: string; feminine: boolean; editLink?: string }> = {
+  RECIPE: { label: 'Recette', plural: 'Recettes', feminine: true, editLink: '/admin/recettes' },
+  CATEGORY: { label: 'Catégorie', plural: 'Catégories', feminine: true },
+  MENU: { label: 'Menu', plural: 'Menus', feminine: false },
+  IMAGE: { label: 'Photo', plural: 'Photos', feminine: true },
+  TAG: { label: 'Tag', plural: 'Tags', feminine: false },
+  INGREDIENT: { label: 'Ingrédient', plural: 'Ingrédients', feminine: false },
+  GLOSSARY_TERM: { label: 'Mot du glossaire', plural: 'Mots du glossaire', feminine: false },
 };
 
 /**
- * Deleted recipes, categories, menus and photos, kept 30 days before being erased: restored in one
+ * Deleted recipes, categories, menus, photos, tags, ingredients and words of the glossary, kept 30 days before being erased: restored in one
  * click, as they were (URL, dates, photos, views, menus), or erased at once; one by one or ticked
  * together.
  */
@@ -72,7 +75,7 @@ export default class AdminTrash {
       ...(Object.keys(KINDS) as Kind[])
         .map((kind) => ({ kind, count: items.filter((item) => item.kind === kind).length }))
         .filter(({ count }) => count > 0)
-        .map(({ kind, count }) => ({ value: kind, label: `${KINDS[kind].label}s (${count})` })),
+        .map(({ kind, count }) => ({ value: kind, label: `${KINDS[kind].plural} (${count})` })),
     ];
   });
   protected readonly shown = computed(() =>
@@ -82,7 +85,7 @@ export default class AdminTrash {
   /** What "Tout sélectionner" covers once a type is chosen: "(recettes)". */
   protected readonly shownLabel = computed(() => {
     const kind = this.kind();
-    return kind === 'ALL' ? '' : `${KINDS[kind].label.toLowerCase()}s`;
+    return kind === 'ALL' ? '' : KINDS[kind].plural.toLowerCase();
   });
 
   /** A deleted photo is no longer in the gallery: the trash serves it. */
@@ -118,9 +121,7 @@ export default class AdminTrash {
   protected async erase(item: TrashedItem): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Effacer définitivement ?',
-      message: `« ${item.title} » ne pourra plus être ${KINDS[item.kind].feminine ? 'restaurée' : 'restauré'}. ${
-        item.kind === 'IMAGE' ? 'Ses fichiers sont supprimés du stockage' : 'Sa photo reste dans la galerie'
-      }`,
+      message: `« ${item.title} » ne pourra plus être ${KINDS[item.kind].feminine ? 'restaurée' : 'restauré'}${erasedNote(item.kind)}`,
       confirmLabel: 'Effacer',
     });
     if (confirmed && (await attempt(this.api.invoke(eraseFromTrash, { id: item.id }))).ok) {
@@ -225,6 +226,20 @@ export default class AdminTrash {
   }
 }
 
+/** What else erasing it does: a photo's files go, a recipe's, category's or menu's photo stays. */
+function erasedNote(kind: Kind): string {
+  switch (kind) {
+    case 'IMAGE':
+      return '. Ses fichiers sont supprimés du stockage';
+    case 'RECIPE':
+    case 'CATEGORY':
+    case 'MENU':
+      return '. Sa photo reste dans la galerie';
+    default:
+      return '';
+  }
+}
+
 /** "« Goûter » : Un menu porte déjà ce titre", the first ones named, the others counted. */
 function failedMessage(failed: Failure[]): string {
   const named = failed.slice(0, NAMED_FAILURES).map((failure) => `« ${failure.title} » : ${failure.message}`);
@@ -249,5 +264,11 @@ function restoredMessage(restored: TrashRestored): string {
       return back
         ? `Photo remise dans la galerie, et à ${back > 1 ? `ses ${back} emplacements` : 'sa place'}`
         : 'Photo remise dans la galerie';
+    case 'TAG':
+      return `Tag « ${restored.title} » restauré${back ? `, de nouveau sur ${back > 1 ? `${back} recettes` : '1 recette'}` : ''}`;
+    case 'INGREDIENT':
+      return `Ingrédient « ${restored.title} » restauré`;
+    case 'GLOSSARY_TERM':
+      return `« ${restored.title} » est de nouveau dans le glossaire`;
   }
 }

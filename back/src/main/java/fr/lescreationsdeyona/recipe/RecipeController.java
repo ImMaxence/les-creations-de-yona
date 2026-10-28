@@ -49,7 +49,8 @@ class RecipeController {
 					+ "that finds nothing is noted, anonymously, for the back-office statistics.")
 	@GetMapping("/recipes")
 	PageResponse<RecipeCard> listPublishedRecipes(
-			@Parameter(description = "Part of the title, case and accents ignored")
+			@Parameter(description = "What the visitor typed: each word in the title, a category, a tag or an ingredient, case, "
+					+ "accents and plurals ignored; small words and a number of people (\"8 personnes\") left out")
 			@RequestParam(required = false) @Size(max = 100) @Nullable String q,
 			@Parameter(description = "Category slug")
 			@RequestParam(required = false) @Nullable String category,
@@ -64,7 +65,7 @@ class RecipeController {
 			@ParameterObject @PageableDefault(size = 12, sort = "publishedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		Page<RecipeCard> recipes = recipeService.searchPublished(
-				new RecipeFilter(q, category, tag, ingredient == null ? List.of() : ingredient, null, null, null,
+				new RecipeFilter(null, q, category, tag, ingredient == null ? List.of() : ingredient, null, null, null,
 						maxMinutes, difficulty), pageable);
 		if (recipes.isEmpty() && pageable.getPageNumber() == 0 && StringUtils.hasText(q)) {
 			searchMissService.record(q);
@@ -103,12 +104,6 @@ class RecipeController {
 		return recipeService.findFeatured()
 			.map(ResponseEntity::ok)
 			.orElseGet(() -> ResponseEntity.noContent().build());
-	}
-
-	@Operation(summary = "Title autocompletion: at most 5 published recipes")
-	@GetMapping("/recipe-suggestions")
-	List<RecipeSuggestion> suggestRecipeTitles(@RequestParam @NotBlank @Size(min = 2, max = 100) String q) {
-		return recipeService.suggestTitles(q);
 	}
 
 }

@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.social;
 
+import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditKind;
+import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.util.ArrayList;
@@ -17,6 +20,8 @@ public class SocialLinkService {
 	private final SocialLinkRepository socialLinkRepository;
 
 	private final SocialLinkMapper socialLinkMapper;
+
+	private final AuditLog auditLog;
 
 	public List<SocialLinkResponse> list() {
 		return socialLinkRepository.findAll(Sort.by("position")).stream().map(socialLinkMapper::toResponse).toList();
@@ -39,6 +44,7 @@ public class SocialLinkService {
 			socialLink.setPosition(position);
 			links.add(socialLink);
 		}
+		auditLog.record(AuditAction.UPDATED, AuditKind.SOCIAL_LINKS, "Réseaux sociaux", null);
 		return socialLinkRepository.saveAll(links).stream().map(socialLinkMapper::toResponse).toList();
 	}
 

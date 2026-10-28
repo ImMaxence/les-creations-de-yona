@@ -65,6 +65,11 @@ public enum ErrorCode {
 	PUSH_SUBSCRIPTION_INVALID(HttpStatus.BAD_REQUEST, "Cet abonnement aux notifications n'est pas valide"),
 	PUSH_SUBSCRIPTIONS_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les abonnements aux notifications sont complets pour le moment"),
 
+	// Visitors' messages
+	FEEDBACK_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Vous avez envoyé plusieurs messages en peu de temps : réessayez dans une heure"),
+	FEEDBACK_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les messages ne peuvent pas être reçus pour le moment : réessayez dans quelques jours"),
+	FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
+
 	// Ingredients
 	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable"),
 	INGREDIENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Cet ingrédient existe déjà"),

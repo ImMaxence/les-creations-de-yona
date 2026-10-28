@@ -29,10 +29,17 @@
   }
 </section>
 
+<!-- The search put forward: a recipe, an ingredient, an occasion -->
+<section class="container home-search" aria-labelledby="search-title">
+  <h2 id="search-title" class="home-search__title" yonaReveal>Que voulez-vous cuisiner ?</h2>
+  <yona-site-search class="home-search__box" large />
+  <p class="home-search__hint">Une recette, un ingrédient, une occasion : « chocolat », « petit-déjeuner », « tarte 8 personnes »</p>
+</section>
+
 <section class="container latest" aria-labelledby="latest-title">
   <header class="section-head" yonaReveal>
-    <p class="eyebrow">Fraîchement publiées</p>
-    <h2 id="latest-title">Dernières recettes</h2>
+    <p class="eyebrow">{{ content().latestEyebrow }}</p>
+    <h2 id="latest-title">{{ content().latestTitle }}</h2>
   </header>
 
   @if (data().latest.length) {
@@ -55,8 +62,8 @@
 @if (menus().length) {
   <section class="container menus" aria-labelledby="menus-title">
     <header class="section-head" yonaReveal>
-      <p class="eyebrow">Pour chaque occasion</p>
-      <h2 id="menus-title">Nos menus</h2>
+      <p class="eyebrow">{{ content().menusEyebrow }}</p>
+      <h2 id="menus-title">{{ content().menusTitle }}</h2>
     </header>
     <ul role="list" class="menus__grid">
       @for (menu of menus(); track menu.slug; let i = $index) {
@@ -122,8 +129,8 @@
 @if (categories().length) {
   <section class="categories" aria-labelledby="categories-title">
     <header class="container section-head" yonaReveal>
-      <p class="eyebrow">Envie d'une douceur ?</p>
-      <h2 id="categories-title">Catégories</h2>
+      <p class="eyebrow">{{ content().categoriesEyebrow }}</p>
+      <h2 id="categories-title">{{ content().categoriesTitle }}</h2>
     </header>
 
     <ul role="list" class="category-rail">

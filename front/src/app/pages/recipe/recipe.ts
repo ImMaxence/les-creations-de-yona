@@ -82,6 +82,8 @@ export default class Recipe {
   readonly related = input<RecipeCardModel[]>([]);
   /** From glossaryResolver: the words underlined in the steps. */
   readonly glossary = input<GlossaryTermResponse[]>([]);
+  /** ?portions=8, from a search ("tarte 8 personnes"): the quantities shown for that many at once. */
+  readonly portions = input<string>();
 
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly shoppingListPath = SHOPPING_LIST_PATH;
@@ -102,8 +104,15 @@ export default class Recipe {
   /** Its route, for the timers of the cooking mode, found again from any page. */
   protected readonly recipeLink = computed(() => recipeLink(this.recipe()));
 
-  /** Servings chosen by the visitor; back to the recipe's own when the recipe changes. */
-  protected readonly servings = linkedSignal(() => this.recipe().servings ?? null);
+  /**
+   * Servings chosen by the visitor; back to the recipe's own when the recipe changes, or those asked
+   * for in the search. A recipe without servings has nothing to adapt.
+   */
+  protected readonly servings = linkedSignal(() => {
+    const own = this.recipe().servings ?? null;
+    const asked = Number(this.portions());
+    return own && asked >= 1 && asked <= 50 ? asked : own;
+  });
   /** The visitor's mold, instead of the recipe's: quantities follow its area. */
   protected readonly chosenMold = linkedSignal<RecipeDetail, Mold | null>({
     source: this.recipe,

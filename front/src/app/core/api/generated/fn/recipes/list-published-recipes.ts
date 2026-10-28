@@ -12,7 +12,7 @@ import { PageResponseRecipeCard } from '../../models/page-response-recipe-card';
 export interface ListPublishedRecipes$Params {
 
 /**
- * Part of the title, case and accents ignored
+ * What the visitor typed: each word in the title, a category, a tag or an ingredient, case, accents and plurals ignored; small words and a number of people ("8 personnes") left out
  */
   q?: string;
 

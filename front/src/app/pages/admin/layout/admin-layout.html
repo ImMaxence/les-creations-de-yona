@@ -29,6 +29,13 @@
     <a routerLink="preferences" routerLinkActive="is-active"><svg yonaIcon="sliders-horizontal" [size]="18"></svg>Préférences</a>
     <a routerLink="sauvegarde" routerLinkActive="is-active"><svg yonaIcon="database-backup" [size]="18"></svg>Sauvegarde</a>
     <a routerLink="corbeille" routerLinkActive="is-active"><svg yonaIcon="trash" [size]="18"></svg>Corbeille</a>
+    <a routerLink="retours" routerLinkActive="is-active">
+      <svg yonaIcon="message-square" [size]="18"></svg>Retours
+      @if (unreadFeedback.count(); as count) {
+        <span class="nav-count" [attr.aria-label]="count + ' non lu' + (count > 1 ? 's' : '')">{{ count }}</span>
+      }
+    </a>
+    <a routerLink="historique" routerLinkActive="is-active"><svg yonaIcon="history" [size]="18"></svg>Historique</a>
     <a routerLink="nouveautes" routerLinkActive="is-active"><svg yonaIcon="sparkles" [size]="18"></svg>Nouveautés</a>
   </nav>
 

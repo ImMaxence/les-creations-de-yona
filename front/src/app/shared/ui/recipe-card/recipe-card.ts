@@ -5,6 +5,7 @@ import { categoryNames } from '../../format/categories';
 import { ParisDatePipe } from '../../format/paris-date.pipe';
 import { RECIPE_IMAGE_TRANSITION, isSameTabClick } from '../../motion/view-transitions';
 import { recipeLink } from '../../routing/links';
+import { SERVINGS_PARAM } from '../../search/search-target';
 import { CoverImage } from '../cover-image/cover-image';
 
 @Component({
@@ -18,8 +19,14 @@ export class RecipeCard {
   readonly recipe = input.required<RecipeCardModel>();
   /** First card of a page, likely the largest image on screen: loaded first. */
   readonly priority = input(false, { transform: booleanAttribute });
+  /** Asked for in the search ("8 personnes"): the recipe opens with its quantities for that many. */
+  readonly servings = input<number | null>(null);
 
   protected readonly link = computed(() => recipeLink(this.recipe()));
+  protected readonly linkParams = computed(() => {
+    const servings = this.servings();
+    return servings ? { [SERVINGS_PARAM]: servings } : null;
+  });
   protected readonly categories = computed(() => categoryNames(this.recipe().categories));
   /** Its publication; favorites kept before it existed have their creation only. */
   protected readonly date = computed(() => this.recipe().publishedAt ?? this.recipe().createdAt);

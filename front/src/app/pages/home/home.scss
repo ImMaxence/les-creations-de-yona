@@ -117,6 +117,34 @@
 
 // About -----------------------------------------------------------------------
 
+// Search ------------------------------------------------------------------------
+
+.home-search {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.home-search__title {
+  font-size: var(--text-2xl);
+}
+
+.home-search__box {
+  width: 100%;
+  max-width: 40rem;
+  // The suggestions float over the sections below
+  position: relative;
+  z-index: 2;
+  text-align: left;
+}
+
+.home-search__hint {
+  max-width: 40rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
 .about {
   display: grid;
   justify-items: center;

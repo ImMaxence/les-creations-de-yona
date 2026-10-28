@@ -1,5 +1,6 @@
 package fr.lescreationsdeyona.recipe;
 
+import fr.lescreationsdeyona.common.SearchWords;
 import fr.lescreationsdeyona.common.Texts;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
@@ -41,6 +42,11 @@ final class RecipeSpecifications {
 		String titleQuery = filter.titleQuery();
 		if (StringUtils.hasText(titleQuery)) {
 			criteria.add(titleContains(titleQuery.strip()));
+		}
+		String text = filter.text();
+		if (StringUtils.hasText(text)) {
+			// Each word somewhere: "chocolat dessert" finds a recipe with chocolate in the desserts
+			SearchWords.of(text).forEach(word -> criteria.add(mentions(word)));
 		}
 		// Each one: "œufs + chocolat" finds the recipes having both
 		for (String ingredientName : filter.ingredientNames()) {
@@ -85,6 +91,30 @@ final class RecipeSpecifications {
 		// A plain value is sent as a bound parameter; cb.literal() would be inlined into the SQL.
 		String pattern = containsPattern(text);
 		return (recipe, query, cb) -> cb.like(folded(cb, recipe.get("title")), pattern, LIKE_ESCAPE);
+	}
+
+	/**
+	 * A folded word in its title, one of its categories, tags or ingredients. Subqueries rather than
+	 * joins: each recipe comes out once.
+	 */
+	private static Specification<Recipe> mentions(String word) {
+		String pattern = "%" + word + "%";
+		return (recipe, query, cb) -> {
+			Subquery<Integer> categories = query.subquery(Integer.class);
+			Root<Recipe> inCategory = categories.correlate(recipe);
+			categories.select(cb.literal(1))
+				.where(cb.like(folded(cb, inCategory.join("categories").get("name")), pattern));
+			Subquery<Integer> tags = query.subquery(Integer.class);
+			Root<Recipe> withTag = tags.correlate(recipe);
+			tags.select(cb.literal(1)).where(cb.like(folded(cb, withTag.join("tags").get("name")), pattern));
+			Subquery<Integer> lines = query.subquery(Integer.class);
+			Root<RecipeIngredient> line = lines.from(RecipeIngredient.class);
+			lines.select(cb.literal(1))
+				.where(cb.equal(line.get("part").get("recipe"), recipe),
+						cb.like(folded(cb, line.get("ingredient").get("name")), pattern));
+			return cb.or(cb.like(folded(cb, recipe.get("title")), pattern), cb.exists(categories), cb.exists(tags),
+					cb.exists(lines));
+		};
 	}
 
 	/**

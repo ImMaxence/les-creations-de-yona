@@ -60,7 +60,7 @@ class AdminRecipeController {
 			@ParameterObject @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		return PageResponse.of(recipeService.searchAll(
-				new RecipeFilter(q, category, tag, List.of(), ingredientId, imageId, status, null, null), pageable));
+				new RecipeFilter(q, null, category, tag, List.of(), ingredientId, imageId, status, null, null), pageable));
 	}
 
 	@Operation(summary = "A recipe, for the edit form")
