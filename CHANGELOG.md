@@ -2,6 +2,14 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste (règle complète et fichiers à mettre à jour : [docs/developpement.md](docs/developpement.md#monter-la-version)). Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.8.1 - 2026-10-28
+
+Front 3.8.1, backend 3.8.1. Pas de migration de base.
+
+### Technique
+
+- Documentation : les réseaux d'entreprise. Bot Fight Mode protège le site des robots : on n'ajuste pas cette protection à l'aveugle, on identifie d'abord la règle qui bloque le visiteur (Security → Events).
+
 ## 3.8.0 - 2026-10-28
 
 Front 3.8.0, backend 3.8.0. Pas de migration de base.
