@@ -7,8 +7,8 @@
   </div>
   <p class="field__hint">
     Quelques recettes réunies pour une occasion (« Menu de Noël », « Goûter d'anniversaire ») : une page sur le site, et
-    tout à la liste de courses en un geste. Sa photo est celle de sa première recette ; seules ses recettes publiées
-    s'affichent
+    tout à la liste de courses en un geste. Sans photo choisie, il montre celle de sa première recette ; seules ses
+    recettes publiées s'affichent
   </p>
 
   @if (draft(); as menu) {
@@ -36,6 +36,26 @@
           [value]="menu.intro"
           (input)="update({ intro: $any($event.target).value })"
         ></textarea>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Photo (facultative)</span>
+        @if (menu.id === null) {
+          <span class="field__hint">À choisir une fois le menu créé, après « Enregistrer »</span>
+        } @else {
+          <yona-image-upload
+            class="menu-form__photo"
+            [imageId]="menu.imageId"
+            [busy]="savingImage()"
+            [progress]="uploadProgress()"
+            (fileChosen)="uploadImage($event)"
+            (galleryImageChosen)="chooseImage($event)"
+            (removed)="chooseImage(null)"
+          />
+          <span class="field__hint">
+            Sur sa carte et en haut de sa page. Enregistrée tout de suite ; sans photo choisie, celle de sa première recette
+          </span>
+        }
       </div>
 
       <div class="field">

@@ -8,32 +8,44 @@ import { Toaster } from '../../core/notifications/toaster';
 import { Reveal } from '../../shared/motion/reveal';
 import { MENUS_PATH, SHOPPING_LIST_PATH } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
+import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { Icon } from '../../shared/ui/icon/icon';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
 
 /**
- * A menu: its recipes, in the order Yona chose, all added to the shopping list at once (each for
+ * A menu: its photo (chosen for it, or else its first recipe's), its recipes, in the order Yona chose, all added to the shopping list at once (each for
  * the servings of its recipe; changed later on its own page).
  */
 @Component({
   selector: 'yona-menu',
-  imports: [Button, Icon, RecipeCard, Reveal, RouterLink],
+  imports: [Button, CoverImage, Icon, RecipeCard, Reveal, RouterLink],
   template: `
     <article class="container menu">
-      <header class="menu__head">
-        <a class="eyebrow enter" [routerLink]="menusPath">Menus</a>
-        <h1 class="enter" style="--delay: 60ms">{{ menu().title }}</h1>
-        @if (menu().intro) {
-          <p class="menu__intro enter" style="--delay: 120ms">{{ menu().intro }}</p>
+      <header class="menu__head" [class.menu__head--photo]="menu().imageId">
+        @if (menu().imageId; as imageId) {
+          <yona-cover-image
+            class="menu__photo enter"
+            [imageId]="imageId"
+            [alt]="menu().title"
+            sizes="(width >= 64rem) 36rem, 100vw"
+            priority
+          />
         }
-        <div class="menu__actions enter" style="--delay: 180ms">
-          <button yonaButton type="button" [disabled]="adding()" (click)="addAll()">
-            <svg yonaIcon="shopping-basket"></svg>
-            {{ adding() ? 'Ajout…' : 'Tout ajouter à ma liste de courses' }}
-          </button>
-          @if (added()) {
-            <a class="menu__list-link" [routerLink]="shoppingListPath">Voir ma liste</a>
+        <div class="menu__heading">
+          <a class="eyebrow enter" [routerLink]="menusPath">Menus</a>
+          <h1 class="enter" style="--delay: 60ms">{{ menu().title }}</h1>
+          @if (menu().intro) {
+            <p class="menu__intro enter" style="--delay: 120ms">{{ menu().intro }}</p>
           }
+          <div class="menu__actions enter" style="--delay: 180ms">
+            <button yonaButton type="button" [disabled]="adding()" (click)="addAll()">
+              <svg yonaIcon="shopping-basket"></svg>
+              {{ adding() ? 'Ajout…' : 'Tout ajouter à ma liste de courses' }}
+            </button>
+            @if (added()) {
+              <a class="menu__list-link" [routerLink]="shoppingListPath">Voir ma liste</a>
+            }
+          </div>
         </div>
       </header>
 

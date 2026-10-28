@@ -14,6 +14,8 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--space-4);
+  // Opened from its address (#etape-2): not hidden under the top of the screen
+  scroll-margin-top: var(--space-8);
 
   // Line joining the numbers, like a timeline
   &:not(:last-child)::before {

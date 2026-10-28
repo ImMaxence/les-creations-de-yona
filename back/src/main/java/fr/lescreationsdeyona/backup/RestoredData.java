@@ -361,12 +361,15 @@ class RestoredData {
 
 	/**
 	 * A menu whose title or address the site already has is left out. Its recipes are found by their
-	 * address, once the backup's recipes are merged; those the site lacks are left out.
+	 * address, once the backup's recipes are merged; those the site lacks are left out, as its photo.
 	 */
 	private void mergeMenus(JdbcClient scratch, JdbcClient site) {
+		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
 		for (Map<String, Object> menu : scratch.sql("select * from menu order by id").query().listOfRows()) {
 			Map<String, Object> values = new LinkedHashMap<>(menu);
 			long backupId = ((Number) values.remove("id")).longValue();
+			// Its photo, if the site has it (in the gallery, or added from the backup); else that of its first recipe
+			values.computeIfPresent("image_id", (key, id) -> images.contains(id) ? id : null);
 			Long siteId = site.sql("insert into menu (" + columns(values) + ") values (" + parameters(values)
 					+ ") on conflict do nothing returning id")
 				.params(values)

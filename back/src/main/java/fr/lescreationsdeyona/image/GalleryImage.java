@@ -9,6 +9,7 @@ import java.util.UUID;
 public record GalleryImage(UUID id, ImageKind kind, Instant createdAt,
 		@Schema(description = "Recipes showing it, by title") List<UsingRecipe> recipes,
 		@Schema(description = "Categories showing it, by name") List<UsingCategory> categories,
+		@Schema(description = "Menus showing it as their own photo, by title") List<UsingMenu> menus,
 		@Schema(description = "Shown in the \"À propos\" section of the home page") boolean aboutPage) {
 
 	public record UsingRecipe(Long id, String title) {
@@ -17,12 +18,19 @@ public record GalleryImage(UUID id, ImageKind kind, Instant createdAt,
 	public record UsingCategory(Long id, String name, String slug) {
 	}
 
+	public record UsingMenu(Long id, String title) {
+	}
+
 	/** A recipe showing an image, as read by {@link ImageRepository}. */
 	record RecipeUsage(UUID imageId, Long id, String title) {
 	}
 
 	/** A category showing an image, as read by {@link ImageRepository}. */
 	record CategoryUsage(UUID imageId, Long id, String name, String slug) {
+	}
+
+	/** A menu showing an image, as read by {@link ImageRepository}. */
+	record MenuUsage(UUID imageId, Long id, String title) {
 	}
 
 }

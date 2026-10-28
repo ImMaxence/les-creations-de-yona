@@ -67,6 +67,7 @@ export class GalleryPicker {
     const usedBy = [
       ...image.recipes.map((recipe) => recipe.title),
       ...image.categories.map((category) => category.name),
+      ...image.menus.map((menu) => menu.title),
       ...(image.aboutPage ? ['À propos'] : []),
     ];
     return usedBy.length ? usedBy.join(', ') : 'Non utilisée';

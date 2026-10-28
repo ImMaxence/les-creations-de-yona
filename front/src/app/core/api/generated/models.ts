@@ -69,6 +69,7 @@ export type { TrashBatchRestored } from './models/trash-batch-restored';
 export type { TrashedItem } from './models/trashed-item';
 export type { TrashRestored } from './models/trash-restored';
 export type { UsingCategory } from './models/using-category';
+export type { UsingMenu } from './models/using-menu';
 export type { UsingRecipe } from './models/using-recipe';
 export type { VersionResponse } from './models/version-response';
 export type { ViewedRecipe } from './models/viewed-recipe';

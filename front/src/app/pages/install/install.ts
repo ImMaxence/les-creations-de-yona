@@ -39,6 +39,8 @@ export default class Install {
   /** Browser state is only read once hydrated: the first render matches the server's. */
   private readonly hydrated = signal(false);
   protected readonly installed = computed(() => this.hydrated() && this.installPrompt.installed());
+  /** Read in the app itself, not in a browser tab. */
+  protected readonly standalone = computed(() => this.hydrated() && this.installPrompt.standalone());
   protected readonly canPrompt = computed(() => this.hydrated() && this.installPrompt.canPrompt());
   /** The visitor's own device first, once known. */
   protected readonly activeTab = linkedSignal<DevicePlatform>(() =>

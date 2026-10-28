@@ -1,6 +1,6 @@
 <ol role="list" class="list">
   @for (step of steps(); track $index; let i = $index) {
-    <li class="step" [class.is-done]="done().has(i)" yonaReveal>
+    <li class="step" [id]="stepAnchor(i + 1, part())" [class.is-done]="done().has(i)" yonaReveal>
       <button
         type="button"
         class="step__number"

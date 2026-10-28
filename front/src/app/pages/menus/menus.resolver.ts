@@ -31,6 +31,7 @@ export function menuSeo(route: ActivatedRouteSnapshot): PageSeo {
       menu.intro || `${menu.title} : ${menu.recipes.map((recipe) => recipe.title).join(', ')}. Des recettes maison`,
     ),
     canonicalPath: path,
+    image: menu.imageId ? `/api/images/${menu.imageId}/1600.webp` : undefined,
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'ItemList',

@@ -12,7 +12,7 @@
     @if (installed()) {
       <p class="install__status" animate.enter="install__status--enter">
         <svg yonaIcon="circle-check" [size]="20"></svg>
-        L'application est installée sur cet appareil
+        {{ standalone() ? "L'application est installée sur cet appareil" : "L'application est déjà installée sur cet appareil : ouvrez-la depuis son icône" }}
       </p>
     } @else {
       <div class="install__cta enter" style="--delay: 220ms">

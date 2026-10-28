@@ -8,7 +8,7 @@
 }
 
 .menus__head,
-.menu__head {
+.menu__heading {
   display: grid;
   gap: var(--space-3);
   max-width: 44rem;
@@ -16,6 +16,30 @@
   h1 {
     font-size: var(--text-3xl);
   }
+}
+
+.menu__head {
+  display: grid;
+  gap: var(--space-5);
+}
+
+// With its photo: above the title on a phone, beside it on a wide screen
+.menu__head--photo {
+  @include m.from(lg) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-7);
+
+    .menu__photo {
+      order: 1;
+    }
+  }
+}
+
+.menu__photo {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
 }
 
 .menus__lead,

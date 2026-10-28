@@ -10,7 +10,7 @@ import { RequestBuilder } from '../../request-builder';
 import { PageResponseGalleryImage } from '../../models/page-response-gallery-image';
 
 export interface ListImages$Params {
-  kind?: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE' | 'PINTEREST';
+  kind?: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE' | 'PINTEREST' | 'MENU';
 
 /**
  * true: the vertical Pinterest photos only; false: the landscape ones only

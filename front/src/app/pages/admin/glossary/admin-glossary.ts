@@ -9,6 +9,7 @@ import { listGlossary } from '../../../core/api/generated/fn/glossary/list-gloss
 import { GlossaryTermResponse } from '../../../core/api/generated/models/glossary-term-response';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
+import { byGlossaryName } from '../../../shared/format/glossary';
 import { GLOSSARY_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -40,6 +41,11 @@ export default class AdminGlossary {
   protected readonly maxNameLength = MAX_NAME_LENGTH;
   protected readonly maxDefinitionLength = MAX_DEFINITION_LENGTH;
   protected readonly terms = resource({ loader: () => this.api.invoke(listGlossary) });
+  /** In the order of the site's glossary page. */
+  protected readonly sortedTerms = computed(() => {
+    const terms = this.terms.value();
+    return terms && [...terms].sort(byGlossaryName);
+  });
 
   /** The word being changed; null while adding a new one. */
   protected readonly editing = signal<GlossaryTermResponse | null>(null);
@@ -50,7 +56,7 @@ export default class AdminGlossary {
   protected readonly saving = signal(false);
 
   protected readonly selection = new Selection<number>();
-  protected readonly termIds = computed(() => this.terms.value()?.map((term) => term.id) ?? []);
+  protected readonly termIds = computed(() => this.sortedTerms()?.map((term) => term.id) ?? []);
   protected readonly deleting = signal(false);
 
   protected edit(term: GlossaryTermResponse): void {

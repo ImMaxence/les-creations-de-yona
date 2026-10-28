@@ -26,6 +26,11 @@ export function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('fr');
 }
 
+/** Alphabetical the French way, as in a dictionary: "Éclair" before "Émulsionner", "Œuf" after "Ganache". */
+export function byGlossaryName(a: GlossaryTermResponse, b: GlossaryTermResponse): number {
+  return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+}
+
 export function glossaryMatcher(terms: GlossaryTermResponse[]): GlossaryMatcher {
   const byForm = new Map<string, GlossaryTermResponse>();
   for (const term of terms) {

@@ -12,7 +12,7 @@ import { Step } from '../../core/api/generated/models/step';
 import { PageSeo, SITE_URL, absoluteUrl, excerpt } from '../../core/seo/page-seo';
 import { isoDuration } from '../../shared/format/units';
 import { mainCategory, recipeLink } from '../../shared/routing/links';
-import { hasParts, totalIngredients } from './recipe-parts';
+import { hasParts, stepAnchor, totalIngredients } from './recipe-parts';
 
 /** Not matched by any route: rendered by the catch-all 404 page, with the visitor's URL kept. */
 export const NOT_FOUND_PATH = '/page-introuvable';
@@ -87,8 +87,9 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
       recipeCategory: recipe.categories.map((category) => category.name).join(', '),
       keywords: recipe.tags.length ? recipe.tags.map((tag) => tag.name).join(', ') : undefined,
       recipeYield: recipe.servings ? `${recipe.servings} portions` : undefined,
-      prepTime: recipe.prepMinutes ? isoDuration(recipe.prepMinutes) : undefined,
-      cookTime: recipe.cookMinutes ? isoDuration(recipe.cookMinutes) : undefined,
+      // Once one time is given, an empty one means none: a cake without baking, a sauce without preparation
+      prepTime: totalMinutes ? isoDuration(recipe.prepMinutes ?? 0) : undefined,
+      cookTime: totalMinutes ? isoDuration(recipe.cookMinutes ?? 0) : undefined,
       totalTime: totalMinutes ? isoDuration(totalMinutes) : undefined,
       // The whole recipe: quantities of an ingredient used in several parts are added up
       recipeIngredient: totalIngredients(recipe.parts, 1).map((ingredient) =>
@@ -96,16 +97,41 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
       ),
       tool: recipe.equipment.length ? recipe.equipment.map((item) => ({ '@type': 'HowToTool', name: item })) : undefined,
       recipeInstructions: hasParts(recipe.parts)
-        ? recipe.parts.map((part) => ({
+        ? recipe.parts.map((part, index) => ({
             '@type': 'HowToSection',
             name: part.title,
-            itemListElement: howToSteps(part.steps),
+            itemListElement: howToSteps(part.steps, index + 1, path, image),
           }))
-        : howToSteps(recipe.parts.flatMap((part) => part.steps)),
+        : howToSteps(recipe.parts.flatMap((part) => part.steps), null, path, image),
     },
   };
 }
 
-function howToSteps(steps: Step[]): object[] {
-  return steps.map((step, index) => ({ '@type': 'HowToStep', position: index + 1, text: step.description }));
+/**
+ * Each step with what Google asks for: a short name (its first sentence), its address on the page
+ * (#etape-2) and an image, the photo of the recipe, steps having none of their own.
+ */
+function howToSteps(steps: Step[], part: number | null, path: string, image: string | undefined): object[] {
+  return steps.map((step, index) => {
+    const text = plainText(step.description);
+    return {
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: excerpt(text.split(/(?<=[.!?…])\s/)[0].replace(/\.$/, ''), 80),
+      text,
+      url: `${absoluteUrl(path)}#${stepAnchor(index + 1, part)}`,
+      image: image ? absoluteUrl(image) : undefined,
+    };
+  });
+}
+
+/** Steps are written in Markdown, Google reads plain text: "**Fouettez** les [blancs](…)" → "Fouettez les blancs". */
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s*(?:[-*+]|\d+\.|#{1,6}|>)\s+/gm, '')
+    .replace(/\*\*|__|[*`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

@@ -30,6 +30,25 @@ Cloudflare (offre gratuite, proxy seulement) :
 - **Rocket Loader** (désactivé par défaut) : le laisser désactivé, il réécrit les balises `<script>`.
 - Photos (`/api/images/*`) : Cloudflare les garde en cache (un an, réponse `immutable`). Une photo supprimée reste accessible à qui connaît son URL (UUID impossible à deviner) jusqu'à purge manuelle (**Caching → Purge Cache**). Accepté.
 
+## Réseaux d'entreprise
+
+Retour de la 3.6 : depuis certains réseaux d'entreprise, « tunnel connection failed », erreurs de cache, « 504 Gateway Timeout » sur les recettes et le back-office. Ces erreurs viennent du proxy de l'entreprise, entre le poste et Cloudflare, pas du site : `ERR_TUNNEL_CONNECTION_FAILED` veut dire que le proxy a refusé d'ouvrir la connexion HTTPS vers le domaine, et un 504 qu'il a abandonné avant la réponse.
+
+Ce que le site fait depuis la 3.7 :
+
+- Les pages répondent `Cache-Control: private, no-cache` : un proxy ne les garde plus (une page périmée resservie par lui pouvait ne plus correspondre aux fichiers du site), le navigateur les redemande à chaque fois.
+- Une fois le site visité (ou l'application installée), les pages s'ouvrent depuis l'appareil, sans attendre le réseau, et les données attendent 3 secondes au plus avant de passer à celles déjà gardées : un proxy qui bloque ou répond « Forbidden » ne bloque plus que les nouveautés.
+
+Ce que le code ne peut pas régler, et qui se fait une fois, en ligne :
+
+1. **Catégorie du domaine** : les filtres d'entreprise bloquent ou ralentissent souvent les domaines récents ou « non classés ». Demander le classement en « Food / Recipes » (« Cuisine », « Gastronomie ») chez les principaux éditeurs, gratuitement : Zscaler (https://sitereview.zscaler.com), Palo Alto Networks (https://urlfiltering.paloaltonetworks.com), Fortinet (https://www.fortiguard.com/webfilter), Cisco Talos (https://talosintelligence.com/reputation_center), Broadcom/Symantec (https://sitereview.bluecoat.com), Forcepoint (https://csi.forcepoint.com), Check Point (https://www.checkpoint.com/urlcat). Une réponse arrive en général en quelques jours. Si le service informatique d'une entreprise est connu, lui demander quel produit bloque : c'est le seul à classer en priorité.
+2. **Cloudflare, Security → Events** : vérifier qu'aucune règle ne bloque ou ne met en défi les visiteurs de ces réseaux (beaucoup d'utilisateurs derrière une même adresse IP ressemblent à un robot). Si c'est le cas, désactiver **Bot Fight Mode** (offre gratuite) plutôt que de bloquer, ou baisser le **Security Level**.
+3. Le back-office passe par la connexion Google : certains réseaux bloquent `accounts.google.com` hors des comptes de l'entreprise. Rien à faire côté site.
+
+## Google Search Console
+
+Les rapports « Données structurées : Recettes » sont des suggestions (non critiques). Depuis la 3.7, chaque étape a un nom (sa première phrase), son adresse (`#etape-2`, `#partie-1-etape-2`, ancre de la page) et une image (la photo de la recette), et les temps de préparation et de cuisson sont donnés dès que l'un des temps est rempli (un temps vide compte pour 0). Une recette sans aucun temps reste signalée : la remplir (Statistiques, « Recettes à compléter », « temps »). Après la mise en ligne, **Valider la correction** dans chaque rapport pour que Google repasse sur les pages.
+
 ## Services Google
 
 Réglages pas à pas (projet Google Cloud, client OAuth, Google Drive, Analytics, Search Console) et problèmes courants : [docs/google.md](./google.md).

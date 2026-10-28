@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@angular/service-worker/config/schema.json",
   "index": "/index.csr.html",
-  "navigationRequestStrategy": "freshness",
+  "navigationRequestStrategy": "performance",
   "navigationUrls": ["/**", "!/**/*.*", "!/**/*__*", "!/**/*__*/**", "!/api/**"],
   "assetGroups": [
     {
@@ -31,13 +31,16 @@
         "/api/categories",
         "/api/ingredients",
         "/api/ingredients/aisles",
+        "/api/menus",
+        "/api/menus/**",
         "/api/site-content",
         "/api/social-links",
+        "/api/tags",
         "/api/theme"
       ],
       "cacheConfig": {
         "strategy": "freshness",
-        "timeout": "4s",
+        "timeout": "3s",
         "maxAge": "30d",
         "maxSize": 200
       }

@@ -18,17 +18,19 @@ public final class MenuResponses {
 	public record MenuSummary(Long id, String title, String slug, @Nullable String intro, boolean published,
 			@Schema(description = "Its recipes on the site (published ones only); all of them in the back-office")
 			int recipeCount,
-			@Schema(description = "Photo of its first recipe that has one") @Nullable UUID imageId,
+			@Schema(description = "Photo chosen for it, or else that of its first recipe that has one") @Nullable UUID imageId,
 			Instant updatedAt) {
 	}
 
 	/** The page of a published menu: its published recipes, in order. */
-	public record MenuDetail(String title, String slug, @Nullable String intro, List<RecipeCard> recipes,
-			Instant updatedAt) {
+	public record MenuDetail(String title, String slug, @Nullable String intro,
+			@Schema(description = "Photo chosen for it, or else that of its first recipe that has one") @Nullable UUID imageId,
+			List<RecipeCard> recipes, Instant updatedAt) {
 	}
 
 	/** A menu in the back-office editor: every recipe, drafts included. */
 	public record AdminMenu(Long id, String title, String slug, @Nullable String intro, boolean published,
+			@Schema(description = "Photo chosen for it; null when it shows that of its first recipe") @Nullable UUID imageId,
 			List<MenuRecipe> recipes, Instant updatedAt) {
 	}
 

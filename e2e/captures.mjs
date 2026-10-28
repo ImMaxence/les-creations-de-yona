@@ -45,7 +45,7 @@ if (wanted('pc-accueil', 'pc-recettes', 'pc-recette')) {
 // Le back-office sans connexion Google : la page « Nouveautés », la seule sans données de l'API admin
 if (wanted('pc-administration')) {
   const admin = await newPage(browser, DESKTOP);
-  await fakeAdmin(admin, '3.6.0');
+  await fakeAdmin(admin, '3.7.0');
   await admin.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
   await admin.locator('details.changelog__version').first().waitFor();
   await shoot(admin, 'pc-administration');

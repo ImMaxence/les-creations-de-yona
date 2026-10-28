@@ -4,6 +4,11 @@
 import { MenuRecipe } from '../models/menu-recipe';
 export interface AdminMenu {
   id: number;
+
+  /**
+   * Photo chosen for it; null when it shows that of its first recipe
+   */
+  imageId?: string;
   intro?: string;
   published: boolean;
   recipes: Array<MenuRecipe>;

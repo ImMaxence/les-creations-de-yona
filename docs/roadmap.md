@@ -45,6 +45,7 @@ Les versions passées, résumées (le détail depuis la 3.1.0 est dans le [CHANG
 - [x] 3.1.0 : notifications des nouvelles recettes (Web Push), sauvegarde de nuit sur Google Drive, corbeille, publication programmée, « Dupliquer », brouillon gardé dans le navigateur, glossaire, « Le conseil de Yona », temps de repos et « Organiser mon temps », adaptation au moule, « Vous aimerez aussi », ingrédients par étape et sonnerie du mode cuisine, icônes intégrées sans Lucide (migration V9)
 - [x] 3.2.0 : encart des notifications sur l'accueil, dernières recettes avant « À propos » ; mode cuisine : « Mise en place », « + 1 min », minuteurs gardés une fois le mode fermé, minuteur qui part bien de 1:00, vibration légère au rythme de la sonnerie ; « Mes notes » sur chaque recette ; recherche avec plusieurs ingrédients ; « Installer l'application » retiré de la navbar, bandeau d'installation ; page « Nouveautés » (CHANGELOG) dans le back-office ; tests unitaires front (Vitest) et backend (JUnit)
 - [x] 3.3.0 : minuteurs gardés sur tout le site, minuteur libre ; liste de courses par rayon (rayon des ingrédients dans le back-office) ; matériel des recettes ; réponse 400 aux adresses mal encodées ; parcours dans Chrome (`e2e/`) ; documentation découpée (`docs/`), captures d'écran, licence MIT (migration V10)
+- [x] 3.7.0 : photo des menus (migration V13), hors connexion immédiat (pages servies depuis l'appareil, plus d'erreur « Forbidden »), application déjà installée reconnue depuis le navigateur, glossaire du back-office trié, étapes des recettes complétées pour Google, pages non gardées par les proxys ; étude IA (Gemini)
 - [x] 3.6.0 : corbeille, sélection multiple pour restaurer ou effacer plusieurs éléments à la fois
 - [x] 3.5.3 : la liste des recettes du back-office garde sa position quand on change le tri, un filtre ou la recherche
 - [x] 3.5.2 : liste des recettes du back-office de nouveau affichée (tris de la 3.5.0 refusés par le serveur)
@@ -53,6 +54,8 @@ Les versions passées, résumées (le détail depuis la 3.1.0 est dans le [CHANG
 - [x] 3.4.0 : menus composés par Yona (pages, accueil, back-office ; migration V11), minuteurs retrouvés après un rechargement, accessibilité (axe) et Lighthouse dans le parcours Chrome, compression par la passerelle, corrections d'accessibilité (repère de l'en-tête, titres de la page Recettes, étiquette des notes)
 
 ## Points ouverts
+
+- 3.7.0 en ligne : sur un téléphone, ouvrir l'application installée en mode avion (pages déjà vues affichées tout de suite) ; sur Android, vérifier « déjà installée » sur la page d'installation depuis Chrome ; choisir la photo des premiers menus ; Search Console, « Valider la correction » des rapports Recettes ; demander le classement du domaine chez les éditeurs de filtres d'entreprise ([production](production.md#réseaux-dentreprise)) ; décider de la suite de l'étude IA ([ia.md](ia.md)).
 
 - Vérification en ligne : connexion Google, upload d'une photo depuis l'iPhone, sauvegarde ZIP, restauration (d'abord une fusion avec une sauvegarde toute fraîche : rien à ajouter attendu).
 - 3.1.0 en ligne : réglages Google Drive (voir « Services Google »), connexion du Drive, puis vérifier une notification de nouvelle recette sur un Android et sur un iPhone avec l'application installée.

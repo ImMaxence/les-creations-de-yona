@@ -63,8 +63,10 @@ app.use(
   }),
 );
 
-// Every other request: server-side rendering of the Angular application
+// Every other request: server-side rendering of the Angular application. Pages change with every
+// publication: kept by no shared cache (company proxies), checked again by the browser each time.
 app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'private, no-cache');
   const nonce = cspNonce(res);
   const context: ServerRequestContext | undefined = nonce ? { cspNonce: nonce } : undefined;
   angularApp

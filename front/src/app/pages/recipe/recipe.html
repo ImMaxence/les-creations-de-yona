@@ -178,7 +178,7 @@
                 </div>
               }
               @if (part.steps.length) {
-                <yona-recipe-steps [steps]="part.steps" [glossary]="glossaryMatcher()" />
+                <yona-recipe-steps [steps]="part.steps" [glossary]="glossaryMatcher()" [part]="i + 1" />
               }
             </section>
           }

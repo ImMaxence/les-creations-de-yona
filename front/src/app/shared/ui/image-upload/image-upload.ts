@@ -76,9 +76,9 @@ import { Icon } from '../icon/icon';
     </div>
     <p class="field__hint">
       @if (portrait()) {
-        JPEG ou PNG, 10 Mo maximum, format vertical : 1000 × 1333 px minimum, 1000 × 1500 px (2:3) conseillé.
+        JPEG ou PNG, 10 Mo maximum, format vertical : 1000 × 1333 px minimum, 1000 × 1500 px (2:3) conseillé
       } @else {
-        JPEG ou PNG, 10 Mo maximum, format paysage (1200 × 800 px minimum).
+        JPEG ou PNG, 10 Mo maximum, format paysage (1200 × 800 px minimum)
       }
     </p>
     <yona-gallery-picker #picker [portrait]="portrait()" (chosen)="galleryImageChosen.emit($event)" />

@@ -71,6 +71,12 @@
                       Voir les catégories ({{ image.categories.length }})
                     </a>
                   }
+                  @if (image.menus.length) {
+                    <a class="link-button" routerLink="/admin/menus">
+                      <svg yonaIcon="utensils-crossed" [size]="14"></svg>
+                      {{ image.menus.length > 1 ? 'Voir les menus (' + image.menus.length + ')' : 'Voir le menu « ' + image.menus[0].title + ' »' }}
+                    </a>
+                  }
                 </div>
               } @else {
                 <span class="badge badge--unused">Non utilisée</span>

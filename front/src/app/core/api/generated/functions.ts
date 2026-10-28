@@ -59,6 +59,10 @@ export type { UpdateMenu$Params as UpdateMenu$Params } from './fn/admin-menus/up
 export { updateMenu as updateMenu } from './fn/admin-menus/update-menu';
 export type { DeleteMenu$Params as DeleteMenu$Params } from './fn/admin-menus/delete-menu';
 export { deleteMenu as deleteMenu } from './fn/admin-menus/delete-menu';
+export type { ReplaceMenuImage$Params as ReplaceMenuImage$Params } from './fn/admin-menus/replace-menu-image';
+export { replaceMenuImage as replaceMenuImage } from './fn/admin-menus/replace-menu-image';
+export type { ChooseMenuImage$Params as ChooseMenuImage$Params } from './fn/admin-menus/choose-menu-image';
+export { chooseMenuImage as chooseMenuImage } from './fn/admin-menus/choose-menu-image';
 export type { ListAdminMenus$Params as ListAdminMenus$Params } from './fn/admin-menus/list-admin-menus';
 export { listAdminMenus as listAdminMenus } from './fn/admin-menus/list-admin-menus';
 export type { CreateMenu$Params as CreateMenu$Params } from './fn/admin-menus/create-menu';

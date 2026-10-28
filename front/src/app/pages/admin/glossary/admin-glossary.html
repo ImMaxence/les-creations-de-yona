@@ -62,7 +62,7 @@
     </div>
   </form>
 
-  @if (terms.value(); as list) {
+  @if (sortedTerms(); as list) {
     @if (list.length) {
       <yona-bulk-bar
         [count]="selection.size()"

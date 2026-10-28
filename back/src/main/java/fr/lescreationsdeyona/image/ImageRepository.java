@@ -15,7 +15,7 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 
 	/**
 	 * Images of the gallery, optionally only those shown (or not shown) by a recipe (as its photo
-	 * or its Pinterest photo), a category or the "À propos" section. {@code portrait}: true for the
+	 * or its Pinterest photo), a category, a menu or the "À propos" section. {@code portrait}: true for the
 	 * vertical Pinterest photos only, false for all the others (landscape), null for all.
 	 */
 	@Query("""
@@ -27,9 +27,11 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 			and (:used is null
 				or (:used = true and (exists (select 1 from Recipe r where r.image = i or r.pinterestImage = i)
 					or exists (select 1 from Category c where c.image = i)
+					or exists (select 1 from Menu m where m.image = i)
 					or exists (select 1 from SiteContent s where s.aboutImage = i)))
 				or (:used = false and not exists (select 1 from Recipe r where r.image = i or r.pinterestImage = i)
 					and not exists (select 1 from Category c where c.image = i)
+					and not exists (select 1 from Menu m where m.image = i)
 					and not exists (select 1 from SiteContent s where s.aboutImage = i)))""")
 	Page<Image> findGallery(@Nullable ImageKind kind, @Nullable Boolean portrait, @Nullable Boolean used,
 			Pageable pageable);
@@ -48,6 +50,11 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 			select new fr.lescreationsdeyona.image.GalleryImage$CategoryUsage(c.image.id, c.id, c.name, c.slug)
 			from Category c where c.image.id in :imageIds order by c.name""")
 	List<GalleryImage.CategoryUsage> findCategoryUsages(Collection<UUID> imageIds);
+
+	@Query("""
+			select new fr.lescreationsdeyona.image.GalleryImage$MenuUsage(m.image.id, m.id, m.title)
+			from Menu m where m.image.id in :imageIds order by m.title""")
+	List<GalleryImage.MenuUsage> findMenuUsages(Collection<UUID> imageIds);
 
 	// Restore from the trash: written in SQL, the entity being immutable and its date set by auditing.
 
@@ -72,6 +79,10 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 			update category set image_id = :imageId where id in (:categoryIds) and image_id is null
 			and not exists (select 1 from category other where other.image_id = :imageId)""", nativeQuery = true)
 	int showOnCategories(UUID imageId, Collection<Long> categoryIds);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update menu set image_id = :imageId where id in (:menuIds) and image_id is null", nativeQuery = true)
+	int showOnMenus(UUID imageId, Collection<Long> menuIds);
 
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query(value = "update site_content set about_image_id = :imageId where about_image_id is null", nativeQuery = true)

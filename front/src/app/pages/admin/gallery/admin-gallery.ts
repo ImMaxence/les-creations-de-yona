@@ -56,9 +56,10 @@ export default class AdminGallery {
   private readonly imageUploads = inject(ImageUploads);
 
   protected readonly kindOptions: SelectOption<KindFilter>[] = [
-    { value: 'ALL', label: 'Recettes et catégories' },
+    { value: 'ALL', label: 'Recettes, catégories et menus' },
     { value: 'RECIPE', label: 'Envoyées pour une recette' },
     { value: 'CATEGORY', label: 'Envoyées pour une catégorie' },
+    { value: 'MENU', label: 'Envoyées pour un menu' },
     { value: 'GALLERY', label: 'Envoyées dans la galerie' },
     { value: 'SITE', label: 'Envoyées pour « À propos »' },
     { value: 'PINTEREST', label: 'Photos Pinterest (verticales)' },
@@ -127,11 +128,12 @@ export default class AdminGallery {
     }
   }
 
-  /** Titles of the recipes, names of the categories, and the "À propos" section showing it. */
+  /** Titles of the recipes, names of the categories, titles of the menus, and the "À propos" section showing it. */
   protected usedBy(image: GalleryImage): string[] {
     return [
       ...image.recipes.map((recipe) => recipe.title),
       ...image.categories.map((category) => category.name),
+      ...image.menus.map((menu) => menu.title),
       ...(image.aboutPage ? ['À propos'] : []),
     ];
   }

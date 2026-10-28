@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 3.6.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 3.7.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -30,7 +30,7 @@ Sur téléphone, là où se lisent la plupart des recettes :
 
 - Recettes avec recherche (titre, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté), portions et moule ajustables, « Organiser mon temps ».
 - Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page et après un rechargement.
-- Menus composés par Yona (« Menu de Noël », « Goûter d'anniversaire »), toutes leurs recettes à la liste de courses en un geste.
+- Menus composés par Yona (« Menu de Noël », « Goûter d'anniversaire »), chacun avec sa photo, toutes leurs recettes à la liste de courses en un geste.
 - Favoris, liste de courses rangée par rayon, notes personnelles : gardés dans le navigateur.
 - Application installable d'un bouton (« Télécharger l'application » ; sur iPhone, les deux gestes expliqués), lisible hors connexion, notifications des nouvelles recettes.
 - Glossaire de pâtisserie, mots expliqués d'un appui dans les étapes.
@@ -39,7 +39,7 @@ Sur téléphone, là où se lisent la plupart des recettes :
 
 - Éditeur de recettes (parties, étapes minutées, matériel, conseil, publication programmée, brouillon gardé), aperçu, liste triable (modification, création, titre, vues).
 - Corbeille de 30 jours pour les recettes, catégories, menus et photos, qui reviennent à leur place une fois restaurés.
-- Galerie de photos, catégories, tags, menus, ingrédients (doublons, rayons), glossaire.
+- Galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
 - Apparence (thèmes, polices), statistiques (dont le nombre de vues et les recettes les plus vues), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
 
 Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).
@@ -75,6 +75,7 @@ cd e2e && npm test     # parcours dans Chrome (dont accessibilité et Lighthouse
 | [Roadmap](docs/roadmap.md) | Versions passées et points à vérifier |
 | [CHANGELOG](CHANGELOG.md) | Le détail de chaque version, aussi affiché dans le back-office |
 | [Sécurité](SECURITY-REVIEW.md) · [Restauration](docs/restauration.md) · [Google](docs/google.md) · [Domaine](docs/changement-de-domaine.md) | Revue de sécurité, procédures |
+| [IA](docs/ia.md) | Étude : remplir une recette avec Gemini, gratuitement |
 
 ## Licence
 

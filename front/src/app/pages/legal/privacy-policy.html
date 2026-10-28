@@ -166,7 +166,11 @@
       si vous désinstallez l'application ou videz les données du site. Si vous répondez « Plus tard » à
       la proposition d'installer l'application, la date de ce choix est gardée dans votre navigateur
       (stockage local, clé <strong>yona-install-banner-dismissed</strong>) pour ne pas la reproposer
-      avant un mois.
+      avant un mois. Une fois l'application installée ou ouverte sur votre appareil, le site le note
+      aussi dans votre navigateur (stockage local, clé <strong>yona-app-installed</strong>), pour ne
+      plus vous proposer de l'installer ; cette indication est effacée si le navigateur propose de
+      nouveau l'installation, c'est-à-dire une fois l'application désinstallée. Ces informations ne
+      quittent pas votre appareil.
     </p>
 
     <h2>Notifications des nouvelles recettes</h2>

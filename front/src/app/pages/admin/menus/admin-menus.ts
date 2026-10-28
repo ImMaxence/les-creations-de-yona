@@ -2,12 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, resource, signal 
 import { RouterLink } from '@angular/router';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
+import { ImageUploads } from '../../../core/api/image-uploads';
+import { chooseMenuImage } from '../../../core/api/generated/fn/admin-menus/choose-menu-image';
 import { createMenu } from '../../../core/api/generated/fn/admin-menus/create-menu';
 import { deleteMenu } from '../../../core/api/generated/fn/admin-menus/delete-menu';
 import { getAdminMenu } from '../../../core/api/generated/fn/admin-menus/get-admin-menu';
 import { listAdminMenus } from '../../../core/api/generated/fn/admin-menus/list-admin-menus';
+import { replaceMenuImage } from '../../../core/api/generated/fn/admin-menus/replace-menu-image';
 import { updateMenu } from '../../../core/api/generated/fn/admin-menus/update-menu';
 import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
+import { AdminMenu } from '../../../core/api/generated/models/admin-menu';
 import { MenuRecipe } from '../../../core/api/generated/models/menu-recipe';
 import { MenuSummary } from '../../../core/api/generated/models/menu-summary';
 import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
@@ -17,6 +21,7 @@ import { SiteData } from '../../../core/site/site-data';
 import { menuLink } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 
 const MAX_RECIPES = 12;
@@ -30,21 +35,25 @@ interface MenuDraft {
   intro: string;
   published: boolean;
   recipes: MenuRecipe[];
+  /** Chosen for it; null: the photo of its first recipe. Saved at once, apart from the form. */
+  imageId: string | null;
 }
 
 /**
  * "Menus": a few recipes put together for an occasion ("Menu de Noël"), shown on the site once
- * published, with its published recipes only. Its photo is the one of its first recipe.
+ * published, with its published recipes only. Its photo is the one chosen for it, or else the one
+ * of its first recipe; chosen once the menu exists.
  */
 @Component({
   selector: 'yona-admin-menus',
-  imports: [Button, Icon, RouterLink, Select],
+  imports: [Button, Icon, ImageUpload, RouterLink, Select],
   templateUrl: './admin-menus.html',
   styleUrl: './admin-menus.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class AdminMenus {
   private readonly api = inject(Api);
+  private readonly imageUploads = inject(ImageUploads);
   private readonly confirm = inject(Confirm);
   private readonly toaster = inject(Toaster);
   private readonly siteData = inject(SiteData);
@@ -57,6 +66,9 @@ export default class AdminMenus {
 
   protected readonly draft = signal<MenuDraft | null>(null);
   protected readonly saving = signal(false);
+  protected readonly savingImage = signal(false);
+  /** Share of a new photo sent (0 to 1) while it uploads. */
+  protected readonly uploadProgress = signal<number | null>(null);
   /** Those not in the menu yet; drafts marked as such. */
   protected readonly recipeOptions = computed<SelectOption<number>[]>(() => {
     const chosen = new Set(this.draft()?.recipes.map((recipe) => recipe.id));
@@ -66,14 +78,13 @@ export default class AdminMenus {
   });
 
   protected startNew(): void {
-    this.draft.set({ id: null, title: '', intro: '', published: false, recipes: [] });
+    this.draft.set({ id: null, title: '', intro: '', published: false, recipes: [], imageId: null });
   }
 
   protected async edit(menu: MenuSummary): Promise<void> {
     const found = await attempt(this.api.invoke(getAdminMenu, { id: menu.id }));
     if (found.ok) {
-      const { id, title, intro, published, recipes } = found.value;
-      this.draft.set({ id, title, intro: intro ?? '', published, recipes });
+      this.open(found.value);
     }
   }
 
@@ -124,11 +135,61 @@ export default class AdminMenus {
         : this.api.invoke(updateMenu, { id: draft.id, body }),
     );
     this.saving.set(false);
-    if (saved.ok) {
+    if (!saved.ok) {
+      return;
+    }
+    if (draft.id === null) {
+      // Left open: its photo can now be chosen
+      this.toaster.success('Menu créé : vous pouvez maintenant lui choisir une photo');
+      this.open(saved.value);
+    } else {
       this.toaster.success(draft.published ? 'Menu enregistré et visible sur le site' : 'Menu enregistré, pas encore publié');
       this.draft.set(null);
-      this.reload();
     }
+    this.reload();
+  }
+
+  protected async uploadImage(file: File): Promise<void> {
+    const id = this.draft()?.id;
+    if (id == null) {
+      return;
+    }
+    this.uploadProgress.set(0);
+    const upload = await attempt(
+      this.imageUploads.send<AdminMenu>(replaceMenuImage.PATH.replace('{id}', String(id)), file, (sent) =>
+        this.uploadProgress.set(sent),
+      ),
+    );
+    this.uploadProgress.set(null);
+    if (upload.ok) {
+      this.photoSaved(upload.value, 'Photo enregistrée');
+    }
+  }
+
+  /** A photo of the gallery, or none (null): the previous one stays in the gallery. */
+  protected async chooseImage(imageId: string | null): Promise<void> {
+    const id = this.draft()?.id;
+    if (id == null) {
+      return;
+    }
+    this.savingImage.set(true);
+    const choice = await attempt(this.api.invoke(chooseMenuImage, { id, body: { imageId: imageId ?? undefined } }));
+    this.savingImage.set(false);
+    if (choice.ok) {
+      this.photoSaved(choice.value, imageId ? 'Photo enregistrée' : 'Photo retirée, elle reste dans la galerie');
+    }
+  }
+
+  /** The form keeps what is being typed: only the photo changes. */
+  private photoSaved(menu: AdminMenu, message: string): void {
+    this.toaster.success(message);
+    this.update({ imageId: menu.imageId ?? null });
+    this.reload();
+  }
+
+  private open(menu: AdminMenu): void {
+    const { id, title, intro, published, recipes, imageId } = menu;
+    this.draft.set({ id, title, intro: intro ?? '', published, recipes, imageId: imageId ?? null });
   }
 
   protected async remove(menu: MenuSummary): Promise<void> {

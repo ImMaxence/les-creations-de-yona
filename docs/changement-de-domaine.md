@@ -22,6 +22,7 @@ Prévoir un mot aux visiteurs (réseaux sociaux, encart sur le site) avant la ba
 | `front/src/app/core/seo/page-seo.ts` | `SITE_URL` : adresses canoniques, Open Graph, JSON-LD, sitemap |
 | `front/angular.json` | `security.allowedHosts` : hôte accepté par le serveur SSR (sinon erreur 400) |
 | `front/public/robots.txt` | ligne `Sitemap:` |
+| `front/public/manifest.webmanifest` | `related_applications` : sinon le site ne voit plus, depuis le navigateur, que l'application est installée |
 | `front/src/app/core/analytics/analytics.ts` | `MEASURED_HOSTS` : sinon plus aucune mesure d'audience |
 | `front/src/app/pages/legal/legal-notice.html` | nom du site dans les mentions légales |
 | `front/src/app/pages/legal/legal.ts` | `LEGAL_PAGES_UPDATED_ON` (date de mise à jour) |

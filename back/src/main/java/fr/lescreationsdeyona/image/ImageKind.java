@@ -9,7 +9,9 @@ public enum ImageKind {
 	/** Uploaded for the "À propos" section of the home page. */
 	SITE("site"),
 	/** Vertical photo of a recipe, offered to Pinterest by the "Épingler" button. */
-	PINTEREST("pinterest");
+	PINTEREST("pinterest"),
+	/** Uploaded for a menu ("Menu de Noël"). */
+	MENU("menus");
 
 	/** Top-level S3 folder of this kind of image. */
 	private final String folder;

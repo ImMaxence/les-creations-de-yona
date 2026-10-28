@@ -5,7 +5,7 @@ export interface MenuSummary {
   id: number;
 
   /**
-   * Photo of its first recipe that has one
+   * Photo chosen for it, or else that of its first recipe that has one
    */
   imageId?: string;
   intro?: string;

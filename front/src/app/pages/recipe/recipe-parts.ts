@@ -18,6 +18,14 @@ export function hasParts(parts: Part[]): boolean {
   return parts.length > 1 || !!parts[0]?.title;
 }
 
+/**
+ * Anchor of a step on the recipe page, also its address for Google: #etape-2, or #partie-1-etape-2
+ * in a recipe in parts (numbers from 1).
+ */
+export function stepAnchor(step: number, part: number | null): string {
+  return part === null ? `etape-${step}` : `partie-${part}-etape-${step}`;
+}
+
 /** Ingredients of a part, in its order. */
 export function shownIngredients(lines: IngredientLine[], ratio: number): ShownIngredient[] {
   return lines.map((line) => ({

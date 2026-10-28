@@ -2,6 +2,41 @@
 
 Les versions du site, front (`front/package.json`) et backend (`back/pom.xml`) montées ensemble, en version sémantique : majeure pour un changement qui casse l'existant, mineure pour des fonctionnalités, correctif pour le reste (règle complète et fichiers à mettre à jour : [docs/developpement.md](docs/developpement.md#monter-la-version)). Les versions antérieures à 3.1.0 sont résumées dans la [roadmap](docs/roadmap.md).
 
+## 3.7.0 - 2026-10-28
+
+Front 3.7.0, backend 3.7.0. Migration de base : V13.
+
+### Ajouté, pour les visiteurs
+
+- **Une photo pour chaque menu** : sur sa carte (page Menus, accueil) et en grand en haut de sa page, au-dessus du titre sur téléphone, à côté sur ordinateur. C'est aussi l'image montrée quand le menu est partagé. Sans photo choisie, le menu montre celle de sa première recette, comme avant.
+
+### Ajouté, dans le back-office
+
+- **Menus : choisir une photo** (« Nouvelle photo », « Choisir dans la galerie » ou « Retirer »), enregistrée tout de suite. Pour un nouveau menu, l'éditeur reste ouvert après « Enregistrer » pour lui choisir sa photo. La galerie montre les menus qui affichent une photo, et un filtre « Envoyées pour un menu ». Une photo de menu mise à la corbeille puis restaurée revient sur son menu ; un menu restauré retrouve sa photo.
+
+### Corrigé
+
+- **Hors connexion** : l'application ne restait plus bloquée 30 secondes avant d'afficher une erreur « Forbidden ». Les pages déjà vues s'ouvrent maintenant tout de suite, avec ou sans réseau, même derrière un réseau qui bloque ou répond mal (Wi-Fi sans Internet, réseau d'entreprise). Les menus et les tags restent aussi lisibles hors connexion.
+- **« L'application est déjà installée »** : le site le sait aussi depuis le navigateur, une fois l'application installée ou ouverte sur l'appareil (Android, ordinateur), et ne propose plus de la télécharger. Sur iPhone, Safari ne peut toujours pas le savoir.
+- **Glossaire du back-office** dans l'ordre alphabétique, le même que la page du site.
+- **Google (Search Console)** : les étapes des recettes ont maintenant un nom, une adresse et une image, et les temps de préparation et de cuisson sont toujours donnés quand la recette a un temps. Une recette sans aucun temps reste signalée : la compléter (Statistiques, « Recettes à compléter »).
+- Plus de point à la fin de l'aide sous les photos.
+
+### Modifié
+
+- Une nouvelle version du site est prise au changement de page suivant, sans rien faire. Dans le back-office, au prochain rechargement.
+- Politique de confidentialité : la mémoire « application installée » gardée dans le navigateur (clé `yona-app-installed`).
+
+### Technique
+
+- Service worker : pages servies depuis l'appareil (`navigationRequestStrategy: performance` au lieu de `freshness`, qui attendait le réseau sans limite et servait telle quelle la réponse d'un proxy), données du site en 3 s au plus au lieu de 4, `/api/menus` et `/api/tags` mis en cache. Mises à jour par `SwUpdate` (`core/pwa/app-updates.ts`). Vérifié dans Chrome : hors connexion, une page déjà vue s'affiche en 60 ms ; derrière un faux proxy (30 s puis 403), en 6 s depuis le cache au lieu de l'erreur.
+- Pages rendues par le serveur en `Cache-Control: private, no-cache` : un proxy d'entreprise ne les garde plus. Les erreurs des réseaux d'entreprise (« tunnel connection failed », 504) viennent du proxy : démarches à faire en ligne dans [production](docs/production.md#réseaux-dentreprise).
+- Installation : `related_applications` dans le manifeste (`getInstalledRelatedApps`), clé `yona-app-installed`.
+- API : `PUT /api/admin/menus/{id}/image` et `…/image-choice` ; `imageId` dans le menu du back-office et la page d'un menu ; `menus` dans les photos de la galerie. Migration V13 : `menu.image_id`, type de photo `MENU` (dossier `menus/`). Fusion d'une sauvegarde : la photo d'un menu suit, si le site l'a.
+- JSON-LD des recettes : étapes avec `name`, `text` sans Markdown, `url` (ancre `#etape-2`, `#partie-1-etape-2`, aussi posée sur la page) et `image`.
+- Étude « remplir une recette par IA » (Gemini, offre gratuite) : [docs/ia.md](docs/ia.md).
+- 66 tests front, 73 tests backend.
+
 ## 3.6.0 - 2026-10-28
 
 Front 3.6.0, backend 3.6.0. Pas de migration de base.

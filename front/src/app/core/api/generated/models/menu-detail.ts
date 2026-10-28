@@ -3,6 +3,11 @@
 
 import { RecipeCard } from '../models/recipe-card';
 export interface MenuDetail {
+
+  /**
+   * Photo chosen for it, or else that of its first recipe that has one
+   */
+  imageId?: string;
   intro?: string;
   recipes: Array<RecipeCard>;
   slug: string;

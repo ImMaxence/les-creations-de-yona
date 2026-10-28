@@ -76,10 +76,15 @@ public class ImageService {
 					.collect(Collectors.groupingBy(GalleryImage.CategoryUsage::imageId, Collectors.mapping(
 							usage -> new GalleryImage.UsingCategory(usage.id(), usage.name(), usage.slug()),
 							Collectors.toList())));
+		Map<UUID, List<GalleryImage.UsingMenu>> menus = ids.isEmpty() ? Map.of()
+				: imageRepository.findMenuUsages(ids)
+					.stream()
+					.collect(Collectors.groupingBy(GalleryImage.MenuUsage::imageId, Collectors.mapping(
+							usage -> new GalleryImage.UsingMenu(usage.id(), usage.title()), Collectors.toList())));
 		UUID aboutImageId = siteContentRepository.findAboutImageId().orElse(null);
 		return images.map(image -> new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(),
 				recipes.getOrDefault(image.getId(), List.of()), categories.getOrDefault(image.getId(), List.of()),
-				image.getId().equals(aboutImageId)));
+				menus.getOrDefault(image.getId(), List.of()), image.getId().equals(aboutImageId)));
 	}
 
 	/** Opens a variant for the public site. Ids are random UUIDs, so they cannot be guessed. */
@@ -130,12 +135,14 @@ public class ImageService {
 	@Transactional
 	public GalleryImage upload(ProcessedImage processed) {
 		Image image = create(ImageKind.GALLERY, processed);
-		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of(), false);
+		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of(), List.of(),
+				false);
 	}
 
 	/**
 	 * Moved to the trash, kept 30 days: the recipes and categories showing it fall back to the
-	 * default visual ({@code ON DELETE SET NULL}) and get it back on restore.
+	 * default visual ({@code ON DELETE SET NULL}), the menus to the photo of their first recipe; all
+	 * get it back on restore.
 	 */
 	@Transactional
 	public void delete(UUID id) {
@@ -143,16 +150,19 @@ public class ImageService {
 		List<GalleryImage.RecipeUsage> recipes = imageRepository.findRecipeUsages(List.of(id));
 		List<GalleryImage.RecipeUsage> pinterest = imageRepository.findPinterestUsages(List.of(id));
 		List<GalleryImage.CategoryUsage> categories = imageRepository.findCategoryUsages(List.of(id));
+		List<GalleryImage.MenuUsage> menus = imageRepository.findMenuUsages(List.of(id));
 		boolean aboutPage = id.equals(siteContentRepository.findAboutImageId().orElse(null));
 		List<String> shownOn = new ArrayList<>();
 		Stream.concat(recipes.stream(), pinterest.stream()).map(GalleryImage.RecipeUsage::title).distinct().forEach(shownOn::add);
 		categories.forEach(category -> shownOn.add(category.name()));
+		menus.forEach(menu -> shownOn.add(menu.title()));
 		if (aboutPage) {
 			shownOn.add("À propos");
 		}
 		TrashedImage.Links links = new TrashedImage.Links(recipes.stream().map(GalleryImage.RecipeUsage::id).toList(),
 				pinterest.stream().map(GalleryImage.RecipeUsage::id).toList(),
-				categories.stream().map(GalleryImage.CategoryUsage::id).toList(), aboutPage);
+				categories.stream().map(GalleryImage.CategoryUsage::id).toList(), aboutPage,
+				menus.stream().map(GalleryImage.MenuUsage::id).toList());
 		trashBin.put(new TrashBin.Entry(TrashKind.IMAGE, trashedTitle(shownOn), null, null, null, null,
 				new TrashedImage(image.getId(), image.getKind(), image.getS3Prefix(), image.getCreatedAt()), links, null));
 		imageRepository.delete(image);
@@ -165,7 +175,7 @@ public class ImageService {
 	}
 
 	/**
-	 * Back in the gallery from the trash, with the same URL, and on the recipes, categories and
+	 * Back in the gallery from the trash, with the same URL, and on the recipes, categories, menus and
 	 * "À propos" that showed it and have no other photo since. Returns the number of places it is
 	 * back on.
 	 */
@@ -186,6 +196,9 @@ public class ImageService {
 		}
 		if (!links.categoryIds().isEmpty()) {
 			shown += imageRepository.showOnCategories(kept.id(), links.categoryIds());
+		}
+		if (!links.menuIds().isEmpty()) {
+			shown += imageRepository.showOnMenus(kept.id(), links.menuIds());
 		}
 		if (links.aboutPage()) {
 			shown += imageRepository.showOnAboutPage(kept.id());

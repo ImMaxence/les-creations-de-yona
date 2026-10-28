@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.image.Image;
+import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.menu.MenuResponses.AdminMenu;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuRecipe;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuSummary;
@@ -22,6 +24,7 @@ import fr.lescreationsdeyona.trash.TrashItem;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -33,8 +36,17 @@ class MenuServiceTest {
 
 	private final TrashBin trashBin = mock(TrashBin.class);
 
+	private final ImageService imageService = mock(ImageService.class);
+
 	private final MenuService service = new MenuService(menuRepository, recipeRepository, mock(RecipeMapper.class),
-			trashBin);
+			imageService, trashBin);
+
+	private static Image photo() {
+		Image image = mock(Image.class);
+		UUID id = UUID.randomUUID();
+		when(image.getId()).thenReturn(id);
+		return image;
+	}
 
 	private static Recipe recipe(long id, String title, RecipeStatus status) {
 		Recipe recipe = new Recipe();
@@ -116,6 +128,22 @@ class MenuServiceTest {
 	}
 
 	@Test
+	void showsItsOwnPhotoOrElseThatOfItsFirstRecipeWithOne() {
+		Recipe soup = recipe(1, "Velouté", RecipeStatus.PUBLISHED);
+		Recipe tart = recipe(2, "Tarte", RecipeStatus.PUBLISHED);
+		Image tartPhoto = photo();
+		tart.setImage(tartPhoto);
+		Image menuPhoto = photo();
+		Menu autumn = menu(1, "Automne", true, soup, tart);
+		Menu christmas = menu(2, "Noël", true, soup, tart);
+		christmas.setImage(menuPhoto);
+		when(menuRepository.findByPublishedTrueOrderByUpdatedAtDesc()).thenReturn(List.of(autumn, christmas));
+
+		assertThat(service.listPublished()).extracting(MenuSummary::imageId)
+			.containsExactly(tartPhoto.getId(), menuPhoto.getId());
+	}
+
+	@Test
 	void hidesAMenuWithoutPublishedRecipe() {
 		when(menuRepository.findBySlugAndPublishedTrue("brouillons"))
 			.thenReturn(Optional.of(menu(2, "Brouillons", true, recipe(3, "Bûche", RecipeStatus.DRAFT))));
@@ -154,11 +182,15 @@ class MenuServiceTest {
 	}
 
 	@Test
-	void restoresAMenuWithItsRecipesFoundByIdOrByAddress() {
+	void restoresAMenuWithItsRecipesFoundByIdOrByAddressAndItsPhoto() {
 		TrashItem trashed = new TrashItem();
+		UUID photoId = UUID.randomUUID();
 		when(trashBin.content(trashed, TrashedMenu.class)).thenReturn(new TrashedMenu("Menu de Noël", "menu-de-noel", null,
 				true, Instant.parse("2026-10-01T10:00:00Z"), List.of(new TrashedMenu.RecipeRef(1L, "buche"),
-						new TrashedMenu.RecipeRef(2L, "tarte"), new TrashedMenu.RecipeRef(3L, "gone"))));
+						new TrashedMenu.RecipeRef(2L, "tarte"), new TrashedMenu.RecipeRef(3L, "gone")), photoId));
+		Image photo = mock(Image.class);
+		when(photo.getId()).thenReturn(photoId);
+		when(imageService.find(photoId)).thenReturn(Optional.of(photo));
 		when(menuRepository.findByTitle("Menu de Noël")).thenReturn(Optional.empty());
 		Recipe log = recipe(1, "Bûche", RecipeStatus.PUBLISHED);
 		// The tart was put in the trash and restored meanwhile: a new id, the same address
@@ -179,13 +211,14 @@ class MenuServiceTest {
 
 		assertThat(menu.slug()).isEqualTo("menu-de-noel");
 		assertThat(menu.recipes()).extracting(MenuRecipe::title).containsExactly("Bûche", "Tarte");
+		assertThat(menu.imageId()).isEqualTo(photoId);
 	}
 
 	@Test
 	void refusesToRestoreAMenuWhoseTitleIsTaken() {
 		TrashItem trashed = new TrashItem();
 		when(trashBin.content(trashed, TrashedMenu.class)).thenReturn(new TrashedMenu("Goûter", "gouter", null, false,
-				Instant.now(), List.of()));
+				Instant.now(), List.of(), null));
 		when(menuRepository.findByTitle("Goûter")).thenReturn(Optional.of(menu(2, "Goûter", false)));
 
 		assertThatThrownBy(() -> service.restoreFromTrash(trashed)).isInstanceOf(ApiException.class)
@@ -197,9 +230,13 @@ class MenuServiceTest {
 	void readsBackAMenuOfTheTrash() {
 		JsonMapper json = JsonMapper.builder().build();
 		TrashedMenu menu = new TrashedMenu("Goûter", "gouter", null, true, Instant.parse("2026-10-01T10:00:00Z"),
-				List.of(new TrashedMenu.RecipeRef(1L, "tarte")));
+				List.of(new TrashedMenu.RecipeRef(1L, "tarte")), UUID.randomUUID());
 
 		assertThat(json.readValue(json.writeValueAsString(menu), TrashedMenu.class)).isEqualTo(menu);
+		// Put in the trash before 3.7: no photo of its own
+		assertThat(json.readValue("""
+				{"title":"Goûter","slug":"gouter","published":true,"createdAt":"2026-10-01T10:00:00Z","recipes":[]}""",
+				TrashedMenu.class).imageId()).isNull();
 	}
 
 }

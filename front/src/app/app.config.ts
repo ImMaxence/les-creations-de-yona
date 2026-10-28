@@ -27,6 +27,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { adminErrorsInterceptor } from './core/api/admin-errors.interceptor';
 import { provideApiConfiguration } from './core/api/generated/api-configuration';
+import { AppUpdates } from './core/pwa/app-updates';
 import { InstallPrompt } from './core/pwa/install-prompt';
 import { offlineWarmupInterceptor } from './core/pwa/offline-warmup';
 import { serviceWorkerBypassInterceptor } from './core/pwa/service-worker-bypass';
@@ -89,6 +90,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(SiteData).load()),
     provideAppInitializer(() => inject(SiteTheme).load()),
     provideAppInitializer(() => inject(InstallPrompt).listen()),
+    provideAppInitializer(() => inject(AppUpdates).listen()),
     // Offline reading and installation as an app (PWA). Off in development, where it would cache stale code.
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

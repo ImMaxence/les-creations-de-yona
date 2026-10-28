@@ -5,6 +5,9 @@ import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.Image;
+import fr.lescreationsdeyona.image.ImageKind;
+import fr.lescreationsdeyona.image.ImageService;
+import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.menu.MenuResponses.AdminMenu;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuDetail;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuRecipe;
@@ -22,9 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -42,6 +47,8 @@ public class MenuService {
 	private final RecipeRepository recipeRepository;
 
 	private final RecipeMapper recipeMapper;
+
+	private final ImageService imageService;
 
 	private final TrashBin trashBin;
 
@@ -63,7 +70,7 @@ public class MenuService {
 		if (recipes.isEmpty()) {
 			throw new ApiException(ErrorCode.MENU_NOT_FOUND);
 		}
-		return new MenuDetail(menu.getTitle(), menu.getSlug(), menu.getIntro(),
+		return new MenuDetail(menu.getTitle(), menu.getSlug(), menu.getIntro(), imageId(shownImage(menu, recipes)),
 				recipes.stream().map(recipeMapper::toCard).toList(), menu.getUpdatedAt());
 	}
 
@@ -98,20 +105,37 @@ public class MenuService {
 		return save(menu, title, form);
 	}
 
-	/** Moved to the trash, kept 30 days; its recipes stay. */
+	/** A new photo for a menu; the previous one stays in the gallery. */
+	@Transactional
+	public AdminMenu replaceImage(long id, ProcessedImage processed) {
+		Menu menu = find(id);
+		menu.setImage(imageService.create(ImageKind.MENU, processed));
+		return toAdmin(menuRepository.saveAndFlush(menu));
+	}
+
+	/** A photo of the gallery on a menu, or none: it then shows the photo of its first recipe. */
+	@Transactional
+	public AdminMenu chooseImage(long id, @Nullable UUID imageId) {
+		Menu menu = find(id);
+		menu.setImage(imageId == null ? null : imageService.getLandscape(imageId));
+		return toAdmin(menuRepository.saveAndFlush(menu));
+	}
+
+	/** Moved to the trash, kept 30 days; its recipes stay, its photo too, in the gallery. */
 	@Transactional
 	public void delete(long id) {
 		Menu menu = find(id);
 		trashBin.put(TrashBin.Entry.of(TrashKind.MENU, menu.getTitle(), menu.getSlug(),
-				menu.getRecipes().stream().map(Recipe::getImage).filter(Objects::nonNull).findFirst().orElse(null),
+				shownImage(menu, menu.getRecipes()),
 				new TrashedMenu(menu.getTitle(), menu.getSlug(), menu.getIntro(), menu.isPublished(), menu.getCreatedAt(),
-						menu.getRecipes().stream().map(recipe -> new TrashedMenu.RecipeRef(recipe.getId(), recipe.getSlug())).toList())));
+						menu.getRecipes().stream().map(recipe -> new TrashedMenu.RecipeRef(recipe.getId(), recipe.getSlug())).toList(),
+						imageId(menu.getImage()))));
 		menuRepository.delete(menu);
 	}
 
 	/**
-	 * Created again from the trash: same URL if still free, its recipes that still exist, in order.
-	 * Refused when another menu has taken its title meanwhile.
+	 * Created again from the trash: same URL if still free, its recipes that still exist, in order,
+	 * its photo if still in the gallery. Refused when another menu has taken its title meanwhile.
 	 */
 	@Transactional
 	public AdminMenu restoreFromTrash(TrashItem trashed) {
@@ -126,6 +150,9 @@ public class MenuService {
 				: kept.slug());
 		menu.setIntro(kept.intro());
 		menu.setPublished(kept.published());
+		if (kept.imageId() != null) {
+			imageService.find(kept.imageId()).ifPresent(menu::setImage);
+		}
 		kept.recipes().stream()
 			.map(ref -> recipeRepository.findById(ref.id()).or(() -> recipeRepository.findBySlug(ref.slug())))
 			.flatMap(Optional::stream)
@@ -185,9 +212,17 @@ public class MenuService {
 	private MenuSummary summary(Menu menu, boolean publishedOnly) {
 		List<Recipe> recipes = publishedOnly ? published(menu) : menu.getRecipes();
 		return new MenuSummary(menu.getId(), menu.getTitle(), menu.getSlug(), menu.getIntro(), menu.isPublished(),
-				recipes.size(),
-				recipes.stream().map(Recipe::getImage).filter(Objects::nonNull).map(Image::getId).findFirst().orElse(null),
-				menu.getUpdatedAt());
+				recipes.size(), imageId(shownImage(menu, recipes)), menu.getUpdatedAt());
+	}
+
+	/** Chosen for it, or else the photo of its first recipe that has one. */
+	private static @Nullable Image shownImage(Menu menu, List<Recipe> recipes) {
+		return menu.getImage() != null ? menu.getImage()
+				: recipes.stream().map(Recipe::getImage).filter(Objects::nonNull).findFirst().orElse(null);
+	}
+
+	private static @Nullable UUID imageId(@Nullable Image image) {
+		return image == null ? null : image.getId();
 	}
 
 	private static List<Recipe> published(Menu menu) {
@@ -196,7 +231,7 @@ public class MenuService {
 
 	private static AdminMenu toAdmin(Menu menu) {
 		return new AdminMenu(menu.getId(), menu.getTitle(), menu.getSlug(), menu.getIntro(), menu.isPublished(),
-				menu.getRecipes()
+				imageId(menu.getImage()), menu.getRecipes()
 					.stream()
 					.map(recipe -> new MenuRecipe(recipe.getId(), recipe.getTitle(), recipe.getStatus()))
 					.toList(),

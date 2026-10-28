@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
-import { fold } from '../../shared/format/glossary';
+import { byGlossaryName, fold } from '../../shared/format/glossary';
 import { Reveal } from '../../shared/motion/reveal';
 import { RECIPES_PATH } from '../../shared/routing/links';
 
@@ -22,14 +22,14 @@ interface Letter {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class Glossary {
-  /** From glossaryResolver, sorted by name. */
+  /** From glossaryResolver. */
   readonly terms = input<GlossaryTermResponse[]>([]);
 
   protected readonly recipesPath = RECIPES_PATH;
   /** "É" files under "E", as in a dictionary. */
   protected readonly letters = computed<Letter[]>(() => {
     const byLetter = new Map<string, GlossaryTermResponse[]>();
-    for (const term of this.terms()) {
+    for (const term of [...this.terms()].sort(byGlossaryName)) {
       const letter = fold(term.name).charAt(0).toUpperCase() || '#';
       byLetter.set(letter, [...(byLetter.get(letter) ?? []), term]);
     }

@@ -6,6 +6,7 @@ import { formatMinutes } from '../../../shared/format/units';
 import { Reveal } from '../../../shared/motion/reveal';
 import { GlossaryPopover } from '../../../shared/ui/glossary-popover/glossary-popover';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { stepAnchor } from '../recipe-parts';
 
 /**
  * Numbered timeline of the steps of a part; a tap on a number marks the step as done, a tap on an
@@ -21,8 +22,11 @@ import { Icon } from '../../../shared/ui/icon/icon';
 export class RecipeSteps {
   readonly steps = input.required<Step[]>();
   readonly glossary = input<GlossaryMatcher>(NO_GLOSSARY);
+  /** Its number (from 1) in a recipe in parts, for the anchors of the steps; null without parts. */
+  readonly part = input<number | null>(null);
 
   protected readonly formatMinutes = formatMinutes;
+  protected readonly stepAnchor = stepAnchor;
   protected readonly done = linkedSignal<Step[], ReadonlySet<number>>({
     source: this.steps,
     computation: () => new Set(),
