@@ -104,12 +104,10 @@ public enum ErrorCode {
 	IMAGE_FORMAT_UNSUPPORTED(HttpStatus.BAD_REQUEST, "Seules les images JPEG et PNG sont acceptées"),
 	IMAGE_UNREADABLE(HttpStatus.BAD_REQUEST, "L'image est illisible ou endommagée"),
 	IMAGE_TOO_MANY_PIXELS(HttpStatus.BAD_REQUEST, "L'image dépasse 100 mégapixels"),
-	IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image doit mesurer au moins 1200 × 800 pixels"),
-	IMAGE_NOT_LANDSCAPE(HttpStatus.BAD_REQUEST, "L'image doit être au format paysage (4:3 ou plus large)"),
-	PORTRAIT_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image Pinterest doit mesurer au moins 1000 × 1333 pixels"),
+	IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image doit mesurer au moins 800 × 450 pixels"),
+	IMAGE_NOT_LANDSCAPE(HttpStatus.BAD_REQUEST, "L'image doit être en paysage ou carrée"),
+	PORTRAIT_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image Pinterest doit mesurer au moins 600 × 800 pixels"),
 	IMAGE_NOT_PORTRAIT(HttpStatus.BAD_REQUEST, "L'image Pinterest doit être verticale (3:4 ou plus haute, 2:3 conseillé)"),
-	EDITED_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST,
-			"Recadrage trop serré : la photo retouchée doit garder au moins 800 × 450 pixels (600 × 800 pour Pinterest)"),
 	STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Le stockage des images est indisponible, réessayez plus tard"),
 
 	// Backup

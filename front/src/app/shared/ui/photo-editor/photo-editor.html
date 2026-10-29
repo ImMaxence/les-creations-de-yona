@@ -13,7 +13,7 @@
         <svg yonaIcon="loader-circle" class="spin" [size]="20"></svg> Ouverture de la photo…
       </p>
     }
-    <div class="frame" [hidden]="!image()">
+    <div #frame class="frame" [hidden]="!image()">
       <canvas #canvas class="frame__canvas" aria-hidden="true"></canvas>
       <!-- The part kept: dragged, or its corners; the rest of the photo is dimmed around it -->
       <div
@@ -65,17 +65,40 @@
             </button>
           }
         </div>
-        <div class="tools__row">
-          <button type="button" class="pill" aria-label="Tourner à gauche" (click)="turn(-1)">
-            <svg yonaIcon="rotate-ccw" [size]="18"></svg>
-          </button>
-          <button type="button" class="pill" aria-label="Tourner à droite" (click)="turn(1)">
-            <svg yonaIcon="rotate-cw" [size]="18"></svg>
-          </button>
-          <button type="button" class="pill" aria-label="Miroir" [attr.aria-pressed]="flipped()" (click)="flip()">
-            <svg yonaIcon="flip-horizontal-2" [size]="18"></svg>
-          </button>
+        <div class="tools__row tools__row--turn">
+          <!-- Pressed and turned like a knob: stops on 0, 90, 180 and 270° when close to them -->
+          <div
+            class="dial"
+            role="slider"
+            tabindex="0"
+            aria-label="Rotation : appuyez et tournez, la photo s'arrête sur les angles droits"
+            aria-valuemin="0"
+            aria-valuemax="359"
+            [attr.aria-valuenow]="angle()"
+            [attr.aria-valuetext]="angleLabel()"
+            [class.is-right]="angle() % 90 === 0"
+            (pointerdown)="startTurn($event)"
+            (pointermove)="onTurn($event)"
+            (pointerup)="endTurn($event)"
+            (pointercancel)="endTurn($event)"
+            (keydown)="onDialKey($event)"
+          >
+            <span class="dial__needle" [style.transform]="'rotate(' + angle() + 'deg)'"></span>
+            <span class="dial__value">{{ angleLabel() }}</span>
+          </div>
+          <div class="tools__row">
+            <button type="button" class="pill" aria-label="Tourner à gauche d'un quart de tour" (click)="turn(-1)">
+              <svg yonaIcon="rotate-ccw" [size]="18"></svg>
+            </button>
+            <button type="button" class="pill" aria-label="Tourner à droite d'un quart de tour" (click)="turn(1)">
+              <svg yonaIcon="rotate-cw" [size]="18"></svg>
+            </button>
+            <button type="button" class="pill" aria-label="Miroir" [attr.aria-pressed]="flipped()" (click)="flip()">
+              <svg yonaIcon="flip-horizontal-2" [size]="18"></svg>
+            </button>
+          </div>
         </div>
+        <p class="tools__hint">Appuyez sur la molette et tournez : la photo s'arrête sur 0, 90, 180 et 270°</p>
       </div>
 
       <div class="tools__group" role="group" aria-labelledby="photo-filter-label">

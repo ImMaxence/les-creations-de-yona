@@ -31,7 +31,7 @@ class AdminSiteContentController {
 	}
 
 	@Operation(summary = "Upload a new photo for the \"À propos\" section; the previous one stays in the gallery",
-			description = "JPEG or PNG, 10 MB max, landscape: at least 1200 × 800 px and 4:3.")
+			description = "JPEG or PNG, 10 MB max, landscape or square: at least 800 × 450 px.")
 	@PutMapping(path = "/about-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	SiteContentResponse replaceAboutImage(@RequestPart MultipartFile file) {
 		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.

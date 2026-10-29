@@ -22,4 +22,11 @@ class AdminStatsController {
 		return statsService.compute();
 	}
 
+	@Operation(summary = "Memory and processor in use now, alone: light enough to be asked every second (live curves)",
+			description = "The processor load is the one since the previous measure, so polling gives the load of each interval.")
+	@GetMapping("/server")
+	ServerUsage getServerUsage() {
+		return ServerUsage.now();
+	}
+
 }

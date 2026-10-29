@@ -62,7 +62,7 @@ class AdminCategoryController {
 	}
 
 	@Operation(summary = "Upload a new photo for a category; the previous one stays in the gallery",
-			description = "JPEG or PNG, 10 MB max, landscape: at least 1200 × 800 px and 4:3.")
+			description = "JPEG or PNG, 10 MB max, landscape or square: at least 800 × 450 px.")
 	@PutMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	CategoryResponse replaceCategoryImage(@PathVariable long id, @RequestPart MultipartFile file) {
 		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.

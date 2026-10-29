@@ -2,6 +2,29 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.13.0 - 2026-10-29
+
+Front and backend 1.13.0. No database migration.
+
+### Added
+
+- **Live server curves** in Statistics ("Suivre en direct"): processor and memory of the backend measured every 1, 2 or 5 s, the last 60 drawn, values on hover.
+- **Free rotation** in the photo editor: a dial to press and turn, stopping on 0, 90, 180 and 270°; the frame stays on the tilted photo, no empty corner.
+
+### Changed
+
+- **Smaller photos accepted**: landscape or square, 800 × 450 px at least (1200 × 800 and 4:3 before); Pinterest 600 × 800 (1000 × 1333). Any image the browser opens (iPhone HEIC, WebP) goes through the editor, sent as JPEG; 10 MB at most.
+
+### Fixed
+
+- Statistics exported as PDF: charts printed, "Actualiser" buttons left out.
+
+### Technical
+
+- **Backend memory** about 370 to 400 MB at rest (420 MB in 1.12.0): heap capped at 256 MB, quick compiler (C1) only.
+- API: `GET /api/admin/stats/server` (memory and processor alone, for the live curves); `PUT /api/admin/images/{id}` follows the same size rules as an upload.
+- 131 backend tests, 100 front tests, 82 Chrome checks.
+
 ## 1.12.0 - 2026-10-29
 
 Front and backend 1.12.0. Database migration: V17.

@@ -51,7 +51,7 @@ class AdminImageController {
 	}
 
 	@Operation(summary = "Upload a photo to the gallery, shown nowhere until chosen for a recipe or a category",
-			description = "JPEG or PNG, 10 MB max, landscape: at least 1200 × 800 px and 4:3.")
+			description = "JPEG or PNG, 10 MB max, landscape or square: at least 800 × 450 px.")
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	GalleryImage uploadImage(@RequestPart MultipartFile file) {
@@ -60,13 +60,13 @@ class AdminImageController {
 	}
 
 	@Operation(summary = "Replace a photo by its retouched version (cropped, turned, lightened…), wherever it is shown",
-			description = "JPEG or PNG made by the editor of the back-office from the 1600 px file: at least 800 × 450 px "
-					+ "(600 × 800 for a Pinterest photo), same shape rules as an upload. The new photo has a new id; the "
-					+ "original goes to the trash.")
+			description = "JPEG or PNG made by the editor of the back-office from the 1600 px file, same rules as an upload "
+					+ "(a Pinterest photo stays vertical). The new photo has a new id; the original goes to the trash.")
 	@PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	GalleryImage replaceImage(@PathVariable UUID id, @RequestPart MultipartFile file) {
 		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.
-		ProcessedImage retouched = imageProcessor.processEdited(file, imageService.kindOf(id) == ImageKind.PINTEREST);
+		ProcessedImage retouched = imageService.kindOf(id) == ImageKind.PINTEREST ? imageProcessor.processPortrait(file)
+				: imageProcessor.process(file);
 		return imageService.replace(id, retouched);
 	}
 

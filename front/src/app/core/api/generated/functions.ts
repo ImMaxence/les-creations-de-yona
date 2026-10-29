@@ -199,6 +199,8 @@ export type { GetVersion$Params as GetVersion$Params } from './fn/admin-version/
 export { getVersion as getVersion } from './fn/admin-version/get-version';
 export type { GetStats$Params as GetStats$Params } from './fn/admin-stats/get-stats';
 export { getStats as getStats } from './fn/admin-stats/get-stats';
+export type { GetServerUsage$Params as GetServerUsage$Params } from './fn/admin-stats/get-server-usage';
+export { getServerUsage as getServerUsage } from './fn/admin-stats/get-server-usage';
 export type { GetCurrentAdmin$Params as GetCurrentAdmin$Params } from './fn/authentication/get-current-admin';
 export { getCurrentAdmin as getCurrentAdmin } from './fn/authentication/get-current-admin';
 export type { ListHistory$Params as ListHistory$Params } from './fn/admin-history/list-history';

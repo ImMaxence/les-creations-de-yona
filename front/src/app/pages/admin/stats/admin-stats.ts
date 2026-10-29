@@ -12,6 +12,7 @@ import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { formatBytes } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { ServerLive } from './server-live';
 
 const MONTH = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' });
 const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -66,6 +67,7 @@ interface Bar {
     RouterLink,
     Button,
     ParisDatePipe,
+    ServerLive,
   ],
   templateUrl: './admin-stats.html',
   styleUrl: './admin-stats.scss',

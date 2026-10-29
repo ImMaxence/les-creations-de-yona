@@ -137,7 +137,7 @@
         <div class="storage__head">
           <svg yonaIcon="gauge" [size]="22" [strokeWidth]="1.75"></svg>
           <h3 id="server-title">Mémoire et processeur</h3>
-          <button yonaButton variant="ghost" type="button" class="storage__refresh" [disabled]="stats.isLoading()" (click)="stats.reload()">
+          <button yonaButton variant="ghost" type="button" class="storage__refresh no-print" [disabled]="stats.isLoading()" (click)="stats.reload()">
             <svg yonaIcon="refresh-cw"></svg>Actualiser
           </button>
         </div>
@@ -179,6 +179,8 @@
           (la limite du conteneur s'il en a une, sinon tout le serveur). Les pages du site, la base et les photos tournent à
           part. Backend démarré il y a {{ usage.uptime }}
         </p>
+        <!-- Live curves: a measure every few seconds, only while asked -->
+        <yona-server-live class="no-print" />
       </section>
     }
 

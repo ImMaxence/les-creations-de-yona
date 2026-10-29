@@ -18,6 +18,7 @@ import {
 import { Button } from '../button/button';
 import { Dialog } from '../dialog/dialog';
 import { Icon } from '../icon/icon';
+import { sendableAsIs } from '../image-upload/photo-file';
 import {
   Adjustments,
   Corner,
@@ -28,12 +29,17 @@ import {
   Ratio,
   WHOLE,
   applyAdjustments,
+  cropInside,
   cropProblem,
+  isRightAngle,
   largestCrop,
   movedCrop,
+  normalizedAngle,
   outputSize,
   resizedCrop,
   sameAdjustments,
+  snappedAngle,
+  turnedSize,
 } from './photo-edits';
 
 const LANDSCAPE_RATIOS: readonly { label: string; ratio: Ratio }[] = [
@@ -77,12 +83,23 @@ interface Drag {
   startCrop: Crop;
 }
 
+/** The dial being turned: its centre on screen, and the angle of the finger last seen. */
+interface Turn {
+  pointerId: number;
+  centerX: number;
+  centerY: number;
+  lastPointer: number;
+  /** Angle the finger has turned to, before the stop on right angles. */
+  free: number;
+}
+
 /**
  * Photo editor of the back-office, before an upload or on a photo of the site ("Retoucher"):
- * cropping (free, or at a ratio the site uses), quarter turns, mirror, ready-made filters and
- * light settings. Done in the browser: the API receives a plain JPEG, 2400 px at most, and a frame
- * the API would refuse (too small, wrong shape) is said before sending; a retouched photo, which
- * comes from the 1600 px file of the site, may be smaller than an upload. Left untouched, a chosen file up to 2400 px is sent as it is.
+ * cropping (free, or at a ratio the site uses), rotation (quarter turns, or any angle with the
+ * dial, stopping on right angles), mirror, ready-made filters and light settings. Tilted, the frame
+ * stays on the photo: no empty corner. Done in the browser: the API receives a plain JPEG, 2400 px
+ * at most, and a frame the API would refuse (too small, wrong shape) is said before sending. Left
+ * untouched, a JPEG or PNG the API takes as it is (10 MB, 2400 px at most) is sent without change.
  */
 @Component({
   selector: 'yona-photo-editor',
@@ -96,7 +113,7 @@ export class PhotoEditor {
   readonly source = input<File | string | null>(null);
   /** The vertical photo offered to Pinterest. */
   readonly portrait = input(false, { transform: booleanAttribute });
-  /** A photo of the site retouched: smaller sizes accepted, nothing to send when untouched. */
+  /** A photo of the site retouched: nothing to send when untouched. */
   readonly retouch = input(false, { transform: booleanAttribute });
   readonly open = model(false);
   /** The photo to send: the chosen file itself when untouched. */
@@ -109,30 +126,28 @@ export class PhotoEditor {
 
   protected readonly image = signal<HTMLImageElement | null>(null);
   protected readonly loadFailed = signal(false);
-  /** Quarter turns clockwise, 0 to 3. */
-  protected readonly turns = signal(0);
+  /** Rotation shown, in degrees clockwise, from 0 to 359.x. */
+  protected readonly angle = signal(0);
+  /** Mirrored before the rotation (see flip). */
   protected readonly flipped = signal(false);
   protected readonly ratio = signal<Ratio>(null);
   protected readonly crop = signal<Crop>(WHOLE);
   protected readonly adjustments = signal<Adjustments>(NO_ADJUSTMENT);
   protected readonly busy = signal(false);
+  /** "12°", in the middle of the dial. */
+  protected readonly angleLabel = computed(() => `${Math.round(this.angle())}°`);
 
-  /** Size of the photo once turned, in pixels. */
-  private readonly turnedSize = computed(() => {
+  /** Size of the box holding the turned photo, in pixels. */
+  private readonly boxSize = computed(() => {
     const image = this.image();
-    if (!image) {
-      return { width: 0, height: 0 };
-    }
-    return this.turns() % 2
-      ? { width: image.naturalHeight, height: image.naturalWidth }
-      : { width: image.naturalWidth, height: image.naturalHeight };
+    return image ? turnedSize(image.naturalWidth, image.naturalHeight, this.angle()) : { width: 0, height: 0 };
   });
   private readonly cropPixels = computed(() => ({
-    width: Math.round(this.crop().width * this.turnedSize().width),
-    height: Math.round(this.crop().height * this.turnedSize().height),
+    width: Math.round(this.crop().width * this.boxSize().width),
+    height: Math.round(this.crop().height * this.boxSize().height),
   }));
   protected readonly problem = computed(() =>
-    this.image() ? cropProblem(this.cropPixels().width, this.cropPixels().height, this.portrait(), this.retouch()) : null,
+    this.image() ? cropProblem(this.cropPixels().width, this.cropPixels().height, this.portrait()) : null,
   );
   protected readonly sizeLabel = computed(() => {
     const size = outputSize(this.cropPixels().width, this.cropPixels().height);
@@ -140,7 +155,7 @@ export class PhotoEditor {
   });
   protected readonly untouched = computed(
     () =>
-      this.turns() === 0 &&
+      this.angle() === 0 &&
       !this.flipped() &&
       sameCrop(this.crop(), WHOLE) &&
       sameAdjustments(this.adjustments(), NO_ADJUSTMENT),
@@ -148,10 +163,12 @@ export class PhotoEditor {
   protected readonly activePreset = computed(() => PRESETS.find((preset) => sameAdjustments(preset.adjustments, this.adjustments())));
 
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
+  private readonly frame = viewChild<ElementRef<HTMLElement>>('frame');
   private readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
   /** The turned photo at preview size, before the settings: they are applied to a copy of it. */
   private basePixels: ImageData | null = null;
   private drag: Drag | null = null;
+  private turning: Turn | null = null;
   private objectUrl: string | null = null;
   private loadCount = 0;
   /** Width of the stage, followed so that the preview fits it (phone turned, window resized). */
@@ -178,9 +195,10 @@ export class PhotoEditor {
     afterRenderEffect(() => {
       const image = this.image();
       const canvas = this.canvas()?.nativeElement;
+      const frame = this.frame()?.nativeElement;
       const width = this.stageWidth();
-      if (image && canvas && width) {
-        this.drawBase(image, canvas, width, this.turns(), this.flipped());
+      if (image && canvas && frame && width) {
+        this.drawBase(image, canvas, frame, width, this.angle(), this.flipped());
         this.drawAdjusted(canvas, untracked(this.adjustments));
       }
     });
@@ -196,21 +214,75 @@ export class PhotoEditor {
 
   protected chooseRatio(ratio: Ratio): void {
     this.ratio.set(ratio);
-    const { width, height } = this.turnedSize();
-    this.crop.set(largestCrop(ratio, width, height));
+    this.fitFrame();
   }
 
-  /** A quarter turn, left (-1) or right (1): the frame starts again from the whole photo. */
+  /** A quarter turn, left (-1) or right (1), from the right angle closest: the frame starts again. */
   protected turn(direction: 1 | -1): void {
-    this.turns.update((turns) => (turns + direction + 4) % 4);
-    const { width, height } = this.turnedSize();
-    this.crop.set(largestCrop(this.ratio(), width, height));
+    this.angle.set(normalizedAngle(Math.round(this.angle() / 90) * 90 + direction * 90));
+    this.fitFrame();
   }
 
+  /**
+   * Mirror of what is shown, left to right. The photo is mirrored before being turned: the angle
+   * changes side for the view to be the mirror of the previous one.
+   */
   protected flip(): void {
     this.flipped.update((flipped) => !flipped);
-    // The frame mirrors with the photo
+    this.angle.update((angle) => normalizedAngle(-angle));
     this.crop.update((crop) => ({ ...crop, x: 1 - crop.x - crop.width }));
+  }
+
+  /** The dial pressed: it turns with the finger (or the mouse) around its centre. */
+  protected startTurn(event: PointerEvent): void {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    const dial = event.currentTarget as HTMLElement;
+    dial.setPointerCapture(event.pointerId);
+    dial.focus();
+    const box = dial.getBoundingClientRect();
+    const centerX = box.left + box.width / 2;
+    const centerY = box.top + box.height / 2;
+    this.turning = {
+      pointerId: event.pointerId,
+      centerX,
+      centerY,
+      lastPointer: pointerAngle(event, centerX, centerY),
+      free: this.angle(),
+    };
+  }
+
+  protected onTurn(event: PointerEvent): void {
+    const turning = this.turning;
+    if (!turning || turning.pointerId !== event.pointerId) {
+      return;
+    }
+    const pointer = pointerAngle(event, turning.centerX, turning.centerY);
+    // The shortest way from the last position: the finger may go round several times
+    turning.free += ((pointer - turning.lastPointer + 540) % 360) - 180;
+    turning.lastPointer = pointer;
+    // By whole degrees: finer than a finger can aim anyway
+    this.setAngle(snappedAngle(Math.round(turning.free)));
+  }
+
+  protected endTurn(event: PointerEvent): void {
+    if (this.turning?.pointerId === event.pointerId) {
+      this.turning = null;
+    }
+  }
+
+  /** Arrows turn by one degree, Page up and down by a quarter turn. */
+  protected onDialKey(event: KeyboardEvent): void {
+    const steps: Record<string, number> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
+    if (event.key in steps) {
+      event.preventDefault();
+      this.setAngle(normalizedAngle(Math.round(this.angle()) + steps[event.key]));
+    } else if (event.key === 'PageUp' || event.key === 'PageDown') {
+      event.preventDefault();
+      this.turn(event.key === 'PageUp' ? 1 : -1);
+    }
   }
 
   protected choosePreset(adjustments: Adjustments): void {
@@ -224,7 +296,7 @@ export class PhotoEditor {
 
   /** Back to the photo as it came, with the frame the site needs. */
   protected reset(): void {
-    this.turns.set(0);
+    this.angle.set(0);
     this.flipped.set(false);
     this.adjustments.set(NO_ADJUSTMENT);
     this.startFrame();
@@ -243,19 +315,25 @@ export class PhotoEditor {
   protected onDrag(event: PointerEvent): void {
     const drag = this.drag;
     const canvas = this.canvas()?.nativeElement;
-    if (!drag || drag.pointerId !== event.pointerId || !canvas) {
+    const image = this.image();
+    if (!drag || drag.pointerId !== event.pointerId || !canvas || !image) {
       return;
     }
     const box = canvas.getBoundingClientRect();
-    if (drag.corner) {
-      const { width, height } = this.turnedSize();
-      const px = (event.clientX - box.left) / box.width;
-      const py = (event.clientY - box.top) / box.height;
-      this.crop.set(resizedCrop(drag.startCrop, drag.corner, px, py, this.ratio(), width, height));
-    } else {
-      this.crop.set(
-        movedCrop(drag.startCrop, (event.clientX - drag.startX) / box.width, (event.clientY - drag.startY) / box.height),
-      );
+    const next = drag.corner
+      ? resizedCrop(
+          drag.startCrop,
+          drag.corner,
+          (event.clientX - box.left) / box.width,
+          (event.clientY - box.top) / box.height,
+          this.ratio(),
+          this.boxSize().width,
+          this.boxSize().height,
+        )
+      : movedCrop(drag.startCrop, (event.clientX - drag.startX) / box.width, (event.clientY - drag.startY) / box.height);
+    // Tilted, the frame stops where it would leave the photo
+    if (cropInside(next, image.naturalWidth, image.naturalHeight, this.angle())) {
+      this.crop.set(next);
     }
   }
 
@@ -274,9 +352,13 @@ export class PhotoEditor {
       ArrowDown: [0, KEY_STEP],
     };
     const move = moves[event.key];
-    if (move) {
+    const image = this.image();
+    if (move && image) {
       event.preventDefault();
-      this.crop.update((crop) => movedCrop(crop, move[0], move[1]));
+      const next = movedCrop(this.crop(), move[0], move[1]);
+      if (cropInside(next, image.naturalWidth, image.naturalHeight, this.angle())) {
+        this.crop.set(next);
+      }
     }
   }
 
@@ -287,7 +369,12 @@ export class PhotoEditor {
       return;
     }
     // A large photo is still made smaller: quicker to send from a phone, as sharp on the site (1600 px)
-    if (this.untouched() && source instanceof File && Math.max(image.naturalWidth, image.naturalHeight) <= MAX_OUTPUT_SIDE) {
+    if (
+      this.untouched() &&
+      source instanceof File &&
+      sendableAsIs(source) &&
+      Math.max(image.naturalWidth, image.naturalHeight) <= MAX_OUTPUT_SIDE
+    ) {
       this.finish(source);
       return;
     }
@@ -303,6 +390,27 @@ export class PhotoEditor {
     this.image.set(null);
     this.basePixels = null;
     this.releaseUrl();
+  }
+
+  /** A new angle, the frame fitted again: tilted, it shrinks to stay on the photo. */
+  private setAngle(angle: number): void {
+    if (angle === this.angle()) {
+      return;
+    }
+    if (isRightAngle(angle) && !isRightAngle(this.angle())) {
+      // A small tap felt on the right angle, where the phone can
+      navigator.vibrate?.(10);
+    }
+    this.angle.set(angle);
+    this.fitFrame();
+  }
+
+  /** The largest frame of the ratio chosen, centred, on the photo as it is turned. */
+  private fitFrame(): void {
+    const image = this.image();
+    if (image) {
+      this.crop.set(largestCrop(this.ratio(), image.naturalWidth, image.naturalHeight, this.angle()));
+    }
   }
 
   private finish(file: File): void {
@@ -333,7 +441,7 @@ export class PhotoEditor {
     if (count !== this.loadCount) {
       return;
     }
-    this.turns.set(0);
+    this.angle.set(0);
     this.flipped.set(false);
     this.adjustments.set(NO_ADJUSTMENT);
     this.image.set(image);
@@ -342,8 +450,8 @@ export class PhotoEditor {
 
   /** The whole photo when the site takes it as it is, otherwise the largest frame of the usual ratio. */
   private startFrame(): void {
-    const { width, height } = this.turnedSize();
-    if (!cropProblem(width, height, this.portrait(), this.retouch())) {
+    const { width, height } = this.boxSize();
+    if (!cropProblem(width, height, this.portrait())) {
       this.ratio.set(null);
       this.crop.set(WHOLE);
     } else {
@@ -351,23 +459,36 @@ export class PhotoEditor {
     }
   }
 
-  private drawBase(image: HTMLImageElement, canvas: HTMLCanvasElement, stageWidth: number, turns: number, flipped: boolean): void {
-    const turned = turns % 2 ? { width: image.naturalHeight, height: image.naturalWidth } : { width: image.naturalWidth, height: image.naturalHeight };
+  /**
+   * The preview keeps the size of the photo turned by the closest right angle: while it turns,
+   * the corners of the box around it go past the stage instead of shrinking everything.
+   */
+  private drawBase(
+    image: HTMLImageElement,
+    canvas: HTMLCanvasElement,
+    frame: HTMLElement,
+    stageWidth: number,
+    angle: number,
+    flipped: boolean,
+  ): void {
+    const box = turnedSize(image.naturalWidth, image.naturalHeight, angle);
+    const upright = turnedSize(image.naturalWidth, image.naturalHeight, Math.round(angle / 90) * 90);
     // Fits the stage, and leaves the tools in sight under it
     const maxHeight = Math.max(200, window.innerHeight * 0.5);
-    const scale = Math.min(stageWidth / turned.width, maxHeight / turned.height, 1);
+    const scale = Math.min(stageWidth / upright.width, maxHeight / upright.height, 1);
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.style.width = `${Math.round(turned.width * scale)}px`;
-    canvas.style.height = `${Math.round(turned.height * scale)}px`;
-    canvas.width = Math.max(1, Math.round(turned.width * scale * pixelRatio));
-    canvas.height = Math.max(1, Math.round(turned.height * scale * pixelRatio));
+    canvas.style.width = `${Math.round(box.width * scale)}px`;
+    canvas.style.height = `${Math.round(box.height * scale)}px`;
+    frame.style.margin = `${Math.round(((upright.height - box.height) * scale) / 2)}px ${Math.round(((upright.width - box.width) * scale) / 2)}px`;
+    canvas.width = Math.max(1, Math.round(box.width * scale * pixelRatio));
+    canvas.height = Math.max(1, Math.round(box.height * scale * pixelRatio));
     const context = canvas.getContext('2d', { willReadFrequently: true });
     if (!context) {
       return;
     }
     context.imageSmoothingQuality = 'high';
-    context.scale(canvas.width / turned.width, canvas.height / turned.height);
-    drawTurned(context, image, turned.width, turned.height, turns, flipped);
+    context.scale(canvas.width / box.width, canvas.height / box.height);
+    drawTurned(context, image, box.width, box.height, angle, flipped);
     this.basePixels = context.getImageData(0, 0, canvas.width, canvas.height);
   }
 
@@ -384,7 +505,7 @@ export class PhotoEditor {
 
   /** The frame at full size (2400 px at most), turned, mirrored and adjusted, as a JPEG. */
   private async render(image: HTMLImageElement, name: string): Promise<File> {
-    const turned = this.turnedSize();
+    const box = this.boxSize();
     const crop = this.crop();
     const pixels = this.cropPixels();
     const size = outputSize(pixels.width, pixels.height);
@@ -397,8 +518,8 @@ export class PhotoEditor {
     context.fillRect(0, 0, size.width, size.height);
     context.imageSmoothingQuality = 'high';
     context.scale(size.width / pixels.width, size.height / pixels.height);
-    context.translate(-crop.x * turned.width, -crop.y * turned.height);
-    drawTurned(context, image, turned.width, turned.height, this.turns(), this.flipped());
+    context.translate(-crop.x * box.width, -crop.y * box.height);
+    drawTurned(context, image, box.width, box.height, this.angle(), this.flipped());
     context.setTransform(1, 0, 0, 1, 0, 0);
     const data = context.getImageData(0, 0, size.width, size.height);
     applyAdjustments(data.data, this.adjustments());
@@ -420,21 +541,29 @@ export class PhotoEditor {
   }
 }
 
-/** Draws the photo turned by quarter turns, then mirrored, into a box of the turned size. */
+/**
+ * Draws the photo, mirrored then turned by that angle around its centre, in the middle of a box of
+ * the turned size: what is shown is the mirrored photo turned clockwise.
+ */
 function drawTurned(
   context: CanvasRenderingContext2D,
   image: HTMLImageElement,
-  turnedWidth: number,
-  turnedHeight: number,
-  turns: number,
+  boxWidth: number,
+  boxHeight: number,
+  angle: number,
   flipped: boolean,
 ): void {
-  context.translate(turnedWidth / 2, turnedHeight / 2);
+  context.translate(boxWidth / 2, boxHeight / 2);
+  context.rotate((angle * Math.PI) / 180);
   if (flipped) {
     context.scale(-1, 1);
   }
-  context.rotate((turns * Math.PI) / 2);
   context.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2, image.naturalWidth, image.naturalHeight);
+}
+
+/** Angle of the pointer seen from (centerX, centerY), in degrees, clockwise from the right. */
+function pointerAngle(event: PointerEvent, centerX: number, centerY: number): number {
+  return (Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180) / Math.PI;
 }
 
 function sameCrop(a: Crop, b: Crop): boolean {

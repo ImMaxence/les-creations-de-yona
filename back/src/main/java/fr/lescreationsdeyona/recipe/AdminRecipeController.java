@@ -126,7 +126,7 @@ class AdminRecipeController {
 	}
 
 	@Operation(summary = "Upload a new photo for a recipe; the previous one stays in the gallery",
-			description = "JPEG or PNG, 10 MB max, landscape: at least 1200 × 800 px and 4:3.")
+			description = "JPEG or PNG, 10 MB max, landscape or square: at least 800 × 450 px.")
 	@PutMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	RecipeDetail replaceRecipeImage(@PathVariable long id, @RequestPart MultipartFile file) {
 		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.
@@ -141,7 +141,7 @@ class AdminRecipeController {
 	}
 
 	@Operation(summary = "Upload the vertical photo offered to Pinterest; the previous one stays in the gallery",
-			description = "JPEG or PNG, 10 MB max, portrait: at least 1000 × 1333 px and 3:4 (2:3 advised).")
+			description = "JPEG or PNG, 10 MB max, portrait: at least 600 × 800 px and 3:4 (2:3 advised).")
 	@PutMapping(path = "/{id}/pinterest-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	RecipeDetail replaceRecipePinterestImage(@PathVariable long id, @RequestPart MultipartFile file) {
 		return recipeService.replacePinterestImage(id, imageProcessor.processPortrait(file));

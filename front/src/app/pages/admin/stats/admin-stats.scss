@@ -433,6 +433,13 @@ a.admin-row__title {
 
 // Export as PDF (printed): the figures only, every table open (see exportPdf) ------------
 @media print {
+  // The bars are backgrounds, which browsers leave out of a print by default: kept here
+  :host,
+  :host * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   .admin-panel,
   .tile {
     break-inside: avoid;

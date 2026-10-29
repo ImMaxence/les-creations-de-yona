@@ -1,4 +1,16 @@
-import { NO_ADJUSTMENT, WHOLE, applyAdjustments, cropProblem, largestCrop, movedCrop, outputSize, resizedCrop } from './photo-edits';
+import {
+  NO_ADJUSTMENT,
+  WHOLE,
+  applyAdjustments,
+  cropInside,
+  cropProblem,
+  largestCrop,
+  movedCrop,
+  outputSize,
+  resizedCrop,
+  snappedAngle,
+  turnedSize,
+} from './photo-edits';
 
 describe('photo edits', () => {
   it('leaves the pixels alone without settings, and lightens them with brightness', () => {
@@ -44,12 +56,29 @@ describe('photo edits', () => {
   });
 
   it('says what the API would refuse', () => {
-    expect(cropProblem(1600, 1200, false, false)).toBeNull();
-    expect(cropProblem(1000, 1200, false, false)).toContain('paysage');
-    expect(cropProblem(1000, 700, false, false)).toContain('1200 × 800');
-    // A retouched photo of the site may be smaller
-    expect(cropProblem(1000, 700, false, true)).toBeNull();
-    expect(cropProblem(1000, 1500, true, false)).toBeNull();
+    expect(cropProblem(1600, 1200, false)).toBeNull();
+    expect(cropProblem(1000, 1000, false)).toBeNull();
+    expect(cropProblem(1000, 1200, false)).toContain('paysage');
+    expect(cropProblem(700, 450, false)).toContain('800 × 450');
+    expect(cropProblem(1000, 1500, true)).toBeNull();
+    expect(cropProblem(500, 900, true)).toContain('600 × 800');
+  });
+
+  it('stops the rotation on right angles', () => {
+    expect(snappedAngle(87)).toBe(90);
+    expect(snappedAngle(-3)).toBe(0);
+    expect(snappedAngle(184)).toBe(180);
+    expect(snappedAngle(30)).toBe(30);
+    expect(snappedAngle(400)).toBe(40);
+  });
+
+  it('keeps a tilted frame on the photo: no empty corner', () => {
+    expect(turnedSize(1600, 1200, 90)).toEqual({ width: 1200, height: 1600 });
+    const crop = largestCrop(4 / 3, 1600, 1200, 10);
+    expect(cropInside(crop, 1600, 1200, 10)).toBe(true);
+    expect(cropInside(WHOLE, 1600, 1200, 10)).toBe(false);
+    // Turned by a right angle, the whole photo again
+    expect(largestCrop(null, 1600, 1200, 90)).toEqual(WHOLE);
   });
 
   it('makes the file sent 2400 px at most', () => {

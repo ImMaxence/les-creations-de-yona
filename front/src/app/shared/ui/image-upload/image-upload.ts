@@ -18,7 +18,7 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { CoverImage } from '../cover-image/cover-image';
 import { GalleryPicker } from '../gallery-picker/gallery-picker';
 import { PhotoEditor } from '../photo-editor/photo-editor';
-import { PHOTO_ACCEPT, photoFileError } from './photo-file';
+import { EDITABLE_PHOTO_ACCEPT, editablePhotoError } from './photo-file';
 import { Icon } from '../icon/icon';
 
 
@@ -90,10 +90,10 @@ import { Icon } from '../icon/icon';
     </div>
     <p class="field__hint">
       @if (portrait()) {
-        JPEG ou PNG, 10 Mo maximum, format vertical : 1000 × 1333 px minimum, 1000 × 1500 px (2:3) conseillé. Recadrage,
+        Format vertical : 600 × 800 px minimum, 1000 × 1500 px (2:3) conseillé. Recadrage,
         rotation et filtres avant l'envoi
       } @else {
-        JPEG ou PNG, 10 Mo maximum, format paysage (1200 × 800 px minimum). Recadrage, rotation et filtres avant l'envoi
+        Format paysage ou carré, 800 × 450 px minimum. Recadrage, rotation et filtres avant l'envoi
       }
     </p>
     <yona-gallery-picker #picker [portrait]="portrait()" (chosen)="galleryImageChosen.emit($event)" />
@@ -125,7 +125,7 @@ export class ImageUpload {
   /** "Retoucher" saved: the id of the retouched photo, now shown wherever the previous one was. */
   readonly retouched = output<string>();
 
-  protected readonly accept = PHOTO_ACCEPT;
+  protected readonly accept = EDITABLE_PHOTO_ACCEPT;
   protected readonly editorOpen = signal(false);
   protected readonly editorSource = signal<File | string | null>(null);
   /** The editor shows the current photo (true), or a file just chosen. */
@@ -154,7 +154,7 @@ export class ImageUpload {
     if (!file) {
       return;
     }
-    const error = photoFileError(file);
+    const error = editablePhotoError(file);
     if (error) {
       this.toaster.error(error);
       return;

@@ -1,0 +1,245 @@
+// Same tokens as the statistics page: the backend in the accent color, the rest in gray
+:host {
+  --chart-mark: var(--color-accent);
+  --chart-rest: color-mix(in srgb, var(--color-text-muted) 75%, transparent);
+  --chart-line: var(--color-line);
+
+  display: grid;
+  gap: var(--space-4);
+}
+
+.live__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.live__every {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.pill {
+  min-width: 2.75rem;
+  min-height: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+
+  &[aria-pressed='true'] {
+    border-color: var(--color-accent);
+    background-color: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    color: var(--color-accent-strong);
+  }
+}
+
+.live__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  animation: beat 1.4s ease-in-out infinite;
+}
+
+.live__status {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent-strong);
+}
+
+@keyframes beat {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live__dot {
+    animation: none;
+  }
+}
+
+.live__charts {
+  display: grid;
+  gap: var(--space-5);
+
+  @media (width >= 48rem) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.live-chart {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+}
+
+.live-chart__title {
+  font-weight: 600;
+}
+
+.live-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  strong {
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// A short line in the style of its curve: solid, or dashed
+.key {
+  width: 1rem;
+  height: 0;
+  border-top: 2px solid var(--chart-mark);
+}
+
+.key--rest {
+  border-top: 2px dashed var(--chart-rest);
+}
+
+// Room on the left for the values of the scale
+.live-chart__plot {
+  position: relative;
+  padding-left: 3.25rem;
+}
+
+.live-chart__tick {
+  position: absolute;
+  left: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  transform: translateY(-50%);
+}
+
+.live-chart__tick--top {
+  top: 0;
+}
+
+.live-chart__tick--middle {
+  top: 50%;
+}
+
+.live-chart__tick--bottom {
+  top: 100%;
+}
+
+.live-chart__area {
+  position: relative;
+  height: 9rem;
+  cursor: crosshair;
+  touch-action: pan-y;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+}
+
+.grid {
+  stroke: var(--chart-line);
+  stroke-dasharray: 2 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.baseline {
+  stroke: var(--chart-line);
+  vector-effect: non-scaling-stroke;
+}
+
+.curve {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.curve--mark {
+  stroke: var(--chart-mark);
+}
+
+.curve--rest {
+  stroke: var(--chart-rest);
+  stroke-dasharray: 5 4;
+}
+
+.crosshair {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+// A ring in the panel's color around each point, so that it stands out from the curve
+.point {
+  position: absolute;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background-color: var(--chart-mark);
+  box-shadow: 0 0 0 2px var(--color-bg);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.point--rest {
+  background-color: var(--color-text-muted);
+}
+
+.tip {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  gap: 0.1rem;
+  min-width: 9rem;
+  margin-left: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  pointer-events: none;
+
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Near the right edge, the tip goes to the left of the line
+.tip--left {
+  transform: translateX(calc(-100% - 2 * var(--space-2)));
+}
+
+.tip__when {
+  color: var(--color-text-muted);
+}
+
+.live-chart__axis {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 3.25rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

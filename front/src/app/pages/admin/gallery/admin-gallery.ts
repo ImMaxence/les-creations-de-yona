@@ -15,7 +15,7 @@ import { SiteData } from '../../../core/site/site-data';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { Button } from '../../../shared/ui/button/button';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
-import { PHOTO_ACCEPT, photoFileError } from '../../../shared/ui/image-upload/photo-file';
+import { EDITABLE_PHOTO_ACCEPT, editablePhotoError } from '../../../shared/ui/image-upload/photo-file';
 import { Pagination } from '../../../shared/ui/pagination/pagination';
 import { PhotoEditor } from '../../../shared/ui/photo-editor/photo-editor';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
@@ -74,7 +74,7 @@ export default class AdminGallery {
     { value: 'USED', label: 'Utilisées' },
     { value: 'UNUSED', label: 'Non utilisées' },
   ];
-  protected readonly accept = PHOTO_ACCEPT;
+  protected readonly accept = EDITABLE_PHOTO_ACCEPT;
   /** Share of the new photo sent (0 to 1) while it uploads. */
   protected readonly uploadProgress = signal<number | null>(null);
   protected readonly uploadPercent = computed(() => Math.round((this.uploadProgress() ?? 0) * 100));
@@ -114,7 +114,7 @@ export default class AdminGallery {
     if (!file) {
       return;
     }
-    const error = photoFileError(file);
+    const error = editablePhotoError(file);
     if (error) {
       this.toaster.error(error);
       return;

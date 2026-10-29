@@ -57,7 +57,10 @@ export function applyAdjustments(pixels: Uint8ClampedArray, adjustments: Adjustm
   }
 }
 
-/** A part of the photo, as shares of its width and height (0 to 1), once turned. */
+/**
+ * A part of the turned photo, as shares (0 to 1) of the box holding it: the photo itself when turned
+ * by a right angle, the box around the tilted photo otherwise.
+ */
 export interface Crop {
   x: number;
   y: number;
@@ -70,19 +73,66 @@ export const WHOLE: Crop = { x: 0, y: 0, width: 1, height: 1 };
 /** Width / height of the frame wanted, in pixels; null when free. */
 export type Ratio = number | null;
 
+/** Within this many degrees of a right angle, the rotation stops on it. */
+export const SNAP_DEGREES = 5;
+
+/** From 0 to 359.x, clockwise. */
+export function normalizedAngle(angle: number): number {
+  return ((angle % 360) + 360) % 360;
+}
+
+/** The angle stopped on 0, 90, 180 or 270 when close to it. */
+export function snappedAngle(angle: number): number {
+  const right = Math.round(angle / 90) * 90;
+  return normalizedAngle(Math.abs(angle - right) <= SNAP_DEGREES ? right : angle);
+}
+
+export function isRightAngle(angle: number): boolean {
+  return normalizedAngle(angle) % 90 === 0;
+}
+
+/** Size of the box around a photo of width × height pixels turned by that angle. */
+export function turnedSize(width: number, height: number, angle: number): { width: number; height: number } {
+  const { cos, sin } = absoluteTrig(angle);
+  return { width: Math.round(width * cos + height * sin), height: Math.round(width * sin + height * cos) };
+}
+
 /**
- * The largest frame of that ratio, centred, on a photo of width × height pixels; the whole photo
- * when free.
+ * The largest frame of that ratio, centred, inside a photo of width × height pixels turned by that
+ * angle: no empty corner when it is tilted. Free, the ratio of the photo as it stands.
  */
-export function largestCrop(ratio: Ratio, width: number, height: number): Crop {
-  if (ratio === null) {
-    return WHOLE;
+export function largestCrop(ratio: Ratio, width: number, height: number, angle = 0): Crop {
+  const { cos, sin } = absoluteTrig(angle);
+  const box = turnedSize(width, height, angle);
+  const wanted = ratio ?? (cos >= sin ? width / height : height / width);
+  // Half sides a × b of a centred frame: its corners within the photo, a = ratio × b
+  const halfHeight = Math.min(width / 2 / (wanted * cos + sin), height / 2 / (wanted * sin + cos));
+  const shareWidth = Math.min(1, (2 * wanted * halfHeight) / box.width);
+  const shareHeight = Math.min(1, (2 * halfHeight) / box.height);
+  return { x: (1 - shareWidth) / 2, y: (1 - shareHeight) / 2, width: shareWidth, height: shareHeight };
+}
+
+/** Whether every corner of the frame lies on the photo turned by that angle (a pixel of tolerance). */
+export function cropInside(crop: Crop, width: number, height: number, angle: number): boolean {
+  if (isRightAngle(angle)) {
+    return true;
   }
-  // The ratio in shares of the photo: share of width / share of height
-  const shares = (ratio * height) / width;
-  return shares <= 1
-    ? { x: (1 - shares) / 2, y: 0, width: shares, height: 1 }
-    : { x: 0, y: (1 - 1 / shares) / 2, width: 1, height: 1 / shares };
+  const radians = (angle * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const box = turnedSize(width, height, angle);
+  const corners = [
+    [crop.x, crop.y],
+    [crop.x + crop.width, crop.y],
+    [crop.x, crop.y + crop.height],
+    [crop.x + crop.width, crop.y + crop.height],
+  ];
+  return corners.every(([shareX, shareY]) => {
+    // From the centre of the box, turned back onto the photo
+    const x = (shareX - 0.5) * box.width;
+    const y = (shareY - 0.5) * box.height;
+    return Math.abs(x * cos + y * sin) <= width / 2 + 1 && Math.abs(-x * sin + y * cos) <= height / 2 + 1;
+  });
 }
 
 /** The frame moved by (dx, dy) shares, kept inside the photo. */
@@ -131,12 +181,9 @@ export function resizedCrop(crop: Crop, corner: Corner, px: number, py: number, 
   };
 }
 
-/** Smallest photo the API takes: an upload, or a retouched photo of the site (from its 1600 px file). */
-export function minimumSize(portrait: boolean, retouch: boolean): { width: number; height: number } {
-  if (retouch) {
-    return portrait ? { width: 600, height: 800 } : { width: 800, height: 450 };
-  }
-  return portrait ? { width: 1000, height: 1333 } : { width: 1200, height: 800 };
+/** Smallest photo the API takes, upload or retouch alike. */
+export function minimumSize(portrait: boolean): { width: number; height: number } {
+  return portrait ? { width: 600, height: 800 } : { width: 800, height: 450 };
 }
 
 /** Largest side of the file sent: enough for the 1600 px version, light to send from a phone. */
@@ -149,17 +196,28 @@ export function outputSize(width: number, height: number): { width: number; heig
 }
 
 /** Why the API would refuse a frame of width × height pixels; null when it is fine. */
-export function cropProblem(width: number, height: number, portrait: boolean, retouch: boolean): string | null {
-  // Same rules as the API: landscape 4:3 or wider, portrait 3:4 or taller
-  if (portrait ? 3 * height < 4 * width : 3 * width < 4 * height) {
-    return portrait ? 'Cadre trop large : la photo Pinterest doit être verticale (3:4 ou plus haute)' : 'Cadre trop haut : la photo doit être en paysage (4:3 ou plus large)';
+export function cropProblem(width: number, height: number, portrait: boolean): string | null {
+  // Same rules as the API: landscape or square, portrait 3:4 or taller
+  if (portrait ? 3 * height < 4 * width : width < height) {
+    return portrait
+      ? 'Cadre trop large : la photo Pinterest doit être verticale (3:4 ou plus haute)'
+      : 'Cadre trop haut : la photo doit être en paysage ou carrée';
   }
-  const minimum = minimumSize(portrait, retouch);
+  const minimum = minimumSize(portrait);
   const output = outputSize(width, height);
   if (output.width < minimum.width || output.height < minimum.height) {
     return `Cadre trop petit : ${minimum.width} × ${minimum.height} pixels au moins`;
   }
   return null;
+}
+
+/** |cos| and |sin| of an angle in degrees, rounded: cos(90°) is not exactly 0 in floating point. */
+function absoluteTrig(angle: number): { cos: number; sin: number } {
+  const radians = (angle * Math.PI) / 180;
+  return {
+    cos: Math.abs(Math.round(Math.cos(radians) * 1e9) / 1e9),
+    sin: Math.abs(Math.round(Math.sin(radians) * 1e9) / 1e9),
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {
