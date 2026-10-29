@@ -4,12 +4,17 @@ import { Api } from '../../core/api/generated/api';
 import { getFeaturedRecipe } from '../../core/api/generated/fn/recipes/get-featured-recipe';
 import { listPublishedRecipes } from '../../core/api/generated/fn/recipes/list-published-recipes';
 import { RecipeCard } from '../../core/api/generated/models/recipe-card';
+import { THEMES } from '../../shared/format/themes';
 
 export const LATEST_RECIPES_COUNT = 3;
 
 export interface HomeData {
-  /** null when nothing is published yet (the API answers 204). */
-  featured: RecipeCard | null;
+  /**
+   * The featured recipe of each theme, sweet then savory (its latest one when none is chosen); a
+   * theme without any published recipe is left out (the API answers 204). Empty when nothing is
+   * published yet.
+   */
+  featured: RecipeCard[];
   latest: RecipeCard[];
 }
 
@@ -19,9 +24,9 @@ export interface HomeData {
  */
 export const homeResolver: ResolveFn<HomeData> = async () => {
   const api = inject(Api);
-  const [featured, latest] = await Promise.all([
-    api.invoke(getFeaturedRecipe) as Promise<RecipeCard | null>,
+  const [latest, featured] = await Promise.all([
     api.invoke(listPublishedRecipes, { size: LATEST_RECIPES_COUNT }),
+    Promise.all(THEMES.map(({ value }) => api.invoke(getFeaturedRecipe, { theme: value }) as Promise<RecipeCard | null>)),
   ]);
-  return { featured, latest: latest.content };
+  return { featured: featured.filter((recipe): recipe is RecipeCard => !!recipe), latest: latest.content };
 };

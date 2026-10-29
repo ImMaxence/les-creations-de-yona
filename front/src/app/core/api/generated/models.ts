@@ -62,6 +62,7 @@ export type { RestoreStart } from './models/restore-start';
 export type { RestoreStatus } from './models/restore-status';
 export type { SearchMiss } from './models/search-miss';
 export type { SearchSuggestions } from './models/search-suggestions';
+export type { ServerUsage } from './models/server-usage';
 export type { SimilarIngredients } from './models/similar-ingredients';
 export type { SiteContentForm } from './models/site-content-form';
 export type { SiteContentResponse } from './models/site-content-response';

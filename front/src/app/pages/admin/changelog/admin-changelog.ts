@@ -3,9 +3,10 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, signal } from '@
 import changelog from '../../../../../../CHANGELOG.md';
 import { FRONT_VERSION } from '../../../core/version';
 import { MarkdownPipe } from '../../../shared/format/markdown.pipe';
+import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 
-/** A version of the CHANGELOG: "## 3.2.0 - 2026-10-27" and what follows, up to the next one. */
+/** A version of the CHANGELOG: "## 1.2.0 - 2026-10-27" and what follows, up to the next one. */
 export interface ChangelogVersion {
   version: string;
   /** "27 octobre 2026", or null when the heading gives no date. */
@@ -15,18 +16,34 @@ export interface ChangelogVersion {
 
 const DATE = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
+/** The code of the site, where the CHANGELOG's links to files of the repository lead. */
+export const REPOSITORY_URL = 'https://github.com/ImMaxence/les-creations-de-yona';
+
+/** Coolify, which builds and runs the site on the server: deployments, logs, settings. */
+export const COOLIFY_URL = 'https://coolify.nailsbyanastasie.fr/';
+
 /**
  * "Nouveautés": the CHANGELOG, read only, so that the admins see what each version changed. One
  * fold per version, the latest open; a version's text is only rendered once opened, however long
- * the CHANGELOG grows. Its introduction (for developers) is left out.
+ * the CHANGELOG grows. Its introduction (for developers) is left out. Links to the code (GitHub)
+ * and to the server (Coolify) at the top; a link of the CHANGELOG to a file of the repository
+ * leads to it on GitHub, not to a page of the site.
  */
 @Component({
   selector: 'yona-admin-changelog',
-  imports: [Icon, MarkdownPipe],
+  imports: [Button, Icon, MarkdownPipe],
   template: `
     <section class="admin-section" aria-labelledby="changelog-title">
       <div class="admin-section__head">
         <h2 id="changelog-title">Nouveautés</h2>
+        <div class="admin-section__actions">
+          <a yonaButton variant="secondary" [href]="repositoryUrl" target="_blank" rel="noopener noreferrer">
+            <svg yonaIcon="github"></svg>GitHub
+          </a>
+          <a yonaButton variant="secondary" [href]="coolifyUrl" target="_blank" rel="noopener noreferrer">
+            <svg yonaIcon="server"></svg>Coolify
+          </a>
+        </div>
       </div>
       <p class="field__hint">
         Ce qui a changé sur le site à chaque version, la plus récente en premier. Version en ligne : {{ version }}
@@ -58,6 +75,8 @@ const DATE = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', y
 })
 export default class AdminChangelog {
   protected readonly version = FRONT_VERSION;
+  protected readonly repositoryUrl = REPOSITORY_URL;
+  protected readonly coolifyUrl = COOLIFY_URL;
   protected readonly versions = versionsOf(changelog);
   /** The latest version open on arrival. */
   protected readonly opened = signal<ReadonlySet<number>>(new Set([0]));
@@ -89,7 +108,15 @@ export function versionsOf(markdown: string): ChangelogVersion[] {
       return {
         version: version ?? heading,
         date: isoDate ? DATE.format(new Date(`${isoDate}T00:00:00Z`)) : null,
-        markdown: newline < 0 ? '' : section.slice(newline + 1).trim(),
+        markdown: newline < 0 ? '' : onGitHub(section.slice(newline + 1).trim()),
       };
     });
+}
+
+/**
+ * "[ia.md](docs/ia.md)" leads to the file on GitHub: written for the repository, a relative link
+ * would open a page of the site that does not exist. Full addresses and anchors stay as they are.
+ */
+export function onGitHub(markdown: string): string {
+  return markdown.replace(/\]\((?!https?:|mailto:|#)\.?\/?([^)\s]+)\)/g, (_link, path: string) => `](${REPOSITORY_URL}/blob/main/${path})`);
 }

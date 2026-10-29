@@ -62,11 +62,13 @@ class RecipeController {
 			@Parameter(description = "Preparation, rest and cooking together at most this long, in minutes")
 			@RequestParam(required = false) @Min(1) @Max(1440) @Nullable Integer maxMinutes,
 			@RequestParam(required = false) @Nullable DifficultyLevel difficulty,
+			@Parameter(description = "Sweet or savory; without it, \"sucré\" or \"salé\" typed in q chooses it")
+			@RequestParam(required = false) @Nullable RecipeTheme theme,
 			@ParameterObject @PageableDefault(size = 12, sort = "publishedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		Page<RecipeCard> recipes = recipeService.searchPublished(
 				new RecipeFilter(null, q, category, tag, ingredient == null ? List.of() : ingredient, null, null, null,
-						maxMinutes, difficulty), pageable);
+						theme, maxMinutes, difficulty), pageable);
 		if (recipes.isEmpty() && pageable.getPageNumber() == 0 && StringUtils.hasText(q)) {
 			searchMissService.record(q);
 		}
@@ -98,10 +100,11 @@ class RecipeController {
 
 	// Kept out of /recipes/{...} so that no recipe slug can ever shadow these routes.
 
-	@Operation(summary = "Featured recipe, or the latest published one; 204 when there is no recipe")
+	@Operation(summary = "Featured recipe of a theme, or its latest published one; 204 when the theme has no recipe",
+			description = "Without theme: any featured recipe, or the latest published one.")
 	@GetMapping("/featured-recipe")
-	ResponseEntity<RecipeCard> getFeaturedRecipe() {
-		return recipeService.findFeatured()
+	ResponseEntity<RecipeCard> getFeaturedRecipe(@RequestParam(required = false) @Nullable RecipeTheme theme) {
+		return recipeService.findFeatured(theme)
 			.map(ResponseEntity::ok)
 			.orElseGet(() -> ResponseEntity.noContent().build());
 	}

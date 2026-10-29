@@ -270,6 +270,17 @@ textarea.input {
   margin-left: auto;
 }
 
+// Why a scheduled publication failed, under the row's details
+.admin-row__failure {
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+}
+
+// "Publier maintenant", beside the actions of a failed recipe
+.admin-row__retry {
+  margin-left: auto;
+}
+
 .admin-empty {
   padding: var(--space-6);
   border-radius: var(--radius-md);
@@ -290,8 +301,27 @@ textarea.input {
   color: var(--color-text);
 }
 
+// Status of a recipe, at a glance: grey draft, green published, red failure. The green is the same in
+// every theme of the site, mixed with the text colour to stay readable in light and dark.
+.badge--draft {
+  background-color: color-mix(in srgb, var(--color-text) 9%, transparent);
+  color: var(--color-text-muted);
+}
+
 .badge--published {
-  background-color: color-mix(in srgb, var(--color-decor) 22%, transparent);
+  background-color: color-mix(in srgb, #2e9b55 18%, transparent);
+  color: color-mix(in srgb, #2e9b55 65%, var(--color-text));
+}
+
+.badge--failed {
+  background-color: color-mix(in srgb, var(--color-danger) 16%, transparent);
+  color: var(--color-danger);
+}
+
+.badge--failed-time {
+  box-shadow: inset 0 0 0 1px var(--color-danger);
+  background-color: transparent;
+  color: var(--color-danger);
 }
 
 .badge--featured {

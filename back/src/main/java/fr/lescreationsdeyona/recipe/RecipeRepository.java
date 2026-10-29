@@ -13,9 +13,13 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 
 	Optional<Recipe> findBySlugAndStatus(String slug, RecipeStatus status);
 
-	Optional<Recipe> findFirstByFeaturedTrue();
+	Optional<Recipe> findFirstByFeaturedTrueAndStatus(RecipeStatus status);
+
+	Optional<Recipe> findFirstByFeaturedTrueAndStatusAndTheme(RecipeStatus status, RecipeTheme theme);
 
 	Optional<Recipe> findFirstByStatusOrderByPublishedAtDesc(RecipeStatus status);
+
+	Optional<Recipe> findFirstByStatusAndThemeOrderByPublishedAtDesc(RecipeStatus status, RecipeTheme theme);
 
 	boolean existsBySlug(String slug);
 
@@ -23,10 +27,16 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 
 	boolean existsByCategoriesId(long categoryId);
 
-	/** Unfeatures every recipe but {@code keptId} (all of them when null). */
+	/**
+	 * Unfeatures the published recipes of this theme but {@code keptId} (all of them when null); the
+	 * scheduled ones featured ahead are left alone.
+	 */
 	@Modifying(flushAutomatically = true)
-	@Query("update Recipe r set r.featured = false where r.featured = true and (:keptId is null or r.id <> :keptId)")
-	void unfeatureAllExcept(@Nullable Long keptId);
+	@Query("""
+			update Recipe r set r.featured = false
+			where r.featured = true and r.status = RecipeStatus.PUBLISHED and r.theme = :theme
+				and (:keptId is null or r.id <> :keptId)""")
+	void unfeatureAllExcept(RecipeTheme theme, @Nullable Long keptId);
 
 	@Query("select r.id from Recipe r where r.status = RecipeStatus.DRAFT and r.scheduledAt <= :now order by r.scheduledAt")
 	List<Long> findScheduledBefore(Instant now);

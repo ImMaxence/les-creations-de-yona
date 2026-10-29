@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import fr.lescreationsdeyona.recipe.MoldShape;
 import fr.lescreationsdeyona.recipe.RecipeForm;
+import fr.lescreationsdeyona.recipe.RecipeTheme;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,7 @@ class RecipeAiReaderTest {
 	@Test
 	void fillsTheDraftWithTheSitesOwnNames() {
 		RecipeAiDraft draft = read("""
-				{"isRecipe":true,"title":"  Crêpes  ","intro":null,"servings":4,"prepMinutes":10,"cookMinutes":20,
+				{"isRecipe":true,"theme":"SWEET","title":"  Crêpes  ","intro":null,"servings":4,"prepMinutes":10,"cookMinutes":20,
 				"restMinutes":60,"difficulty":1.3,"categories":["crepes et gaufres","Plats"],"tags":["vegetarien"],
 				"parts":[{"title":"Les crêpes","ingredients":[
 				  {"name":"oeufs","quantity":4,"unit":null,"note":null},
@@ -34,6 +35,7 @@ class RecipeAiReaderTest {
 				"equipment":["poêle à crêpes","Poêle à crêpes"],"mold":null,"tip":"Se garde 2 jours"}""");
 
 		assertThat(draft.title()).isEqualTo("Crêpes");
+		assertThat(draft.theme()).isEqualTo(RecipeTheme.SWEET);
 		assertThat(draft.difficulty()).isEqualByComparingTo("1.5");
 		assertThat(draft.categoryIds()).containsExactly(2L);
 		assertThat(draft.tagIds()).containsExactly(7L);

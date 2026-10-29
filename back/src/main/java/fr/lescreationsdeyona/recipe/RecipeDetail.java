@@ -11,7 +11,8 @@ import org.jspecify.annotations.Nullable;
 
 /** A full recipe: public recipe page, and back-office edit form. */
 public record RecipeDetail(Long id, String title, String slug, @Nullable String intro, RecipeStatus status,
-		boolean featured,
+		RecipeTheme theme, boolean featured,
+		@Schema(description = "Why its scheduled publication did not happen; a failed recipe only") @Nullable String publicationFailure,
 		@Schema(description = "At least one; the first one is the main category, in the recipe URL")
 		List<CategoryResponse> categories,
 		@Schema(description = "Sorted by name; empty when none") List<TagResponse> tags,
@@ -28,7 +29,8 @@ public record RecipeDetail(Long id, String title, String slug, @Nullable String 
 		List<Part> parts,
 		Instant createdAt, Instant updatedAt,
 		@Schema(description = "First publication; absent for a recipe never published") @Nullable Instant publishedAt,
-		@Schema(description = "A draft to be published at that time") @Nullable Instant scheduledAt) {
+		@Schema(description = "A draft to be published at that time; for a failed recipe, the time it was planned")
+		@Nullable Instant scheduledAt) {
 
 	/** A part of the recipe (the dough, the filling…), with its own ingredients and steps. */
 	public record Part(@Schema(description = "Absent for the single part of a recipe without parts") @Nullable String title,

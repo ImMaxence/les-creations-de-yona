@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { NewRecipeNotifications } from '../../core/pwa/new-recipe-notifications';
 import { SiteData } from '../../core/site/site-data';
 import { categoryNames } from '../../shared/format/categories';
+import { themeLabel } from '../../shared/format/themes';
 import { Reveal } from '../../shared/motion/reveal';
 import { RECIPE_IMAGE_TRANSITION, isSameTabClick } from '../../shared/motion/view-transitions';
 import { MENUS_PATH, RECIPES_PATH, categoryQueryParams, recipeLink } from '../../shared/routing/links';
@@ -38,18 +39,18 @@ export default class Home {
   protected readonly content = this.siteData.content;
   /** A blank line in the text written in the back-office starts a new paragraph. */
   protected readonly aboutParagraphs = computed(() => paragraphs(this.content().aboutText));
-  protected readonly featuredLink = computed(() => {
-    const featured = this.data().featured;
-    return featured ? recipeLink(featured) : null;
-  });
+  protected readonly link = recipeLink;
+  protected readonly themeLabel = themeLabel;
+  protected readonly imageTransition = RECIPE_IMAGE_TRANSITION;
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;
   protected readonly categoryNames = categoryNames;
+  /** Slug of the featured recipe opened: its photo flies to the recipe page. */
   protected readonly featuredTransition = signal<string | null>(null);
 
-  protected onFeaturedClick(event: MouseEvent): void {
+  protected onFeaturedClick(event: MouseEvent, slug: string): void {
     if (isSameTabClick(event)) {
-      this.featuredTransition.set(RECIPE_IMAGE_TRANSITION);
+      this.featuredTransition.set(slug);
     }
   }
 }

@@ -45,6 +45,11 @@ export interface RecipeDetail {
   prepMinutes?: number;
 
   /**
+   * Why its scheduled publication did not happen; a failed recipe only
+   */
+  publicationFailure?: string;
+
+  /**
    * First publication; absent for a recipe never published
    */
   publishedAt?: string;
@@ -55,17 +60,18 @@ export interface RecipeDetail {
   restMinutes?: number;
 
   /**
-   * A draft to be published at that time
+   * A draft to be published at that time; for a failed recipe, the time it was planned
    */
   scheduledAt?: string;
   servings?: number;
   slug: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
 
   /**
    * Sorted by name; empty when none
    */
   tags: Array<TagResponse>;
+  theme: 'SWEET' | 'SAVORY';
 
   /**
    * "Le conseil de Yona", Markdown rendered by the front

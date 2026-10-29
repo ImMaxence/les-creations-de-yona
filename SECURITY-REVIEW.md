@@ -44,8 +44,9 @@ Correction proposée : désactiver par défaut (`${API_DOCS_ENABLED:false}`), ac
 
 - Accès admin : email Google vérifié et présent dans la liste autorisée, rôle admin exigé sur `/api/admin/**`, toute autre route refusée.
 - CSRF : cookie `XSRF-TOKEN` `Secure` et `SameSite=Strict`, déconnexion en POST avec jeton.
-- Vues des recettes (3.5) : `POST /api/recipes/{slug}/views`, public et sans jeton CSRF comme les abonnements aux notifications. Le pire d'une requête forgée ou répétée : gonfler le compteur d'une recette publiée, montré au seul back-office. Une requête SQL à paramètre lié, aucune donnée sur le visiteur gardée, aucune session créée.
-- Corbeille (3.5) : sous `/api/admin/**` ; la miniature d'une photo supprimée est lue depuis son dossier S3 enregistré par le serveur, jamais depuis une saisie.
+- Vues des recettes (1.5) : `POST /api/recipes/{slug}/views`, public et sans jeton CSRF comme les abonnements aux notifications. Le pire d'une requête forgée ou répétée : gonfler le compteur d'une recette publiée, montré au seul back-office. Une requête SQL à paramètre lié, aucune donnée sur le visiteur gardée, aucune session créée.
+- « Donner mon avis » (1.9, durci en 1.10) : `POST /api/feedback`, public et sans jeton CSRF. Champ piège pour les robots ; par adresse (`CF-Connecting-IP`, que Cloudflare écrase toujours ; sinon l'adresse lue derrière les proxys), une minute entre deux messages et 5 par heure ; 30 messages par heure pour tout le site, quelles que soient les adresses (un réseau de machines ne peut pas inonder le back-office) ; un même message gardé une fois ; 500 non lus au plus. Tout en mémoire, rien sur le visiteur n'est écrit. Le pire d'un envoi en masse : 30 messages par heure à supprimer.
+- Corbeille (1.5) : sous `/api/admin/**` ; la miniature d'une photo supprimée est lue depuis son dossier S3 enregistré par le serveur, jamais depuis une saisie.
 - Redirections OAuth : cibles fixes, pas de redirection ouverte.
 - Injection SQL : paramètres liés, jokers `LIKE` échappés, tri limité à une liste de champs.
 - Clés S3 : UUID générés par le serveur, jamais issus d'une saisie.

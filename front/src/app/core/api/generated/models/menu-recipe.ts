@@ -3,6 +3,6 @@
 
 export interface MenuRecipe {
   id: number;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
   title: string;
 }

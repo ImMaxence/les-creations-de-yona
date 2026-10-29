@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,12 +44,41 @@ class FeedbackServiceTest {
 	void takesFiveMessagesAnHourFromAnAddress() {
 		Instant now = Instant.parse("2026-10-28T10:00:00Z");
 		for (int message = 0; message < FeedbackService.PER_HOUR; message++) {
-			assertThat(service.allow("1.2.3.4", now.plusSeconds(message))).isTrue();
+			assertThat(service.refusal("1.2.3.4", now.plus(Duration.ofMinutes(2L * message)))).isNull();
 		}
 
-		assertThat(service.allow("1.2.3.4", now.plusSeconds(60))).isFalse();
-		assertThat(service.allow("5.6.7.8", now.plusSeconds(60))).isTrue();
-		assertThat(service.allow("1.2.3.4", now.plus(Duration.ofMinutes(61)))).isTrue();
+		assertThat(service.refusal("1.2.3.4", now.plus(Duration.ofMinutes(12)))).isEqualTo(ErrorCode.FEEDBACK_TOO_MANY);
+		assertThat(service.refusal("5.6.7.8", now.plus(Duration.ofMinutes(12)))).isNull();
+		assertThat(service.refusal("1.2.3.4", now.plus(Duration.ofMinutes(61)))).isNull();
+	}
+
+	@Test
+	void waitsAMinuteBetweenTwoMessagesOfAnAddress() {
+		Instant now = Instant.parse("2026-10-28T10:00:00Z");
+
+		assertThat(service.refusal("1.2.3.4", now)).isNull();
+		assertThat(service.refusal("1.2.3.4", now.plusSeconds(5))).isEqualTo(ErrorCode.FEEDBACK_TOO_FAST);
+		assertThat(service.refusal("1.2.3.4", now.plusSeconds(61))).isNull();
+	}
+
+	@Test
+	void takesThirtyMessagesAnHourForTheWholeSite() {
+		Instant now = Instant.parse("2026-10-28T10:00:00Z");
+		for (int sender = 0; sender < FeedbackService.SITE_PER_HOUR; sender++) {
+			assertThat(service.refusal("10.0.0." + sender, now.plusSeconds(sender))).isNull();
+		}
+
+		// 40 messages at once from 40 addresses: the last ones wait
+		assertThat(service.refusal("10.0.1.1", now.plusSeconds(40))).isEqualTo(ErrorCode.FEEDBACK_BUSY);
+		assertThat(service.refusal("10.0.1.1", now.plus(Duration.ofMinutes(61)))).isNull();
+	}
+
+	@Test
+	void keepsTheSameMessageOnce() {
+		service.submit(new FeedbackForm("Super   site !", null, null, null), "1.2.3.4");
+		service.submit(new FeedbackForm("super site !", null, null, null), "5.6.7.8");
+
+		verify(repository, times(1)).save(any());
 	}
 
 	@Test

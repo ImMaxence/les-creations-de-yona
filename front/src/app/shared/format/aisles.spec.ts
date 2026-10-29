@@ -11,7 +11,7 @@ describe('groupByAisle', () => {
     const groups = groupByAisle(['Beurre', 'Sel', 'Pommes', 'Crème'], (name) => aisles.get(name));
     expect(groups.map((group) => [group.label, group.items])).toEqual([
       ['Fruits et légumes', ['Pommes']],
-      ['Crèmerie, œufs', ['Beurre', 'Crème']],
+      ['Crèmerie et œufs', ['Beurre', 'Crème']],
       ['Autres', ['Sel']],
     ]);
   });
@@ -24,7 +24,8 @@ describe('groupByAisle', () => {
 
 describe('aisleLabel', () => {
   it('names an aisle, or "Autres" for none', () => {
-    expect(aisleLabel('SWEET_GROCERY')).toBe('Épicerie sucrée');
+    expect(aisleLabel('SWEET_GROCERY')).toBe('Épicerie sucrée et pâtisserie');
+    expect(aisleLabel('FRESH')).toBe('Rayon frais');
     expect(aisleLabel(null)).toBe('Autres');
   });
 });

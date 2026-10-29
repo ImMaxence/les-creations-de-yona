@@ -13,7 +13,7 @@ record TrashedImage(UUID id, ImageKind kind, String s3Prefix, Instant createdAt)
 
 	/**
 	 * Shown there when deleted: given back on restore where no other photo has been chosen meanwhile.
-	 * {@code menuIds}: absent from the photos put in the trash before 3.7.
+	 * {@code menuIds}: absent from the photos put in the trash before 1.7.
 	 */
 	record Links(List<Long> recipeIds, List<Long> pinterestRecipeIds, List<Long> categoryIds, boolean aboutPage,
 			@Nullable List<Long> menuIds) {

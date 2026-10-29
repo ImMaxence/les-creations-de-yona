@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.PageResponse;
+import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.time.Duration;
@@ -28,9 +29,10 @@ import org.springframework.util.StringUtils;
 
 /**
  * Messages of the visitors ("Donner mon avis"), read in the back-office. Without a captcha (and
- * its third-party service): a field hidden from people catches robots, an address sends 5 messages
- * an hour at most (remembered in memory only, never written), and the unread ones stop at 500.
- * Kept 12 months at most.
+ * its third-party service): a field hidden from people catches robots; an address sends one
+ * message a minute and 5 an hour at most (remembered in memory only, never written); the same
+ * message sent again within the hour is kept once; the whole site takes 30 messages an hour at
+ * most, whatever the addresses; and the unread ones stop at 500. Kept 12 months at most.
  */
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,12 @@ import org.springframework.util.StringUtils;
 public class FeedbackService {
 
 	static final int PER_HOUR = 5;
+
+	/** Between two messages of an address: a double tap, or a script, is stopped at once. */
+	static final Duration MIN_INTERVAL = Duration.ofMinutes(1);
+
+	/** For the whole site: many addresses (a botnet) cannot flood the back-office either. */
+	static final int SITE_PER_HOUR = 30;
 
 	static final int MAX_UNREAD = 500;
 
@@ -52,19 +60,35 @@ public class FeedbackService {
 	/** Times of the last messages, by address of the sender: forgotten after an hour. */
 	private final Map<String, Deque<Instant>> sentBy = new ConcurrentHashMap<>();
 
+	/** Times of the last messages, all senders together. */
+	private final Deque<Instant> sentBySite = new ArrayDeque<>();
+
+	/** Folded messages of the last hour, with their time: a message sent twice is kept once. */
+	private final Map<String, Instant> recentMessages = new ConcurrentHashMap<>();
+
 	@Transactional
 	public void submit(FeedbackForm form, String sender) {
 		// A robot fills every field: answered as a success, so that it learns nothing
 		if (StringUtils.hasText(form.website())) {
 			return;
 		}
-		if (!allow(sender, Instant.now())) {
-			throw new ApiException(ErrorCode.FEEDBACK_TOO_MANY);
+		Instant now = Instant.now();
+		Instant hourAgo = now.minus(Duration.ofHours(1));
+		String folded = Texts.foldCaseAndAccents(form.message()).replaceAll("\\s+", " ").strip();
+		recentMessages.values().removeIf(time -> time.isBefore(hourAgo));
+		// Sent again (a second tap, a copy): already received, answered as a success
+		if (recentMessages.putIfAbsent(folded, now) != null) {
+			return;
 		}
-		if (repository.countByReadAtIsNull() >= MAX_UNREAD) {
-			throw new ApiException(ErrorCode.FEEDBACK_FULL);
+		ErrorCode refused = refusal(sender, now);
+		if (refused == null && repository.countByReadAtIsNull() >= MAX_UNREAD) {
+			refused = ErrorCode.FEEDBACK_FULL;
 		}
-		repository.save(new Feedback(Instant.now(), form.message().strip(), blankToNull(form.email()), blankToNull(form.page())));
+		if (refused != null) {
+			recentMessages.remove(folded);
+			throw new ApiException(refused);
+		}
+		repository.save(new Feedback(now, form.message().strip(), blankToNull(form.email()), blankToNull(form.page())));
 	}
 
 	public PageResponse<FeedbackResponse> list(Pageable pageable) {
@@ -110,19 +134,37 @@ public class FeedbackService {
 		});
 	}
 
-	/** At most {@link #PER_HOUR} messages in the last hour from this sender. */
-	boolean allow(String sender, Instant now) {
+	/**
+	 * Why a message of this sender is refused now, or null: one a minute and {@link #PER_HOUR} an
+	 * hour from an address, {@link #SITE_PER_HOUR} an hour for the whole site. An accepted message is
+	 * counted.
+	 */
+	@Nullable ErrorCode refusal(String sender, Instant now) {
+		Instant hourAgo = now.minus(Duration.ofHours(1));
 		Deque<Instant> times = sentBy.computeIfAbsent(sender, key -> new ArrayDeque<>());
 		synchronized (times) {
-			Instant hourAgo = now.minus(Duration.ofHours(1));
-			while (!times.isEmpty() && times.peekFirst().isBefore(hourAgo)) {
-				times.pollFirst();
+			dropBefore(times, hourAgo);
+			if (!times.isEmpty() && times.peekLast().isAfter(now.minus(MIN_INTERVAL))) {
+				return ErrorCode.FEEDBACK_TOO_FAST;
 			}
 			if (times.size() >= PER_HOUR) {
-				return false;
+				return ErrorCode.FEEDBACK_TOO_MANY;
+			}
+			synchronized (sentBySite) {
+				dropBefore(sentBySite, hourAgo);
+				if (sentBySite.size() >= SITE_PER_HOUR) {
+					return ErrorCode.FEEDBACK_BUSY;
+				}
+				sentBySite.addLast(now);
 			}
 			times.addLast(now);
-			return true;
+			return null;
+		}
+	}
+
+	private static void dropBefore(Deque<Instant> times, Instant limit) {
+		while (!times.isEmpty() && times.peekFirst().isBefore(limit)) {
+			times.pollFirst();
 		}
 	}
 

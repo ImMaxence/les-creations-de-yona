@@ -17,7 +17,8 @@ import { catchError, debounceTime, distinctUntilChanged, from, map, of, switchMa
 import { Api } from '../../../core/api/generated/api';
 import { suggest } from '../../../core/api/generated/fn/search/suggest';
 import { SearchSuggestions } from '../../../core/api/generated/models/search-suggestions';
-import { SearchChoice, SearchPick, servingsIn } from '../../search/search-target';
+import { themeLabel } from '../../format/themes';
+import { MAX_SERVINGS, SearchChoice, SearchPick, servingsIn, withServings } from '../../search/search-target';
 import { Icon } from '../icon/icon';
 import { IconName } from '../icon/icons';
 
@@ -37,14 +38,23 @@ interface SuggestionGroup {
   items: HighlightedSuggestion[];
 }
 
-const NO_SUGGESTIONS: SearchSuggestions = { recipes: [], categories: [], tags: [], menus: [], ingredients: [] };
+const NO_SUGGESTIONS: SearchSuggestions = { recipes: [], themes: [], categories: [], tags: [], menus: [], ingredients: [] };
+
+/** The suggestions, and the text they answer: "no result" is only said once they have come. */
+interface Found {
+  query: string;
+  suggestions: SearchSuggestions;
+}
 
 let nextId = 0;
 
 /**
  * Search of the site, following the ARIA combobox pattern: arrows move in the suggestions, Enter
- * opens the active one or searches the typed text, Escape closes. Suggestions by kind: recipes
- * mentioning each word, then the categories, tags, menus and ingredients of that name.
+ * opens the active one or searches the typed text, Escape closes. Suggestions by kind: the theme,
+ * recipes mentioning each word, then the categories, tags, menus and ingredients of that name
+ * ("Yaourt" for "gâteau au yaourt"; "Recettes salées" for "cake salé"). A number of people
+ * understood ("gâteau 8", "tarte 6 personnes") shows on the right of the field, changed with − and
+ * +: the recipes opened from it are shown for it. Nothing found is said, with an icon.
  * {@code inline}: the suggestions push the content down instead of floating over it (in a dialog).
  */
 @Component({
@@ -75,19 +85,29 @@ export class SearchBox {
   /** Only what the visitor types triggers suggestions: never the value read from the URL. */
   private readonly typed = signal('');
 
-  private readonly suggestions = toSignal(
+  private readonly found = toSignal(
     toObservable(this.typed).pipe(
       map((query) => query.trim()),
       debounceTime(SUGGESTION_DELAY_MS),
       distinctUntilChanged(),
       switchMap((query) =>
         query.length < MIN_QUERY_LENGTH
-          ? of(NO_SUGGESTIONS)
-          : from(this.api.invoke(suggest, { q: query })).pipe(catchError(() => of(NO_SUGGESTIONS))),
+          ? of<Found>({ query, suggestions: NO_SUGGESTIONS })
+          : from(this.api.invoke(suggest, { q: query })).pipe(
+              map((suggestions): Found => ({ query, suggestions })),
+              // Offline: no suggestion, and no "no result" either
+              catchError(() => of<Found>({ query: '', suggestions: NO_SUGGESTIONS })),
+            ),
       ),
     ),
-    { initialValue: NO_SUGGESTIONS },
+    { initialValue: { query: '', suggestions: NO_SUGGESTIONS } },
   );
+  private readonly suggestions = computed(() => this.found().suggestions);
+
+  protected readonly maxServings = MAX_SERVINGS;
+  /** "gâteau 8": 8, shown on the right of the field. */
+  protected readonly servings = computed(() => servingsIn(this.query()));
+  protected readonly typedQuery = computed(() => this.typed().trim());
 
   protected readonly groups = computed<SuggestionGroup[]>(() => {
     const found = this.suggestions();
@@ -100,6 +120,11 @@ export class SearchBox {
     });
     return [
       group(
+        'Thèmes',
+        'chef-hat',
+        (found.themes ?? []).map((theme) => ({ kind: 'theme', label: `Recettes ${themeLabel(theme).toLowerCase()}es`, theme })),
+      ),
+      group(
         'Recettes',
         'book-open',
         found.recipes.map((recipe) => ({ kind: 'recipe', label: recipe.title, slug: recipe.slug, categorySlug: recipe.categorySlug })),
@@ -111,7 +136,14 @@ export class SearchBox {
     ].filter((each) => each.items.length > 0);
   });
   private readonly highlighted = computed(() => this.groups().flatMap((each) => each.items));
-  protected readonly expanded = computed(() => this.focused() && this.highlighted().length > 0);
+  /** The suggestions of what is typed came back empty. */
+  private readonly nothingFound = computed(() => {
+    const query = this.typedQuery();
+    return query.length >= MIN_QUERY_LENGTH && this.found().query === query && this.highlighted().length === 0;
+  });
+  protected readonly expanded = computed(
+    () => this.focused() && (this.highlighted().length > 0 || this.nothingFound()),
+  );
   protected readonly activeOptionId = computed(() =>
     this.expanded() && this.activeIndex() >= 0 ? `${this.listboxId}-${this.activeIndex()}` : null,
   );
@@ -169,6 +201,16 @@ export class SearchBox {
   protected choose(pick: SearchPick): void {
     this.focused.set(false);
     this.picked.emit({ pick, servings: servingsIn(this.query()) });
+  }
+
+  /** − and + beside the number of people: the number changes in the search itself. */
+  protected changeServings(step: number): void {
+    const servings = this.servings();
+    if (!servings) {
+      return;
+    }
+    const next = Math.min(MAX_SERVINGS, Math.max(1, servings + step));
+    this.query.set(withServings(this.query(), next));
   }
 
   protected clear(): void {

@@ -47,6 +47,8 @@ class RestoredData {
 
 	private static final int LISTED_NAMES = 50;
 
+	static final String RESTORED_LATE_FAILURE = "Sauvegarde restaurée après l'heure prévue : la recette n'a pas été publiée";
+
 	private final DataSource dataSource;
 
 	private final TransactionTemplate transactions;
@@ -239,7 +241,8 @@ class RestoredData {
 			Map<Long, Long> ingredients) {
 		Set<String> existing = strings(site, "select slug from recipe");
 		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
-		boolean featuredTaken = site.sql("select exists (select 1 from recipe where featured)").query(Boolean.class).single();
+		// One featured recipe per theme
+		Set<String> featuredThemes = strings(site, "select theme from recipe where featured and status = 'PUBLISHED'");
 		long added = 0;
 		for (Map<String, Object> recipe : scratch.sql("select * from recipe order by id").query().listOfRows()) {
 			if (existing.contains((String) recipe.get("slug"))) {
@@ -249,10 +252,11 @@ class RestoredData {
 			long backupId = ((Number) values.remove("id")).longValue();
 			values.computeIfPresent("image_id", (key, id) -> images.contains(id) ? id : null);
 			values.computeIfPresent("pinterest_image_id", (key, id) -> images.contains(id) ? id : null);
-			boolean featured = Boolean.TRUE.equals(values.get("featured")) && !featuredTaken;
-			featuredTaken |= featured;
+			// A publication scheduled in the backup is never done by surprise: the admin schedules it again.
+			// A recipe featured ahead of its publication is then featured no more.
+			boolean featured = Boolean.TRUE.equals(values.get("featured")) && "PUBLISHED".equals(values.get("status"))
+					&& featuredThemes.add((String) values.get("theme"));
 			values.put("featured", featured);
-			// A publication scheduled in the backup is never done by surprise: the admin schedules it again
 			values.put("scheduled_at", null);
 			long siteId = insertReturningId(site, "recipe", values);
 			for (Map<String, Object> link : scratch.sql("select category_id, position from recipe_category where recipe_id = :id")
@@ -429,8 +433,13 @@ class RestoredData {
 			finally {
 				DataSourceUtils.releaseConnection(siteConnection, dataSource);
 			}
-			// A publication scheduled in the past would happen within a minute, notification included
-			site.sql("update recipe set scheduled_at = null where scheduled_at < now()").update();
+			// A publication scheduled in the past would happen within a minute, notification included: it
+			// fails instead, and the admin publishes it or schedules it again
+			site.sql("""
+					update recipe set status = 'FAILED', publication_failure = :reason
+					where status = 'DRAFT' and scheduled_at < now()""")
+				.param("reason", RESTORED_LATE_FAILURE)
+				.update();
 			for (Map<String, Object> identity : site.sql("""
 					select table_name, column_name from information_schema.columns
 					where table_schema = 'public' and is_identity = 'YES'""").query().listOfRows()) {

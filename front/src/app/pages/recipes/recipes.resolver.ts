@@ -8,6 +8,7 @@ import { TagSummary } from '../../core/api/generated/models/tag-summary';
 import { PageResponseRecipeCard } from '../../core/api/generated/models/page-response-recipe-card';
 import { PageSeo, excerpt } from '../../core/seo/page-seo';
 import { SiteData } from '../../core/site/site-data';
+import { Theme, themeOfSlug } from '../../shared/format/themes';
 import { RECIPES_PATH } from '../../shared/routing/links';
 
 export const PAGE_SIZES = [12, 24, 48] as const;
@@ -21,6 +22,9 @@ export const RECIPES_QUERY = {
   tag: 'tag',
   time: 'temps',
   difficulty: 'difficulte',
+  theme: 'theme',
+  /** Not a filter: the number of people the recipes opened from the list show their quantities for. */
+  servings: 'portions',
   page: 'page',
   pageSize: 'parPage',
 } as const;
@@ -49,6 +53,8 @@ export interface RecipeFilters {
   /** Ready in at most this many minutes. */
   maxMinutes: number | null;
   difficulty: DifficultyFilter | null;
+  /** Sucré or salé (?theme=sucre). */
+  theme: Theme | null;
   /** Starts at 1, as displayed. */
   page: number;
   pageSize: number;
@@ -76,6 +82,7 @@ export function readFilters(params: ParamMap): RecipeFilters {
     tag: params.get(RECIPES_QUERY.tag) || null,
     maxMinutes: (TIME_FILTERS as readonly number[]).includes(time) ? time : null,
     difficulty: difficulty && difficulty in DIFFICULTY_FILTERS ? (difficulty as DifficultyFilter) : null,
+    theme: themeOfSlug(params.get(RECIPES_QUERY.theme)),
     page: Number.isInteger(page) && page >= 1 ? page : 1,
     pageSize: (PAGE_SIZES as readonly number[]).includes(pageSize) ? pageSize : DEFAULT_PAGE_SIZE,
   };
@@ -108,6 +115,7 @@ export const recipesResolver: ResolveFn<RecipesPageData> = async (route) => {
       tag: filters.tag ?? undefined,
       maxMinutes: filters.maxMinutes ?? undefined,
       difficulty: filters.difficulty ? DIFFICULTY_FILTERS[filters.difficulty] : undefined,
+      theme: filters.theme ?? undefined,
       page: filters.page - 1,
       size: filters.pageSize,
     }),
@@ -148,6 +156,7 @@ export function recipesSeo(route: ActivatedRouteSnapshot): PageSeo {
       filters.tag !== null ||
       filters.maxMinutes !== null ||
       filters.difficulty !== null ||
+      filters.theme !== null ||
       result.content.length === 0,
   };
 }

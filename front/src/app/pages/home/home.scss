@@ -102,6 +102,38 @@
   }
 }
 
+// Sweet and savory: one under the other on phones, side by side from tablets on, a little less wide
+.hero--pair {
+  display: grid;
+  gap: var(--space-4);
+
+  @include m.from(md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+
+  // Square on phones: the two of them leave the search in sight sooner
+  .hero__card {
+    aspect-ratio: 1 / 1;
+
+    @include m.from(sm) {
+      aspect-ratio: 16 / 10;
+    }
+
+    @include m.from(md) {
+      aspect-ratio: 4 / 5;
+    }
+
+    @include m.from(lg) {
+      aspect-ratio: 5 / 4;
+    }
+  }
+
+  .hero__title {
+    font-size: var(--text-2xl);
+  }
+}
+
 .hero__welcome {
   display: grid;
   gap: var(--space-3);

@@ -47,7 +47,14 @@
           (mouseenter)="activeIndex.set(i)"
           (click)="choose(i)"
         >
-          {{ item.option.label }}
+          @if (item.option.hint) {
+            <span class="option__text">
+              {{ item.option.label }}
+              <small class="option__hint">{{ item.option.hint }}</small>
+            </span>
+          } @else {
+            {{ item.option.label }}
+          }
           @if (item.index === selectedIndex()) {
             <svg yonaIcon="check" class="option__check" [size]="16" [strokeWidth]="2.5"></svg>
           }

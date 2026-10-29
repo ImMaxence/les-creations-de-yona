@@ -23,7 +23,9 @@ import org.jspecify.annotations.Nullable;
 public record RecipeForm(
 		@NotBlank @Size(max = 150) String title,
 		@Size(max = 1000) @Nullable String intro,
-		@NotNull RecipeStatus status,
+		@Schema(description = "DRAFT or PUBLISHED: FAILED is set by the site only") @NotNull RecipeStatus status,
+		@NotNull RecipeTheme theme,
+		@Schema(description = "Published, or scheduled: featured once published, in place of the featured recipe of its theme")
 		@NotNull Boolean featured,
 		@Schema(description = "Each one once; the first one is the main category, in the recipe URL")
 		@NotEmpty @Size(max = 10) List<@NotNull Long> categoryIds,

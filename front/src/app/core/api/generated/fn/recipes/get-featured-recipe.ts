@@ -10,11 +10,13 @@ import { RequestBuilder } from '../../request-builder';
 import { RecipeCard } from '../../models/recipe-card';
 
 export interface GetFeaturedRecipe$Params {
+  theme?: 'SWEET' | 'SAVORY';
 }
 
 export function getFeaturedRecipe(http: HttpClient, rootUrl: string, params?: GetFeaturedRecipe$Params, context?: HttpContext): Observable<StrictHttpResponse<RecipeCard>> {
   const rb = new RequestBuilder(rootUrl, getFeaturedRecipe.PATH, 'get');
   if (params) {
+    rb.query('theme', params.theme, {});
   }
 
   return http.request(

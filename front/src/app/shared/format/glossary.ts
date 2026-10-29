@@ -1,10 +1,10 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
 
-/** Finds the glossary words in a text, whatever their case and accents. */
+/** Finds the glossary words in a text, whatever their case, accents and separators. */
 export interface GlossaryMatcher {
   pattern: RegExp | null;
-  /** By folded spelling (name or other form). */
+  /** By key of each spelling (name or other form), see glossaryKey. */
   terms: ReadonlyMap<string, GlossaryTermResponse>;
 }
 
@@ -26,6 +26,17 @@ export function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('fr');
 }
 
+/** Hyphens, underscores and spaces between the words of a term: "pâte-à-choux", "pâte_à_choux", "pâte à choux". */
+const SEPARATORS = /[\s\-_\u2010\u2011]+/g;
+
+/**
+ * How a spelling is looked up: folded, its separators as one space, its apostrophes straight.
+ * "Pâte-à-Choux" and "pate a choux" have the same key; so have "Chemiser" and "chemiser".
+ */
+export function glossaryKey(text: string): string {
+  return fold(text).replace(SEPARATORS, ' ').replace(/[’‘]/g, "'").trim();
+}
+
 /** Alphabetical the French way, as in a dictionary: "Éclair" before "Émulsionner", "Œuf" after "Ganache". */
 export function byGlossaryName(a: GlossaryTermResponse, b: GlossaryTermResponse): number {
   return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
@@ -35,7 +46,7 @@ export function glossaryMatcher(terms: GlossaryTermResponse[]): GlossaryMatcher 
   const byForm = new Map<string, GlossaryTermResponse>();
   for (const term of terms) {
     for (const form of [term.name, ...term.forms]) {
-      const key = fold(form.trim());
+      const key = glossaryKey(form);
       if (key && !byForm.has(key)) {
         byForm.set(key, term);
       }
@@ -82,7 +93,7 @@ export function highlightTerms(html: string, matcher: GlossaryMatcher): string {
         return chunk;
       }
       return chunk.replace(pattern, (word) => {
-        const term = matcher.terms.get(fold(word));
+        const term = matcher.terms.get(glossaryKey(word));
         if (!term || seen.has(term.id)) {
           return word;
         }
@@ -96,7 +107,7 @@ export function highlightTerms(html: string, matcher: GlossaryMatcher): string {
 /** The glossary word a click or a key press landed on, if any. */
 export function termAt(event: Event, matcher: GlossaryMatcher): { term: GlossaryTermResponse; element: HTMLElement } | null {
   const element = (event.target as Element | null)?.closest?.('dfn.glossary-term');
-  const term = element ? matcher.terms.get(fold(element.textContent ?? '')) : undefined;
+  const term = element ? matcher.terms.get(glossaryKey(element.textContent ?? '')) : undefined;
   return element && term ? { term, element: element as HTMLElement } : null;
 }
 
@@ -108,20 +119,26 @@ export class GlossaryPipe implements PipeTransform {
   }
 }
 
-function spellings(folded: string): string {
-  return [...folded]
+/**
+ * The pattern of a key. Only the characters that mean something in a pattern are escaped: an
+ * escaped hyphen ("\\-") is an error with the u flag, and made the whole glossary disappear as soon
+ * as a word had one.
+ */
+function spellings(key: string): string {
+  return [...key]
     .map((char) => {
       if (ACCENTS[char]) {
         return `[${ACCENTS[char]}]`;
       }
-      if (/\s/.test(char)) {
-        return '\\s+';
+      // A space of the key: any separator in the text ("pâte-à-choux" for "pâte à choux")
+      if (char === ' ') {
+        return '[\\s\\-_\\u2010\\u2011]+';
       }
       // Apostrophes are typed either way
-      if (char === "'" || char === '’') {
-        return "['’]";
+      if (char === "'") {
+        return "['’‘]";
       }
-      return char.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
+      return char.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
     })
     .join('');
 }

@@ -444,3 +444,14 @@ a.admin-row__title {
     visibility: visible;
   }
 }
+
+// "Actualiser" at the end of the memory panel's heading
+.storage__refresh {
+  margin-left: auto;
+}
+
+// The failed publications lead to the list filtered on them
+.failed-link {
+  color: var(--color-danger);
+  font-weight: 700;
+}

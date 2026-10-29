@@ -20,8 +20,29 @@ class SearchWordsTest {
 		assertThat(SearchWords.of("recette 8 personnes")).isEmpty();
 		assertThat(SearchWords.of("brioche 6 parts")).containsExactly("brioche");
 		assertThat(SearchWords.of("lasagnes 10 pers.")).containsExactly("lasagne");
-		// A number alone stays: "3 chocolats"
+		// A number alone is a number of people too, unless a word follows it: "3 chocolats"
+		assertThat(SearchWords.of("gâteau 12")).containsExactly("gateau");
+		assertThat(SearchWords.of("gâteau pour 4")).containsExactly("gateau");
 		assertThat(SearchWords.of("3 chocolats")).containsExactly("chocolat");
+		assertThat(SearchWords.of("quatre-quarts 4 quarts")).containsExactly("quatre", "quart");
+	}
+
+	@Test
+	void takesTheThemeOutOfTheWords() {
+		assertThat(SearchWords.of("cake salé")).containsExactly("cake");
+		assertThat(SearchWords.of("tartes sucrées")).containsExactly("tarte");
+		assertThat(SearchWords.theme("cake salé")).isEqualTo(SearchWords.SAVORY);
+		assertThat(SearchWords.theme("Tartes SUCRÉES")).isEqualTo(SearchWords.SWEET);
+		assertThat(SearchWords.theme("quiche sale")).isEqualTo(SearchWords.SAVORY);
+	}
+
+	@Test
+	void keepsSugarAnIngredient() {
+		// Without its accent, "sucre" is the ingredient, not the theme
+		assertThat(SearchWords.of("tarte au sucre")).containsExactly("tarte", "sucre");
+		assertThat(SearchWords.theme("tarte au sucre")).isNull();
+		assertThat(SearchWords.theme("sucré salé")).isNull();
+		assertThat(SearchWords.theme("salade")).isNull();
 	}
 
 	@Test
@@ -32,6 +53,16 @@ class SearchWordsTest {
 		assertThat(SearchWords.allIn(words, "Déjeuner")).isFalse();
 		assertThat(SearchWords.allIn(SearchWords.of("pommes"), "Tarte aux pommes")).isTrue();
 		assertThat(SearchWords.allIn(List.of(), "Tarte")).isFalse();
+	}
+
+	@Test
+	void findsTheNameThatIsOneOfTheWords() {
+		List<String> words = SearchWords.of("gâteau au yaourt");
+
+		assertThat(SearchWords.isOneOf(words, "Yaourt")).isTrue();
+		assertThat(SearchWords.isOneOf(SearchWords.of("tarte pomme"), "Pommes")).isTrue();
+		assertThat(SearchWords.isOneOf(SearchWords.of("tarte pâte feuilletée"), "Pâte feuilletée")).isTrue();
+		assertThat(SearchWords.isOneOf(words, "Yaourt grec")).isFalse();
 	}
 
 }

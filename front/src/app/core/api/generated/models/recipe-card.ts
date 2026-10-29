@@ -12,9 +12,14 @@ export interface RecipeCard {
   imageId?: string;
 
   /**
-   * First publication: the date shown; absent only for cards kept in a browser before 3.1
+   * First publication: the date shown; absent only for cards kept in a browser before 1.1
    */
   publishedAt?: string;
   slug: string;
+
+  /**
+   * Absent only for cards kept in a browser before 1.10
+   */
+  theme?: 'SWEET' | 'SAVORY';
   title: string;
 }

@@ -20,9 +20,28 @@ export interface ShoppingRecipe {
   title: string;
   /** For the link back to the recipe: /recettes/{categorySlug}/{slug}. */
   categorySlug: string;
-  /** Servings the quantities are for; null when the recipe gives none. */
+  /** Servings the quantities of `lines` are for; null when the recipe gives none. */
   servings: number | null;
+  /** Servings chosen on the list page afterwards, the quantities following; absent: `servings`. */
+  chosenServings?: number;
   lines: ShoppingLine[];
+}
+
+/** Changed on the list page, one by one. */
+export const MAX_LIST_SERVINGS = 50;
+
+/** The servings the recipe is on the list for: those chosen on the list, else those added. */
+export function shownServings(recipe: ShoppingRecipe): number | null {
+  return recipe.servings ? (recipe.chosenServings ?? recipe.servings) : null;
+}
+
+/** Its lines for the servings chosen on the list, rounded to measurable values. */
+export function linesFor(recipe: ShoppingRecipe): ShoppingLine[] {
+  const servings = shownServings(recipe);
+  const ratio = recipe.servings && servings ? servings / recipe.servings : 1;
+  return ratio === 1
+    ? recipe.lines
+    : recipe.lines.map((line) => ({ ...line, quantity: line.quantity == null ? null : roundForKitchen(line.quantity * ratio) }));
 }
 
 interface ShoppingState {
@@ -88,7 +107,18 @@ export class ShoppingList {
     return this.state().recipes.some((recipe) => recipe.slug === slug);
   }
 
-  /** Added at the end, or updated in place (other servings). */
+  /** For as many people, from the list page: the quantities of the recipe follow. */
+  setServings(slug: string, servings: number): void {
+    const count = Math.min(MAX_LIST_SERVINGS, Math.max(1, Math.round(servings)));
+    this.state.update((state) => ({
+      ...state,
+      recipes: state.recipes.map((recipe) =>
+        recipe.slug === slug && recipe.servings ? { ...recipe, chosenServings: count } : recipe,
+      ),
+    }));
+  }
+
+  /** Added at the end, or updated in place (other servings, those chosen on the list forgotten). */
   add(recipe: ShoppingRecipe): void {
     this.state.update((state) => {
       const index = state.recipes.findIndex((existing) => existing.slug === recipe.slug);

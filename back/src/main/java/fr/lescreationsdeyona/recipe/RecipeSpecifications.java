@@ -44,9 +44,17 @@ final class RecipeSpecifications {
 			criteria.add(titleContains(titleQuery.strip()));
 		}
 		String text = filter.text();
+		RecipeTheme theme = filter.theme();
 		if (StringUtils.hasText(text)) {
 			// Each word somewhere: "chocolat dessert" finds a recipe with chocolate in the desserts
-			SearchWords.of(text).forEach(word -> criteria.add(mentions(word)));
+			SearchWords.of(text).forEach(word -> criteria.add(mentions(word, true)));
+			String typed = SearchWords.theme(text);
+			if (theme == null && typed != null) {
+				criteria.add(themeTyped(RecipeTheme.valueOf(typed)));
+			}
+		}
+		if (theme != null) {
+			criteria.add((recipe, query, cb) -> cb.equal(recipe.get("theme"), theme));
 		}
 		// Each one: "œufs + chocolat" finds the recipes having both
 		for (String ingredientName : filter.ingredientNames()) {
@@ -94,10 +102,21 @@ final class RecipeSpecifications {
 	}
 
 	/**
-	 * A folded word in its title, one of its categories, tags or ingredients. Subqueries rather than
-	 * joins: each recipe comes out once.
+	 * "salé" typed: the savory recipes, but also a sweet one that says it ("Caramel au beurre salé",
+	 * the ingredient "Beurre salé"); a theme typed is not a filter, the visitor may mean the word.
+	 * "sucré": the sweet ones, or a title, category or tag saying it, the ingredient "Sucre" left out
+	 * (any recipe may have some).
 	 */
-	private static Specification<Recipe> mentions(String word) {
+	private static Specification<Recipe> themeTyped(RecipeTheme theme) {
+		Specification<Recipe> sayingIt = theme == RecipeTheme.SAVORY ? mentions("sale", true) : mentions("sucre", false);
+		return (recipe, query, cb) -> cb.or(cb.equal(recipe.get("theme"), theme), sayingIt.toPredicate(recipe, query, cb));
+	}
+
+	/**
+	 * A folded word in its title, one of its categories, tags or ingredients (unless left out).
+	 * Subqueries rather than joins: each recipe comes out once.
+	 */
+	private static Specification<Recipe> mentions(String word, boolean inIngredients) {
 		String pattern = "%" + word + "%";
 		return (recipe, query, cb) -> {
 			Subquery<Integer> categories = query.subquery(Integer.class);
@@ -112,8 +131,8 @@ final class RecipeSpecifications {
 			lines.select(cb.literal(1))
 				.where(cb.equal(line.get("part").get("recipe"), recipe),
 						cb.like(folded(cb, line.get("ingredient").get("name")), pattern));
-			return cb.or(cb.like(folded(cb, recipe.get("title")), pattern), cb.exists(categories), cb.exists(tags),
-					cb.exists(lines));
+			Predicate named = cb.or(cb.like(folded(cb, recipe.get("title")), pattern), cb.exists(categories), cb.exists(tags));
+			return inIngredients ? cb.or(named, cb.exists(lines)) : named;
 		};
 	}
 

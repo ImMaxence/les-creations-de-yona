@@ -11,6 +11,7 @@ describe('readFilters', () => {
         tag: 'vegetarien',
         temps: '30',
         difficulte: 'facile',
+        theme: 'sale',
         page: '2',
         parPage: '24',
       }),
@@ -22,6 +23,7 @@ describe('readFilters', () => {
       tag: 'vegetarien',
       maxMinutes: 30,
       difficulty: 'facile',
+      theme: 'SAVORY',
       page: 2,
       pageSize: 24,
     });

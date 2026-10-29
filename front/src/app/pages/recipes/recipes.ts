@@ -4,7 +4,8 @@ import { SiteData } from '../../core/site/site-data';
 import { Reveal } from '../../shared/motion/reveal';
 import { keepScrollThroughNextNavigation } from '../../shared/routing/kept-scroll';
 import { RECIPES_PATH } from '../../shared/routing/links';
-import { SearchChoice, searchTarget, servingsIn } from '../../shared/search/search-target';
+import { THEMES, Theme, themeLabel, themeSlug } from '../../shared/format/themes';
+import { MAX_SERVINGS, SearchChoice, searchTarget, servingsIn } from '../../shared/search/search-target';
 import { Button } from '../../shared/ui/button/button';
 import { Pagination } from '../../shared/ui/pagination/pagination';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
@@ -21,6 +22,9 @@ import {
   sameName,
 } from './recipes.resolver';
 import { Icon } from '../../shared/ui/icon/icon';
+
+/** "Pour combien de personnes ?": the usual numbers; any other one comes from the search. */
+const SERVINGS_CHOICES = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20] as const;
 
 @Component({
   selector: 'yona-recipes',
@@ -41,7 +45,7 @@ import { Icon } from '../../shared/ui/icon/icon';
 export default class Recipes {
   /** From recipesResolver, run again on every query parameter change. */
   readonly data = input.required<RecipesPageData>();
-  /** ?portions=8, from a suggestion of the search: carried to the recipes opened. */
+  /** ?portions=8, chosen on the page or from the search: carried to the recipes opened. */
   readonly portions = input<string>();
 
   private readonly router = inject(Router);
@@ -55,11 +59,20 @@ export default class Recipes {
   }));
 
   protected readonly filters = computed(() => this.data().filters);
-  /** "tarte 8 personnes": each recipe opens with its quantities for 8. */
+  /**
+   * "Pour 8 personnes", or "tarte 8 personnes" searched: each recipe opens with its quantities for
+   * 8. Not a filter: every recipe adapts to any number of people.
+   */
   protected readonly servings = computed(() => {
     const asked = Number(this.portions());
-    return asked >= 1 && asked <= 50 ? asked : servingsIn(this.filters().search);
+    return asked >= 1 && asked <= MAX_SERVINGS ? asked : servingsIn(this.filters().search);
   });
+  protected readonly themes = THEMES;
+  protected readonly themeLabel = themeLabel;
+  protected readonly servingsOptions: SelectOption<number | null>[] = [
+    { value: null, label: 'Comme la recette' },
+    ...SERVINGS_CHOICES.map((count) => ({ value: count, label: `Pour ${count} personne${count > 1 ? 's' : ''}` })),
+  ];
   protected readonly result = computed(() => this.data().result);
   protected readonly activeCategory = computed(
     () => this.categories().find((category) => category.slug === this.filters().category) ?? null,
@@ -76,6 +89,8 @@ export default class Recipes {
   protected readonly hasFilters = computed(
     () =>
       this.filters().search !== '' ||
+      this.filters().theme !== null ||
+      this.servings() !== null ||
       this.filters().category !== null ||
       this.filters().ingredients.length > 0 ||
       this.moreFiltersCount() > 0,
@@ -128,6 +143,16 @@ export default class Recipes {
     const count = this.result().totalElements;
     return count === 0 ? 'Aucune recette' : count === 1 ? '1 recette' : `${count} recettes`;
   });
+
+  protected changeTheme(theme: Theme | null): void {
+    this.updateQuery({ [RECIPES_QUERY.theme]: theme ? themeSlug(theme) : null, [RECIPES_QUERY.page]: null });
+  }
+
+  /** Kept in the URL: the cards open their recipe for that many people. */
+  protected changeServings(servings: number | null | undefined): void {
+    this.keepScroll();
+    this.updateQuery({ [RECIPES_QUERY.servings]: servings ?? null });
+  }
 
   protected changeCategory(slug: string | undefined): void {
     this.updateQuery({ [RECIPES_QUERY.category]: slug || null, [RECIPES_QUERY.page]: null });

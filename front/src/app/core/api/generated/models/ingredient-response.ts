@@ -6,7 +6,7 @@ export interface IngredientResponse {
   /**
    * Shop aisle, for the shopping list; absent until set
    */
-  aisle?: 'FRUITS_VEGETABLES' | 'MEAT_FISH' | 'DAIRY_EGGS' | 'BAKERY' | 'SAVORY_GROCERY' | 'SWEET_GROCERY' | 'FROZEN' | 'DRINKS';
+  aisle?: 'FRUITS_VEGETABLES' | 'MEAT_FISH' | 'FRESH' | 'DAIRY_EGGS' | 'SAVORY_GROCERY' | 'SWEET_GROCERY' | 'FROZEN' | 'DRINKS';
   id: number;
   name: string;
 

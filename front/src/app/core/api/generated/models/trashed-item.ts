@@ -20,6 +20,6 @@ export interface TrashedItem {
   /**
    * A recipe's only
    */
-  status?: 'DRAFT' | 'PUBLISHED';
+  status?: 'DRAFT' | 'PUBLISHED' | 'FAILED';
   title: string;
 }

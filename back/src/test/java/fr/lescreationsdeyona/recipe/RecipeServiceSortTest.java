@@ -33,7 +33,7 @@ class RecipeServiceSortTest {
 			mock(IngredientService.class), mock(ImageService.class), mock(TagService.class), mock(MenuService.class),
 			mock(TrashBin.class), mock(RecipeMapper.class), mock(ApplicationEventPublisher.class), mock(AuditLog.class));
 
-	private final RecipeFilter noFilter = new RecipeFilter(null, null, null, null, List.of(), null, null, null, null, null);
+	private final RecipeFilter noFilter = new RecipeFilter(null, null, null, null, List.of(), null, null, null, null, null, null);
 
 	@SuppressWarnings("unchecked")
 	private void anyPageIsEmpty() {

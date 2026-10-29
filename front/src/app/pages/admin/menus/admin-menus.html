@@ -67,8 +67,8 @@
                 <span class="menu-recipe__position">{{ i + 1 }}</span>
                 <span class="menu-recipe__title">
                   {{ recipe.title }}
-                  @if (recipe.status === 'DRAFT') {
-                    <span class="badge">Brouillon</span>
+                  @if (recipe.status !== 'PUBLISHED') {
+                    <span class="badge" [class.badge--failed]="recipe.status === 'FAILED'" [class.badge--draft]="recipe.status === 'DRAFT'">{{ recipe.status === 'FAILED' ? 'Échec' : 'Brouillon' }}</span>
                   }
                 </span>
                 <button type="button" class="icon-button" [attr.aria-label]="'Monter ' + recipe.title" [disabled]="i === 0" (click)="moveRecipe(i, -1)">

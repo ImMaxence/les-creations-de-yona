@@ -28,6 +28,20 @@ const MISSING_LABELS: Record<IncompleteRecipe['missing'][number], string> = {
   DIFFICULTY: 'Difficulté',
 };
 
+/** "3 j 4 h", "2 h 05", "12 min": since the backend started. */
+export function duration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) {
+    return `${days} j ${hours % 24} h`;
+  }
+  if (hours > 0) {
+    return `${hours} h ${String(minutes % 60).padStart(2, '0')}`;
+  }
+  return `${minutes} min`;
+}
+
 /** A bar of a one-series chart: its share of the largest value, for its length. */
 interface Bar {
   label: string;
@@ -93,6 +107,31 @@ export default class AdminStats {
   });
 
   /** Shares of the disk: the photos, everything else used, and the free room. */
+  /** Memory and processor: the backend's share of the machine's memory, the rest used, the free part. */
+  protected readonly server = computed(() => {
+    const usage = this.stats.value()?.server;
+    if (!usage || !usage.machineMemoryBytes) {
+      return null;
+    }
+    const total = usage.machineMemoryBytes;
+    const used = Math.max(0, total - usage.machineFreeMemoryBytes);
+    const backend = Math.min(used, usage.backendMemoryBytes ?? usage.heapUsedBytes);
+    const other = Math.max(0, used - backend);
+    const load = (share: number | null | undefined) => (share == null ? '—' : PERCENT.format(share));
+    return {
+      ...usage,
+      backend,
+      other,
+      backendCpu: load(usage.backendCpuLoad),
+      machineCpu: load(usage.machineCpuLoad),
+      usedShare: used / total,
+      backendShare: backend / total,
+      otherShare: other / total,
+      freeShare: usage.machineFreeMemoryBytes / total,
+      uptime: duration(usage.uptimeSeconds),
+    };
+  });
+
   protected readonly storage = computed(() => {
     const storage = this.stats.value()?.storage;
     if (!storage) {

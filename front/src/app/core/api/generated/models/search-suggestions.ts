@@ -11,7 +11,7 @@ export interface SearchSuggestions {
   categories: Array<Named>;
 
   /**
-   * Ingredients of published recipes, whose name holds each word
+   * Ingredients of published recipes whose name holds each word, or is one of the words ("Yaourt" for "gâteau au yaourt")
    */
   ingredients: Array<string>;
 
@@ -21,7 +21,7 @@ export interface SearchSuggestions {
   menus: Array<Named>;
 
   /**
-   * Published recipes mentioning each word (title, category, tag, ingredient), 5 at most
+   * Published recipes mentioning each word (title, category, tag, ingredient), of the theme typed, 5 at most
    */
   recipes: Array<RecipeSuggestion>;
 
@@ -29,4 +29,9 @@ export interface SearchSuggestions {
    * Tags of published recipes, whose name holds each word
    */
   tags: Array<Named>;
+
+  /**
+   * "Sucré" or "Salé" typed (accents matter: "sucre" is the ingredient), or a theme beginning with what is typed ("sal")
+   */
+  themes: Array<'SWEET' | 'SAVORY'>;
 }

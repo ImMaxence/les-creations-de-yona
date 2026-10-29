@@ -35,7 +35,8 @@ export interface SearchRecipes$Params {
  * Id of its photo or of its Pinterest photo
  */
   imageId?: string;
-  status?: 'DRAFT' | 'PUBLISHED';
+  status?: 'DRAFT' | 'PUBLISHED' | 'FAILED';
+  theme?: 'SWEET' | 'SAVORY';
 
 /**
  * Zero-based page index (0..N)
@@ -62,6 +63,7 @@ export function searchRecipes(http: HttpClient, rootUrl: string, params?: Search
     rb.query('ingredientId', params.ingredientId, {});
     rb.query('imageId', params.imageId, {});
     rb.query('status', params.status, {});
+    rb.query('theme', params.theme, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});
     rb.query('sort', params.sort, {});

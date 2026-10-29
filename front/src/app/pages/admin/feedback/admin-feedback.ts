@@ -85,11 +85,24 @@ const PAGE_SIZE = 20;
     </section>
   `,
   styles: `
+    // A card: the row's outline, the message on the surface colour, read ones quieter
+    .feedback {
+      align-items: flex-start;
+      padding: var(--space-4);
+      border: 1px solid var(--color-line);
+      box-shadow: var(--shadow-sm);
+    }
+
+    // Unread: an accent bar on the left, inside the outline rather than in place of it
     .feedback.is-unread {
-      box-shadow: inset 3px 0 0 var(--color-accent);
+      border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-line));
+      border-left: 4px solid var(--color-accent);
     }
 
     .feedback__message {
+      padding: var(--space-3);
+      border-radius: var(--radius-sm);
+      background-color: var(--color-surface);
       white-space: pre-line;
       overflow-wrap: anywhere;
     }

@@ -17,6 +17,8 @@ import { attempt } from '../../../core/api/attempt';
 import { deleteRecipe } from '../../../core/api/generated/fn/admin-recipes/delete-recipe';
 import { deleteRecipes } from '../../../core/api/generated/fn/admin-recipes/delete-recipes';
 import { duplicateRecipe } from '../../../core/api/generated/fn/admin-recipes/duplicate-recipe';
+import { publishRecipe } from '../../../core/api/generated/fn/admin-recipes/publish-recipe';
+import { THEMES, Theme, themeLabel, themeOfSlug, themeSlug } from '../../../shared/format/themes';
 import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
 import { PageResponseRecipeAdminSummary } from '../../../core/api/generated/models/page-response-recipe-admin-summary';
@@ -40,7 +42,16 @@ import { Selection } from '../selection';
 import { ADMIN_RECIPES_QUERY } from './admin-recipes-query';
 import { Icon } from '../../../shared/ui/icon/icon';
 
-type StatusFilter = 'ALL' | 'DRAFT' | 'PUBLISHED';
+type Status = RecipeAdminSummary['status'];
+type StatusFilter = 'ALL' | Status;
+type ThemeFilter = 'ALL' | Theme;
+
+/** The name and colour of each status (see .badge--…): grey draft, green published, red failure. */
+const STATUSES: Record<Status, { label: string; badge: string }> = {
+  DRAFT: { label: 'Brouillon', badge: 'badge--draft' },
+  PUBLISHED: { label: 'Publiée', badge: 'badge--published' },
+  FAILED: { label: 'Échec', badge: 'badge--failed' },
+};
 type SortOrder = 'modification' | 'creation' | 'anciennes' | 'titre' | 'titre-inverse' | 'vues';
 
 /** Sent to the API; the id keeps equal titles or counts in the same order from one page to the next. */
@@ -84,6 +95,7 @@ export default class AdminRecipes {
   // Query parameters, bound by the router
   readonly q = input<string>();
   readonly statut = input<string>();
+  readonly theme = input<string>();
   readonly categorie = input<string>();
   readonly tag = input<string>();
   readonly idIngredient = input<string>();
@@ -99,11 +111,19 @@ export default class AdminRecipes {
 
   protected readonly categoryNames = categoryNames;
   protected readonly parisDateTime = parisDateTime;
+  protected readonly statuses = STATUSES;
+  protected readonly themeLabel = themeLabel;
   protected readonly statusOptions: SelectOption<StatusFilter>[] = [
     { value: 'ALL', label: 'Tous les statuts' },
     { value: 'PUBLISHED', label: 'Publiées' },
     { value: 'DRAFT', label: 'Brouillons' },
+    { value: 'FAILED', label: 'En échec' },
   ];
+  protected readonly themeOptions: SelectOption<ThemeFilter>[] = [
+    { value: 'ALL', label: 'Sucré et salé' },
+    ...THEMES.map(({ value, label }) => ({ value, label })),
+  ];
+  protected readonly publishing = signal<number | null>(null);
   protected readonly sortOptions: SelectOption<SortOrder>[] = [
     { value: 'modification', label: 'Dernières modifiées' },
     { value: 'creation', label: 'Dernières créées' },
@@ -118,9 +138,11 @@ export default class AdminRecipes {
     ...this.categories().map((category) => ({ value: category.slug, label: category.name })),
   ]);
 
-  protected readonly status = computed<StatusFilter>(() =>
-    this.statut() === 'PUBLISHED' || this.statut() === 'DRAFT' ? (this.statut() as StatusFilter) : 'ALL',
-  );
+  protected readonly status = computed<StatusFilter>(() => {
+    const status = this.statut();
+    return status && status in STATUSES ? (status as Status) : 'ALL';
+  });
+  protected readonly themeFilter = computed<ThemeFilter>(() => themeOfSlug(this.theme()) ?? 'ALL');
   protected readonly sort = computed<SortOrder>(() => {
     const sort = this.tri();
     return sort && sort in SORTS ? (sort as SortOrder) : DEFAULT_SORT;
@@ -148,7 +170,8 @@ export default class AdminRecipes {
   protected readonly recipes = resource({
     params: () => ({
       q: this.q()?.trim() || undefined,
-      status: this.status() === 'ALL' ? undefined : (this.status() as 'DRAFT' | 'PUBLISHED'),
+      status: this.status() === 'ALL' ? undefined : (this.status() as Status),
+      theme: this.themeFilter() === 'ALL' ? undefined : (this.themeFilter() as Theme),
       category: this.category() || undefined,
       tag: this.tagSlug() || undefined,
       ingredientId: this.ingredientId(),
@@ -184,6 +207,7 @@ export default class AdminRecipes {
     () =>
       !!this.q()?.trim() ||
       this.status() !== 'ALL' ||
+      this.themeFilter() !== 'ALL' ||
       !!this.category() ||
       !!this.tagSlug() ||
       this.ingredientId() !== undefined ||
@@ -229,6 +253,21 @@ export default class AdminRecipes {
     this.search.set((event.target as HTMLInputElement).value);
   }
 
+
+  protected changeTheme(theme: ThemeFilter | undefined): void {
+    this.updateQuery({ [ADMIN_RECIPES_QUERY.theme]: theme && theme !== 'ALL' ? themeSlug(theme) : null });
+  }
+
+  /** "Publier maintenant": a failed recipe (or any draft) published at once. */
+  protected async publishNow(recipe: RecipeAdminSummary): Promise<void> {
+    this.publishing.set(recipe.id);
+    const published = await attempt(this.api.invoke(publishRecipe, { id: recipe.id }));
+    this.publishing.set(null);
+    if (published.ok) {
+      this.toaster.success(`« ${recipe.title} » publiée`);
+      this.recipes.reload();
+    }
+  }
 
   protected changeStatus(status: StatusFilter | undefined): void {
     this.updateQuery({ [ADMIN_RECIPES_QUERY.status]: status && status !== 'ALL' ? status : null });

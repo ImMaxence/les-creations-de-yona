@@ -6,11 +6,17 @@ import { fromParisInput, toParisInput } from '../../../shared/format/paris-time'
 
 export type MoldShapeChoice = 'NONE' | 'ROUND' | 'SQUARE' | 'RECTANGLE';
 
+export type RecipeTheme = RecipeForm['theme'];
+
 /** Editable copy of a recipe: every field exists, empty ones as "" or null. */
 export interface RecipeDraft {
   title: string;
   intro: string;
+  /** A failed recipe comes back as a draft: published or scheduled again by the admin. */
   status: 'DRAFT' | 'PUBLISHED';
+  /** Sucré or salé. */
+  theme: RecipeTheme;
+  /** Published, or scheduled: featured once published, in place of the featured recipe of its theme. */
   featured: boolean;
   /** Drafts only: Paris time, as the datetime-local field shows it ("2026-10-31T10:00"); "" for none. */
   scheduledAt: string;
@@ -90,6 +96,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       title: '',
       intro: '',
       status: 'DRAFT',
+      theme: 'SWEET',
       featured: false,
       scheduledAt: '',
       categoryIds: [],
@@ -112,9 +119,11 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
   return {
     title: recipe.title,
     intro: recipe.intro ?? '',
-    status: recipe.status,
+    status: recipe.status === 'FAILED' ? 'DRAFT' : recipe.status,
+    theme: recipe.theme,
     featured: recipe.featured,
-    scheduledAt: recipe.scheduledAt ? toParisInput(recipe.scheduledAt) : '',
+    // A failed recipe's time has passed: a new one is chosen, or none
+    scheduledAt: recipe.scheduledAt && recipe.status !== 'FAILED' ? toParisInput(recipe.scheduledAt) : '',
     categoryIds: recipe.categories.map((category) => category.id),
     tagIds: recipe.tags.map((tag) => tag.id),
     servings: recipe.servings ?? null,
@@ -167,6 +176,7 @@ export function fromAiDraft(current: RecipeDraft, ai: RecipeAiDraft): RecipeDraf
     ...current,
     title: ai.title ?? '',
     intro: ai.intro ?? '',
+    theme: ai.theme ?? current.theme,
     categoryIds: ai.categoryIds.length ? ai.categoryIds : current.categoryIds,
     tagIds: ai.tagIds.length ? ai.tagIds : current.tagIds,
     servings: ai.servings ?? null,
@@ -200,14 +210,20 @@ export function fromAiDraft(current: RecipeDraft, ai: RecipeAiDraft): RecipeDraf
   };
 }
 
+/** A draft with a publication time. */
+export function isScheduled(draft: RecipeDraft): boolean {
+  return draft.status === 'DRAFT' && fromParisInput(draft.scheduledAt) != null;
+}
+
 /** Request body: blank optional fields are left out rather than sent as "" or null. */
 export function toRecipeForm(draft: RecipeDraft): RecipeForm {
   return {
     title: draft.title.trim(),
     intro: blankToUndefined(draft.intro),
     status: draft.status,
-    featured: draft.featured && draft.status === 'PUBLISHED',
-    scheduledAt: draft.status === 'DRAFT' ? (fromParisInput(draft.scheduledAt) ?? undefined) : undefined,
+    theme: draft.theme,
+    featured: draft.featured && (draft.status === 'PUBLISHED' || isScheduled(draft)),
+    scheduledAt: isScheduled(draft) ? (fromParisInput(draft.scheduledAt) ?? undefined) : undefined,
     categoryIds: draft.categoryIds,
     tagIds: draft.tagIds,
     servings: draft.servings ?? undefined,
@@ -305,8 +321,8 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
       : undefined,
   );
   validate(recipe.featured, ({ value, valueOf }) =>
-    value() && valueOf(recipe.status) !== 'PUBLISHED'
-      ? { kind: 'featuredDraft', message: 'Seule une recette publiée peut être à la une' }
+    value() && valueOf(recipe.status) !== 'PUBLISHED' && !fromParisInput(valueOf(recipe.scheduledAt))
+      ? { kind: 'featuredDraft', message: 'Seule une recette publiée ou programmée peut être à la une' }
       : undefined,
   );
   validate(recipe.scheduledAt, ({ value, valueOf }) => {

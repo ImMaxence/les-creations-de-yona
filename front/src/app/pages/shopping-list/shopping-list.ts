@@ -2,7 +2,14 @@ import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, 
 import { RouterLink } from '@angular/router';
 import { Api } from '../../core/api/generated/api';
 import { listIngredientAisles } from '../../core/api/generated/fn/ingredients/list-ingredient-aisles';
-import { ShoppingList as Basket, ingredientKey } from '../../core/kitchen/shopping-list';
+import {
+  ShoppingList as Basket,
+  MAX_LIST_SERVINGS,
+  ShoppingRecipe,
+  ingredientKey,
+  linesFor,
+  shownServings,
+} from '../../core/kitchen/shopping-list';
 import { Toaster } from '../../core/notifications/toaster';
 import { Aisle, OTHER_AISLE_LABEL, groupByAisle } from '../../shared/format/aisles';
 import { fold } from '../../shared/format/glossary';
@@ -16,7 +23,8 @@ const EXTRA_PREFIX = '+';
 
 /**
  * "Ma liste de courses": the ingredients of the recipes added, the same ones added up (150 g of
- * butter + 50 g = 200 g), plus anything typed by hand. Kept in this browser only; ticked off in
+ * butter + 50 g = 200 g), shown "Beurre (200 g)", plus anything typed by hand. The number of people
+ * of each recipe is changed here too, with − and +. Kept in this browser only; ticked off in
  * the shop, shared as text (WhatsApp, messages…). Sorted by shop aisle, those set in the
  * back-office: read when the list is shown, so that an aisle set later sorts the lists already made.
  */
@@ -48,7 +56,7 @@ export default class ShoppingList {
     const checked = this.basket.checked();
     const parts = this.basket.recipes().map((recipe) => ({
       title: recipe.title,
-      ingredients: recipe.lines.map((line) => ({
+      ingredients: linesFor(recipe).map((line) => ({
         name: line.name,
         quantity: line.quantity ?? undefined,
         unit: line.unit ?? undefined,
@@ -99,6 +107,17 @@ export default class ShoppingList {
     }
   }
 
+  protected readonly shownServings = shownServings;
+  protected readonly maxServings = MAX_LIST_SERVINGS;
+
+  /** − and + beside a recipe: its ingredients follow at once. */
+  protected changeServings(recipe: ShoppingRecipe, step: number): void {
+    const servings = shownServings(recipe);
+    if (servings) {
+      this.basket.setServings(recipe.slug, servings + step);
+    }
+  }
+
   protected recipeLink(recipe: { categorySlug: string; slug: string }): string[] {
     return [RECIPES_PATH, recipe.categorySlug, recipe.slug];
   }
@@ -124,7 +143,7 @@ export default class ShoppingList {
       const toBuy = [
         ...section.items
           .filter((item) => !item.done)
-          .map((item) => `- ${item.amount ? `${item.amount} ` : ''}${item.name}`),
+          .map((item) => `- ${item.name}${item.amount ? ` (${item.amount})` : ''}`),
         ...(section.aisle === null
           ? this.extras()
               .filter((extra) => !extra.done)

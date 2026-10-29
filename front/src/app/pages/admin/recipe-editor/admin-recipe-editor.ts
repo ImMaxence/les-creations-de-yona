@@ -29,6 +29,8 @@ import { createCategory } from '../../../core/api/generated/fn/admin-categories/
 import { createRecipe } from '../../../core/api/generated/fn/admin-recipes/create-recipe';
 import { getRecipeAiStatus } from '../../../core/api/generated/fn/admin-recipe-ai/get-recipe-ai-status';
 import { duplicateRecipe } from '../../../core/api/generated/fn/admin-recipes/duplicate-recipe';
+import { publishRecipe } from '../../../core/api/generated/fn/admin-recipes/publish-recipe';
+import { THEMES } from '../../../shared/format/themes';
 import { previewRecipe } from '../../../core/api/generated/fn/admin-recipes/preview-recipe';
 import { chooseRecipeImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-image';
 import { chooseRecipePinterestImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-pinterest-image';
@@ -56,6 +58,7 @@ import { parisDateTime } from '../../../shared/format/paris-time';
 import {
   MoldShapeChoice,
   PartDraft,
+  RecipeTheme,
   RecipeDraft,
   emptyIngredient,
   emptyPart,
@@ -153,7 +156,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly recipeForm = form(this.draft, recipeSchema);
   /** Last saved state, to warn before leaving with unsaved changes. */
   private readonly savedSnapshot = linkedSignal(() => JSON.stringify(toDraft(this.recipe())));
-  private readonly unsaved = computed(() => JSON.stringify(this.draft()) !== this.savedSnapshot());
+  protected readonly unsaved = computed(() => JSON.stringify(this.draft()) !== this.savedSnapshot());
 
   /**
    * Recipe in parts (the dough, the filling…), each with its title, ingredients and steps.
@@ -165,6 +168,13 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     { value: 'DRAFT', label: 'Brouillon (invisible sur le site)' },
     { value: 'PUBLISHED', label: 'Publiée' },
   ];
+  protected readonly themeOptions: SelectOption<RecipeTheme>[] = THEMES.map(({ value, label }) => ({ value, label }));
+  /** The time a failed publication was planned for: "samedi 31 octobre à 10:00". */
+  protected readonly failedAt = computed(() => {
+    const recipe = this.recipe();
+    return recipe?.status === 'FAILED' && recipe.scheduledAt ? parisDateTime(recipe.scheduledAt) : null;
+  });
+  protected readonly publishing = signal(false);
   protected readonly difficultyOptions = DIFFICULTY_OPTIONS;
   protected readonly moldOptions = MOLD_OPTIONS;
   /** Under the scheduling field: "samedi 31 octobre à 10:00". */
@@ -649,6 +659,21 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     this.usesParts.set(hasParts(ai.parts));
     this.aiFilled.set(true);
     this.toaster.success('Formulaire rempli par l’IA : relisez-le avant d’enregistrer');
+  }
+
+  /** "Publier maintenant", for a failed publication: as saved, without the changes not saved yet. */
+  protected async publishNow(): Promise<void> {
+    const recipe = this.recipe();
+    if (!recipe) {
+      return;
+    }
+    this.publishing.set(true);
+    const published = await attempt(this.api.invoke(publishRecipe, { id: recipe.id }));
+    this.publishing.set(false);
+    if (published.ok) {
+      this.toaster.success('Recette publiée');
+      await this.router.navigate(['/admin/recettes', recipe.id], { onSameUrlNavigation: 'reload' });
+    }
   }
 
   protected async save(): Promise<void> {

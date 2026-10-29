@@ -20,6 +20,37 @@
     (focus)="focused.set(true)"
     (blur)="focused.set(false)"
   />
+  @if (servings()) {
+    <!-- What was understood: the number of people, changed with − and + -->
+    <span class="search__understood">
+      @if (servings(); as count) {
+        <span class="understood understood--servings" role="group" [attr.aria-label]="'Pour ' + count + ' personnes'">
+          <button
+            type="button"
+            class="understood__step"
+            aria-label="Une personne de moins"
+            [disabled]="count <= 1"
+            (mousedown)="$event.preventDefault()"
+            (click)="changeServings(-1)"
+          >
+            <svg yonaIcon="minus" [size]="14" [strokeWidth]="2.5"></svg>
+          </button>
+          <svg yonaIcon="users" [size]="14" [strokeWidth]="2.25"></svg>
+          <span aria-live="polite">{{ count }}<span class="understood__unit"> pers.</span></span>
+          <button
+            type="button"
+            class="understood__step"
+            aria-label="Une personne de plus"
+            [disabled]="count >= maxServings"
+            (mousedown)="$event.preventDefault()"
+            (click)="changeServings(1)"
+          >
+            <svg yonaIcon="plus" [size]="14" [strokeWidth]="2.5"></svg>
+          </button>
+        </span>
+      }
+    </span>
+  }
   @if (query()) {
     <button type="button" class="search__clear" aria-label="Effacer la recherche" (click)="clear()">
       <svg yonaIcon="x" [size]="18"></svg>
@@ -36,6 +67,11 @@
     [id]="listboxId"
     animate.enter="suggestions--enter"
   >
+    @if (servings(); as count) {
+      <p class="suggestions__understood" aria-hidden="true">
+        <svg yonaIcon="users" [size]="14"></svg> Quantités pour <strong>{{ count }} personne{{ count > 1 ? 's' : '' }}</strong>
+      </p>
+    }
     @for (group of groups(); track group.label) {
       <div role="group" class="suggestions__group" [attr.aria-label]="group.label">
         <p class="suggestions__label" aria-hidden="true"><svg [yonaIcon]="group.icon" [size]="14"></svg>{{ group.label }}</p>
@@ -55,7 +91,12 @@
           </div>
         }
       </div>
+    } @empty {
+      <div class="suggestions__empty" role="status">
+        <svg yonaIcon="search-x" [size]="32" [strokeWidth]="1.5"></svg>
+        <p>Aucun résultat pour <strong>« {{ typedQuery() }} »</strong></p>
+        <p>Essayez un autre mot, ou un seul ingrédient</p>
+      </div>
     }
   </div>
 }
-

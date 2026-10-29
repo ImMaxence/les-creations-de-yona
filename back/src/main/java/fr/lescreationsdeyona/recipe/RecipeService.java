@@ -24,6 +24,7 @@ import fr.lescreationsdeyona.trash.TrashBin;
 import fr.lescreationsdeyona.trash.TrashItem;
 import fr.lescreationsdeyona.trash.TrashKind;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,6 +70,14 @@ public class RecipeService {
 
 	private static final String COPY_SUFFIX = " (copie)";
 
+	/**
+	 * A scheduled publication later than this is not done: the site was down at that time, or a
+	 * backup older than it was restored. A redeployment takes a few minutes and passes.
+	 */
+	static final Duration LATE_LIMIT = Duration.ofMinutes(30);
+
+	static final String LATE_FAILURE = "Le site était arrêté à l'heure prévue : plus de 30 minutes de retard, la recette n'a pas été publiée";
+
 	private final RecipeRepository recipeRepository;
 
 	private final CategoryRepository categoryRepository;
@@ -94,17 +103,24 @@ public class RecipeService {
 	/** Published recipes only, whatever {@code filter.status()}; no back-office criteria. */
 	public Page<RecipeCard> searchPublished(RecipeFilter filter, Pageable pageable) {
 		RecipeFilter published = new RecipeFilter(null, filter.text(), filter.categorySlug(), filter.tagSlug(),
-				filter.ingredientNames(), null, null, RecipeStatus.PUBLISHED, filter.maxMinutes(), filter.difficulty());
+				filter.ingredientNames(), null, null, RecipeStatus.PUBLISHED, filter.theme(), filter.maxMinutes(),
+				filter.difficulty());
 		return recipeRepository
 			.findAll(RecipeSpecifications.matching(published), Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
 			.map(recipeMapper::toCard);
 	}
 
-	/** The featured recipe or, if none, the latest published one. */
-	public Optional<RecipeCard> findFeatured() {
-		return recipeRepository.findFirstByFeaturedTrue()
-			.or(() -> recipeRepository.findFirstByStatusOrderByPublishedAtDesc(RecipeStatus.PUBLISHED))
-			.map(recipeMapper::toCard);
+	/**
+	 * The featured recipe of this theme or, if none, its latest published one. Without theme, any
+	 * featured recipe, or the latest published one.
+	 */
+	public Optional<RecipeCard> findFeatured(@Nullable RecipeTheme theme) {
+		Optional<Recipe> featured = theme == null
+				? recipeRepository.findFirstByFeaturedTrueAndStatus(RecipeStatus.PUBLISHED)
+					.or(() -> recipeRepository.findFirstByStatusOrderByPublishedAtDesc(RecipeStatus.PUBLISHED))
+				: recipeRepository.findFirstByFeaturedTrueAndStatusAndTheme(RecipeStatus.PUBLISHED, theme)
+					.or(() -> recipeRepository.findFirstByStatusAndThemeOrderByPublishedAtDesc(RecipeStatus.PUBLISHED, theme));
+		return featured.map(recipeMapper::toCard);
 	}
 
 	/** Published recipes mentioning each word typed (title, category, tag, ingredient), by title. */
@@ -211,7 +227,7 @@ public class RecipeService {
 				: source.getTitle() + COPY_SUFFIX;
 		Recipe copy = new Recipe();
 		copy.setSlug(Slugs.uniqueSlug(title, "recette", recipeRepository::existsBySlug));
-		apply(formOf(detail, title, RecipeStatus.DRAFT, ids(detail.categories(), CategoryResponse::id),
+		apply(formOf(detail, title, RecipeStatus.DRAFT, detail.theme(), ids(detail.categories(), CategoryResponse::id),
 				ids(detail.tags(), TagResponse::id)), copy);
 		copy.setImage(source.getImage());
 		copy.setPinterestImage(source.getPinterestImage());
@@ -240,7 +256,8 @@ public class RecipeService {
 	 * Created again from the trash, as it was: same URL if still free, same dates and views, its
 	 * photos if still in the gallery, its categories and tags that still exist (a category or a tag
 	 * deleted then restored meanwhile is found by its URL). Never featured again, and no notification: it
-	 * was already published. Its menus are given back by {@link MenuService#addBack}.
+	 * was already published. A failed one comes back as a draft, a recipe trashed before the themes as
+	 * sweet. Its menus are given back by {@link MenuService#addBack}.
 	 */
 	@Transactional
 	public RecipeDetail restoreFromTrash(TrashItem trashed) {
@@ -259,11 +276,13 @@ public class RecipeService {
 		recipe.setSlug(recipeRepository.existsBySlug(trashed.getSlug())
 				? Slugs.uniqueSlug(kept.title(), "recette", recipeRepository::existsBySlug)
 				: trashed.getSlug());
-		apply(formOf(kept, kept.title(), kept.status(), categoryIds, tagIds), recipe);
+		RecipeStatus status = kept.status() == RecipeStatus.FAILED ? RecipeStatus.DRAFT : kept.status();
+		apply(formOf(kept, kept.title(), status, kept.theme() == null ? RecipeTheme.SWEET : kept.theme(), categoryIds,
+				tagIds), recipe);
 		recipe.setImage(trashed.getImage());
 		recipe.setPinterestImage(trashed.getPinterestImage());
 		long id = recipeRepository.saveAndFlush(recipe).getId();
-		recipeRepository.restoreDates(id, kept.createdAt(), kept.publishedAt() != null || kept.status() != RecipeStatus.PUBLISHED
+		recipeRepository.restoreDates(id, kept.createdAt(), kept.publishedAt() != null || status != RecipeStatus.PUBLISHED
 				? kept.publishedAt()
 				: Instant.now(), trashed.getViewCount() == null ? 0 : trashed.getViewCount());
 		return get(id);
@@ -274,7 +293,10 @@ public class RecipeService {
 		return recipeRepository.findScheduledBefore(now);
 	}
 
-	/** Publishes a draft at its scheduled time; does nothing if it was published or rescheduled meanwhile. */
+	/**
+	 * Publishes a draft at its scheduled time; does nothing if it was published or rescheduled
+	 * meanwhile. More than {@link #LATE_LIMIT} late, it fails instead: the site was down then.
+	 */
 	@Transactional
 	public void publishScheduled(long id, Instant now) {
 		Recipe recipe = recipeRepository.findById(id).orElse(null);
@@ -282,15 +304,59 @@ public class RecipeService {
 				|| recipe.getScheduledAt().isAfter(now)) {
 			return;
 		}
+		if (recipe.getScheduledAt().isBefore(now.minus(LATE_LIMIT))) {
+			fail(recipe, LATE_FAILURE);
+			return;
+		}
+		publish(recipe, now);
+		auditLog.record(AuditAction.PUBLISHED, AuditKind.RECIPE, recipe.getTitle(), id);
+	}
+
+	/** A scheduled publication that kept failing: the recipe stays unpublished, with the reason. */
+	@Transactional
+	public void failScheduled(long id, String reason) {
+		recipeRepository.findById(id)
+			.filter(recipe -> recipe.getStatus() == RecipeStatus.DRAFT && recipe.getScheduledAt() != null)
+			.ifPresent(recipe -> fail(recipe, reason));
+	}
+
+	/**
+	 * "Publier maintenant": a draft or a failed recipe published at once, its schedule dropped.
+	 * Featured ahead, it becomes the featured recipe of its theme. Nothing changes for a recipe
+	 * already published.
+	 */
+	@Transactional
+	public RecipeDetail publishNow(long id) {
+		Recipe recipe = find(id);
+		if (recipe.getStatus() == RecipeStatus.PUBLISHED) {
+			return recipeMapper.toDetail(recipe);
+		}
+		RecipeDetail published = publish(recipe, Instant.now());
+		auditLog.record(AuditAction.PUBLISHED, AuditKind.RECIPE, recipe.getTitle(), id);
+		return published;
+	}
+
+	private RecipeDetail publish(Recipe recipe, Instant now) {
+		if (recipe.isFeatured()) {
+			// Before the status changes: the flush preceding this update must not write a second featured recipe
+			recipeRepository.unfeatureAllExcept(recipe.getTheme(), recipe.getId());
+		}
 		boolean firstPublication = recipe.getPublishedAt() == null;
 		recipe.setStatus(RecipeStatus.PUBLISHED);
 		recipe.setScheduledAt(null);
+		recipe.setPublicationFailure(null);
 		if (firstPublication) {
 			recipe.setPublishedAt(now);
 		}
 		recipe.setUpdatedAt(now);
-		saveAndAnnounce(recipe, firstPublication);
-		auditLog.record(AuditAction.PUBLISHED, AuditKind.RECIPE, recipe.getTitle(), id);
+		return saveAndAnnounce(recipe, firstPublication);
+	}
+
+	private void fail(Recipe recipe, String reason) {
+		recipe.setStatus(RecipeStatus.FAILED);
+		recipe.setPublicationFailure(reason);
+		recipeRepository.saveAndFlush(recipe);
+		auditLog.record(AuditAction.PUBLICATION_FAILED, AuditKind.RECIPE, recipe.getTitle(), recipe.getId());
 	}
 
 	/** "Modifier la photo": the new image is shown, the previous one stays in the gallery. */
@@ -362,6 +428,9 @@ public class RecipeService {
 		List<Tag> tags = form.tagIds() == null ? List.of() : tagService.findAll(form.tagIds());
 		List<RecipePart> parts = parts(recipe, form.parts());
 		checkMold(form.mold());
+		if (form.status() == RecipeStatus.FAILED) {
+			throw new ApiException(ErrorCode.RECIPE_STATUS_FAILED_NOT_SETTABLE);
+		}
 		Instant scheduledAt = form.scheduledAt();
 		if (scheduledAt != null) {
 			if (form.status() != RecipeStatus.DRAFT) {
@@ -373,16 +442,20 @@ public class RecipeService {
 			}
 		}
 		if (form.featured()) {
-			if (form.status() != RecipeStatus.PUBLISHED) {
+			if (form.status() != RecipeStatus.PUBLISHED && scheduledAt == null) {
 				throw new ApiException(ErrorCode.FEATURED_RECIPE_MUST_BE_PUBLISHED);
 			}
 			// Done before changing the entity: the flush preceding this update must not write a second
-			// featured recipe, which the database would reject.
-			recipeRepository.unfeatureAllExcept(recipe.getId());
+			// featured recipe, which the database would reject. A scheduled one waits for its publication.
+			if (form.status() == RecipeStatus.PUBLISHED) {
+				recipeRepository.unfeatureAllExcept(form.theme(), recipe.getId());
+			}
 		}
 		recipe.setTitle(Texts.capitalizeFirstLetter(form.title().strip()));
 		recipe.setIntro(form.intro());
 		recipe.setStatus(form.status());
+		recipe.setTheme(form.theme());
+		recipe.setPublicationFailure(null);
 		recipe.setFeatured(form.featured());
 		recipe.setScheduledAt(scheduledAt);
 		recipe.getCategories().clear();
@@ -532,10 +605,10 @@ public class RecipeService {
 	}
 
 	/** The form that would save {@code recipe} again: duplicate, restore from the trash. */
-	private static RecipeForm formOf(RecipeDetail recipe, String title, RecipeStatus status, List<Long> categoryIds,
-			List<Long> tagIds) {
+	private static RecipeForm formOf(RecipeDetail recipe, String title, RecipeStatus status, RecipeTheme theme,
+			List<Long> categoryIds, List<Long> tagIds) {
 		RecipeDetail.Mold mold = recipe.mold();
-		return new RecipeForm(title, recipe.intro(), status, false, categoryIds, tagIds, recipe.servings(),
+		return new RecipeForm(title, recipe.intro(), status, theme, false, categoryIds, tagIds, recipe.servings(),
 				recipe.prepMinutes(), recipe.cookMinutes(), recipe.restMinutes(), recipe.difficulty(),
 				recipe.youtubeVideoId() == null ? null : "https://www.youtube.com/watch?v=" + recipe.youtubeVideoId(),
 				recipe.tip(), recipe.equipment(), mold == null ? null : new RecipeForm.Mold(mold.shape(), mold.lengthCm(), mold.widthCm()),

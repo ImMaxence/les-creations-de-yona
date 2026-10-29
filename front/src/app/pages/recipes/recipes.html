@@ -15,8 +15,31 @@
       @if (activeTag(); as tag) {
         · {{ tag.name }}
       }
+      @if (filters().theme; as theme) {
+        · {{ themeLabel(theme) }}
+      }
+      @if (servings(); as count) {
+        · quantités pour {{ count }} personne{{ count > 1 ? 's' : '' }}
+      }
     </p>
   </header>
+
+  <!-- Sucré, salé, or both -->
+  <div class="themes enter" style="--delay: 170ms" role="group" aria-label="Thème">
+    <button type="button" class="chip themes__chip" [attr.aria-pressed]="filters().theme === null" (click)="changeTheme(null)">
+      Tout
+    </button>
+    @for (theme of themes; track theme.value) {
+      <button
+        type="button"
+        class="chip themes__chip"
+        [attr.aria-pressed]="filters().theme === theme.value"
+        (click)="changeTheme(theme.value)"
+      >
+        {{ theme.label }}
+      </button>
+    }
+  </div>
 
   <div class="recipes__tools enter" style="--delay: 200ms">
     <yona-search-box
@@ -64,6 +87,16 @@
       [options]="categoryOptions()"
       [value]="filters().category ?? ''"
       (valueChange)="changeCategory($event)"
+    />
+
+    <!-- Not a filter: every recipe adapts its quantities to the number chosen -->
+    <yona-select
+      class="tool-select"
+      label="Pour combien de personnes ?"
+      size="large"
+      [options]="servingsOptions"
+      [value]="servings()"
+      (valueChange)="changeServings($event)"
     />
 
     <!-- Phones: tag, time and difficulty behind a button, unless one is in use -->

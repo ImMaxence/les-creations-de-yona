@@ -20,6 +20,7 @@ final class RecipeAiPrompt {
 			- isRecipe : false si le contenu n'est pas une recette de cuisine ; laisse alors les autres champs vides.
 			- N'invente aucune quantité, aucun temps, aucun ingrédient : ce que la recette ne dit pas reste null, ou une liste vide.
 			- Garde les mots de l'autrice : corrige seulement l'orthographe et les fautes de frappe. Tout en français.
+			- theme : SWEET pour une recette sucrée (dessert, gâteau, goûter, confiserie), SAVORY pour une recette salée.
 			- title : le nom de la recette, court, sans emoji. intro : une ou deux phrases de présentation si la recette en a, sinon null.
 			- servings : le nombre de personnes ou de parts. Temps en minutes : prepMinutes (préparation), cookMinutes (cuisson), \
 			restMinutes (repos, levée, réfrigération, congélation).
@@ -67,7 +68,8 @@ final class RecipeAiPrompt {
 				Map.of("type", "string", "enum", List.of("ROUND", "SQUARE", "RECTANGLE")), "lengthCm", type("number"), "widthCm",
 				nullable("number")));
 		mold.put("type", List.of("object", "null"));
-		return object("isRecipe", type("boolean"), "title", nullable("string"), "intro", nullable("string"), "servings",
+		return object("isRecipe", type("boolean"), "theme", Map.of("type", "string", "enum", List.of("SWEET", "SAVORY")),
+				"title", nullable("string"), "intro", nullable("string"), "servings",
 				nullable("integer"), "prepMinutes", nullable("integer"), "cookMinutes", nullable("integer"), "restMinutes",
 				nullable("integer"), "difficulty", nullable("number"), "categories", array(type("string")), "tags",
 				array(type("string")), "parts", array(part), "equipment", array(type("string")), "mold", mold, "tip",

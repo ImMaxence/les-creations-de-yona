@@ -3,8 +3,8 @@
     <p class="eyebrow enter">Gardée dans ce navigateur</p>
     <h1 class="list-page__title enter" style="--delay: 80ms">Ma liste de courses</h1>
     <p class="list-page__hint enter" style="--delay: 140ms">
-      Ajoutez les ingrédients d'une recette depuis sa page, avec le nombre de portions voulu : les mêmes ingrédients
-      s'additionnent ici. Cochez au fur et à mesure dans le magasin
+      Ajoutez les ingrédients d'une recette depuis sa page : les mêmes ingrédients s'additionnent ici, et le nombre de
+      personnes se change avec − et +. Cochez au fur et à mesure dans le magasin
     </p>
   </header>
 
@@ -38,10 +38,12 @@
                   <input type="checkbox" class="visually-hidden" [checked]="item.done" (change)="basket.toggle(item.key)" />
                   <span class="item__box" aria-hidden="true"><svg yonaIcon="check" [size]="14" [strokeWidth]="3"></svg></span>
                   <span class="item__text">
-                    @if (item.amount) {
-                      <strong>{{ item.amount }}</strong>
-                    }
-                    {{ item.name }}
+                    <span>
+                      {{ item.name }}
+                      @if (item.amount) {
+                        <span class="item__amount">({{ item.amount }})</span>
+                      }
+                    </span>
                     @if (item.parts.length) {
                       <span class="item__recipes">{{ item.parts.join(' · ') }}</span>
                     }
@@ -94,8 +96,28 @@
             @for (recipe of basket.recipes(); track recipe.slug) {
               <li>
                 <a [routerLink]="recipeLink(recipe)">{{ recipe.title }}</a>
-                @if (recipe.servings) {
-                  <span class="recipes__servings">{{ recipe.servings }} portion{{ recipe.servings > 1 ? 's' : '' }}</span>
+                @if (shownServings(recipe); as servings) {
+                  <span class="servings" role="group" [attr.aria-label]="'Personnes pour ' + recipe.title">
+                    <button
+                      type="button"
+                      class="servings__step"
+                      [attr.aria-label]="'Une personne de moins pour ' + recipe.title"
+                      [disabled]="servings <= 1"
+                      (click)="changeServings(recipe, -1)"
+                    >
+                      <svg yonaIcon="minus" [size]="14" [strokeWidth]="2.5"></svg>
+                    </button>
+                    <span class="servings__count" aria-live="polite">{{ servings }} pers.</span>
+                    <button
+                      type="button"
+                      class="servings__step"
+                      [attr.aria-label]="'Une personne de plus pour ' + recipe.title"
+                      [disabled]="servings >= maxServings"
+                      (click)="changeServings(recipe, 1)"
+                    >
+                      <svg yonaIcon="plus" [size]="14" [strokeWidth]="2.5"></svg>
+                    </button>
+                  </span>
                 }
                 <button type="button" class="icon-button" [attr.aria-label]="'Retirer ' + recipe.title + ' de la liste'" (click)="basket.remove(recipe.slug)">
                   <svg yonaIcon="trash" [size]="16"></svg>

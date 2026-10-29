@@ -18,6 +18,8 @@ import { Icon } from '../icon/icon';
 export interface SelectOption<T> {
   value: T;
   label: string;
+  /** Under the label in the list, smaller: what the choice holds (a shop aisle's products). */
+  hint?: string;
 }
 
 let nextId = 0;

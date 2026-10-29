@@ -20,6 +20,10 @@ export interface RecipeForm {
    * Equipment needed (moule à tarte, fouet…), in order; absent or empty for none
    */
   equipment?: Array<string>;
+
+  /**
+   * Published, or scheduled: featured once published, in place of the featured recipe of its theme
+   */
   featured: boolean;
   intro?: string;
 
@@ -44,12 +48,17 @@ export interface RecipeForm {
    */
   scheduledAt?: string;
   servings?: number;
-  status: 'DRAFT' | 'PUBLISHED';
+
+  /**
+   * DRAFT or PUBLISHED: FAILED is set by the site only
+   */
+  status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
 
   /**
    * Absent or empty for none
    */
   tagIds?: Array<number>;
+  theme: 'SWEET' | 'SAVORY';
 
   /**
    * "Le conseil de Yona" (tip, storage, variant…), Markdown; blank for none

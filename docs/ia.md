@@ -1,6 +1,6 @@
 # Remplir une recette avec l'IA (Gemini)
 
-Depuis la 3.8.0, l'éditeur de recettes du back-office a un bouton **« Remplir avec l'IA »** : Gemini, l'IA de Google, lit une recette collée ou photographiée et remplit le formulaire. Gratuit (offre gratuite de l'API Gemini). Retour au [ReadMe](../ReadMe.md).
+Depuis la 1.8.0, l'éditeur de recettes du back-office a un bouton **« Remplir avec l'IA »** : Gemini, l'IA de Google, lit une recette collée ou photographiée et remplit le formulaire. Gratuit (offre gratuite de l'API Gemini). Retour au [ReadMe](../ReadMe.md).
 
 ## Pour Yona
 

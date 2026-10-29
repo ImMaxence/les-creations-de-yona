@@ -158,7 +158,31 @@
         <span class="field__label">Statut</span>
         <yona-select label="Statut" [options]="statusOptions" [formField]="recipeForm.status" />
       </div>
+      <div class="field">
+        <span class="field__label">Thème</span>
+        <yona-select label="Thème" [options]="themeOptions" [formField]="recipeForm.theme" />
+        <span class="field__hint">Les visiteurs filtrent les recettes par thème, et l'accueil montre une recette à la une de chacun</span>
+      </div>
     </div>
+    @if (recipe()?.status === 'FAILED') {
+      <div class="admin-panel failed" role="alert">
+        <svg yonaIcon="triangle-alert" [size]="22" [strokeWidth]="1.75"></svg>
+        <div>
+          <p class="failed__title">
+            Publication en échec
+            @if (failedAt(); as planned) {
+              (prévue le {{ planned }})
+            }
+          </p>
+          <p class="field__hint">{{ recipe()?.publicationFailure }}. Publiez-la maintenant, ou choisissez une nouvelle date</p>
+        </div>
+        <div class="recovered__actions">
+          <button yonaButton type="button" [disabled]="publishing() || unsaved()" (click)="publishNow()">
+            <svg yonaIcon="send"></svg>Publier maintenant
+          </button>
+        </div>
+      </div>
+    }
     @if (draft().status === 'DRAFT') {
       <div class="field">
         <label class="field__label" for="scheduled-at">Publication programmée (facultatif)</label>
@@ -180,9 +204,12 @@
     <div class="field">
       <label class="checkbox-field">
         <input type="checkbox" [formField]="recipeForm.featured" />
-        Mettre à la une sur l'accueil
+        Mettre à la une sur l'accueil ({{ draft().theme === 'SAVORY' ? 'salé' : 'sucré' }})
       </label>
-      <span class="field__hint">Une seule recette à la une : cocher celle-ci retire l'ancienne</span>
+      <span class="field__hint">
+        Une recette à la une par thème : cocher celle-ci retire l'ancienne du même thème. Une recette programmée passe à la une
+        à sa publication
+      </span>
       <yona-field-error [field]="recipeForm.featured" />
     </div>
     <div class="field">

@@ -26,7 +26,8 @@ public enum ErrorCode {
 
 	// Recipes
 	RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "Recette introuvable"),
-	FEATURED_RECIPE_MUST_BE_PUBLISHED(HttpStatus.BAD_REQUEST, "Seule une recette publiée peut être mise à la une"),
+	FEATURED_RECIPE_MUST_BE_PUBLISHED(HttpStatus.BAD_REQUEST, "Seule une recette publiée ou programmée peut être mise à la une"),
+	RECIPE_STATUS_FAILED_NOT_SETTABLE(HttpStatus.BAD_REQUEST, "Une recette ne se met pas en échec : choisissez brouillon ou publiée"),
 	DUPLICATE_RECIPE_INGREDIENT(HttpStatus.BAD_REQUEST, "Un même ingrédient apparaît plusieurs fois dans une même partie de la recette"),
 	DUPLICATE_RECIPE_CATEGORY(HttpStatus.BAD_REQUEST, "Une même catégorie est choisie plusieurs fois"),
 	RECIPE_INGREDIENT_REQUIRED(HttpStatus.BAD_REQUEST, "La recette doit avoir au moins un ingrédient"),
@@ -67,6 +68,8 @@ public enum ErrorCode {
 
 	// Visitors' messages
 	FEEDBACK_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Vous avez envoyé plusieurs messages en peu de temps : réessayez dans une heure"),
+	FEEDBACK_TOO_FAST(HttpStatus.TOO_MANY_REQUESTS, "Votre message vient de partir : patientez une minute avant d'en envoyer un autre"),
+	FEEDBACK_BUSY(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup de messages arrivent en ce moment : réessayez dans une heure"),
 	FEEDBACK_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les messages ne peuvent pas être reçus pour le moment : réessayez dans quelques jours"),
 	FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
 

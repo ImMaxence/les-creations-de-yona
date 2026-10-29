@@ -52,6 +52,17 @@
       <div><dt>Avec une vidéo</dt><dd>{{ data.recipes.withVideo }}</dd></div>
       <div><dt>En plusieurs parties</dt><dd>{{ data.recipes.inParts }}</dd></div>
       <div><dt>Publications programmées</dt><dd>{{ data.recipes.scheduled }}</dd></div>
+      <div>
+        <dt>Publications en échec</dt>
+        <dd>
+          @if (data.recipes.failed) {
+            <a class="failed-link" routerLink="/admin/recettes" [queryParams]="{ statut: 'FAILED' }">{{ data.recipes.failed }}</a>
+          } @else {
+            0
+          }
+        </dd>
+      </div>
+      <div><dt>Sucrées · salées</dt><dd>{{ data.recipes.sweet }} · {{ data.recipes.savory }}</dd></div>
       <div><dt>Vues des recettes</dt><dd>{{ data.recipes.views.toLocaleString('fr-FR') }}</dd></div>
       <div><dt>Dans la corbeille</dt><dd>{{ data.trashedItems }}</dd></div>
       <div><dt>Mots du glossaire</dt><dd>{{ data.glossaryTerms }}</dd></div>
@@ -116,6 +127,57 @@
           Le disque est celui du serveur qui fait tourner le site : la base de données et les photos y sont, avec le reste
           de ce que le serveur héberge. Chaque photo compte ses deux tailles (800 et 1600 px), y compris les photos qui ne
           sont plus utilisées
+        </p>
+      </section>
+    }
+
+    <!-- Memory and processor -->
+    @if (server(); as usage) {
+      <section class="admin-panel storage" aria-labelledby="server-title">
+        <div class="storage__head">
+          <svg yonaIcon="gauge" [size]="22" [strokeWidth]="1.75"></svg>
+          <h3 id="server-title">Mémoire et processeur</h3>
+          <button yonaButton variant="ghost" type="button" class="storage__refresh" [disabled]="stats.isLoading()" (click)="stats.reload()">
+            <svg yonaIcon="refresh-cw"></svg>Actualiser
+          </button>
+        </div>
+        <div class="storage__figures">
+          <div>
+            <span class="tile__label">Processeur</span>
+            <strong class="storage__value">{{ usage.backendCpu }}</strong>
+            <span class="tile__detail">pour le backend · machine {{ usage.machineCpu }} · {{ plural(usage.processors, 'cœur', 'cœurs') }}</span>
+          </div>
+          <div>
+            <span class="tile__label">Mémoire du backend</span>
+            <strong class="storage__value">{{ usage.backendMemoryBytes != null ? formatBytes(usage.backendMemoryBytes) : formatBytes(usage.heapUsedBytes) }}</strong>
+            <span class="tile__detail">dont données Java {{ formatBytes(usage.heapUsedBytes) }} sur {{ formatBytes(usage.heapMaxBytes) }} permis</span>
+          </div>
+          <div>
+            <span class="tile__label">Mémoire de la machine</span>
+            <strong class="storage__value">{{ formatBytes(usage.machineFreeMemoryBytes) }} libres</strong>
+            <span class="tile__detail">sur {{ formatBytes(usage.machineMemoryBytes) }} · {{ percent(usage.usedShare) }} utilisée</span>
+          </div>
+        </div>
+        <div
+          class="meter"
+          role="img"
+          [attr.aria-label]="
+            'Mémoire : backend ' + percent(usage.backendShare) + ', reste utilisé ' + percent(usage.otherShare) + ', libre ' + percent(usage.freeShare)
+          "
+        >
+          <span class="meter__images" [style.flex-grow]="usage.backendShare"></span>
+          <span class="meter__other" [style.flex-grow]="usage.otherShare"></span>
+          <span class="meter__free" [style.flex-grow]="usage.freeShare"></span>
+        </div>
+        <ul role="list" class="legend">
+          <li><span class="swatch swatch--images"></span>Backend <strong>{{ formatBytes(usage.backend) }}</strong></li>
+          <li><span class="swatch swatch--other"></span>Le reste (pages du site, base, photos…) <strong>{{ formatBytes(usage.other) }}</strong></li>
+          <li><span class="swatch swatch--free"></span>Libre <strong>{{ formatBytes(usage.machineFreeMemoryBytes) }}</strong></li>
+        </ul>
+        <p class="field__hint">
+          Mesuré à l'ouverture de la page, depuis le backend : son processus Java, et la machine telle que son conteneur la voit
+          (la limite du conteneur s'il en a une, sinon tout le serveur). Les pages du site, la base et les photos tournent à
+          part. Backend démarré il y a {{ usage.uptime }}
         </p>
       </section>
     }
@@ -229,8 +291,8 @@
               <div class="admin-row__main">
                 <a class="admin-row__title" [routerLink]="['/admin/recettes', recipe.id]">{{ recipe.title }}</a>
                 <span class="admin-row__meta">
-                  <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'">
-                    {{ recipe.status === 'PUBLISHED' ? 'Publiée' : 'Brouillon' }}
+                  <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'" [class.badge--draft]="recipe.status === 'DRAFT'" [class.badge--failed]="recipe.status === 'FAILED'">
+                    {{ recipe.status === 'PUBLISHED' ? 'Publiée' : recipe.status === 'FAILED' ? 'Échec' : 'Brouillon' }}
                   </span>
                   Manque :
                   @for (field of recipe.missing; track field) {

@@ -5,20 +5,20 @@ package fr.lescreationsdeyona.ingredient;
  * in this order (the usual walk through a French supermarket). No aisle: listed last, as "Autres".
  */
 public enum Aisle {
-	/** Fruits et légumes. */
+	/** Fruits et légumes (herbes fraîches comprises). */
 	FRUITS_VEGETABLES,
-	/** Boucherie, poissonnerie. */
+	/** Viandes et poissons. */
 	MEAT_FISH,
-	/** Crèmerie, œufs. */
+	/** Rayon frais: charcuterie, lardons, pâtes à tarte toutes prêtes, traiteur. */
+	FRESH,
+	/** Crèmerie: lait, beurre, crème, yaourts, fromages, œufs. */
 	DAIRY_EGGS,
-	/** Boulangerie. */
-	BAKERY,
-	/** Épicerie salée (pâtes, conserves, épices…). */
+	/** Épicerie salée: pâtes, riz, conserves, huile, vinaigre, épices. */
 	SAVORY_GROCERY,
-	/** Épicerie sucrée (farine, sucre, chocolat…). */
+	/** Épicerie sucrée et pâtisserie: farine, sucre, levure, chocolat, confiture. */
 	SWEET_GROCERY,
 	/** Surgelés. */
 	FROZEN,
-	/** Boissons. */
+	/** Boissons (vin et alcools de cuisine compris). */
 	DRINKS
 }

@@ -14,11 +14,17 @@ export interface RecipeAdminSummary {
   imageId?: string;
 
   /**
-   * A draft to be published at that time
+   * Why its scheduled publication did not happen; a failed recipe only
+   */
+  publicationFailure?: string;
+
+  /**
+   * A draft to be published at that time; for a failed recipe, the time it was planned
    */
   scheduledAt?: string;
   slug: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
+  theme: 'SWEET' | 'SAVORY';
   title: string;
   updatedAt: string;
 

@@ -46,7 +46,7 @@ public class StatsService {
 	public SiteStats compute() {
 		return new SiteStats(recipes(), jdbc.sql("select count(*) from category").query(Long.class).single(),
 				ingredients(), images(), recipesPerCategory(), topIngredients(), mostViewedRecipes(), recipesPerMonth(), storage(),
-				incompleteRecipes(), datedRecipes("DRAFT", "30 days"), datedRecipes("PUBLISHED", "12 months"),
+				ServerUsage.now(), incompleteRecipes(), datedRecipes("DRAFT", "30 days"), datedRecipes("PUBLISHED", "12 months"),
 				searchMissService.top(SEARCH_MISSES), count("push_subscription"), count("trash_item"),
 				count("glossary_term"), Instant.now());
 	}
@@ -122,7 +122,10 @@ public class StatsService {
 					count(*) filter (where id in (select recipe_id from recipe_part
 						group by recipe_id having count(*) > 1 or bool_or(title is not null))) as in_parts,
 					count(*) filter (where created_at >= now() - interval '30 days') as created_last_30_days,
-					count(*) filter (where scheduled_at is not null) as scheduled,
+					count(*) filter (where scheduled_at is not null and status = 'DRAFT') as scheduled,
+					count(*) filter (where status = 'FAILED') as failed,
+					count(*) filter (where theme = 'SWEET') as sweet,
+					count(*) filter (where theme = 'SAVORY') as savory,
 					coalesce(sum(view_count), 0) as views,
 					max(updated_at) as last_update
 				from recipe""")
@@ -130,7 +133,8 @@ public class StatsService {
 				OffsetDateTime lastUpdate = row.getObject("last_update", OffsetDateTime.class);
 				return new SiteStats.Recipes(row.getLong("total"), row.getLong("published"), row.getLong("drafts"),
 						row.getLong("without_photo"), row.getLong("with_video"), row.getLong("in_parts"),
-						row.getLong("created_last_30_days"), row.getLong("scheduled"), row.getLong("views"),
+						row.getLong("created_last_30_days"), row.getLong("scheduled"), row.getLong("failed"),
+						row.getLong("sweet"), row.getLong("savory"), row.getLong("views"),
 						lastUpdate == null ? null : lastUpdate.toInstant());
 			})
 			.single();

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, linkedSignal, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, inject, linkedSignal, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { listHistory } from '../../../core/api/generated/fn/admin-history/list-history';
@@ -10,7 +10,7 @@ import { Select, SelectOption } from '../../../shared/ui/select/select';
 type Kind = AuditEventResponse['kind'];
 type Action = AuditEventResponse['action'];
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
 /** How each kind is named, and the page of the back-office showing it (with its id for a recipe). */
 const KINDS: Record<Kind, { label: string; link?: string }> = {
@@ -37,7 +37,8 @@ const ACTIONS: Record<Action, string> = {
   DELETED: 'Suppression',
   RESTORED: 'Restauration',
   ERASED: 'Effacement définitif',
-  PUBLISHED: 'Publication programmée',
+  PUBLISHED: 'Publication',
+  PUBLICATION_FAILED: 'Publication en échec',
   MERGED: 'Fusion',
   EXPORTED: 'Sauvegarde',
   IMPORTED: 'Restauration de sauvegarde',
@@ -47,7 +48,8 @@ const ACTIONS: Record<Action, string> = {
 
 /**
  * "Historique": what was done in the back-office, by whom and when, the latest first, over the
- * last 6 months (older lines are erased every night). Filtered by kind.
+ * last 6 months (older lines are erased every night). Filtered by kind, 20 a page, with the
+ * pagination above and under the list.
  */
 @Component({
   selector: 'yona-admin-history',
@@ -67,7 +69,16 @@ const ACTIONS: Record<Action, string> = {
 
       @if (events.value(); as result) {
         @if (result.content.length) {
-          <ul role="list" class="admin-list">
+          <p class="admin-row__meta" aria-live="polite">
+            {{ result.totalElements }} action{{ result.totalElements > 1 ? 's' : '' }}, les plus récentes d'abord
+            @if (result.totalPages > 1) {
+              · page {{ page() }} sur {{ result.totalPages }}
+            }
+          </p>
+          @if (result.totalPages > 1) {
+            <yona-pagination buttons [page]="page()" [totalPages]="result.totalPages" (pageChange)="goTo($event)" />
+          }
+          <ul role="list" class="admin-list" [class.is-busy]="events.isLoading()">
             @for (event of result.content; track event.id) {
               <li class="admin-row">
                 <div class="admin-row__main">
@@ -87,7 +98,7 @@ const ACTIONS: Record<Action, string> = {
             }
           </ul>
           @if (result.totalPages > 1) {
-            <yona-pagination buttons [page]="page()" [totalPages]="result.totalPages" (pageChange)="page.set($event)" />
+            <yona-pagination buttons [page]="page()" [totalPages]="result.totalPages" (pageChange)="goTo($event, true)" />
           }
         } @else {
           <p class="admin-empty">Rien pour le moment</p>
@@ -101,6 +112,7 @@ const ACTIONS: Record<Action, string> = {
 })
 export default class AdminHistory {
   private readonly api = inject(Api);
+  private readonly document = inject(DOCUMENT);
 
   protected readonly kinds = KINDS;
   protected readonly actions = ACTIONS;
@@ -124,6 +136,14 @@ export default class AdminHistory {
         size: PAGE_SIZE,
       }),
   });
+
+  /** From the pagination under the list, back to the top of it. */
+  protected goTo(page: number, scroll = false): void {
+    this.page.set(page);
+    if (scroll) {
+      this.document.getElementById('history-title')?.scrollIntoView({ block: 'start' });
+    }
+  }
 
   protected changeKind(kind: Kind | 'ALL' | undefined): void {
     this.kind.set(kind ?? 'ALL');

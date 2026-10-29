@@ -31,6 +31,11 @@ export interface RecipeAiDraft {
    * Among the site's
    */
   tagIds: Array<number>;
+
+  /**
+   * Sweet or savory, as the AI saw it
+   */
+  theme?: 'SWEET' | 'SAVORY';
   tip?: string;
   title?: string;
 }

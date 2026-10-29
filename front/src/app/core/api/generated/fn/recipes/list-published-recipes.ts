@@ -38,6 +38,11 @@ export interface ListPublishedRecipes$Params {
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
 
 /**
+ * Sweet or savory; without it, "sucré" or "salé" typed in q chooses it
+ */
+  theme?: 'SWEET' | 'SAVORY';
+
+/**
  * Zero-based page index (0..N)
  */
   page?: number;
@@ -62,6 +67,7 @@ export function listPublishedRecipes(http: HttpClient, rootUrl: string, params?:
     rb.query('ingredient', params.ingredient, {});
     rb.query('maxMinutes', params.maxMinutes, {});
     rb.query('difficulty', params.difficulty, {});
+    rb.query('theme', params.theme, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});
     rb.query('sort', params.sort, {});

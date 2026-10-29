@@ -9,6 +9,7 @@ import { MonthCount } from '../models/month-count';
 import { NamedCount } from '../models/named-count';
 import { Recipes } from '../models/recipes';
 import { SearchMiss } from '../models/search-miss';
+import { ServerUsage } from '../models/server-usage';
 import { Storage } from '../models/storage';
 import { ViewedRecipe } from '../models/viewed-recipe';
 export interface SiteStats {
@@ -57,6 +58,11 @@ export interface SiteStats {
    * What visitors searched for without finding any recipe, the most searched first (30 at most)
    */
   searchMisses: Array<SearchMiss>;
+
+  /**
+   * Memory and processor in use
+   */
+  server: ServerUsage;
 
   /**
    * Drafts not changed for 30 days, the oldest first (50 at most)

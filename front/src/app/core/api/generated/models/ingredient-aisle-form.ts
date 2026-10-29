@@ -6,6 +6,6 @@ export interface IngredientAisleForm {
   /**
    * Absent to take them out of any aisle ("Autres")
    */
-  aisle?: 'FRUITS_VEGETABLES' | 'MEAT_FISH' | 'DAIRY_EGGS' | 'BAKERY' | 'SAVORY_GROCERY' | 'SWEET_GROCERY' | 'FROZEN' | 'DRINKS';
+  aisle?: 'FRUITS_VEGETABLES' | 'MEAT_FISH' | 'FRESH' | 'DAIRY_EGGS' | 'SAVORY_GROCERY' | 'SWEET_GROCERY' | 'FROZEN' | 'DRINKS';
   ingredientIds: Array<number>;
 }

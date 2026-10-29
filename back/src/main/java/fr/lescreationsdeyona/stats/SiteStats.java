@@ -17,6 +17,7 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 		@Schema(description = "Recipes created each month, the last 12 months (Paris time), oldest first")
 		List<MonthCount> recipesPerMonth,
 		Storage storage,
+		@Schema(description = "Memory and processor in use") ServerUsage server,
 		@Schema(description = "Recipes lacking what Google shows best: published ones first, the most incomplete first (100 at most)")
 		List<IncompleteRecipe> incompleteRecipes,
 		@Schema(description = "Drafts not changed for 30 days, the oldest first (50 at most)")
@@ -47,6 +48,9 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 	public record Recipes(long total, long published, long drafts, long withoutPhoto, long withVideo,
 			@Schema(description = "With several parts, or a titled one") long inParts, long createdLast30Days,
 			@Schema(description = "Drafts with a scheduled publication") long scheduled,
+			@Schema(description = "Scheduled publications that could not happen") long failed,
+			@Schema(description = "Sweet ones") long sweet,
+			@Schema(description = "Savory ones") long savory,
 			@Schema(description = "Visits of the recipe pages, the admins' own left out") long views,
 			@Nullable Instant lastUpdate) {
 	}

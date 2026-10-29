@@ -5,15 +5,31 @@
   display: block;
 }
 
+// The box drawn around the field: the icon, what is typed, what was understood, and the clear button
 .search {
-  position: relative;
   display: flex;
   align-items: center;
+  gap: var(--space-2);
+  min-height: 3.25rem;
+  padding-inline: var(--space-4) var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+
+  &:focus-within {
+    border-color: var(--color-accent);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--color-accent) 15%, transparent),
+      var(--shadow-sm);
+  }
 }
 
 .search__icon {
-  position: absolute;
-  left: var(--space-4);
+  flex: none;
   color: var(--color-text-muted);
   pointer-events: none;
   transition: color var(--duration-base) var(--ease-out);
@@ -24,17 +40,12 @@
 }
 
 .search__input {
-  width: 100%;
-  min-height: 3.25rem;
-  padding: var(--space-3) var(--space-8) var(--space-3) calc(var(--space-4) + 1.75rem);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-bg);
+  flex: 1;
+  min-width: 0;
+  padding-block: var(--space-3);
+  border: 0;
+  background: transparent;
   font-size: var(--text-base); // 16px minimum: no zoom on focus in iOS Safari
-  box-shadow: var(--shadow-sm);
-  transition:
-    border-color var(--duration-base) var(--ease-out),
-    box-shadow var(--duration-base) var(--ease-out);
   appearance: none;
 
   &::placeholder {
@@ -47,17 +58,65 @@
 
   &:focus-visible {
     outline: none;
-    border-color: var(--color-accent);
-    box-shadow:
-      0 0 0 4px color-mix(in srgb, var(--color-accent) 15%, transparent),
-      var(--shadow-sm);
+  }
+}
+
+// What the search understood, on the right: "8 pers." with − and +
+.search__understood {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.understood {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 2rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent-strong);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.understood--servings {
+  padding-inline: 0.15rem;
+}
+
+.understood__step {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  color: inherit;
+  transition: background-color var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+}
+
+// Phones: the number alone, the − and + stay
+@include m.below(sm) {
+  .understood__unit {
+    display: none;
   }
 }
 
 .search__clear {
-  position: absolute;
-  right: var(--space-2);
   display: grid;
+  flex: none;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
@@ -111,11 +170,47 @@
   color: var(--color-text-muted);
 }
 
+// "Quantités pour 8 personnes": what the results will be opened with, above them
+.suggestions__understood {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+
+  strong {
+    color: var(--color-accent-strong);
+  }
+}
+
+// Nothing found: said, with an icon, instead of an empty list
+.suggestions__empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  color: var(--color-text-muted);
+  text-align: center;
+
+  svg {
+    color: var(--color-accent);
+  }
+
+  strong {
+    color: var(--color-text);
+  }
+}
+
 // Home page: the search put forward
-.search--large .search__input {
+.search--large {
   min-height: 3.75rem;
-  font-size: var(--text-lg);
   box-shadow: var(--shadow-md);
+
+  .search__input {
+    font-size: var(--text-lg);
+  }
 }
 
 .suggestions--enter {

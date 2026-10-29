@@ -3,6 +3,7 @@ package fr.lescreationsdeyona.ai;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.recipe.MoldShape;
 import fr.lescreationsdeyona.recipe.RecipeForm;
+import fr.lescreationsdeyona.recipe.RecipeTheme;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ final class RecipeAiReader {
 			RecipeForm.Part single = parts.getFirst();
 			parts.set(0, new RecipeForm.Part(null, single.ingredients(), single.steps()));
 		}
-		return new RecipeAiDraft(text(answer.path("title"), 150), text(answer.path("intro"), 1000),
+		return new RecipeAiDraft(theme(answer.path("theme")), text(answer.path("title"), 150), text(answer.path("intro"), 1000),
 				count(answer.path("servings"), 1000), count(answer.path("prepMinutes"), MAX_MINUTES),
 				count(answer.path("cookMinutes"), MAX_MINUTES), count(answer.path("restMinutes"), MAX_MINUTES),
 				difficulty(answer.path("difficulty")), text(answer.path("tip"), 2000), equipment(answer.path("equipment")),
@@ -147,6 +148,12 @@ final class RecipeAiReader {
 			quantity = quantity.setScale(0);
 		}
 		return quantity.signum() > 0 && quantity.compareTo(BigDecimal.valueOf(1_000_000)) < 0 ? quantity : null;
+	}
+
+	/** Sweet or savory, as the model saw it; null for anything else, the editor's choice then stays. */
+	private static @Nullable RecipeTheme theme(JsonNode node) {
+		String theme = node.asString("");
+		return "SWEET".equals(theme) ? RecipeTheme.SWEET : "SAVORY".equals(theme) ? RecipeTheme.SAVORY : null;
 	}
 
 	/** From 1 to 5, rounded to the nearest half point. */

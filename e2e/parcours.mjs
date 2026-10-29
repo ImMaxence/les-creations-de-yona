@@ -10,7 +10,7 @@ const SHOTS = folder('resultats');
 const AXE_RULES = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
 /**
  * Scores minimaux de Lighthouse (sur 100), téléphone simulé en 4G lente. La performance varie de
- * quelques points d'une mesure à l'autre : un seuil sous le score habituel (78 à 90 en 3.4), pour
+ * quelques points d'une mesure à l'autre : un seuil sous le score habituel (78 à 90 en 1.4), pour
  * ne signaler que les vraies régressions ; les autres catégories sont stables.
  */
 const LIGHTHOUSE_MIN = { performance: 70, accessibility: 100, 'best-practices': 95, seo: 100 };
@@ -49,6 +49,44 @@ await part('API', async () => {
   check('Recherche à plusieurs ingrédients : la recette en fait partie', both.content.some((card) => card.slug === recipe.slug));
   const tooMany = await fetch(`${BASE}/api/recipes?${'ingredient=a&'.repeat(6)}`);
   check('Plus de 5 ingrédients refusés', tooMany.status === 400, String(tooMany.status));
+  const sweet = await api('/api/recipes?theme=SWEET&size=50');
+  check('Filtre par thème : des recettes sucrées seulement', sweet.content.every((card) => card.theme === 'SWEET'), `${sweet.totalElements} recette(s)`);
+  const featured = await fetch(`${BASE}/api/featured-recipe?theme=${recipe.theme}`);
+  check('À la une du thème de la recette', featured.status === 200, String(featured.status));
+  const themes = await api(`/api/search-suggestions?q=${encodeURIComponent('cake salé')}`);
+  check('Suggestions : « cake salé » propose le thème salé', themes.themes.includes('SAVORY'), themes.themes.join(', '));
+  const yogurt = ingredients[0].name;
+  const named = await api(`/api/search-suggestions?q=${encodeURIComponent(`gâteau au ${yogurt}`)}`);
+  check('Suggestions : l’ingrédient nommé parmi les mots', named.ingredients.includes(yogurt), `« gâteau au ${yogurt} » → ${named.ingredients.join(', ')}`);
+  const number = await api(`/api/recipes?q=${encodeURIComponent(`${recipe.title} 8`)}`);
+  // Le titre peut dire « salé » (« caramel au beurre salé ») : la recette sort quel que soit son thème
+  check('Un nombre seul n’est pas cherché (« titre 8 »)', number.content.some((card) => card.slug === recipe.slug));
+});
+
+await part('Recherche intelligente (ordinateur)', async () => {
+  const page = await newPage(browser, DESKTOP, errors);
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  const box = page.locator('.home-search').getByRole('combobox', { name: 'Rechercher sur le site' });
+  await box.fill(`${recipe.title} 8`);
+  const servings = page.locator('.home-search').getByRole('group', { name: 'Pour 8 personnes' });
+  await servings.waitFor({ timeout: 3000 });
+  check('« titre 8 » : « 8 pers. » à droite du champ', await servings.isVisible());
+  await servings.getByRole('button', { name: 'Une personne de plus' }).click();
+  await page.waitForFunction(() => document.querySelector('.home-search input')?.value.endsWith(' 9'), null, { timeout: 2000 }).catch(() => {});
+  check('« + » : 9 dans la recherche', (await box.inputValue()).endsWith(' 9'), await box.inputValue());
+  await page.locator('.home-search .suggestion').first().waitFor({ timeout: 3000 });
+  await page.screenshot({ path: SHOTS + 'recherche-personnes.png' });
+  await page.locator('.home-search .suggestion').first().click();
+  await page.waitForURL((url) => url.searchParams.get('portions') === '9');
+  check('Une suggestion ouverte pour 9 personnes', new URL(page.url()).searchParams.get('portions') === '9', page.url());
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await box.fill('zzqqxwv');
+  const empty = page.locator('.home-search .suggestions__empty');
+  await empty.waitFor({ timeout: 3000 }).catch(() => {});
+  check('Rien trouvé : « Aucun résultat » avec une icône', (await empty.isVisible()) && (await empty.locator('svg').count()) === 1);
+  await page.screenshot({ path: SHOTS + 'recherche-aucun-resultat.png' });
+  await page.context().close();
 });
 
 await part('Accueil (ordinateur)', async () => {
@@ -125,6 +163,19 @@ await part('Recherche (téléphone)', async () => {
   await page.getByRole('link', { name: 'Effacer tous les filtres' }).click();
   await page.waitForURL((url) => !url.search.includes('ingredient'));
   check('« Effacer tous les filtres »', (await page.locator('.chosen-ingredients').count()) === 0);
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+
+  // Sucré ou salé, et le nombre de personnes porté jusqu'aux recettes
+  await page.getByRole('group', { name: 'Thème' }).getByRole('button', { name: 'Salé' }).click();
+  await page.waitForURL((url) => url.searchParams.get('theme') === 'sale');
+  check('« Salé » : le thème dans l’adresse', true);
+  await page.getByRole('group', { name: 'Thème' }).getByRole('button', { name: 'Tout' }).click();
+  await page.waitForURL((url) => !url.searchParams.has('theme'));
+  await page.getByRole('combobox', { name: 'Pour combien de personnes ?' }).click();
+  await page.getByRole('option', { name: 'Pour 6 personnes' }).click();
+  await page.waitForURL((url) => url.searchParams.get('portions') === '6');
+  const link = await page.locator('yona-recipe-card a').first().getAttribute('href');
+  check('« Pour 6 personnes » : les recettes s’ouvrent pour 6', link?.includes('portions=6') ?? false, link ?? '');
   await page.context().close();
 });
 
@@ -224,8 +275,20 @@ await part('Recette et mode cuisine (téléphone, horloge maîtrisée)', async (
   await page.getByRole('link', { name: 'Voir ma liste' }).click();
   await page.locator('.aisle').first().waitFor();
   const headings = await page.locator('.aisle').allTextContents();
-  const expected = ['Fruits et légumes', ...(shelved.length > 1 ? ['Crèmerie, œufs'] : []), ...(ingredients.length > 2 ? ['Autres'] : [])];
+  const expected = ['Fruits et légumes', ...(shelved.length > 1 ? ['Crèmerie et œufs'] : []), ...(ingredients.length > 2 ? ['Autres'] : [])];
   check('Liste de courses par rayon', headings.join(' | ') === expected.join(' | '), headings.join(' | '));
+  // La plus grande quantité : un « 1 rouleau » resterait 1 une fois arrondi
+  const measured = ingredients.filter((line) => line.quantity >= 10).sort((a, b) => b.quantity - a.quantity)[0];
+  if (measured) {
+    const item = page.locator('.item__text', { hasText: measured.name }).first();
+    const before = (await item.textContent()).replace(/\s+/g, ' ').trim();
+    check('Ingrédient écrit « Nom (quantité) »', new RegExp(`^${measured.name} \\(.+\\)`).test(before), before);
+    if (recipe.servings) {
+      await page.getByRole('button', { name: `Une personne de plus pour ${recipe.title}` }).click();
+      const after = (await item.textContent()).replace(/\s+/g, ' ').trim();
+      check('« + » dans la liste : les quantités suivent', after !== before, `${before} → ${after}`);
+    }
+  }
   await page.screenshot({ path: SHOTS + 'liste-par-rayon.png', fullPage: true });
   await page.context().close();
 });
@@ -336,12 +399,39 @@ await part('Back-office (session simulée)', async () => {
   await folds.first().waitFor();
   await answerCookies(page);
   check('Nouveautés : une section par version, la dernière ouverte', (await folds.count()) >= 1 && (await folds.nth(0).evaluate((d) => d.open)));
+  check(
+    'Nouveautés : boutons GitHub et Coolify',
+    (await page.getByRole('link', { name: 'GitHub' }).getAttribute('href')) === 'https://github.com/ImMaxence/les-creations-de-yona' &&
+      (await page.getByRole('link', { name: 'Coolify' }).count()) === 1,
+  );
+  const relative = await page.locator('.changelog__body a[href]').evaluateAll((links) =>
+    links.map((link) => link.getAttribute('href')).filter((href) => !/^(https?:|mailto:|#)/.test(href ?? '')),
+  );
+  check('Nouveautés : aucun lien relatif vers une page du site', relative.length === 0, relative.join(', '));
   if ((await folds.count()) > 1) {
     check('Les autres fermées, sans texte rendu', (await folds.nth(1).locator('.changelog__body').count()) === 0);
     await folds.nth(1).locator('summary').click();
     const rendered = await folds.nth(1).locator('.changelog__body').waitFor({ timeout: 2000 }).then(() => true, () => false);
     check('Une section ouverte : son texte rendu', rendered);
   }
+
+  // Une publication programmée en échec : statut rouge, raison, « Publier maintenant »
+  const failed = {
+    id: 999, title: 'Tarte en échec', slug: 'tarte-en-echec', status: 'FAILED', theme: 'SWEET', featured: false, categories: [],
+    createdAt: '2026-10-01T10:00:00Z', updatedAt: '2026-10-01T10:00:00Z', viewCount: 0, scheduledAt: '2026-10-28T08:00:00Z',
+    publicationFailure: 'Le site était arrêté à l’heure prévue : plus de 30 minutes de retard, la recette n’a pas été publiée',
+  };
+  await page.route('**/api/admin/recipes?**', (route) =>
+    route.fulfill({ json: { content: [failed], page: 0, size: 20, totalElements: 1, totalPages: 1 } }),
+  );
+  // Sans session, toute autre route du back-office répondrait 401 et renverrait vers Google
+  await page.route('**/api/admin/tags', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/admin/ingredients**', (route) => route.fulfill({ json: [] }));
+  await page.goto(BASE + '/admin/recettes', { waitUntil: 'load' });
+  await page.locator('.badge--failed').waitFor({ timeout: 5000 });
+  check('Recettes : statut « Échec » en rouge', (await page.locator('.badge--failed').textContent()).includes('Échec'));
+  check('Recettes : raison de l’échec et « Publier maintenant »', (await page.locator('.admin-row__failure').isVisible()) && (await page.getByRole('button', { name: 'Publier maintenant' }).isVisible()));
+  await page.screenshot({ path: SHOTS + 'admin-echec.png' });
 
     await page.route('**/api/admin/ingredients', (route) =>
     route.request().method() === 'GET' ? route.fulfill({ json: [{ id: 1, name: 'Beurre', aisle: 'DAIRY_EGGS', recipeCount: 2 }, { id: 2, name: 'Sel', recipeCount: 1 }] }) : route.fallback(),

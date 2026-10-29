@@ -54,6 +54,12 @@ public class Recipe {
 	@Enumerated(EnumType.STRING)
 	private RecipeStatus status;
 
+	@Enumerated(EnumType.STRING)
+	private RecipeTheme theme;
+
+	/** Why its scheduled publication did not happen, shown in the back-office; set for a failed recipe only. */
+	private String publicationFailure;
+
 	private Integer servings;
 
 	private Integer prepMinutes;
@@ -91,12 +97,16 @@ public class Recipe {
 	@ManyToOne(fetch = FetchType.LAZY)
 	private Image pinterestImage;
 
+	/**
+	 * One published recipe per theme at most. A scheduled draft may be featured ahead: it replaces the
+	 * featured recipe of its theme once published.
+	 */
 	private boolean featured;
 
 	/** First publication, kept if the recipe goes back to draft; null for a recipe never published. */
 	private Instant publishedAt;
 
-	/** A draft published by the backend at that time (see ScheduledPublication). */
+	/** A draft published by the backend at that time (see ScheduledPublication); kept on a failed one. */
 	private Instant scheduledAt;
 
 	/**

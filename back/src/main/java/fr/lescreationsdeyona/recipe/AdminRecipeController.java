@@ -57,10 +57,20 @@ class AdminRecipeController {
 			@Parameter(description = "Id of its photo or of its Pinterest photo")
 			@RequestParam(required = false) @Nullable UUID imageId,
 			@RequestParam(required = false) @Nullable RecipeStatus status,
+			@RequestParam(required = false) @Nullable RecipeTheme theme,
 			@ParameterObject @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		return PageResponse.of(recipeService.searchAll(
-				new RecipeFilter(q, null, category, tag, List.of(), ingredientId, imageId, status, null, null), pageable));
+				new RecipeFilter(q, null, category, tag, List.of(), ingredientId, imageId, status, theme, null, null),
+				pageable));
+	}
+
+	@Operation(summary = "\"Publier maintenant\": a draft or a failed recipe published at once, its schedule dropped",
+			description = "Featured ahead, it becomes the featured recipe of its theme. Subscribers are notified of a first "
+					+ "publication. Nothing changes for a recipe already published.")
+	@PostMapping("/{id}/publish")
+	RecipeDetail publishRecipe(@PathVariable long id) {
+		return recipeService.publishNow(id);
 	}
 
 	@Operation(summary = "A recipe, for the edit form")
@@ -70,7 +80,8 @@ class AdminRecipeController {
 	}
 
 	@Operation(summary = "Create a recipe",
-			description = "Featuring a recipe unfeatures the previous one. Unknown ingredients are created.")
+			description = "Featuring a published recipe unfeatures the previous one of its theme; a scheduled one is featured "
+					+ "once published. Unknown ingredients are created.")
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	RecipeDetail createRecipe(@Valid @RequestBody RecipeForm form) {

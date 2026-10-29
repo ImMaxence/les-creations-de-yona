@@ -27,6 +27,7 @@
     <yona-select label="Catégorie" [options]="categoryOptions()" [value]="category()" (valueChange)="changeCategory($event)" />
     <yona-select label="Tag" [options]="tagOptions()" [value]="tagSlug()" (valueChange)="changeTag($event)" />
     <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="changeStatus($event)" />
+    <yona-select label="Thème" [options]="themeOptions" [value]="themeFilter()" (valueChange)="changeTheme($event)" />
     <yona-select label="Trier" [options]="sortOptions" [value]="sort()" (valueChange)="changeSort($event)" />
     @if (hasFilters()) {
       <button yonaButton variant="ghost" type="button" class="admin-toolbar__clear" (click)="clearFilters()">
@@ -72,11 +73,21 @@
             <div class="admin-row__main">
               <a class="admin-row__title" [routerLink]="[recipe.id]">{{ recipe.title }}</a>
               <span class="admin-row__meta">
-                <span class="badge" [class.badge--published]="recipe.status === 'PUBLISHED'">
-                  {{ recipe.status === 'PUBLISHED' ? 'Publiée' : 'Brouillon' }}
+                <span class="badge" [class]="statuses[recipe.status].badge">
+                  @if (recipe.status === 'FAILED') {
+                    <svg yonaIcon="triangle-alert" [size]="12"></svg>
+                  }
+                  {{ statuses[recipe.status].label }}
                 </span>
+                <span class="badge">{{ themeLabel(recipe.theme) }}</span>
                 @if (recipe.scheduledAt; as scheduledAt) {
-                  <span class="badge badge--scheduled"><svg yonaIcon="calendar-clock" [size]="12"></svg>Publiée {{ parisDateTime(scheduledAt) }}</span>
+                  @if (recipe.status === 'FAILED') {
+                    <span class="badge badge--failed-time" [title]="recipe.publicationFailure ?? ''">
+                      <svg yonaIcon="calendar-clock" [size]="12"></svg>Prévue {{ parisDateTime(scheduledAt) }}
+                    </span>
+                  } @else {
+                    <span class="badge badge--scheduled"><svg yonaIcon="calendar-clock" [size]="12"></svg>Publiée {{ parisDateTime(scheduledAt) }}</span>
+                  }
                 }
                 @if (recipe.featured) {
                   <span class="badge badge--featured"><svg yonaIcon="star" [size]="12"></svg>À la une</span>
@@ -91,7 +102,21 @@
                   <span>· {{ views(recipe.viewCount) }}</span>
                 }
               </span>
+              @if (recipe.publicationFailure; as failure) {
+                <span class="admin-row__failure">{{ failure }}</span>
+              }
             </div>
+            @if (recipe.status === 'FAILED') {
+              <button
+                yonaButton
+                type="button"
+                class="admin-row__retry"
+                [disabled]="publishing() === recipe.id"
+                (click)="publishNow(recipe)"
+              >
+                <svg yonaIcon="send"></svg>Publier maintenant
+              </button>
+            }
             <div class="admin-row__actions">
               @if (recipe.status === 'PUBLISHED') {
                 <a class="icon-button" target="_blank" [routerLink]="publicLink(recipe)" [attr.aria-label]="'Voir « ' + recipe.title + ' » sur le site'">

@@ -32,9 +32,9 @@ Cloudflare (offre gratuite, proxy seulement) :
 
 ## Réseaux d'entreprise
 
-Retour de la 3.6 : depuis certains réseaux d'entreprise, « tunnel connection failed », erreurs de cache, « 504 Gateway Timeout » sur les recettes et le back-office. Ces erreurs viennent du proxy de l'entreprise, entre le poste et Cloudflare, pas du site : `ERR_TUNNEL_CONNECTION_FAILED` veut dire que le proxy a refusé d'ouvrir la connexion HTTPS vers le domaine, et un 504 qu'il a abandonné avant la réponse.
+Retour de la 1.6 : depuis certains réseaux d'entreprise, « tunnel connection failed », erreurs de cache, « 504 Gateway Timeout » sur les recettes et le back-office. Ces erreurs viennent du proxy de l'entreprise, entre le poste et Cloudflare, pas du site : `ERR_TUNNEL_CONNECTION_FAILED` veut dire que le proxy a refusé d'ouvrir la connexion HTTPS vers le domaine, et un 504 qu'il a abandonné avant la réponse.
 
-Ce que le site fait depuis la 3.7 :
+Ce que le site fait depuis la 1.7 :
 
 - Les pages répondent `Cache-Control: private, no-cache` : un proxy ne les garde plus (une page périmée resservie par lui pouvait ne plus correspondre aux fichiers du site), le navigateur les redemande à chaque fois.
 - Une fois le site visité (ou l'application installée), les pages s'ouvrent depuis l'appareil, sans attendre le réseau, et les données attendent 3 secondes au plus avant de passer à celles déjà gardées : un proxy qui bloque ou répond « Forbidden » ne bloque plus que les nouveautés.
@@ -47,7 +47,7 @@ Ce que le code ne peut pas régler, et qui se fait une fois, en ligne :
 
 ## Google Search Console
 
-Les rapports « Données structurées : Recettes » sont des suggestions (non critiques). Depuis la 3.7, chaque étape a un nom (sa première phrase), son adresse (`#etape-2`, `#partie-1-etape-2`, ancre de la page) et une image (la photo de la recette), et les temps de préparation et de cuisson sont donnés dès que l'un des temps est rempli (un temps vide compte pour 0). Une recette sans aucun temps reste signalée : la remplir (Statistiques, « Recettes à compléter », « temps »). Après la mise en ligne, **Valider la correction** dans chaque rapport pour que Google repasse sur les pages.
+Les rapports « Données structurées : Recettes » sont des suggestions (non critiques). Depuis la 1.7, chaque étape a un nom (sa première phrase), son adresse (`#etape-2`, `#partie-1-etape-2`, ancre de la page) et une image (la photo de la recette), et les temps de préparation et de cuisson sont donnés dès que l'un des temps est rempli (un temps vide compte pour 0). Une recette sans aucun temps reste signalée : la remplir (Statistiques, « Recettes à compléter », « temps »). Après la mise en ligne, **Valider la correction** dans chaque rapport pour que Google repasse sur les pages.
 
 ## Services Google
 

@@ -233,7 +233,7 @@ class MenuServiceTest {
 				List.of(new TrashedMenu.RecipeRef(1L, "tarte")), UUID.randomUUID());
 
 		assertThat(json.readValue(json.writeValueAsString(menu), TrashedMenu.class)).isEqualTo(menu);
-		// Put in the trash before 3.7: no photo of its own
+		// Put in the trash before 1.7: no photo of its own
 		assertThat(json.readValue("""
 				{"title":"Goûter","slug":"gouter","published":true,"createdAt":"2026-10-01T10:00:00Z","recipes":[]}""",
 				TrashedMenu.class).imageId()).isNull();

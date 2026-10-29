@@ -1,18 +1,21 @@
 <h1 class="visually-hidden">Les créations de Yona, recettes maison</h1>
 
-<section class="container hero" aria-label="Recette à la une">
-  @if (data().featured; as featured) {
-    <a class="hero__card" [routerLink]="featuredLink()" (click)="onFeaturedClick($event)">
+<!-- A featured recipe for each theme: sweet, then savory; side by side from tablets on -->
+<section class="container hero" [class.hero--pair]="data().featured.length > 1" aria-label="Recettes à la une">
+  @for (featured of data().featured; track featured.slug; let i = $index) {
+    <a class="hero__card" [routerLink]="link(featured)" (click)="onFeaturedClick($event, featured.slug)">
       <yona-cover-image
         class="hero__image"
-        [style.view-transition-name]="featuredTransition()"
+        [style.view-transition-name]="featuredTransition() === featured.slug ? imageTransition : null"
         [imageId]="featured.imageId"
         [alt]="featured.title"
-        sizes="(width >= 72rem) 72rem, 100vw"
-        priority
+        [sizes]="data().featured.length > 1 ? '(width >= 72rem) 36rem, (width >= 48rem) 50vw, 100vw' : '(width >= 72rem) 72rem, 100vw'"
+        [priority]="i === 0"
       />
       <div class="hero__content">
-        <p class="eyebrow hero__eyebrow enter" style="--delay: 150ms">À la une</p>
+        <p class="eyebrow hero__eyebrow enter" style="--delay: 150ms">
+          À la une{{ data().featured.length > 1 && featured.theme ? ' · ' + themeLabel(featured.theme) : '' }}
+        </p>
         <h2 class="hero__title enter" style="--delay: 230ms">{{ featured.title }}</h2>
         <div class="hero__meta enter" style="--delay: 310ms">
           <span class="chip hero__chip">{{ categoryNames(featured.categories) }}</span>
@@ -20,7 +23,7 @@
         </div>
       </div>
     </a>
-  } @else {
+  } @empty {
     <div class="hero__welcome">
       <p class="eyebrow enter">Bienvenue</p>
       <h2 class="hero__welcome-title enter" style="--delay: 80ms">Les créations de Yona</h2>
@@ -33,7 +36,7 @@
 <section class="container home-search" aria-labelledby="search-title">
   <h2 id="search-title" class="home-search__title" yonaReveal>Que voulez-vous cuisiner ?</h2>
   <yona-site-search class="home-search__box" large />
-  <p class="home-search__hint">Une recette, un ingrédient, une occasion : « chocolat », « petit-déjeuner », « tarte 8 personnes »</p>
+  <p class="home-search__hint">Une recette, un ingrédient, une occasion : « chocolat », « cake salé », « gâteau au yaourt 8 personnes »</p>
 </section>
 
 <section class="container latest" aria-labelledby="latest-title">

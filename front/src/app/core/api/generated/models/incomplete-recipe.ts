@@ -4,6 +4,6 @@
 export interface IncompleteRecipe {
   id: number;
   missing: Array<'PHOTO' | 'INTRO' | 'TIME' | 'SERVINGS' | 'DIFFICULTY'>;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
   title: string;
 }

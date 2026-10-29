@@ -6,6 +6,11 @@ export interface Recipes {
   drafts: number;
 
   /**
+   * Scheduled publications that could not happen
+   */
+  failed: number;
+
+  /**
    * With several parts, or a titled one
    */
   inParts: number;
@@ -13,9 +18,19 @@ export interface Recipes {
   published: number;
 
   /**
+   * Savory ones
+   */
+  savory: number;
+
+  /**
    * Drafts with a scheduled publication
    */
   scheduled: number;
+
+  /**
+   * Sweet ones
+   */
+  sweet: number;
   total: number;
 
   /**

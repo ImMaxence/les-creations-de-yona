@@ -11,8 +11,10 @@ public enum AuditAction {
 	RESTORED,
 	/** Erased from the trash. */
 	ERASED,
-	/** A scheduled recipe, published by the site. */
+	/** A recipe published by the site at its scheduled time, or by "Publier maintenant". */
 	PUBLISHED,
+	/** A scheduled publication the site could not do (down at that time, repeated errors). */
+	PUBLICATION_FAILED,
 	/** Ingredients merged into one. */
 	MERGED,
 	/** A backup downloaded, or sent to Google Drive at once. */

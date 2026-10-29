@@ -74,7 +74,7 @@ export default class AdminMenus {
     const chosen = new Set(this.draft()?.recipes.map((recipe) => recipe.id));
     return (this.allRecipes.value() ?? [])
       .filter((recipe) => !chosen.has(recipe.id))
-      .map((recipe) => ({ value: recipe.id, label: recipe.status === 'DRAFT' ? `${recipe.title} (brouillon)` : recipe.title }));
+      .map((recipe) => ({ value: recipe.id, label: recipe.status !== 'PUBLISHED' ? `${recipe.title} (non publiée)` : recipe.title }));
   });
 
   protected startNew(): void {

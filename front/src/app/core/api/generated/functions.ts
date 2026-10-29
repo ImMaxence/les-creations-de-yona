@@ -49,6 +49,8 @@ export type { CreateRecipe$Params as CreateRecipe$Params } from './fn/admin-reci
 export { createRecipe as createRecipe } from './fn/admin-recipes/create-recipe';
 export type { DeleteRecipes$Params as DeleteRecipes$Params } from './fn/admin-recipes/delete-recipes';
 export { deleteRecipes as deleteRecipes } from './fn/admin-recipes/delete-recipes';
+export type { PublishRecipe$Params as PublishRecipe$Params } from './fn/admin-recipes/publish-recipe';
+export { publishRecipe as publishRecipe } from './fn/admin-recipes/publish-recipe';
 export type { DuplicateRecipe$Params as DuplicateRecipe$Params } from './fn/admin-recipes/duplicate-recipe';
 export { duplicateRecipe as duplicateRecipe } from './fn/admin-recipes/duplicate-recipe';
 export type { PreviewRecipe$Params as PreviewRecipe$Params } from './fn/admin-recipes/preview-recipe';
