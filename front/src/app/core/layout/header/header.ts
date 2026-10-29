@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
+import { THEMES } from '../../../shared/format/themes';
 import { MENUS_PATH, RECIPES_PATH } from '../../../shared/routing/links';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
@@ -36,6 +37,7 @@ export class Header {
   protected readonly adminSession = inject(AdminSession);
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly menusPath = MENUS_PATH;
+  protected readonly themes = THEMES.map(({ value }) => value);
 
   protected readonly searchOpen = signal(false);
   protected readonly scrolled = signal(false);

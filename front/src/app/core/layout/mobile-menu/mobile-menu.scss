@@ -179,3 +179,9 @@
   font-weight: 700;
   line-height: 1;
 }
+
+// "Toutes les recettes salées": the way into the theme, before its categories
+.chip--all {
+  background-color: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent-strong);
+}

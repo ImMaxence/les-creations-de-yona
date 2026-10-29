@@ -38,6 +38,28 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 				and (:keptId is null or r.id <> :keptId)""")
 	void unfeatureAllExcept(RecipeTheme theme, @Nullable Long keptId);
 
+	/**
+	 * Before its main category gives them {@code theme}: a published featured recipe of it moving to
+	 * that theme is featured no more when the theme has one already.
+	 */
+	@Modifying(flushAutomatically = true)
+	@Query(value = """
+			update recipe set featured = false
+			where featured and status = PUBLISHED and theme <> :theme
+				and id in (select recipe_id from recipe_category where category_id = :categoryId and position = 0)
+				and exists (select 1 from recipe other where other.featured and other.status = PUBLISHED and other.theme = :theme)""",
+			nativeQuery = true)
+	int unfeatureMovingTo(long categoryId, String theme);
+
+	/** The theme of a category, given to the recipes whose main category it is; updated_at left alone. */
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = """
+			update recipe set theme = :theme
+			where theme <> :theme
+				and id in (select recipe_id from recipe_category where category_id = :categoryId and position = 0)""",
+			nativeQuery = true)
+	int giveThemeOfMainCategory(long categoryId, String theme);
+
 	@Query("select r.id from Recipe r where r.status = RecipeStatus.DRAFT and r.scheduledAt <= :now order by r.scheduledAt")
 	List<Long> findScheduledBefore(Instant now);
 

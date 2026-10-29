@@ -40,10 +40,12 @@ class AdminCategoryController {
 		return categoryService.create(form);
 	}
 
-	@Operation(summary = "Rename a category (its slug does not change)")
+	@Operation(summary = "Rename a category (its slug does not change), or change its theme",
+			description = "A new theme goes to every recipe whose main category it is; one of them featured is featured no "
+					+ "more when its new theme has a featured recipe already.")
 	@PutMapping("/{id}")
-	CategoryResponse renameCategory(@PathVariable long id, @Valid @RequestBody CategoryForm form) {
-		return categoryService.rename(id, form);
+	CategoryResponse updateCategory(@PathVariable long id, @Valid @RequestBody CategoryForm form) {
+		return categoryService.update(id, form);
 	}
 
 	@Operation(summary = "Move several categories to the trash, all or none; refused while one still contains recipes")

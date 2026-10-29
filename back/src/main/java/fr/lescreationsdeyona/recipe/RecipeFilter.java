@@ -17,14 +17,23 @@ import org.jspecify.annotations.Nullable;
  * @param imageId its photo or its Pinterest photo (back-office, from the gallery)
  * @param maxMinutes preparation, rest and cooking together at most this long; a recipe giving
  *     neither preparation nor cooking time is left out
+ * @param scheduled with a publication time (true) or without (false), back-office; null for both
  */
 record RecipeFilter(@Nullable String titleQuery, @Nullable String text, @Nullable String categorySlug, @Nullable String tagSlug,
 		List<String> ingredientNames, @Nullable Long ingredientId, @Nullable UUID imageId,
 		@Nullable RecipeStatus status, @Nullable RecipeTheme theme, @Nullable Integer maxMinutes,
-		@Nullable DifficultyLevel difficulty) {
+		@Nullable DifficultyLevel difficulty, @Nullable Boolean scheduled) {
 
 	RecipeFilter {
 		ingredientNames = List.copyOf(ingredientNames);
+	}
+
+	/** Scheduled or not alike: every search but the back-office list's status filter. */
+	RecipeFilter(@Nullable String titleQuery, @Nullable String text, @Nullable String categorySlug, @Nullable String tagSlug,
+			List<String> ingredientNames, @Nullable Long ingredientId, @Nullable UUID imageId, @Nullable RecipeStatus status,
+			@Nullable RecipeTheme theme, @Nullable Integer maxMinutes, @Nullable DifficultyLevel difficulty) {
+		this(titleQuery, text, categorySlug, tagSlug, ingredientNames, ingredientId, imageId, status, theme, maxMinutes,
+				difficulty, null);
 	}
 
 	static RecipeFilter publishedText(String text) {

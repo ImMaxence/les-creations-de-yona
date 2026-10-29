@@ -189,6 +189,18 @@ class RecipePublicationTest {
 	}
 
 	@Test
+	void takesTheThemeOfItsMainCategory() {
+		Category plats = new Category();
+		plats.setTheme(RecipeTheme.SAVORY);
+
+		// Chosen by hand only when the main category holds both
+		assertThat(RecipeService.themeOf(plats, RecipeTheme.SWEET)).isEqualTo(RecipeTheme.SAVORY);
+		assertThat(RecipeService.themeOf(desserts, RecipeTheme.SWEET)).isEqualTo(RecipeTheme.SWEET);
+		assertThatThrownBy(() -> RecipeService.themeOf(desserts, null)).extracting("code")
+			.isEqualTo(ErrorCode.RECIPE_THEME_REQUIRED);
+	}
+
+	@Test
 	void failsAfterThreeErrorsInARow() {
 		RecipeService recipes = mock(RecipeService.class);
 		when(recipes.dueForPublication(any())).thenReturn(List.of(7L));

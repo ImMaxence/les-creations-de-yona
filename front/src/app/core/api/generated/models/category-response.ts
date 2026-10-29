@@ -5,5 +5,15 @@ export interface CategoryResponse {
   id: number;
   imageId?: string;
   name: string;
+
+  /**
+   * Themes of its published recipes, for the menus of the site (a category holding both may have sweet recipes only); filled by the list of the categories, empty elsewhere
+   */
+  publishedThemes: Array<'SWEET' | 'SAVORY'>;
   slug: string;
+
+  /**
+   * Given to the recipes whose main category it is; absent for a category holding both
+   */
+  theme?: 'SWEET' | 'SAVORY';
 }

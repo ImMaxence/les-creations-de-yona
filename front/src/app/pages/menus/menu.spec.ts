@@ -7,7 +7,7 @@ import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { ShoppingList } from '../../core/kitchen/shopping-list';
 import Menu from './menu';
 
-const CARD = { createdAt: '2026-10-01T10:00:00Z', categories: [{ id: 1, name: 'Desserts', slug: 'desserts' }] };
+const CARD = { createdAt: '2026-10-01T10:00:00Z', categories: [{ id: 1, name: 'Desserts', slug: 'desserts', theme: 'SWEET' as const, publishedThemes: [] }] };
 const MENU: MenuDetail = {
   title: "Repas d'automne",
   slug: 'repas-d-automne',

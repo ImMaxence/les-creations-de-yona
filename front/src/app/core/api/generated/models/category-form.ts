@@ -3,4 +3,9 @@
 
 export interface CategoryForm {
   name: string;
+
+  /**
+   * Given to the recipes whose main category it is; absent for a category holding both, whose recipes each choose theirs
+   */
+  theme?: 'SWEET' | 'SAVORY';
 }

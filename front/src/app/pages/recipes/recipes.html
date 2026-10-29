@@ -18,28 +18,11 @@
       @if (filters().theme; as theme) {
         · {{ themeLabel(theme) }}
       }
-      @if (servings(); as count) {
+      @if (chosenServings(); as count) {
         · quantités pour {{ count }} personne{{ count > 1 ? 's' : '' }}
       }
     </p>
   </header>
-
-  <!-- Sucré, salé, or both -->
-  <div class="themes enter" style="--delay: 170ms" role="group" aria-label="Thème">
-    <button type="button" class="chip themes__chip" [attr.aria-pressed]="filters().theme === null" (click)="changeTheme(null)">
-      Tout
-    </button>
-    @for (theme of themes; track theme.value) {
-      <button
-        type="button"
-        class="chip themes__chip"
-        [attr.aria-pressed]="filters().theme === theme.value"
-        (click)="changeTheme(theme.value)"
-      >
-        {{ theme.label }}
-      </button>
-    }
-  </div>
 
   <div class="recipes__tools enter" style="--delay: 200ms">
     <yona-search-box
@@ -48,106 +31,182 @@
       (picked)="open($event)"
     />
 
-    <!-- "Qu'est-ce que je peux faire avec…": each ingredient picked is added to the others -->
-    <yona-select
-      class="tool-select"
-      [label]="chosenIngredients().length ? 'Ajouter un ingrédient' : 'Filtrer par ingrédient'"
-      [placeholder]="
-        chosenIngredients().length >= maxIngredients
-          ? maxIngredients + ' ingrédients au plus'
-          : chosenIngredients().length
-            ? 'Et aussi…'
-            : 'Avec un ingrédient…'
-      "
-      size="large"
-      searchable
-      pickOnly
-      [disabled]="chosenIngredients().length >= maxIngredients"
-      [options]="ingredientOptions()"
-      (picked)="addIngredient($event)"
-    />
-
-    @if (chosenIngredients().length) {
-      <ul role="list" class="chosen-ingredients" aria-label="Ingrédients choisis">
-        @for (name of chosenIngredients(); track name) {
-          <li>
-            <button type="button" class="chip chosen-ingredients__chip" [attr.aria-label]="'Retirer ' + name" (click)="removeIngredient(name)">
-              {{ name }}
-              <svg yonaIcon="x" [size]="14"></svg>
+    <!-- Every filter named above it: what it does is said, not guessed -->
+    <div class="filters">
+      <div class="filter">
+        <span class="filter__label" id="theme-label">Type</span>
+        <div class="segmented" role="group" aria-labelledby="theme-label">
+          <button type="button" class="segmented__option" [attr.aria-pressed]="filters().theme === null" (click)="changeTheme(null)">
+            Tout
+          </button>
+          @for (theme of themes; track theme.value) {
+            <button
+              type="button"
+              class="segmented__option"
+              [attr.aria-pressed]="filters().theme === theme.value"
+              (click)="changeTheme(theme.value)"
+            >
+              {{ theme.label }}
             </button>
-          </li>
-        }
-      </ul>
-    }
+          }
+        </div>
+      </div>
 
-    <yona-select
-      class="tool-select"
-      label="Filtrer par catégorie"
-      size="large"
-      [options]="categoryOptions()"
-      [value]="filters().category ?? ''"
-      (valueChange)="changeCategory($event)"
-    />
+      <!-- Not a filter: every recipe adapts its quantities to the number chosen -->
+      <div class="filter">
+        <label class="filter__label" for="servings-count">Nombre de personnes</label>
+        <div class="stepper-row">
+          <div class="stepper">
+            <button
+              type="button"
+              class="stepper__step"
+              aria-label="Une personne de moins"
+              [disabled]="!chosenServings() || chosenServings()! <= 1"
+              (click)="stepServings(-1)"
+            >
+              <svg yonaIcon="minus" [size]="18" [strokeWidth]="2.25"></svg>
+            </button>
+            <input
+              id="servings-count"
+              class="stepper__value"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              [max]="maxServings"
+              placeholder="–"
+              aria-describedby="servings-hint"
+              [value]="chosenServings() ?? ''"
+              (input)="typeServings($event)"
+            />
+            <button
+              type="button"
+              class="stepper__step"
+              aria-label="Une personne de plus"
+              [disabled]="(chosenServings() ?? 0) >= maxServings"
+              (click)="stepServings(1)"
+            >
+              <svg yonaIcon="plus" [size]="18" [strokeWidth]="2.25"></svg>
+            </button>
+          </div>
+          @if (chosenServings()) {
+            <button type="button" class="filter__reset" aria-label="Revenir aux quantités de chaque recette" (click)="setServings(null)">
+              <svg yonaIcon="x" [size]="16"></svg>
+            </button>
+          }
+        </div>
+        <span class="filter__hint" id="servings-hint">
+          {{ chosenServings() ? 'Les recettes s’ouvrent avec les quantités pour ce nombre' : 'Choisissez-le : les quantités des recettes suivront' }}
+        </span>
+      </div>
 
-    <!-- Not a filter: every recipe adapts its quantities to the number chosen -->
-    <yona-select
-      class="tool-select"
-      label="Pour combien de personnes ?"
-      size="large"
-      [options]="servingsOptions"
-      [value]="servings()"
-      (valueChange)="changeServings($event)"
-    />
-
-    <!-- Phones: tag, time and difficulty behind a button, unless one is in use -->
-    <button
-      type="button"
-      class="more-toggle"
-      aria-controls="more-filters"
-      [attr.aria-expanded]="showMoreFilters() || moreFiltersCount() > 0"
-      (click)="showMoreFilters.set(!showMoreFilters())"
-    >
-      <svg yonaIcon="sliders-horizontal" [size]="18"></svg>
-      Plus de filtres
-      @if (moreFiltersCount()) {
-        <span class="more-toggle__count">{{ moreFiltersCount() }}</span>
-      }
-    </button>
-    <div id="more-filters" class="more-filters" [class.is-open]="showMoreFilters() || moreFiltersCount() > 0">
-      @if (data().tags.length) {
+      <!-- "Qu'est-ce que je peux faire avec…": each ingredient picked is added to the others -->
+      <div class="filter filter--grow">
+        <span class="filter__label" aria-hidden="true">Ingrédients</span>
         <yona-select
           class="tool-select"
-          label="Filtrer par tag"
+          [label]="chosenIngredients().length ? 'Ajouter un ingrédient' : 'Filtrer par ingrédient'"
+          [placeholder]="
+            chosenIngredients().length >= maxIngredients
+              ? maxIngredients + ' ingrédients au plus'
+              : chosenIngredients().length
+                ? 'Et aussi…'
+                : 'Avec un ingrédient…'
+          "
           size="large"
-          [options]="tagOptions()"
-          [value]="filters().tag ?? ''"
-          (valueChange)="changeTag($event)"
+          searchable
+          pickOnly
+          [disabled]="chosenIngredients().length >= maxIngredients"
+          [options]="ingredientOptions()"
+          (picked)="addIngredient($event)"
         />
-      }
-      <yona-select
-        class="tool-select"
-        label="Filtrer par temps total"
-        size="large"
-        [options]="timeOptions"
-        [value]="filters().maxMinutes"
-        (valueChange)="changeTime($event)"
-      />
-      <yona-select
-        class="tool-select"
-        label="Filtrer par difficulté"
-        size="large"
-        [options]="difficultyOptions"
-        [value]="filters().difficulty"
-        (valueChange)="changeDifficulty($event)"
-      />
-    </div>
+      </div>
 
-    @if (hasFilters()) {
-      <a class="clear-filters" [routerLink]="recipesPath" [queryParams]="clearedQuery()">
-        <svg yonaIcon="x" [size]="16"></svg>
-        Effacer tous les filtres
-      </a>
-    }
+      <div class="filter filter--grow">
+        <span class="filter__label" aria-hidden="true">Catégorie</span>
+        <yona-select
+          class="tool-select"
+          label="Filtrer par catégorie"
+          size="large"
+          [options]="categoryOptions()"
+          [value]="filters().category ?? ''"
+          (valueChange)="changeCategory($event)"
+        />
+      </div>
+
+      @if (chosenIngredients().length) {
+        <ul role="list" class="chosen-ingredients" aria-label="Ingrédients choisis">
+          @for (name of chosenIngredients(); track name) {
+            <li>
+              <button type="button" class="chip chosen-ingredients__chip" [attr.aria-label]="'Retirer ' + name" (click)="removeIngredient(name)">
+                {{ name }}
+                <svg yonaIcon="x" [size]="14"></svg>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="filters__footer">
+        <!-- Tag, time and difficulty: behind a button, unless one is in use -->
+        <button
+          type="button"
+          class="more-toggle"
+          aria-controls="more-filters"
+          [attr.aria-expanded]="moreShown()"
+          (click)="showMoreFilters.set(!showMoreFilters())"
+        >
+          <svg yonaIcon="sliders-horizontal" [size]="18"></svg>
+          {{ moreShown() ? 'Moins de filtres' : 'Plus de filtres' }}
+          @if (moreFiltersCount()) {
+            <span class="more-toggle__count">{{ moreFiltersCount() }}</span>
+          }
+        </button>
+        @if (hasFilters()) {
+          <a class="clear-filters" [routerLink]="recipesPath" [queryParams]="clearedQuery()">
+            <svg yonaIcon="x" [size]="16"></svg>
+            Effacer tous les filtres
+          </a>
+        }
+      </div>
+
+      <div id="more-filters" class="more-filters" [class.is-open]="moreShown()">
+        @if (data().tags.length) {
+          <div class="filter filter--grow">
+            <span class="filter__label" aria-hidden="true">Tag</span>
+            <yona-select
+              class="tool-select"
+              label="Filtrer par tag"
+              size="large"
+              [options]="tagOptions()"
+              [value]="filters().tag ?? ''"
+              (valueChange)="changeTag($event)"
+            />
+          </div>
+        }
+        <div class="filter filter--grow">
+          <span class="filter__label" aria-hidden="true">Temps total</span>
+          <yona-select
+            class="tool-select"
+            label="Filtrer par temps total"
+            size="large"
+            [options]="timeOptions"
+            [value]="filters().maxMinutes"
+            (valueChange)="changeTime($event)"
+          />
+        </div>
+        <div class="filter filter--grow">
+          <span class="filter__label" aria-hidden="true">Difficulté</span>
+          <yona-select
+            class="tool-select"
+            label="Filtrer par difficulté"
+            size="large"
+            [options]="difficultyOptions"
+            [value]="filters().difficulty"
+            (valueChange)="changeDifficulty($event)"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="results">
@@ -158,7 +217,7 @@
         <!-- Cards appearing after a filter change fade in; cards already shown stay put -->
         @for (recipe of result().content; track recipe.slug; let i = $index) {
           <li yonaReveal [revealDelay]="(i % 3) * 90" animate.enter="card-enter" [style.--i]="i">
-            <yona-recipe-card [recipe]="recipe" [priority]="i === 0" [servings]="servings()" />
+            <yona-recipe-card [recipe]="recipe" [priority]="i === 0" [servings]="chosenServings()" />
           </li>
         }
       </ul>

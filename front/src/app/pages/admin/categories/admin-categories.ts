@@ -7,13 +7,15 @@ import { chooseCategoryImage } from '../../../core/api/generated/fn/admin-catego
 import { createCategory } from '../../../core/api/generated/fn/admin-categories/create-category';
 import { deleteCategories } from '../../../core/api/generated/fn/admin-categories/delete-categories';
 import { deleteCategory } from '../../../core/api/generated/fn/admin-categories/delete-category';
-import { renameCategory } from '../../../core/api/generated/fn/admin-categories/rename-category';
+import { updateCategory } from '../../../core/api/generated/fn/admin-categories/update-category';
 import { replaceCategoryImage } from '../../../core/api/generated/fn/admin-categories/replace-category-image';
 import { CategoryResponse } from '../../../core/api/generated/models/category-response';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
+import { THEMES, Theme, themeLabel } from '../../../shared/format/themes';
 import { Button } from '../../../shared/ui/button/button';
+import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { FilterChip } from '../filter-chip/filter-chip';
@@ -24,10 +26,26 @@ import { Icon } from '../../../shared/ui/icon/icon';
 
 const MAX_NAME_LENGTH = 60;
 
-/** Categories also feed the navbar and the home page: SiteData is reloaded after each change. */
+/** A category's theme as chosen here: "BOTH" for a category holding sweet and savory recipes. */
+type ThemeChoice = Theme | 'BOTH';
+
+const THEME_OPTIONS: SelectOption<ThemeChoice>[] = [
+  ...THEMES.map(({ value, label }) => ({
+    value,
+    label,
+    hint: `Ses recettes sont ${label.toLowerCase()}es, sans rien à choisir`,
+  })),
+  { value: 'BOTH', label: 'Les deux', hint: 'Chaque recette choisit le sien (apéritifs, brunch…)' },
+];
+
+/**
+ * Categories also feed the navbar and the home page: SiteData is reloaded after each change. Each
+ * has a theme (sweet, savory, or both), given to the recipes whose main category it is: it sorts
+ * the categories under "Sucré" and "Salé" in the navbar.
+ */
 @Component({
   selector: 'yona-admin-categories',
-  imports: [Icon, RouterLink, BulkBar, Button, FilterChip, ImageUpload],
+  imports: [Icon, RouterLink, BulkBar, Button, FilterChip, ImageUpload, Select],
   templateUrl: './admin-categories.html',
   styleUrl: './admin-categories.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,6 +69,9 @@ export default class AdminCategories {
   });
   protected readonly maxNameLength = MAX_NAME_LENGTH;
   protected readonly newName = signal('');
+  protected readonly newTheme = signal<ThemeChoice>('BOTH');
+  protected readonly themeOptions = THEME_OPTIONS;
+  protected readonly themeChoice = (category: CategoryResponse): ThemeChoice => category.theme ?? 'BOTH';
   protected readonly editingId = signal<number | null>(null);
   protected readonly editedName = signal('');
   protected readonly uploadingId = signal<number | null>(null);
@@ -89,10 +110,12 @@ export default class AdminCategories {
       this.toaster.error('Donnez un nom à la catégorie');
       return;
     }
-    if (!(await attempt(this.api.invoke(createCategory, { body: { name } }))).ok) {
+    const theme = this.newTheme() === 'BOTH' ? undefined : (this.newTheme() as Theme);
+    if (!(await attempt(this.api.invoke(createCategory, { body: { name, theme } }))).ok) {
       return;
     }
     this.newName.set('');
+    this.newTheme.set('BOTH');
     this.toaster.success(`Catégorie « ${name} » créée`);
     await this.siteData.load();
   }
@@ -108,12 +131,39 @@ export default class AdminCategories {
       this.editingId.set(null);
       return;
     }
-    if (!(await attempt(this.api.invoke(renameCategory, { id: category.id, body: { name } }))).ok) {
+    if (!(await attempt(this.api.invoke(updateCategory, { id: category.id, body: { name, theme: category.theme } }))).ok) {
       return;
     }
     this.editingId.set(null);
     this.toaster.success('Catégorie renommée');
     await this.siteData.load();
+  }
+
+  /**
+   * Sweet, savory or both. A theme goes to the recipes whose main category it is, after
+   * confirmation; back to "both", they keep the one they have.
+   */
+  protected async changeTheme(category: CategoryResponse, choice: ThemeChoice | undefined): Promise<void> {
+    const theme = choice === 'BOTH' || choice === undefined ? undefined : choice;
+    if (theme === (category.theme ?? undefined)) {
+      return;
+    }
+    const confirmed =
+      !theme ||
+      (await this.confirm.ask({
+        title: `Passer « ${category.name} » en ${themeLabel(theme)} ?`,
+        message: `Les recettes dont c'est la catégorie principale deviennent ${themeLabel(theme).toLowerCase()}es. Une recette à la une peut la perdre si son nouveau thème en a déjà une`,
+        confirmLabel: `Passer en ${themeLabel(theme)}`,
+      }));
+    if (!confirmed) {
+      // The menu shows the theme kept
+      await this.siteData.load();
+      return;
+    }
+    if ((await attempt(this.api.invoke(updateCategory, { id: category.id, body: { name: category.name, theme } }))).ok) {
+      this.toaster.success(theme ? `« ${category.name} » et ses recettes passent en ${themeLabel(theme)}` : `« ${category.name} » contient les deux`);
+      await this.siteData.load();
+    }
   }
 
   protected async uploadImage(category: CategoryResponse, file: File): Promise<void> {

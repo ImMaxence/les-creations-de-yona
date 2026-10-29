@@ -2,6 +2,29 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.11.0 - 2026-10-29
+
+Front and backend 1.11.0. Database migration: V16. Includes 1.10.1, never released.
+
+### Added
+
+- **Themes belong to categories**: each category is Sweet, Savory or Both. A recipe takes the theme of its main category; it is chosen by hand only in a "Both" category.
+- **"Salé" and "Sucré" menus** in the navbar (and on phones) instead of "Catégories": each theme with its categories and "All savory recipes". A "Both" category shows in each menu it has recipes for, opening only those.
+- **Back-office Categories**: theme of each category; changing it moves its recipes (after confirmation).
+- **"Scheduled" status** (blue) in the back-office for a draft with a publication time, with its own filter.
+
+### Changed
+
+- Savory before sweet everywhere (menus, filters, home page), as a meal goes.
+- **Recipes page** reorganised: search on its own line, then labelled filters (Type, Number of people, Ingredients, Category).
+- **Number of people**: a − / + counter (number can be typed, × to reset) instead of the "Comme la recette" menu.
+- Existing categories classified from their name, recipes following their main category (fixes the all-sweet migration of 1.10.0).
+
+### Technical
+
+- API: `theme` and `publishedThemes` on categories, `PUT /api/admin/categories/{id}` renamed `updateCategory` (name and theme), `theme` of the recipe form optional, `scheduled` filter on `/api/admin/recipes`.
+- 122 backend tests, 89 front tests, 81 Chrome checks.
+
 ## 1.10.0 - 2026-10-29
 
 Front and backend 1.10.0. Database migration: V15.

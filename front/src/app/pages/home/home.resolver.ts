@@ -10,7 +10,7 @@ export const LATEST_RECIPES_COUNT = 3;
 
 export interface HomeData {
   /**
-   * The featured recipe of each theme, sweet then savory (its latest one when none is chosen); a
+   * The featured recipe of each theme, savory then sweet (its latest one when none is chosen); a
    * theme without any published recipe is left out (the API answers 204). Empty when nothing is
    * published yet.
    */

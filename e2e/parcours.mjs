@@ -49,6 +49,8 @@ await part('API', async () => {
   check('Recherche à plusieurs ingrédients : la recette en fait partie', both.content.some((card) => card.slug === recipe.slug));
   const tooMany = await fetch(`${BASE}/api/recipes?${'ingredient=a&'.repeat(6)}`);
   check('Plus de 5 ingrédients refusés', tooMany.status === 400, String(tooMany.status));
+  const themed = await api('/api/categories');
+  check('Catégories : leur thème, et les thèmes de leurs recettes publiées', themed.every((category) => 'publishedThemes' in category && (category.theme == null || ['SWEET', 'SAVORY'].includes(category.theme))));
   const sweet = await api('/api/recipes?theme=SWEET&size=50');
   check('Filtre par thème : des recettes sucrées seulement', sweet.content.every((card) => card.theme === 'SWEET'), `${sweet.totalElements} recette(s)`);
   const featured = await fetch(`${BASE}/api/featured-recipe?theme=${recipe.theme}`);
@@ -106,6 +108,19 @@ await part('Accueil (ordinateur)', async () => {
     menus.length ? '« Menus » dans la barre du haut' : 'Pas de « Menus » sans menu publié',
     (await page.locator('yona-header nav.nav').getByRole('link', { name: 'Menus' }).count()) === (menus.length ? 1 : 0),
   );
+  // Salé et Sucré : chaque thème avec ses catégories, à la place de « Catégories »
+  const categories = await api('/api/categories');
+  const nav = page.locator('yona-header nav.nav');
+  check('Menus « Salé » puis « Sucré » dans la barre du haut', (await nav.locator('yona-category-menu .trigger').allTextContents()).map((text) => text.trim()).join(' | ') === 'Salé | Sucré');
+  const savory = categories.find((category) => category.theme === 'SAVORY');
+  if (savory) {
+    await nav.getByRole('button', { name: 'Salé' }).click();
+    const panel = page.locator('#category-menu-sale');
+    await panel.waitFor();
+    check('« Salé » : ses catégories, et toutes les recettes salées', (await panel.getByRole('link', { name: savory.name }).count()) === 1 && (await panel.getByRole('link', { name: 'Toutes les recettes salées' }).count()) === 1);
+    check('« Salé » sans catégorie sucrée', (await panel.getByRole('link').allTextContents()).every((name) => !categories.some((category) => category.theme === 'SWEET' && category.name === name.trim())));
+    await page.keyboard.press('Escape');
+  }
   check('Barre du haut sans « Installer l’application »', (await page.locator('yona-header nav.nav').getByText("Installer l'application").count()) === 0);
   check('Pied de page avec « Installer l’application »', (await page.locator('footer').getByRole('link', { name: "Installer l'application" }).count()) === 1);
   check('Encart des notifications', await page.locator('section.notify button').isVisible());
@@ -166,16 +181,23 @@ await part('Recherche (téléphone)', async () => {
   await page.unrouteAll({ behavior: 'ignoreErrors' });
 
   // Sucré ou salé, et le nombre de personnes porté jusqu'aux recettes
-  await page.getByRole('group', { name: 'Thème' }).getByRole('button', { name: 'Salé' }).click();
+  await page.getByRole('group', { name: 'Type' }).getByRole('button', { name: 'Salé' }).click();
   await page.waitForURL((url) => url.searchParams.get('theme') === 'sale');
   check('« Salé » : le thème dans l’adresse', true);
-  await page.getByRole('group', { name: 'Thème' }).getByRole('button', { name: 'Tout' }).click();
+  await page.getByRole('group', { name: 'Type' }).getByRole('button', { name: 'Tout' }).click();
   await page.waitForURL((url) => !url.searchParams.has('theme'));
-  await page.getByRole('combobox', { name: 'Pour combien de personnes ?' }).click();
-  await page.getByRole('option', { name: 'Pour 6 personnes' }).click();
+  // Le compteur : + depuis rien donne 2, chaque appui une personne de plus, l'adresse suit après une pause
+  const more = page.getByRole('button', { name: 'Une personne de plus' });
+  for (let tap = 0; tap < 5; tap++) {
+    await more.click();
+  }
+  check('Compteur de personnes : 6 après cinq appuis sur +', (await page.getByLabel('Nombre de personnes').inputValue()) === '6');
   await page.waitForURL((url) => url.searchParams.get('portions') === '6');
   const link = await page.locator('yona-recipe-card a').first().getAttribute('href');
-  check('« Pour 6 personnes » : les recettes s’ouvrent pour 6', link?.includes('portions=6') ?? false, link ?? '');
+  check('6 personnes : les recettes s’ouvrent pour 6', link?.includes('portions=6') ?? false, link ?? '');
+  await page.getByRole('button', { name: 'Revenir aux quantités de chaque recette' }).click();
+  await page.waitForURL((url) => !url.searchParams.has('portions'));
+  check('× : retour aux quantités de chaque recette', (await page.getByLabel('Nombre de personnes').inputValue()) === '');
   await page.context().close();
 });
 
@@ -421,8 +443,9 @@ await part('Back-office (session simulée)', async () => {
     createdAt: '2026-10-01T10:00:00Z', updatedAt: '2026-10-01T10:00:00Z', viewCount: 0, scheduledAt: '2026-10-28T08:00:00Z',
     publicationFailure: 'Le site était arrêté à l’heure prévue : plus de 30 minutes de retard, la recette n’a pas été publiée',
   };
+  const scheduled = { ...failed, id: 998, title: 'Quiche programmée', status: 'DRAFT', scheduledAt: '2026-11-07T09:00:00Z', publicationFailure: null };
   await page.route('**/api/admin/recipes?**', (route) =>
-    route.fulfill({ json: { content: [failed], page: 0, size: 20, totalElements: 1, totalPages: 1 } }),
+    route.fulfill({ json: { content: [failed, scheduled], page: 0, size: 20, totalElements: 2, totalPages: 1 } }),
   );
   // Sans session, toute autre route du back-office répondrait 401 et renverrait vers Google
   await page.route('**/api/admin/tags', (route) => route.fulfill({ json: [] }));
@@ -430,6 +453,7 @@ await part('Back-office (session simulée)', async () => {
   await page.goto(BASE + '/admin/recettes', { waitUntil: 'load' });
   await page.locator('.badge--failed').waitFor({ timeout: 5000 });
   check('Recettes : statut « Échec » en rouge', (await page.locator('.badge--failed').textContent()).includes('Échec'));
+  check('Recettes : brouillon daté « Programmée » en bleu', (await page.locator('.badge--scheduled').textContent()).includes('Programmée'));
   check('Recettes : raison de l’échec et « Publier maintenant »', (await page.locator('.admin-row__failure').isVisible()) && (await page.getByRole('button', { name: 'Publier maintenant' }).isVisible()));
   await page.screenshot({ path: SHOTS + 'admin-echec.png' });
 

@@ -20,9 +20,12 @@
           <a class="nav__link" [routerLink]="menusPath" routerLinkActive="is-active">Menus</a>
         </li>
       }
-      <li>
-        <yona-category-menu [categories]="siteData.categories()" />
-      </li>
+      <!-- Salé, Sucré: each theme with its categories -->
+      @for (theme of themes; track theme) {
+        <li>
+          <yona-category-menu [theme]="theme" [categories]="siteData.categories()" />
+        </li>
+      }
       @if (adminSession.isAdmin()) {
         <li>
           <a class="nav__link" routerLink="/admin" routerLinkActive="is-active">Administration</a>

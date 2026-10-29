@@ -99,8 +99,8 @@ export type { DeleteFeedback$Params as DeleteFeedback$Params } from './fn/admin-
 export { deleteFeedback as deleteFeedback } from './fn/admin-feedback/delete-feedback';
 export type { CountUnreadFeedback$Params as CountUnreadFeedback$Params } from './fn/admin-feedback/count-unread-feedback';
 export { countUnreadFeedback as countUnreadFeedback } from './fn/admin-feedback/count-unread-feedback';
-export type { RenameCategory$Params as RenameCategory$Params } from './fn/admin-categories/rename-category';
-export { renameCategory as renameCategory } from './fn/admin-categories/rename-category';
+export type { UpdateCategory$Params as UpdateCategory$Params } from './fn/admin-categories/update-category';
+export { updateCategory as updateCategory } from './fn/admin-categories/update-category';
 export type { DeleteCategory$Params as DeleteCategory$Params } from './fn/admin-categories/delete-category';
 export { deleteCategory as deleteCategory } from './fn/admin-categories/delete-category';
 export type { ReplaceCategoryImage$Params as ReplaceCategoryImage$Params } from './fn/admin-categories/replace-category-image';

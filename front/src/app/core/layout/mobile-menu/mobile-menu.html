@@ -88,17 +88,16 @@
       }
     </ul>
 
-    @if (siteData.categories().length) {
-      <p class="menu__subtitle stagger" style="--i: 3">Naviguer par catégorie</p>
-      <ul role="list" class="menu__categories stagger" style="--i: 4">
-        @for (category of siteData.categories(); track category.id) {
+    <!-- Salé, Sucré: each theme with all its recipes, then its categories -->
+    @for (group of themeGroups(); track group.theme; let i = $index) {
+      <p class="menu__subtitle stagger" [style.--i]="3 + i">{{ group.label }}</p>
+      <ul role="list" class="menu__categories stagger" [style.--i]="3 + i">
+        <li>
+          <a class="chip chip--all" [routerLink]="recipesPath" [queryParams]="group.allQueryParams">Toutes les recettes {{ group.label.toLowerCase() }}es</a>
+        </li>
+        @for (category of group.categories; track category.id) {
           <li>
-            <a
-              class="chip"
-              [routerLink]="recipesPath"
-              [queryParams]="categoryQueryParams(category)"
-              >{{ category.name }}</a
-            >
+            <a class="chip" [routerLink]="recipesPath" [queryParams]="group.queryParams(category)">{{ category.name }}</a>
           </li>
         }
       </ul>

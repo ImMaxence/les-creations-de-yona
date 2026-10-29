@@ -39,6 +39,11 @@ export interface SearchRecipes$Params {
   theme?: 'SWEET' | 'SAVORY';
 
 /**
+ * With a publication time (a scheduled draft, or a failed one), or without
+ */
+  scheduled?: boolean;
+
+/**
  * Zero-based page index (0..N)
  */
   page?: number;
@@ -64,6 +69,7 @@ export function searchRecipes(http: HttpClient, rootUrl: string, params?: Search
     rb.query('imageId', params.imageId, {});
     rb.query('status', params.status, {});
     rb.query('theme', params.theme, {});
+    rb.query('scheduled', params.scheduled, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});
     rb.query('sort', params.sort, {});

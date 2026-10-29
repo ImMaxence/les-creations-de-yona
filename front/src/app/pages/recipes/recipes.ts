@@ -23,8 +23,11 @@ import {
 } from './recipes.resolver';
 import { Icon } from '../../shared/ui/icon/icon';
 
-/** "Pour combien de personnes ?": the usual numbers; any other one comes from the search. */
-const SERVINGS_CHOICES = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20] as const;
+/** The first tap on + from nothing: a meal for two, then one more at each tap. */
+const FIRST_SERVINGS = 2;
+
+/** Taps and typing on the counter are written to the URL once the visitor pauses. */
+const SERVINGS_DELAY_MS = 500;
 
 @Component({
   selector: 'yona-recipes',
@@ -67,12 +70,15 @@ export default class Recipes {
     const asked = Number(this.portions());
     return asked >= 1 && asked <= MAX_SERVINGS ? asked : servingsIn(this.filters().search);
   });
+  /**
+   * The counter "Nombre de personnes": changed at once on screen (and on the cards' links), written
+   * to the URL a moment later, so that each tap does not load the list again.
+   */
+  protected readonly chosenServings = linkedSignal(() => this.servings());
+  protected readonly maxServings = MAX_SERVINGS;
+  private servingsTimer: ReturnType<typeof setTimeout> | undefined;
   protected readonly themes = THEMES;
   protected readonly themeLabel = themeLabel;
-  protected readonly servingsOptions: SelectOption<number | null>[] = [
-    { value: null, label: 'Comme la recette' },
-    ...SERVINGS_CHOICES.map((count) => ({ value: count, label: `Pour ${count} personne${count > 1 ? 's' : ''}` })),
-  ];
   protected readonly result = computed(() => this.data().result);
   protected readonly activeCategory = computed(
     () => this.categories().find((category) => category.slug === this.filters().category) ?? null,
@@ -86,11 +92,13 @@ export default class Recipes {
       Number(this.filters().difficulty !== null),
   );
   protected readonly showMoreFilters = signal(false);
+  /** Tag, time and difficulty: shown once asked for, or when one is in use. */
+  protected readonly moreShown = computed(() => this.showMoreFilters() || this.moreFiltersCount() > 0);
   protected readonly hasFilters = computed(
     () =>
       this.filters().search !== '' ||
       this.filters().theme !== null ||
-      this.servings() !== null ||
+      this.chosenServings() !== null ||
       this.filters().category !== null ||
       this.filters().ingredients.length > 0 ||
       this.moreFiltersCount() > 0,
@@ -148,10 +156,31 @@ export default class Recipes {
     this.updateQuery({ [RECIPES_QUERY.theme]: theme ? themeSlug(theme) : null, [RECIPES_QUERY.page]: null });
   }
 
-  /** Kept in the URL: the cards open their recipe for that many people. */
-  protected changeServings(servings: number | null | undefined): void {
-    this.keepScroll();
-    this.updateQuery({ [RECIPES_QUERY.servings]: servings ?? null });
+  /** − and +: from nothing, + starts at 2. */
+  protected stepServings(step: number): void {
+    const current = this.chosenServings();
+    this.setServings(current ? current + step : step > 0 ? FIRST_SERVINGS : null);
+  }
+
+  /** Typed in the counter: a number from 1 to 50, or nothing (each recipe's own quantities). */
+  protected typeServings(event: Event): void {
+    const typed = Math.round(Number((event.target as HTMLInputElement).value));
+    this.setServings(typed >= 1 ? typed : null);
+  }
+
+  /** Kept in the URL: the cards open their recipe for that many people. Null: as each recipe is written. */
+  protected setServings(servings: number | null): void {
+    const count = servings === null ? null : Math.min(MAX_SERVINGS, Math.max(1, servings));
+    this.chosenServings.set(count);
+    clearTimeout(this.servingsTimer);
+    this.servingsTimer = setTimeout(() => {
+      this.keepScroll();
+      void this.router.navigate([RECIPES_PATH], {
+        queryParams: { [RECIPES_QUERY.servings]: count },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }, SERVINGS_DELAY_MS);
   }
 
   protected changeCategory(slug: string | undefined): void {

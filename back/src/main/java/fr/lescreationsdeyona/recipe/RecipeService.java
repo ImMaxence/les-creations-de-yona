@@ -431,6 +431,7 @@ public class RecipeService {
 		if (form.status() == RecipeStatus.FAILED) {
 			throw new ApiException(ErrorCode.RECIPE_STATUS_FAILED_NOT_SETTABLE);
 		}
+		RecipeTheme theme = themeOf(categories.getFirst(), form.theme());
 		Instant scheduledAt = form.scheduledAt();
 		if (scheduledAt != null) {
 			if (form.status() != RecipeStatus.DRAFT) {
@@ -448,13 +449,13 @@ public class RecipeService {
 			// Done before changing the entity: the flush preceding this update must not write a second
 			// featured recipe, which the database would reject. A scheduled one waits for its publication.
 			if (form.status() == RecipeStatus.PUBLISHED) {
-				recipeRepository.unfeatureAllExcept(form.theme(), recipe.getId());
+				recipeRepository.unfeatureAllExcept(theme, recipe.getId());
 			}
 		}
 		recipe.setTitle(Texts.capitalizeFirstLetter(form.title().strip()));
 		recipe.setIntro(form.intro());
 		recipe.setStatus(form.status());
-		recipe.setTheme(form.theme());
+		recipe.setTheme(theme);
 		recipe.setPublicationFailure(null);
 		recipe.setFeatured(form.featured());
 		recipe.setScheduledAt(scheduledAt);
@@ -484,6 +485,20 @@ public class RecipeService {
 			recipe.setPublishedAt(Instant.now());
 		}
 		return firstPublication;
+	}
+
+	/**
+	 * The theme of the main category; the one chosen for the recipe only when that category holds
+	 * both ("Apéritifs"), required then.
+	 */
+	static RecipeTheme themeOf(Category mainCategory, @Nullable RecipeTheme chosen) {
+		if (mainCategory.getTheme() != null) {
+			return mainCategory.getTheme();
+		}
+		if (chosen == null) {
+			throw new ApiException(ErrorCode.RECIPE_THEME_REQUIRED);
+		}
+		return chosen;
 	}
 
 	/** In the order chosen: the first one is the main category, in the recipe URL. */

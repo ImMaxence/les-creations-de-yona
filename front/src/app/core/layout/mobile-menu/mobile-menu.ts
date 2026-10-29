@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  computed,
   inject,
   signal,
   viewChild,
@@ -21,6 +22,8 @@ import { AdminSession } from '../../auth/admin-session';
 import { Favorites } from '../../kitchen/favorites';
 import { ShoppingList } from '../../kitchen/shopping-list';
 import { SiteData } from '../../site/site-data';
+import { CategoryResponse } from '../../api/generated/models/category-response';
+import { THEMES, categoriesOf, categoryOfThemeQueryParams } from '../../../shared/format/themes';
 import {
   FAVORITES_PATH,
   FEEDBACK_PATH,
@@ -29,7 +32,6 @@ import {
   MENUS_PATH,
   RECIPES_PATH,
   SHOPPING_LIST_PATH,
-  categoryQueryParams,
 } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
@@ -72,7 +74,16 @@ export class MobileMenu {
   protected readonly feedbackPath = FEEDBACK_PATH;
   protected readonly favoritesPath = FAVORITES_PATH;
   protected readonly shoppingListPath = SHOPPING_LIST_PATH;
-  protected readonly categoryQueryParams = categoryQueryParams;
+  /** "Salé", then "Sucré": all the recipes of the theme, then its categories. */
+  protected readonly themeGroups = computed(() =>
+    THEMES.map(({ value, label, slug }) => ({
+      theme: value,
+      label,
+      allQueryParams: { theme: slug },
+      categories: categoriesOf(this.siteData.categories(), value),
+      queryParams: (category: CategoryResponse) => categoryOfThemeQueryParams(category, value),
+    })),
+  );
   protected readonly socialPlatformLabel = socialPlatformLabel;
 
   protected readonly isOpen = signal(false);

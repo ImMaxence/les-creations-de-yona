@@ -11,12 +11,16 @@ import fr.lescreationsdeyona.image.ImageKind;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.recipe.RecipeRepository;
+import fr.lescreationsdeyona.recipe.RecipeTheme;
 import fr.lescreationsdeyona.trash.TrashBin;
 import fr.lescreationsdeyona.trash.TrashItem;
 import fr.lescreationsdeyona.trash.TrashKind;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -41,26 +45,46 @@ public class CategoryService {
 
 	private final AuditLog auditLog;
 
+	/** Sorted by name, each with the themes of its published recipes (for the menus of the site). */
 	public List<CategoryResponse> list() {
-		return categoryRepository.findAll(Sort.by("name")).stream().map(categoryMapper::toResponse).toList();
+		Map<Long, List<RecipeTheme>> themes = new HashMap<>();
+		for (Object[] row : categoryRepository.findPublishedThemes()) {
+			themes.computeIfAbsent((Long) row[0], id -> new ArrayList<>()).add((RecipeTheme) row[1]);
+		}
+		return categoryRepository.findAll(Sort.by("name"))
+			.stream()
+			.map(category -> withThemes(categoryMapper.toResponse(category), themes.getOrDefault(category.getId(), List.of())))
+			.toList();
 	}
 
 	@Transactional
 	public CategoryResponse create(CategoryForm form) {
 		Category category = new Category();
 		category.setName(Texts.capitalizeFirstLetter(form.name().strip()));
+		category.setTheme(form.theme());
 		category.setSlug(Slugs.uniqueSlug(category.getName(), "categorie", categoryRepository::existsBySlug));
 		Category saved = categoryRepository.save(category);
 		auditLog.record(AuditAction.CREATED, AuditKind.CATEGORY, saved.getName(), saved.getId());
 		return categoryMapper.toResponse(saved);
 	}
 
+	/**
+	 * Its name, and its theme: a new theme goes to every recipe whose main category it is (one of them
+	 * featured is featured no more if its new theme has a featured recipe already). Back to "both",
+	 * its recipes keep the theme they had.
+	 */
 	@Transactional
-	public CategoryResponse rename(long id, CategoryForm form) {
+	public CategoryResponse update(long id, CategoryForm form) {
 		Category category = find(id);
 		category.setName(Texts.capitalizeFirstLetter(form.name().strip()));
+		RecipeTheme theme = form.theme();
+		if (theme != null && theme != category.getTheme()) {
+			recipeRepository.unfeatureMovingTo(id, theme.name());
+			recipeRepository.giveThemeOfMainCategory(id, theme.name());
+		}
+		category.setTheme(theme);
 		auditLog.record(AuditAction.UPDATED, AuditKind.CATEGORY, category.getName(), id);
-		return categoryMapper.toResponse(category);
+		return categoryMapper.toResponse(categoryRepository.saveAndFlush(category));
 	}
 
 	/** Refused while it still contains recipes. Moved to the trash, kept 30 days; its photo stays in the gallery. */
@@ -101,6 +125,7 @@ public class CategoryService {
 		CategoryResponse kept = trashBin.content(trashed, CategoryResponse.class);
 		Category category = new Category();
 		category.setName(kept.name());
+		category.setTheme(kept.theme());
 		category.setSlug(categoryRepository.existsBySlug(kept.slug())
 				? Slugs.uniqueSlug(kept.name(), "categorie", categoryRepository::existsBySlug)
 				: kept.slug());
@@ -132,6 +157,11 @@ public class CategoryService {
 					categoryMapper.toResponse(category)));
 		}
 		categoryRepository.deleteAll(categories);
+	}
+
+	private static CategoryResponse withThemes(CategoryResponse category, List<RecipeTheme> publishedThemes) {
+		return new CategoryResponse(category.id(), category.name(), category.slug(), category.imageId(), category.theme(),
+				List.copyOf(publishedThemes));
 	}
 
 	private Category find(long id) {

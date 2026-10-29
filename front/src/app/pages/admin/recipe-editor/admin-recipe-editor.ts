@@ -30,7 +30,7 @@ import { createRecipe } from '../../../core/api/generated/fn/admin-recipes/creat
 import { getRecipeAiStatus } from '../../../core/api/generated/fn/admin-recipe-ai/get-recipe-ai-status';
 import { duplicateRecipe } from '../../../core/api/generated/fn/admin-recipes/duplicate-recipe';
 import { publishRecipe } from '../../../core/api/generated/fn/admin-recipes/publish-recipe';
-import { THEMES } from '../../../shared/format/themes';
+import { THEMES, themeLabel } from '../../../shared/format/themes';
 import { previewRecipe } from '../../../core/api/generated/fn/admin-recipes/preview-recipe';
 import { chooseRecipeImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-image';
 import { chooseRecipePinterestImage } from '../../../core/api/generated/fn/admin-recipes/choose-recipe-pinterest-image';
@@ -197,6 +197,14 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   private readonly storageKey = computed(() => STORED_DRAFT_PREFIX + (this.recipe()?.id ?? 'nouvelle'));
   private storeTimer: ReturnType<typeof setTimeout> | undefined;
   protected readonly categories = this.siteData.categories;
+  /** The first category chosen: it gives the recipe its theme, unless it holds both. */
+  protected readonly mainCategory = computed(() => {
+    const id = this.draft().categoryIds[0];
+    return this.categories().find((category) => category.id === id) ?? null;
+  });
+  /** The theme the recipe will have once saved (see RecipeService.themeOf). */
+  protected readonly theme = computed(() => this.mainCategory()?.theme ?? this.draft().theme);
+  protected readonly themeLabel = themeLabel;
   /** Among the chosen ones: the main category, in the recipe URL. */
   protected readonly mainCategoryOptions = computed<SelectOption<number>[]>(() =>
     this.draft().categoryIds.map((id) => ({

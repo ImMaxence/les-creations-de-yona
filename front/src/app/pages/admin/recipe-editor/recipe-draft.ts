@@ -6,7 +6,7 @@ import { fromParisInput, toParisInput } from '../../../shared/format/paris-time'
 
 export type MoldShapeChoice = 'NONE' | 'ROUND' | 'SQUARE' | 'RECTANGLE';
 
-export type RecipeTheme = RecipeForm['theme'];
+export type RecipeTheme = NonNullable<RecipeForm['theme']>;
 
 /** Editable copy of a recipe: every field exists, empty ones as "" or null. */
 export interface RecipeDraft {

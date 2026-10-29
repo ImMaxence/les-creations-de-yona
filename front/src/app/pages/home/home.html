@@ -1,6 +1,6 @@
 <h1 class="visually-hidden">Les créations de Yona, recettes maison</h1>
 
-<!-- A featured recipe for each theme: sweet, then savory; side by side from tablets on -->
+<!-- A featured recipe for each theme: savory, then sweet; side by side from tablets on -->
 <section class="container hero" [class.hero--pair]="data().featured.length > 1" aria-label="Recettes à la une">
   @for (featured of data().featured; track featured.slug; let i = $index) {
     <a class="hero__card" [routerLink]="link(featured)" (click)="onFeaturedClick($event, featured.slug)">

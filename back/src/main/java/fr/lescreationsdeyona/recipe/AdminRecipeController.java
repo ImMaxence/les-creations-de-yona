@@ -58,10 +58,12 @@ class AdminRecipeController {
 			@RequestParam(required = false) @Nullable UUID imageId,
 			@RequestParam(required = false) @Nullable RecipeStatus status,
 			@RequestParam(required = false) @Nullable RecipeTheme theme,
+			@Parameter(description = "With a publication time (a scheduled draft, or a failed one), or without")
+			@RequestParam(required = false) @Nullable Boolean scheduled,
 			@ParameterObject @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		return PageResponse.of(recipeService.searchAll(
-				new RecipeFilter(q, null, category, tag, List.of(), ingredientId, imageId, status, theme, null, null),
+				new RecipeFilter(q, null, category, tag, List.of(), ingredientId, imageId, status, theme, null, null, scheduled),
 				pageable));
 	}
 

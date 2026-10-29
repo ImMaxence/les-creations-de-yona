@@ -42,16 +42,40 @@ import { Selection } from '../selection';
 import { ADMIN_RECIPES_QUERY } from './admin-recipes-query';
 import { Icon } from '../../../shared/ui/icon/icon';
 
-type Status = RecipeAdminSummary['status'];
+/**
+ * As the list shows it: a draft with a publication time is "Programmée", a status of its own for
+ * the admin, though still a draft for the API (DRAFT with a scheduledAt).
+ */
+type Status = RecipeAdminSummary['status'] | 'SCHEDULED';
 type StatusFilter = 'ALL' | Status;
 type ThemeFilter = 'ALL' | Theme;
 
-/** The name and colour of each status (see .badge--…): grey draft, green published, red failure. */
+/** The name and colour of each status (see .badge--…): grey draft, blue scheduled, green published, red failure. */
 const STATUSES: Record<Status, { label: string; badge: string }> = {
   DRAFT: { label: 'Brouillon', badge: 'badge--draft' },
+  SCHEDULED: { label: 'Programmée', badge: 'badge--scheduled' },
   PUBLISHED: { label: 'Publiée', badge: 'badge--published' },
   FAILED: { label: 'Échec', badge: 'badge--failed' },
 };
+
+/** The status shown for a recipe of the list. */
+export function shownStatus(recipe: Pick<RecipeAdminSummary, 'status' | 'scheduledAt'>): Status {
+  return recipe.status === 'DRAFT' && recipe.scheduledAt ? 'SCHEDULED' : recipe.status;
+}
+
+/** What the API is asked for each status filter: a draft "Brouillon" has no publication time. */
+export function statusQuery(status: StatusFilter): { status?: RecipeAdminSummary['status']; scheduled?: boolean } {
+  switch (status) {
+    case 'ALL':
+      return {};
+    case 'DRAFT':
+      return { status: 'DRAFT', scheduled: false };
+    case 'SCHEDULED':
+      return { status: 'DRAFT', scheduled: true };
+    default:
+      return { status };
+  }
+}
 type SortOrder = 'modification' | 'creation' | 'anciennes' | 'titre' | 'titre-inverse' | 'vues';
 
 /** Sent to the API; the id keeps equal titles or counts in the same order from one page to the next. */
@@ -112,10 +136,12 @@ export default class AdminRecipes {
   protected readonly categoryNames = categoryNames;
   protected readonly parisDateTime = parisDateTime;
   protected readonly statuses = STATUSES;
+  protected readonly shownStatus = shownStatus;
   protected readonly themeLabel = themeLabel;
   protected readonly statusOptions: SelectOption<StatusFilter>[] = [
     { value: 'ALL', label: 'Tous les statuts' },
     { value: 'PUBLISHED', label: 'Publiées' },
+    { value: 'SCHEDULED', label: 'Programmées' },
     { value: 'DRAFT', label: 'Brouillons' },
     { value: 'FAILED', label: 'En échec' },
   ];
@@ -170,7 +196,7 @@ export default class AdminRecipes {
   protected readonly recipes = resource({
     params: () => ({
       q: this.q()?.trim() || undefined,
-      status: this.status() === 'ALL' ? undefined : (this.status() as Status),
+      ...statusQuery(this.status()),
       theme: this.themeFilter() === 'ALL' ? undefined : (this.themeFilter() as Theme),
       category: this.category() || undefined,
       tag: this.tagSlug() || undefined,

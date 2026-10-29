@@ -449,3 +449,12 @@ yona-select {
   font-weight: 700;
   color: var(--color-danger);
 }
+
+// The theme given by the main category: shown, not chosen
+.theme-given {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+}

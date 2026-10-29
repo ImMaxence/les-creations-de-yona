@@ -21,4 +21,10 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 			where r.status = fr.lescreationsdeyona.recipe.RecipeStatus.PUBLISHED""")
 	List<String> findSlugsWithPublishedRecipes();
 
+	/** Each category and a theme of its published recipes: [category id, RecipeTheme], once each. */
+	@Query("""
+			select distinct c.id, r.theme from Recipe r join r.categories c
+			where r.status = fr.lescreationsdeyona.recipe.RecipeStatus.PUBLISHED""")
+	List<Object[]> findPublishedThemes();
+
 }

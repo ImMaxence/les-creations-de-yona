@@ -27,6 +27,7 @@ public enum ErrorCode {
 	// Recipes
 	RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "Recette introuvable"),
 	FEATURED_RECIPE_MUST_BE_PUBLISHED(HttpStatus.BAD_REQUEST, "Seule une recette publiée ou programmée peut être mise à la une"),
+	RECIPE_THEME_REQUIRED(HttpStatus.BAD_REQUEST, "Choisissez si la recette est sucrée ou salée : sa catégorie principale contient les deux"),
 	RECIPE_STATUS_FAILED_NOT_SETTABLE(HttpStatus.BAD_REQUEST, "Une recette ne se met pas en échec : choisissez brouillon ou publiée"),
 	DUPLICATE_RECIPE_INGREDIENT(HttpStatus.BAD_REQUEST, "Un même ingrédient apparaît plusieurs fois dans une même partie de la recette"),
 	DUPLICATE_RECIPE_CATEGORY(HttpStatus.BAD_REQUEST, "Une même catégorie est choisie plusieurs fois"),

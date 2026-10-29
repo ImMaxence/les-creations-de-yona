@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 1.10.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 1.11.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -28,7 +28,7 @@ Sur téléphone, là où se lisent la plupart des recettes :
 
 **Pour les visiteurs, sans compte**
 
-- Recettes sucrées et salées, une à la une pour chaque thème sur l'accueil.
+- Recettes salées et sucrées, rangées par catégorie sous les menus « Salé » et « Sucré », une à la une pour chaque thème sur l'accueil.
 - Recherche partout (loupe de l'en-tête et grande barre sur l'accueil : chaque mot cherché dans les titres, catégories, tags et ingrédients, suggestions par type ; « gâteau 8 » ouvre les recettes pour 8, réglable avec − et +), filtres (sucré ou salé, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté, nombre de personnes), portions et moule ajustables, « Organiser mon temps ».
 - Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page et après un rechargement.
 - Menus composés par Yona (« Menu de Noël », « Goûter d'anniversaire »), chacun avec sa photo (visuel par défaut sans photo), toutes leurs recettes à la liste de courses en un geste.

@@ -158,10 +158,24 @@
         <span class="field__label">Statut</span>
         <yona-select label="Statut" [options]="statusOptions" [formField]="recipeForm.status" />
       </div>
+      <!-- The theme comes from the main category; chosen here only for a category holding both -->
       <div class="field">
         <span class="field__label">Thème</span>
-        <yona-select label="Thème" [options]="themeOptions" [formField]="recipeForm.theme" />
-        <span class="field__hint">Les visiteurs filtrent les recettes par thème, et l'accueil montre une recette à la une de chacun</span>
+        @if (mainCategory()?.theme; as theme) {
+          <p class="theme-given">
+            <span class="badge">{{ themeLabel(theme) }}</span>
+            <span class="field__hint">Celui de sa catégorie principale, « {{ mainCategory()?.name }} »</span>
+          </p>
+        } @else {
+          <yona-select label="Thème" [options]="themeOptions" [formField]="recipeForm.theme" />
+          <span class="field__hint">
+            @if (mainCategory(); as category) {
+              « {{ category.name }} » contient du sucré et du salé : choisissez celui de cette recette
+            } @else {
+              Donné par la catégorie principale, une fois choisie, sauf pour une catégorie qui contient les deux
+            }
+          </span>
+        }
       </div>
     </div>
     @if (recipe()?.status === 'FAILED') {
@@ -204,7 +218,7 @@
     <div class="field">
       <label class="checkbox-field">
         <input type="checkbox" [formField]="recipeForm.featured" />
-        Mettre à la une sur l'accueil ({{ draft().theme === 'SAVORY' ? 'salé' : 'sucré' }})
+        Mettre à la une sur l'accueil ({{ themeLabel(theme()).toLowerCase() }})
       </label>
       <span class="field__hint">
         Une recette à la une par thème : cocher celle-ci retire l'ancienne du même thème. Une recette programmée passe à la une

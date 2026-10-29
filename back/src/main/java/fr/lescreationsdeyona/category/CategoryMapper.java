@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 public interface CategoryMapper {
 
 	@Mapping(target = "imageId", source = "image.id")
+	@Mapping(target = "publishedThemes", expression = "java(java.util.List.of())")
 	CategoryResponse toResponse(Category category);
 
 }

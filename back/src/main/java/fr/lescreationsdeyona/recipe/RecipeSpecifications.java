@@ -76,6 +76,10 @@ final class RecipeSpecifications {
 		if (maxMinutes != null) {
 			criteria.add(takesAtMost(maxMinutes));
 		}
+		Boolean scheduled = filter.scheduled();
+		if (scheduled != null) {
+			criteria.add((recipe, query, cb) -> scheduled ? cb.isNotNull(recipe.get("scheduledAt")) : cb.isNull(recipe.get("scheduledAt")));
+		}
 		DifficultyLevel difficulty = filter.difficulty();
 		if (difficulty != null) {
 			criteria.add((recipe, query, cb) -> cb.between(recipe.get("difficulty"), difficulty.min(), difficulty.max()));

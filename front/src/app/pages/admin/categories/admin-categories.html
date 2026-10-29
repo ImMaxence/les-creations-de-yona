@@ -2,6 +2,10 @@
   <div class="admin-section__head">
     <h2 id="categories-title">Catégories</h2>
   </div>
+  <p class="field__hint">
+    Le thème d'une catégorie est donné à ses recettes et la range sous « Sucré » ou « Salé » dans le menu du site. « Les deux »
+    : la catégorie apparaît dans les deux menus, et chaque recette choisit le sien dans l'éditeur
+  </p>
 
   <form class="admin-toolbar" (submit)="create($event)">
     <input
@@ -12,6 +16,7 @@
       [value]="newName()"
       (input)="readNewName($event)"
     />
+    <yona-select label="Thème de la nouvelle catégorie" [options]="themeOptions" [value]="newTheme()" (valueChange)="newTheme.set($event ?? 'BOTH')" />
     <button yonaButton type="submit"><svg yonaIcon="plus"></svg>Ajouter</button>
   </form>
 
@@ -40,6 +45,15 @@
             (galleryImageChosen)="chooseImage(category, $event)"
             (removed)="chooseImage(category, null)"
           />
+          <div class="field">
+            <span class="field__label" aria-hidden="true">Thème</span>
+            <yona-select
+              [label]="'Thème de ' + category.name"
+              [options]="themeOptions"
+              [value]="themeChoice(category)"
+              (valueChange)="changeTheme(category, $event)"
+            />
+          </div>
           <a class="link-button" routerLink="/admin/recettes" [queryParams]="recipesLink(category)">
             <svg yonaIcon="list" [size]="16"></svg>
             Voir ses recettes

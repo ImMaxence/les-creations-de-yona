@@ -183,12 +183,13 @@ class RestoredData {
 		Map<String, Long> bySlug = idsBy(site, "select id, slug as key from category");
 		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
 		Map<Long, Long> ids = new HashMap<>();
-		for (Map<String, Object> row : scratch.sql("select id, name, slug, image_id from category").query().listOfRows()) {
+		for (Map<String, Object> row : scratch.sql("select id, name, slug, image_id, theme from category").query().listOfRows()) {
 			Long siteId = bySlug.get((String) row.get("slug"));
 			if (siteId == null) {
 				UUID imageId = (UUID) row.get("image_id");
-				siteId = site.sql("insert into category (name, slug, image_id) values (:name, :slug, :imageId) returning id")
+				siteId = site.sql("insert into category (name, slug, image_id, theme) values (:name, :slug, :imageId, :theme) returning id")
 					.param("name", row.get("name"))
+					.param("theme", row.get("theme"))
 					.param("slug", row.get("slug"))
 					.param("imageId", imageId != null && images.contains(imageId) ? imageId : null)
 					.query(Long.class)

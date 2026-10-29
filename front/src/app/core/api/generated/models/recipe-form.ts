@@ -58,7 +58,11 @@ export interface RecipeForm {
    * Absent or empty for none
    */
   tagIds?: Array<number>;
-  theme: 'SWEET' | 'SAVORY';
+
+  /**
+   * Used only when the main category holds both (its theme absent): the recipe then takes the theme of its main category
+   */
+  theme?: 'SWEET' | 'SAVORY';
 
   /**
    * "Le conseil de Yona" (tip, storage, variant…), Markdown; blank for none

@@ -10,13 +10,13 @@ import { RequestBuilder } from '../../request-builder';
 import { CategoryForm } from '../../models/category-form';
 import { CategoryResponse } from '../../models/category-response';
 
-export interface RenameCategory$Params {
+export interface UpdateCategory$Params {
   id: number;
       body: CategoryForm
 }
 
-export function renameCategory(http: HttpClient, rootUrl: string, params: RenameCategory$Params, context?: HttpContext): Observable<StrictHttpResponse<CategoryResponse>> {
-  const rb = new RequestBuilder(rootUrl, renameCategory.PATH, 'put');
+export function updateCategory(http: HttpClient, rootUrl: string, params: UpdateCategory$Params, context?: HttpContext): Observable<StrictHttpResponse<CategoryResponse>> {
+  const rb = new RequestBuilder(rootUrl, updateCategory.PATH, 'put');
   if (params) {
     rb.path('id', params.id, {});
     rb.body(params.body, 'application/json');
@@ -32,4 +32,4 @@ export function renameCategory(http: HttpClient, rootUrl: string, params: Rename
   );
 }
 
-renameCategory.PATH = '/api/admin/categories/{id}';
+updateCategory.PATH = '/api/admin/categories/{id}';
