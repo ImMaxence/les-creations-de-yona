@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { NewRecipeNotifications } from '../../core/pwa/new-recipe-notifications';
 import { SiteData } from '../../core/site/site-data';
 import { categoryNames } from '../../shared/format/categories';
-import { themeLabel } from '../../shared/format/themes';
+import { themeLabel, themeSlug } from '../../shared/format/themes';
 import { Reveal } from '../../shared/motion/reveal';
 import { RECIPE_IMAGE_TRANSITION, isSameTabClick } from '../../shared/motion/view-transitions';
 import { MENUS_PATH, RECIPES_PATH, categoryQueryParams, recipeLink } from '../../shared/routing/links';
@@ -41,6 +41,7 @@ export default class Home {
   protected readonly aboutParagraphs = computed(() => paragraphs(this.content().aboutText));
   protected readonly link = recipeLink;
   protected readonly themeLabel = themeLabel;
+  protected readonly themeSlug = themeSlug;
   protected readonly imageTransition = RECIPE_IMAGE_TRANSITION;
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;

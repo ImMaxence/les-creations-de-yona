@@ -7,6 +7,7 @@ import { Api } from '../../../core/api/generated/api';
 import { deleteImage } from '../../../core/api/generated/fn/admin-images/delete-image';
 import { deleteImages } from '../../../core/api/generated/fn/admin-images/delete-images';
 import { listImages } from '../../../core/api/generated/fn/admin-images/list-images';
+import { replaceImage } from '../../../core/api/generated/fn/admin-images/replace-image';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
@@ -16,6 +17,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { PHOTO_ACCEPT, photoFileError } from '../../../shared/ui/image-upload/photo-file';
 import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { PhotoEditor } from '../../../shared/ui/photo-editor/photo-editor';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { ADMIN_CATEGORIES_QUERY } from '../categories/admin-categories-query';
@@ -30,7 +32,9 @@ const PAGE_SIZE = 24;
 
 /**
  * Every uploaded photo is kept, even once replaced or removed from its recipe: here the admin
- * sees which ones are unused and deletes them, or shows them again from a recipe or category.
+ * sees which ones are unused and deletes them, or shows them again from a recipe or category. A
+ * new photo goes through the photo editor first; "Retoucher" edits one already here, replaced
+ * wherever it is shown.
  */
 @Component({
   selector: 'yona-admin-gallery',
@@ -41,6 +45,7 @@ const PAGE_SIZE = 24;
     Button,
     CoverImage,
     Pagination,
+    PhotoEditor,
     Select,
     ParisDatePipe,
   ],
@@ -95,6 +100,10 @@ export default class AdminGallery {
   protected readonly selection = new Selection<string>();
   protected readonly shownIds = computed(() => this.images.value()?.content.map((image) => image.id) ?? []);
   protected readonly deleting = signal(false);
+  protected readonly editorOpen = signal(false);
+  protected readonly editorSource = signal<File | string | null>(null);
+  /** The photo being retouched; null for a new photo, prepared before it is added. */
+  protected readonly retouched = signal<GalleryImage | null>(null);
 
   /** "Ajouter une photo": shown first once uploaded (unused, the most recent). */
   protected async onFileChosen(event: Event): Promise<void> {
@@ -108,6 +117,33 @@ export default class AdminGallery {
     const error = photoFileError(file);
     if (error) {
       this.toaster.error(error);
+      return;
+    }
+    this.retouched.set(null);
+    this.editorSource.set(file);
+    this.editorOpen.set(true);
+  }
+
+  /** "Retoucher": the photo is replaced by its retouched version wherever it is shown. */
+  protected retouch(image: GalleryImage): void {
+    this.retouched.set(image);
+    this.editorSource.set(`/api/images/${image.id}/1600.webp`);
+    this.editorOpen.set(true);
+  }
+
+  protected async onEdited(file: File): Promise<void> {
+    const image = this.retouched();
+    if (image) {
+      this.uploadProgress.set(0);
+      const upload = await attempt(
+        this.imageUploads.send(replaceImage.PATH.replace('{id}', image.id), file, (sent) => this.uploadProgress.set(sent)),
+      );
+      this.uploadProgress.set(null);
+      if (upload.ok) {
+        this.toaster.success(this.usedBy(image).length ? 'Photo retouchée, partout où elle est montrée' : 'Photo retouchée');
+        this.images.reload();
+        await this.siteData.load();
+      }
       return;
     }
     this.uploadProgress.set(0);

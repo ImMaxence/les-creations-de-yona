@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.glossary;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Slugs;
@@ -60,8 +61,15 @@ public class GlossaryService {
 				&& termRepository.existsByName(name)) {
 			throw new ApiException(ErrorCode.GLOSSARY_TERM_ALREADY_EXISTS);
 		}
-		auditLog.record(AuditAction.UPDATED, AuditKind.GLOSSARY_TERM, name, id);
-		return save(term, name, form);
+		String previousName = term.getName();
+		String definition = term.getDefinition();
+		List<String> forms = List.copyOf(term.getForms());
+		GlossaryTermResponse updated = save(term, name, form);
+		auditLog.record(AuditAction.UPDATED, AuditKind.GLOSSARY_TERM, name, id,
+				new AuditChanges().add("Mot", previousName, name)
+					.add("Définition", definition, term.getDefinition())
+					.add("Autres formes", forms, term.getForms()));
+		return updated;
 	}
 
 	/** All or none, to the trash for 30 days. */

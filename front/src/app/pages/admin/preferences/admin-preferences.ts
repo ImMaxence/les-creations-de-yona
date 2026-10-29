@@ -112,6 +112,18 @@ export default class AdminPreferences {
     this.choose({ imageId });
   }
 
+  /**
+   * "Retoucher": the API has already put the retouched photo in place of the previous one, on the
+   * site too. A photo of the gallery chosen here, not saved yet, becomes the retouched one.
+   */
+  protected async onRetouched(imageId: string): Promise<void> {
+    const pending = this.pendingImage();
+    if (pending && 'imageId' in pending) {
+      this.choose({ imageId });
+    }
+    await this.siteData.load();
+  }
+
   protected reset(): void {
     this.draft.set({ ...this.savedTexts() });
     this.choose(null);

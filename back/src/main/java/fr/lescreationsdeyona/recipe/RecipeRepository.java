@@ -28,28 +28,14 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 	boolean existsByCategoriesId(long categoryId);
 
 	/**
-	 * Unfeatures the published recipes of this theme but {@code keptId} (all of them when null); the
-	 * scheduled ones featured ahead are left alone.
+	 * Unfeatures the published recipes but {@code keptId} (all of them when null); the scheduled ones
+	 * featured ahead are left alone.
 	 */
 	@Modifying(flushAutomatically = true)
 	@Query("""
 			update Recipe r set r.featured = false
-			where r.featured = true and r.status = RecipeStatus.PUBLISHED and r.theme = :theme
-				and (:keptId is null or r.id <> :keptId)""")
-	void unfeatureAllExcept(RecipeTheme theme, @Nullable Long keptId);
-
-	/**
-	 * Before its main category gives them {@code theme}: a published featured recipe of it moving to
-	 * that theme is featured no more when the theme has one already.
-	 */
-	@Modifying(flushAutomatically = true)
-	@Query(value = """
-			update recipe set featured = false
-			where featured and status = PUBLISHED and theme <> :theme
-				and id in (select recipe_id from recipe_category where category_id = :categoryId and position = 0)
-				and exists (select 1 from recipe other where other.featured and other.status = PUBLISHED and other.theme = :theme)""",
-			nativeQuery = true)
-	int unfeatureMovingTo(long categoryId, String theme);
+			where r.featured = true and r.status = RecipeStatus.PUBLISHED and (:keptId is null or r.id <> :keptId)""")
+	void unfeatureAllExcept(@Nullable Long keptId);
 
 	/** The theme of a category, given to the recipes whose main category it is; updated_at left alone. */
 	@Modifying(flushAutomatically = true, clearAutomatically = true)

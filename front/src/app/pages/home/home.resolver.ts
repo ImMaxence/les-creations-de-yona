@@ -4,18 +4,21 @@ import { Api } from '../../core/api/generated/api';
 import { getFeaturedRecipe } from '../../core/api/generated/fn/recipes/get-featured-recipe';
 import { listPublishedRecipes } from '../../core/api/generated/fn/recipes/list-published-recipes';
 import { RecipeCard } from '../../core/api/generated/models/recipe-card';
-import { THEMES } from '../../shared/format/themes';
+import { THEMES, Theme } from '../../shared/format/themes';
 
 export const LATEST_RECIPES_COUNT = 3;
 
+/** The latest recipes of a theme. */
+export interface LatestOfTheme {
+  theme: Theme;
+  recipes: RecipeCard[];
+}
+
 export interface HomeData {
-  /**
-   * The featured recipe of each theme, savory then sweet (its latest one when none is chosen); a
-   * theme without any published recipe is left out (the API answers 204). Empty when nothing is
-   * published yet.
-   */
-  featured: RecipeCard[];
-  latest: RecipeCard[];
+  /** The featured recipe, or the latest published one when none is chosen; null when nothing is published yet. */
+  featured: RecipeCard | null;
+  /** The 3 latest recipes of each theme, savory then sweet, the featured one left out; a theme without any is left out. */
+  latest: LatestOfTheme[];
 }
 
 /**
@@ -24,9 +27,17 @@ export interface HomeData {
  */
 export const homeResolver: ResolveFn<HomeData> = async () => {
   const api = inject(Api);
-  const [latest, featured] = await Promise.all([
-    api.invoke(listPublishedRecipes, { size: LATEST_RECIPES_COUNT }),
-    Promise.all(THEMES.map(({ value }) => api.invoke(getFeaturedRecipe, { theme: value }) as Promise<RecipeCard | null>)),
+  const [featured, latest] = await Promise.all([
+    // 204 without any published recipe
+    api.invoke(getFeaturedRecipe, {}) as Promise<RecipeCard | null>,
+    // One more than shown: the featured recipe, already above, is left out of its theme
+    Promise.all(THEMES.map(({ value }) => api.invoke(listPublishedRecipes, { theme: value, size: LATEST_RECIPES_COUNT + 1 }))),
   ]);
-  return { featured: featured.filter((recipe): recipe is RecipeCard => !!recipe), latest: latest.content };
+  return {
+    featured: featured ?? null,
+    latest: THEMES.map(({ value }, index) => ({
+      theme: value,
+      recipes: latest[index].content.filter((recipe) => recipe.slug !== featured?.slug).slice(0, LATEST_RECIPES_COUNT),
+    })).filter((group) => group.recipes.length > 0),
+  };
 };

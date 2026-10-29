@@ -218,11 +218,11 @@
     <div class="field">
       <label class="checkbox-field">
         <input type="checkbox" [formField]="recipeForm.featured" />
-        Mettre à la une sur l'accueil ({{ themeLabel(theme()).toLowerCase() }})
+        Mettre à la une sur l'accueil
       </label>
       <span class="field__hint">
-        Une recette à la une par thème : cocher celle-ci retire l'ancienne du même thème. Une recette programmée passe à la une
-        à sa publication
+        Une seule recette à la une : cocher celle-ci retire l'ancienne. Une recette programmée passe à la une à sa publication.
+        Sans recette à la une, l'accueil montre la dernière publiée
       </span>
       <yona-field-error [field]="recipeForm.featured" />
     </div>
@@ -305,6 +305,7 @@
         (fileChosen)="onImageChosen($event)"
         (galleryImageChosen)="onImageSelected($event)"
         (removed)="onImageSelected(null)"
+        (retouched)="onImageRetouched($event)"
       />
     </section>
   </div>
@@ -324,6 +325,7 @@
       (fileChosen)="onImageChosen($event, 'pinterest')"
       (galleryImageChosen)="onImageSelected($event, 'pinterest')"
       (removed)="onImageSelected(null, 'pinterest')"
+      (retouched)="onImageRetouched($event, 'pinterest')"
     />
   </section>
 

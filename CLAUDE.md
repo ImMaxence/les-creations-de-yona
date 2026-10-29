@@ -1,7 +1,7 @@
 # Consignes pour Claude
 
 - Pour voir vite le projet, lire [ReadMe.md](ReadMe.md) ; le détail est dans [docs/developpement.md](docs/developpement.md).
-- Le projet tourne en local dans Docker Desktop. Je travaille sur plusieurs PC : après un `git pull`, remettre les conteneurs à jour avec `cd devops && docker compose --profile app up -d --build --wait`.
+- Le projet tourne en local dans Docker Desktop. Je travaille sur plusieurs PC : après un `git pull`, remettre les conteneurs à jour avec `cd devops && docker compose --profile app up -d --build --wait`, si tu veux tester ton tev tu peux interroger le local.
 - À chaque changement, monter la version : front (`front/package.json`) et backend (`back/pom.xml`, balise `<version>` du projet, pas celle du parent) toujours ensemble, même numéro. Majeur = casse l'existant, feature = mineure, fix = correctif. Règle complète et fichiers à toucher : [docs/developpement.md](docs/developpement.md#monter-la-version).
 - Changelog ([CHANGELOG.md](CHANGELOG.md)) : toujours en anglais, synthétique, en points courts.
 - Ne pas modifier à la main `front/src/app/core/api/generated` (généré par `npm run api:generate`).

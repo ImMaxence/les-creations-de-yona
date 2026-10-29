@@ -9,6 +9,10 @@ spring:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+    hikari:
+      # A small site: 5 connections are plenty (10 by default), and each one is a PostgreSQL process.
+      maximum-pool-size: 5
+      minimum-idle: 1
   jpa:
     open-in-view: false
     hibernate:
@@ -50,6 +54,11 @@ server:
   # X-Forwarded-* headers, e.g. for the Google return URL. "framework" (Spring's filter) keeps the
   # port of X-Forwarded-Host (localhost:8000), which Tomcat's native support drops.
   forward-headers-strategy: framework
+  tomcat:
+    threads:
+      # Each thread keeps its stack: 40 at most (200 by default) serve a blog with room to spare.
+      max: 40
+      min-spare: 2
   servlet:
     session:
       timeout: 7d

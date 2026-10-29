@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -56,6 +57,17 @@ class AdminImageController {
 	GalleryImage uploadImage(@RequestPart MultipartFile file) {
 		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.
 		return imageService.upload(imageProcessor.process(file));
+	}
+
+	@Operation(summary = "Replace a photo by its retouched version (cropped, turned, lightened…), wherever it is shown",
+			description = "JPEG or PNG made by the editor of the back-office from the 1600 px file: at least 800 × 450 px "
+					+ "(600 × 800 for a Pinterest photo), same shape rules as an upload. The new photo has a new id; the "
+					+ "original goes to the trash.")
+	@PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	GalleryImage replaceImage(@PathVariable UUID id, @RequestPart MultipartFile file) {
+		// Decoded and encoded before the transaction opens, to hold no database connection meanwhile.
+		ProcessedImage retouched = imageProcessor.processEdited(file, imageService.kindOf(id) == ImageKind.PINTEREST);
+		return imageService.replace(id, retouched);
 	}
 
 	@Operation(summary = "Delete several images, all or none; the recipes and categories showing them fall back to the default visual")

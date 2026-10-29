@@ -6,6 +6,7 @@ export type { AdminResponse } from './models/admin-response';
 export type { Analysis } from './models/analysis';
 export type { AppearancePresetForm } from './models/appearance-preset-form';
 export type { AppearancePresetResponse } from './models/appearance-preset-response';
+export type { AuditChange } from './models/audit-change';
 export type { AuditEventResponse } from './models/audit-event-response';
 export type { CategoryForm } from './models/category-form';
 export type { CategoryResponse } from './models/category-response';

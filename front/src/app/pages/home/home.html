@@ -1,21 +1,19 @@
 <h1 class="visually-hidden">Les créations de Yona, recettes maison</h1>
 
-<!-- A featured recipe for each theme: savory, then sweet; side by side from tablets on -->
-<section class="container hero" [class.hero--pair]="data().featured.length > 1" aria-label="Recettes à la une">
-  @for (featured of data().featured; track featured.slug; let i = $index) {
+<!-- The featured recipe, or the latest published one -->
+<section class="container hero" aria-label="Recette à la une">
+  @if (data().featured; as featured) {
     <a class="hero__card" [routerLink]="link(featured)" (click)="onFeaturedClick($event, featured.slug)">
       <yona-cover-image
         class="hero__image"
         [style.view-transition-name]="featuredTransition() === featured.slug ? imageTransition : null"
         [imageId]="featured.imageId"
         [alt]="featured.title"
-        [sizes]="data().featured.length > 1 ? '(width >= 72rem) 36rem, (width >= 48rem) 50vw, 100vw' : '(width >= 72rem) 72rem, 100vw'"
-        [priority]="i === 0"
+        sizes="(width >= 72rem) 72rem, 100vw"
+        [priority]="true"
       />
       <div class="hero__content">
-        <p class="eyebrow hero__eyebrow enter" style="--delay: 150ms">
-          À la une{{ data().featured.length > 1 && featured.theme ? ' · ' + themeLabel(featured.theme) : '' }}
-        </p>
+        <p class="eyebrow hero__eyebrow enter" style="--delay: 150ms">À la une</p>
         <h2 class="hero__title enter" style="--delay: 230ms">{{ featured.title }}</h2>
         <div class="hero__meta enter" style="--delay: 310ms">
           <span class="chip hero__chip">{{ categoryNames(featured.categories) }}</span>
@@ -23,7 +21,7 @@
         </div>
       </div>
     </a>
-  } @empty {
+  } @else {
     <div class="hero__welcome">
       <p class="eyebrow enter">Bienvenue</p>
       <h2 class="hero__welcome-title enter" style="--delay: 80ms">Les créations de Yona</h2>
@@ -36,7 +34,10 @@
 <section class="container home-search" aria-labelledby="search-title">
   <h2 id="search-title" class="home-search__title" yonaReveal>Que voulez-vous cuisiner ?</h2>
   <yona-site-search class="home-search__box" large />
-  <p class="home-search__hint">Une recette, un ingrédient, une occasion : « chocolat », « cake salé », « gâteau au yaourt 8 personnes »</p>
+  <p class="home-search__hint">
+    Une recette, un ingrédient, un ustensile, un temps : « chocolat », « cake salé », « dessert en 30 min », « tarte facile »,
+    « gâteau au yaourt 8 personnes »
+  </p>
 </section>
 
 <section class="container latest" aria-labelledby="latest-title">
@@ -45,18 +46,30 @@
     <h2 id="latest-title">{{ content().latestTitle }}</h2>
   </header>
 
+  <!-- The latest of each theme: savory, then sweet -->
+  @for (group of data().latest; track group.theme) {
+    <div class="latest__theme">
+      <div class="latest__theme-head" yonaReveal>
+        <h3 [id]="'latest-' + group.theme" class="latest__theme-title">{{ themeLabel(group.theme) }}</h3>
+        <a class="latest__theme-all" [routerLink]="recipesPath" [queryParams]="{ theme: themeSlug(group.theme) }">
+          Toutes les recettes {{ themeLabel(group.theme).toLowerCase() }}es <svg yonaIcon="arrow-right" [size]="16"></svg>
+        </a>
+      </div>
+      <ul role="list" class="recipe-grid" [attr.aria-labelledby]="'latest-' + group.theme">
+        @for (recipe of group.recipes; track recipe.slug; let i = $index) {
+          <li yonaReveal [revealDelay]="(i % 3) * 90">
+            <yona-recipe-card [recipe]="recipe" />
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
   @if (data().latest.length) {
-    <ul role="list" class="recipe-grid">
-      @for (recipe of data().latest; track recipe.slug; let i = $index) {
-        <li yonaReveal [revealDelay]="(i % 3) * 90">
-          <yona-recipe-card [recipe]="recipe" />
-        </li>
-      }
-    </ul>
     <div class="latest__more" yonaReveal>
       <a yonaButton [routerLink]="recipesPath">Voir plus de recettes <svg yonaIcon="arrow-right"></svg></a>
     </div>
-  } @else {
+  } @else if (!data().featured) {
     <p class="empty">Aucune recette publiée pour le moment</p>
   }
 </section>

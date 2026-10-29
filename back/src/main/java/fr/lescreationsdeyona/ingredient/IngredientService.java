@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.ingredient;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Texts;
@@ -93,8 +94,9 @@ public class IngredientService {
 		if (takenByAnother) {
 			throw new ApiException(ErrorCode.INGREDIENT_ALREADY_EXISTS);
 		}
+		AuditChanges changes = new AuditChanges().add("Nom", ingredient.getName(), name);
 		ingredient.setName(name);
-		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, name, id);
+		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, name, id, changes);
 		return toResponse(ingredient, ingredientRepository.countRecipesUsing(id));
 	}
 
@@ -195,9 +197,14 @@ public class IngredientService {
 		if (ingredients.size() != new HashSet<>(ids).size()) {
 			throw new ApiException(ErrorCode.INGREDIENT_NOT_FOUND);
 		}
+		AuditChanges changes = new AuditChanges().add("Rayon",
+				ingredients.stream().map(ingredient -> aisleLabel(ingredient.getAisle())).distinct().toList(), aisleLabel(aisle));
+		if (ingredients.size() > 1) {
+			changes.add("Ingrédients", null, ingredients.stream().map(Ingredient::getName).sorted().toList());
+		}
 		ingredients.forEach(ingredient -> ingredient.setAisle(aisle));
 		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, ingredients.size() == 1 ? ingredients.getFirst().getName()
-				: ingredients.size() + " ingrédients", ingredients.size() == 1 ? ingredients.getFirst().getId() : null);
+				: ingredients.size() + " ingrédients", ingredients.size() == 1 ? ingredients.getFirst().getId() : null, changes);
 	}
 
 	/** Used by the recipe form: the admin types a name, an existing ingredient is reused if any. */
@@ -230,6 +237,21 @@ public class IngredientService {
 		return ingredientRepository.countRecipesPerIngredient()
 			.stream()
 			.collect(Collectors.toMap(RecipeCount::ingredientId, RecipeCount::recipes));
+	}
+
+	/** As the back-office names them; without aisle, "Autres" on the shopping list. */
+	private static String aisleLabel(@Nullable Aisle aisle) {
+		return switch (aisle) {
+			case null -> "Aucun";
+			case FRUITS_VEGETABLES -> "Fruits et légumes";
+			case MEAT_FISH -> "Viandes et poissons";
+			case FRESH -> "Rayon frais";
+			case DAIRY_EGGS -> "Crèmerie et œufs";
+			case SAVORY_GROCERY -> "Épicerie salée";
+			case SWEET_GROCERY -> "Épicerie sucrée et pâtisserie";
+			case FROZEN -> "Surgelés";
+			case DRINKS -> "Boissons";
+		};
 	}
 
 	private Ingredient find(long id) {

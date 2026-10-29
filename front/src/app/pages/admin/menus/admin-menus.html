@@ -51,6 +51,7 @@
             (fileChosen)="uploadImage($event)"
             (galleryImageChosen)="chooseImage($event)"
             (removed)="chooseImage(null)"
+            (retouched)="update({ imageId: $event })"
           />
           <span class="field__hint">
             Sur sa carte et en haut de sa page. Enregistrée tout de suite ; sans photo, le visuel par défaut

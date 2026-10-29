@@ -3,6 +3,8 @@
 :host {
   position: relative;
   display: block;
+  // Never wider than its place: inside a grid or a flex row, the field shrinks instead
+  min-width: 0;
 }
 
 // The box drawn around the field: the icon, what is typed, what was understood, and the clear button
@@ -41,15 +43,21 @@
 
 .search__input {
   flex: 1;
+  // Width 0: an input otherwise asks for about 20 characters, which pushed the box out of a phone screen
+  width: 0;
   min-width: 0;
   padding-block: var(--space-3);
   border: 0;
   background: transparent;
   font-size: var(--text-base); // 16px minimum: no zoom on focus in iOS Safari
+  text-overflow: ellipsis;
   appearance: none;
 
   &::placeholder {
+    overflow: hidden;
     color: var(--color-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &::-webkit-search-cancel-button {
@@ -107,10 +115,30 @@
   }
 }
 
-// Phones: the number alone, the − and + stay
+// Phones: the number alone, the − and + stay, closer together
 @include m.below(sm) {
-  .understood__unit {
+  .search {
+    gap: var(--space-1);
+    padding-inline: var(--space-3) var(--space-1);
+  }
+
+  .understood {
+    gap: 0;
+  }
+
+  .understood__unit,
+  .understood__icon {
     display: none;
+  }
+
+  .understood__step {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .search__clear {
+    width: 2.25rem;
+    height: 2.25rem;
   }
 }
 
@@ -210,6 +238,10 @@
 
   .search__input {
     font-size: var(--text-lg);
+
+    @include m.below(sm) {
+      font-size: var(--text-base);
+    }
   }
 }
 

@@ -10,6 +10,8 @@ import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
 
 /** A line of the back-office history; written once, never changed. */
@@ -39,13 +41,19 @@ public class AuditEvent {
 	/** To link to it while it exists. */
 	private @Nullable Long targetId;
 
-	AuditEvent(Instant happenedAt, String actor, AuditAction action, AuditKind kind, String label, @Nullable Long targetId) {
+	/** What an update changed, as JSON: a list of {@link AuditChange}; null when not recorded (other actions, before 1.12). */
+	@JdbcTypeCode(SqlTypes.JSON)
+	private @Nullable String changes;
+
+	AuditEvent(Instant happenedAt, String actor, AuditAction action, AuditKind kind, String label, @Nullable Long targetId,
+			@Nullable String changes) {
 		this.happenedAt = happenedAt;
 		this.actor = actor;
 		this.action = action;
 		this.kind = kind;
 		this.label = label;
 		this.targetId = targetId;
+		this.changes = changes;
 	}
 
 }

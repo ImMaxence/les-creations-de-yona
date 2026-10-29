@@ -650,6 +650,15 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     this.slotPending(slot).set(imageId ? { imageId } : null);
   }
 
+  /** "Retoucher": the API has already put the retouched photo in place of the previous one. */
+  protected onImageRetouched(imageId: string, slot: PhotoSlot = 'main'): void {
+    this.slotImageId(slot).set(imageId);
+    if (this.slotPending(slot)()) {
+      // A photo of the gallery chosen for a recipe not created yet
+      this.slotPending(slot).set({ imageId });
+    }
+  }
+
   /** The recipe read by the AI replaces what was typed, after confirmation. */
   protected async fillWithAi(ai: RecipeAiDraft): Promise<void> {
     const replace =

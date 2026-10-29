@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
@@ -14,7 +15,9 @@ import org.jspecify.annotations.Nullable;
  * personnes" gives "tarte", "pomme". Case, accents and hyphens ignored ("petit-déjeuner" and "petit
  * dejeuner" are the same), small words and "recette" left out, a number of people too ("8
  * personnes", or a number alone: "gâteau 8"; the recipe page adapts the quantities to it), and the
- * theme ("sucré", "salée": see {@link #theme}), plurals brought back to the singular.
+ * theme ("sucré", "salée": see {@link #theme}), plurals brought back to the singular. What the
+ * search understands otherwise is left out of the words too: a time ("30 min", see
+ * {@link #maxMinutes}), "rapide", "facile", "sans cuisson".
  */
 public final class SearchWords {
 
@@ -43,6 +46,25 @@ public final class SearchWords {
 	private static final Pattern SAVORY_WORD = Pattern
 		.compile("(?<![\\p{L}\\p{N}])sal(?:é|ée|és|ées|e|es|ee|ees)(?![\\p{L}\\p{N}])");
 
+	/**
+	 * A time, on folded text: "30 min", "45 minutes", "1 h", "1h30", "2 heures", maybe after "en",
+	 * "moins de" or "max".
+	 */
+	private static final Pattern DURATION = Pattern.compile("(?<![\\p{L}\\p{N}])(?:(?:en|moins\\s+de|max(?:imum)?)\\s+)?"
+			+ "(?:(?<hours>\\d{1,2})\\s*h(?:eures?)?(?:\\s*(?<extra>\\d{1,2}))?(?:\\s*(?:min|minutes?|mn))?"
+			+ "|(?<minutes>\\d{1,3})\\s*(?:min|minutes?|mn))(?![\\p{L}\\p{N}])");
+
+	/** "rapide", "express", "vite fait": quick recipes, see {@link #QUICK_MINUTES}. */
+	private static final Pattern QUICK = Pattern.compile("(?<![\\p{L}\\p{N}])(?:rapides?|express|vite(?:\\s+fait)?)(?![\\p{L}\\p{N}])");
+
+	/** "facile", "simple": easy recipes. */
+	private static final Pattern EASY = Pattern.compile("(?<![\\p{L}\\p{N}])(?:faciles?|simples?)(?![\\p{L}\\p{N}])");
+
+	private static final Pattern NO_COOKING = Pattern.compile("(?<![\\p{L}\\p{N}])sans\\s+cuisson(?![\\p{L}\\p{N}])");
+
+	/** What "rapide" means: ready in half an hour at most, rest included. */
+	public static final int QUICK_MINUTES = 30;
+
 	/** Anything but letters and digits separates words. */
 	private static final Pattern SEPARATORS = Pattern.compile("[^\\p{L}\\p{N}]+");
 
@@ -57,7 +79,10 @@ public final class SearchWords {
 		String lower = Normalizer.normalize(text, Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
 		lower = SWEET_WORD.matcher(lower).replaceAll(" ");
 		lower = SAVORY_WORD.matcher(lower).replaceAll(" ");
-		String folded = SERVINGS.matcher(Texts.foldCaseAndAccents(lower)).replaceAll(" ");
+		String folded = Texts.foldCaseAndAccents(lower);
+		for (Pattern understood : List.of(DURATION, QUICK, EASY, NO_COOKING, SERVINGS)) {
+			folded = understood.matcher(folded).replaceAll(" ");
+		}
 		Set<String> words = new LinkedHashSet<>();
 		for (String word : SEPARATORS.split(folded)) {
 			if (word.length() >= 2 && !IGNORED.contains(word) && words.size() < MAX_WORDS) {
@@ -73,6 +98,39 @@ public final class SearchWords {
 		boolean sweet = SWEET_WORD.matcher(lower).find();
 		boolean savory = SAVORY_WORD.matcher(lower).find();
 		return sweet == savory ? null : sweet ? SWEET : SAVORY;
+	}
+
+	/**
+	 * The time typed, in minutes: 30 for "tarte en 30 min", 90 for "1h30"; the longest when several,
+	 * null for none.
+	 */
+	public static @Nullable Integer maxMinutes(String text) {
+		Matcher matcher = DURATION.matcher(Texts.foldCaseAndAccents(text));
+		Integer longest = null;
+		while (matcher.find()) {
+			int minutes = matcher.group("minutes") != null ? Integer.parseInt(matcher.group("minutes"))
+					: Integer.parseInt(matcher.group("hours")) * 60
+							+ (matcher.group("extra") == null ? 0 : Integer.parseInt(matcher.group("extra")));
+			if (minutes > 0 && (longest == null || minutes > longest)) {
+				longest = minutes;
+			}
+		}
+		return longest;
+	}
+
+	/** "rapide", "express" or "vite fait" typed. */
+	public static boolean quick(String text) {
+		return QUICK.matcher(Texts.foldCaseAndAccents(text)).find();
+	}
+
+	/** "facile" or "simple" typed. */
+	public static boolean easy(String text) {
+		return EASY.matcher(Texts.foldCaseAndAccents(text)).find();
+	}
+
+	/** "sans cuisson" typed. */
+	public static boolean noCooking(String text) {
+		return NO_COOKING.matcher(Texts.foldCaseAndAccents(text)).find();
 	}
 
 	/** Found in {@code text}, case and accents ignored: each word, anywhere ("dejeuner" in "Petit-déjeuner"). */

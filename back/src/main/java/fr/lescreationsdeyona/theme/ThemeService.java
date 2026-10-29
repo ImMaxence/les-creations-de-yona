@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.theme;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +24,16 @@ public class ThemeService {
 	@Transactional
 	public ThemeResponse update(ThemeForm form) {
 		SiteTheme theme = find();
+		AuditChanges changes = new AuditChanges()
+			.add("Couleurs", AuditChanges.named(theme.getPreset()), AuditChanges.named(form.preset()))
+			.add("Police des titres", AuditChanges.named(theme.getDisplayFont()), AuditChanges.named(form.displayFont()))
+			.add("Police du texte", AuditChanges.named(theme.getBodyFont()), AuditChanges.named(form.bodyFont()))
+			.add("Arrondi", theme.getRadiusPx() + " px", form.radiusPx() + " px");
 		theme.setPreset(form.preset());
 		theme.setDisplayFont(form.displayFont());
 		theme.setBodyFont(form.bodyFont());
 		theme.setRadiusPx(form.radiusPx());
-		auditLog.record(AuditAction.UPDATED, AuditKind.APPEARANCE, "Apparence du site", null);
+		auditLog.record(AuditAction.UPDATED, AuditKind.APPEARANCE, "Apparence du site", null, changes);
 		return toResponse(siteThemeRepository.saveAndFlush(theme));
 	}
 

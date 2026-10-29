@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.social;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ApiException;
@@ -33,6 +34,9 @@ public class SocialLinkService {
 		if (distinctPlatforms != form.links().size()) {
 			throw new ApiException(ErrorCode.DUPLICATE_SOCIAL_PLATFORM);
 		}
+		List<String> before = socialLinkRepository.findAll(Sort.by("position")).stream()
+			.map(link -> AuditChanges.named(link.getPlatform()) + " : " + link.getUrl())
+			.toList();
 		// Runs right away, so the new rows cannot collide with the old ones on the unique platform.
 		socialLinkRepository.deleteAllInBatch();
 		List<SocialLink> links = new ArrayList<>();
@@ -44,7 +48,10 @@ public class SocialLinkService {
 			socialLink.setPosition(position);
 			links.add(socialLink);
 		}
-		auditLog.record(AuditAction.UPDATED, AuditKind.SOCIAL_LINKS, "Réseaux sociaux", null);
+		auditLog.record(AuditAction.UPDATED, AuditKind.SOCIAL_LINKS, "Réseaux sociaux", null,
+				new AuditChanges().addLines("Liens", before, links.stream()
+					.map(link -> AuditChanges.named(link.getPlatform()) + " : " + link.getUrl())
+					.toList()));
 		return socialLinkRepository.saveAll(links).stream().map(socialLinkMapper::toResponse).toList();
 	}
 

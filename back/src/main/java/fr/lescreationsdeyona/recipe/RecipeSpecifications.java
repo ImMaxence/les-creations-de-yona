@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.common.SearchWords;
 import fr.lescreationsdeyona.common.Texts;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -45,12 +46,28 @@ final class RecipeSpecifications {
 		}
 		String text = filter.text();
 		RecipeTheme theme = filter.theme();
+		Integer maxMinutes = filter.maxMinutes();
 		if (StringUtils.hasText(text)) {
 			// Each word somewhere: "chocolat dessert" finds a recipe with chocolate in the desserts
 			SearchWords.of(text).forEach(word -> criteria.add(mentions(word, true)));
 			String typed = SearchWords.theme(text);
 			if (theme == null && typed != null) {
 				criteria.add(themeTyped(RecipeTheme.valueOf(typed)));
+			}
+			// "tarte en 30 min": the time filter, unless a shorter one is chosen
+			Integer typedMinutes = SearchWords.maxMinutes(text);
+			if (typedMinutes != null && (maxMinutes == null || typedMinutes < maxMinutes)) {
+				maxMinutes = typedMinutes;
+			}
+			if (SearchWords.quick(text)) {
+				criteria.add(anyOf(takesAtMost(SearchWords.QUICK_MINUTES), mentions("rapide", false), mentions("express", false)));
+			}
+			if (SearchWords.easy(text)) {
+				criteria.add(anyOf((recipe, query, cb) -> cb.between(recipe.get("difficulty"), DifficultyLevel.EASY.min(),
+						DifficultyLevel.EASY.max()), mentions("facile", false), mentions("simple", false)));
+			}
+			if (SearchWords.noCooking(text)) {
+				criteria.add(anyOf(withoutCooking(), mentions("sans cuisson", true)));
 			}
 		}
 		if (theme != null) {
@@ -72,7 +89,6 @@ final class RecipeSpecifications {
 		if (ingredientId != null) {
 			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("id"), ingredientId)));
 		}
-		Integer maxMinutes = filter.maxMinutes();
 		if (maxMinutes != null) {
 			criteria.add(takesAtMost(maxMinutes));
 		}
@@ -98,6 +114,19 @@ final class RecipeSpecifications {
 		};
 	}
 
+	/** A cooking time of 0, or none given while the preparation time is (a recipe without times is unknown). */
+	private static Specification<Recipe> withoutCooking() {
+		return (recipe, query, cb) -> {
+			Expression<Integer> cook = recipe.get("cookMinutes");
+			return cb.or(cb.equal(cook, 0), cb.and(cb.isNull(cook), cb.isNotNull(recipe.get("prepMinutes"))));
+		};
+	}
+
+	@SafeVarargs
+	private static Specification<Recipe> anyOf(Specification<Recipe>... specifications) {
+		return Specification.anyOf(specifications);
+	}
+
 	/** Case- and accent-insensitive: "creme" finds "Crème brûlée". */
 	private static Specification<Recipe> titleContains(String text) {
 		// A plain value is sent as a bound parameter; cb.literal() would be inlined into the SQL.
@@ -117,12 +146,18 @@ final class RecipeSpecifications {
 	}
 
 	/**
-	 * A folded word in its title, one of its categories, tags or ingredients (unless left out).
-	 * Subqueries rather than joins: each recipe comes out once.
+	 * A folded word in its title, one of its categories or tags, or (unless left out) its content:
+	 * ingredients, equipment, steps ("moule à manqué", "bain-marie"). Subqueries rather than joins:
+	 * each recipe comes out once.
 	 */
-	private static Specification<Recipe> mentions(String word, boolean inIngredients) {
+	private static Specification<Recipe> mentions(String word, boolean inContent) {
 		String pattern = "%" + word + "%";
 		return (recipe, query, cb) -> {
+			Subquery<Integer> steps = query.subquery(Integer.class);
+			Root<RecipePart> part = steps.from(RecipePart.class);
+			Join<RecipePart, RecipeStep> step = part.join("steps");
+			steps.select(cb.literal(1))
+				.where(cb.equal(part.get("recipe"), recipe), cb.like(folded(cb, step.get("description")), pattern));
 			Subquery<Integer> categories = query.subquery(Integer.class);
 			Root<Recipe> inCategory = categories.correlate(recipe);
 			categories.select(cb.literal(1))
@@ -136,7 +171,9 @@ final class RecipeSpecifications {
 				.where(cb.equal(line.get("part").get("recipe"), recipe),
 						cb.like(folded(cb, line.get("ingredient").get("name")), pattern));
 			Predicate named = cb.or(cb.like(folded(cb, recipe.get("title")), pattern), cb.exists(categories), cb.exists(tags));
-			return inIngredients ? cb.or(named, cb.exists(lines)) : named;
+			return inContent
+					? cb.or(named, cb.exists(lines), cb.like(folded(cb, recipe.get("equipment")), pattern), cb.exists(steps))
+					: named;
 		};
 	}
 

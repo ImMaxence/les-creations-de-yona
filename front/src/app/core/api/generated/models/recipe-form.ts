@@ -22,7 +22,7 @@ export interface RecipeForm {
   equipment?: Array<string>;
 
   /**
-   * Published, or scheduled: featured once published, in place of the featured recipe of its theme
+   * Published, or scheduled: featured once published, in place of the featured recipe
    */
   featured: boolean;
   intro?: string;

@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.tag;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Slugs;
@@ -70,8 +71,9 @@ public class TagService {
 				&& tagRepository.existsByName(name)) {
 			throw new ApiException(ErrorCode.TAG_ALREADY_EXISTS);
 		}
+		AuditChanges changes = new AuditChanges().add("Nom", tag.getName(), name);
 		tag.setName(name);
-		auditLog.record(AuditAction.UPDATED, AuditKind.TAG, name, id);
+		auditLog.record(AuditAction.UPDATED, AuditKind.TAG, name, id, changes);
 		return tagMapper.toResponse(tagRepository.saveAndFlush(tag));
 	}
 

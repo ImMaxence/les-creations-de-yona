@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.content;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.image.Image;
@@ -31,6 +32,15 @@ public class SiteContentService {
 	@Transactional
 	public SiteContentResponse update(SiteContentForm form) {
 		SiteContent content = find();
+		AuditChanges changes = new AuditChanges().add("Titre « À propos »", content.getAboutTitle(), form.aboutTitle())
+			.add("Texte « À propos »", content.getAboutText(), form.aboutText())
+			.add("Pied de page", content.getFooterText(), form.footerText())
+			.add("Accueil, sur-titre des recettes", content.getLatestEyebrow(), form.latestEyebrow())
+			.add("Accueil, titre des recettes", content.getLatestTitle(), form.latestTitle())
+			.add("Accueil, sur-titre des menus", content.getMenusEyebrow(), form.menusEyebrow())
+			.add("Accueil, titre des menus", content.getMenusTitle(), form.menusTitle())
+			.add("Accueil, sur-titre des catégories", content.getCategoriesEyebrow(), form.categoriesEyebrow())
+			.add("Accueil, titre des catégories", content.getCategoriesTitle(), form.categoriesTitle());
 		content.setAboutTitle(form.aboutTitle().strip());
 		content.setAboutText(form.aboutText().strip());
 		content.setFooterText(form.footerText().strip());
@@ -40,7 +50,7 @@ public class SiteContentService {
 		content.setMenusTitle(form.menusTitle().strip());
 		content.setCategoriesEyebrow(form.categoriesEyebrow().strip());
 		content.setCategoriesTitle(form.categoriesTitle().strip());
-		auditLog.record(AuditAction.UPDATED, AuditKind.SITE_CONTENT, "Textes du site", null);
+		auditLog.record(AuditAction.UPDATED, AuditKind.SITE_CONTENT, "Textes du site", null, changes);
 		return toResponse(siteContentRepository.saveAndFlush(content));
 	}
 

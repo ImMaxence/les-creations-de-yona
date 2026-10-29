@@ -2,6 +2,33 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.12.0 - 2026-10-29
+
+Front and backend 1.12.0. Database migration: V17.
+
+### Added
+
+- **Photo editor** before every upload and on photos already on the site ("Retoucher", also in the gallery): crop (free, 4:3, 3:2, 16:9; 2:3, 3:4 for Pinterest), quarter turns, mirror, filters (Bright, Gourmet, Soft, Contrasted, Fresh, Black and white), brightness, contrast, colours and warmth. A retouched photo replaces the original wherever it is shown; the original goes to the trash.
+- **History details**: each update lists the fields changed, old value struck through, new value next to it; for ingredients, steps and other lists, the lines removed and added. Photo changes of a recipe are recorded too.
+- **Smarter search**: words are also looked for in the steps and the equipment; a time is understood ("dessert en 30 min", "brioche 1h30"), as are "rapide", "facile" and "sans cuisson".
+
+### Changed
+
+- **A single featured recipe** on the home page again (the latest published one when none is chosen).
+- **Home page**: the 3 latest savory recipes and the 3 latest sweet ones, each with a link to all recipes of the theme, instead of the 3 latest.
+- Photos larger than 2400 px are made smaller in the browser before upload: quicker from a phone.
+
+### Fixed
+
+- Home search bar wider than a phone screen when a number of people was typed; long placeholder cut with an ellipsis.
+- Tapping − and + quickly (servings) zoomed the page in on iPhone.
+
+### Technical
+
+- **Backend memory** about 420 MB at rest instead of 700 to 800 MB: heap capped at 320 MB, G1 giving memory back when idle, GC and compiler threads for 2 cores, native memory trimmed, 5 database connections, 40 web threads at most.
+- API: `changes` on history lines, `PUT /api/admin/images/{id}` (retouched photo), `theme` of `/api/featured-recipe` kept for installed apps only.
+- 131 backend tests, 98 front tests, 82 Chrome checks.
+
 ## 1.11.0 - 2026-10-29
 
 Front and backend 1.11.0. Database migration: V16. Includes 1.10.1, never released.

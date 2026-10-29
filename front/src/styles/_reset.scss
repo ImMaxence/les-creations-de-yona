@@ -13,6 +13,9 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   interpolate-size: allow-keywords;
+  // Tapping − and + quickly made iOS zoom in (double tap, also on a button turned disabled): no
+  // double-tap zoom anywhere, pinch zoom kept. Applies to every element, touch-action combining with the ancestors'
+  touch-action: manipulation;
 }
 
 body {

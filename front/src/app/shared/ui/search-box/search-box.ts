@@ -18,7 +18,7 @@ import { Api } from '../../../core/api/generated/api';
 import { suggest } from '../../../core/api/generated/fn/search/suggest';
 import { SearchSuggestions } from '../../../core/api/generated/models/search-suggestions';
 import { themeLabel } from '../../format/themes';
-import { MAX_SERVINGS, SearchChoice, SearchPick, servingsIn, withServings } from '../../search/search-target';
+import { MAX_SERVINGS, SearchChoice, SearchPick, minutesIn, servingsIn, withServings } from '../../search/search-target';
 import { Icon } from '../icon/icon';
 import { IconName } from '../icon/icons';
 
@@ -54,7 +54,9 @@ let nextId = 0;
  * recipes mentioning each word, then the categories, tags, menus and ingredients of that name
  * ("Yaourt" for "gâteau au yaourt"; "Recettes salées" for "cake salé"). A number of people
  * understood ("gâteau 8", "tarte 6 personnes") shows on the right of the field, changed with − and
- * +: the recipes opened from it are shown for it. Nothing found is said, with an icon.
+ * +: the recipes opened from it are shown for it. A time ("dessert en 30 min") is said above the
+ * suggestions. Words are also looked for in the steps and the equipment of the recipes (API).
+ * Nothing found is said, with an icon.
  * {@code inline}: the suggestions push the content down instead of floating over it (in a dialog).
  */
 @Component({
@@ -107,6 +109,14 @@ export class SearchBox {
   protected readonly maxServings = MAX_SERVINGS;
   /** "gâteau 8": 8, shown on the right of the field. */
   protected readonly servings = computed(() => servingsIn(this.query()));
+  /** "dessert en 30 min": "30 min", said above the suggestions. */
+  protected readonly duration = computed(() => {
+    const minutes = minutesIn(this.query());
+    if (minutes === null) {
+      return null;
+    }
+    return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h${minutes % 60 ? ' ' + String(minutes % 60).padStart(2, '0') : ''}`;
+  });
   protected readonly typedQuery = computed(() => this.typed().trim());
 
   protected readonly groups = computed<SuggestionGroup[]>(() => {

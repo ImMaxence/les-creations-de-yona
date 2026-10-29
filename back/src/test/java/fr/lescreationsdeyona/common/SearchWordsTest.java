@@ -37,6 +37,30 @@ class SearchWordsTest {
 	}
 
 	@Test
+	void understandsATime() {
+		assertThat(SearchWords.maxMinutes("tarte en 30 min")).isEqualTo(30);
+		assertThat(SearchWords.maxMinutes("dessert moins de 45 minutes")).isEqualTo(45);
+		assertThat(SearchWords.maxMinutes("brioche 1h30")).isEqualTo(90);
+		assertThat(SearchWords.maxMinutes("pain 2 heures")).isEqualTo(120);
+		assertThat(SearchWords.maxMinutes("gâteau 8")).isNull();
+		assertThat(SearchWords.maxMinutes("2 hamburgers")).isNull();
+		assertThat(SearchWords.of("tarte en 30 min")).containsExactly("tarte");
+		assertThat(SearchWords.of("dessert moins de 45 minutes")).containsExactly("dessert");
+		assertThat(SearchWords.of("brioche 1h30 pour 6")).containsExactly("brioche");
+	}
+
+	@Test
+	void understandsQuickEasyAndNoCooking() {
+		assertThat(SearchWords.quick("Dessert rapide")).isTrue();
+		assertThat(SearchWords.quick("apéro vite fait")).isTrue();
+		assertThat(SearchWords.easy("gâteau facile")).isTrue();
+		assertThat(SearchWords.noCooking("cheesecake sans cuisson")).isTrue();
+		assertThat(SearchWords.noCooking("gâteau sans gluten")).isFalse();
+		assertThat(SearchWords.of("gâteau facile et rapide")).containsExactly("gateau");
+		assertThat(SearchWords.of("cheesecake sans cuisson")).containsExactly("cheesecake");
+	}
+
+	@Test
 	void keepsSugarAnIngredient() {
 		// Without its accent, "sucre" is the ingredient, not the theme
 		assertThat(SearchWords.of("tarte au sucre")).containsExactly("tarte", "sucre");

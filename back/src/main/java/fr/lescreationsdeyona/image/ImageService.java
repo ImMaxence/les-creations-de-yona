@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.image;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Pageables;
@@ -146,11 +147,66 @@ public class ImageService {
 	}
 
 	/**
+	 * "Retoucher": the retouched photo, a new image (new URL, as images never change), takes the place
+	 * of the original wherever it was shown. The original goes to the trash for 30 days, shown nowhere.
+	 */
+	@Transactional
+	public GalleryImage replace(UUID id, ProcessedImage retouched) {
+		Image original = get(id);
+		String title = "Avant retouche : " + trashedTitle(shownOn(galleryImage(original)));
+		Image replacement = create(original.getKind(), retouched);
+		imageRepository.replaceOnRecipes(id, replacement.getId());
+		imageRepository.replaceOnCategories(id, replacement.getId());
+		imageRepository.replaceOnMenus(id, replacement.getId());
+		imageRepository.replaceOnAboutPage(id, replacement.getId());
+		trash(id, title);
+		GalleryImage replaced = galleryImage(replacement);
+		auditLog.record(AuditAction.UPDATED, AuditKind.IMAGE, "Photo retouchée", null,
+				new AuditChanges().add("Montrée sur", null, shownOn(replaced)));
+		return replaced;
+	}
+
+	/** Its kind, before a retouched version is decoded: Pinterest photos are vertical. */
+	public ImageKind kindOf(UUID id) {
+		return get(id).getKind();
+	}
+
+	private GalleryImage galleryImage(Image image) {
+		List<UUID> ids = List.of(image.getId());
+		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(),
+				Stream.concat(imageRepository.findRecipeUsages(ids).stream(), imageRepository.findPinterestUsages(ids).stream())
+					.map(usage -> new GalleryImage.UsingRecipe(usage.id(), usage.title()))
+					.distinct()
+					.toList(),
+				imageRepository.findCategoryUsages(ids).stream()
+					.map(usage -> new GalleryImage.UsingCategory(usage.id(), usage.name(), usage.slug()))
+					.toList(),
+				imageRepository.findMenuUsages(ids).stream().map(usage -> new GalleryImage.UsingMenu(usage.id(), usage.title())).toList(),
+				image.getId().equals(siteContentRepository.findAboutImageId().orElse(null)));
+	}
+
+	private static List<String> shownOn(GalleryImage image) {
+		List<String> names = new ArrayList<>();
+		image.recipes().forEach(recipe -> names.add(recipe.title()));
+		image.categories().forEach(category -> names.add(category.name()));
+		image.menus().forEach(menu -> names.add(menu.title()));
+		if (image.aboutPage()) {
+			names.add("À propos");
+		}
+		return names;
+	}
+
+	/**
 	 * Moved to the trash, kept 30 days: the recipes, categories and menus showing it fall back to
 	 * the default visual ({@code ON DELETE SET NULL}) and get it back on restore.
 	 */
 	@Transactional
 	public void delete(UUID id) {
+		trash(id, null);
+	}
+
+	/** {@code title}: null for the usual one, saying where it was shown. */
+	private void trash(UUID id, @Nullable String title) {
 		Image image = get(id);
 		List<GalleryImage.RecipeUsage> recipes = imageRepository.findRecipeUsages(List.of(id));
 		List<GalleryImage.RecipeUsage> pinterest = imageRepository.findPinterestUsages(List.of(id));
@@ -168,7 +224,7 @@ public class ImageService {
 				pinterest.stream().map(GalleryImage.RecipeUsage::id).toList(),
 				categories.stream().map(GalleryImage.CategoryUsage::id).toList(), aboutPage,
 				menus.stream().map(GalleryImage.MenuUsage::id).toList());
-		trashBin.put(new TrashBin.Entry(TrashKind.IMAGE, trashedTitle(shownOn), null, null, null, null,
+		trashBin.put(new TrashBin.Entry(TrashKind.IMAGE, title != null ? title : trashedTitle(shownOn), null, null, null, null,
 				new TrashedImage(image.getId(), image.getKind(), image.getS3Prefix(), image.getCreatedAt()), links, null));
 		imageRepository.delete(image);
 	}

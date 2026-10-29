@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.category;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Slugs;
@@ -69,21 +70,21 @@ public class CategoryService {
 	}
 
 	/**
-	 * Its name, and its theme: a new theme goes to every recipe whose main category it is (one of them
-	 * featured is featured no more if its new theme has a featured recipe already). Back to "both",
-	 * its recipes keep the theme they had.
+	 * Its name, and its theme: a new theme goes to every recipe whose main category it is. Back to
+	 * "both", its recipes keep the theme they had.
 	 */
 	@Transactional
 	public CategoryResponse update(long id, CategoryForm form) {
 		Category category = find(id);
+		AuditChanges changes = new AuditChanges().add("Nom", category.getName(), Texts.capitalizeFirstLetter(form.name().strip()))
+			.add("Thème", themeLabel(category.getTheme()), themeLabel(form.theme()));
 		category.setName(Texts.capitalizeFirstLetter(form.name().strip()));
 		RecipeTheme theme = form.theme();
 		if (theme != null && theme != category.getTheme()) {
-			recipeRepository.unfeatureMovingTo(id, theme.name());
 			recipeRepository.giveThemeOfMainCategory(id, theme.name());
 		}
 		category.setTheme(theme);
-		auditLog.record(AuditAction.UPDATED, AuditKind.CATEGORY, category.getName(), id);
+		auditLog.record(AuditAction.UPDATED, AuditKind.CATEGORY, category.getName(), id, changes);
 		return categoryMapper.toResponse(categoryRepository.saveAndFlush(category));
 	}
 
@@ -162,6 +163,10 @@ public class CategoryService {
 	private static CategoryResponse withThemes(CategoryResponse category, List<RecipeTheme> publishedThemes) {
 		return new CategoryResponse(category.id(), category.name(), category.slug(), category.imageId(), category.theme(),
 				List.copyOf(publishedThemes));
+	}
+
+	private static String themeLabel(@Nullable RecipeTheme theme) {
+		return theme == null ? "Sucré et salé" : theme == RecipeTheme.SWEET ? "Sucré" : "Salé";
 	}
 
 	private Category find(long id) {

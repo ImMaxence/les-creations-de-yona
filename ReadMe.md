@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 1.11.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 1.12.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -28,8 +28,8 @@ Sur téléphone, là où se lisent la plupart des recettes :
 
 **Pour les visiteurs, sans compte**
 
-- Recettes salées et sucrées, rangées par catégorie sous les menus « Salé » et « Sucré », une à la une pour chaque thème sur l'accueil.
-- Recherche partout (loupe de l'en-tête et grande barre sur l'accueil : chaque mot cherché dans les titres, catégories, tags et ingrédients, suggestions par type ; « gâteau 8 » ouvre les recettes pour 8, réglable avec − et +), filtres (sucré ou salé, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté, nombre de personnes), portions et moule ajustables, « Organiser mon temps ».
+- Recettes salées et sucrées, rangées par catégorie sous les menus « Salé » et « Sucré » ; sur l'accueil, une recette à la une et les 3 dernières de chaque thème.
+- Recherche partout (loupe de l'en-tête et grande barre sur l'accueil : chaque mot cherché dans les titres, catégories, tags, ingrédients, matériel et étapes, suggestions par type ; « gâteau 8 » ouvre les recettes pour 8, réglable avec − et + ; « dessert en 30 min », « tarte facile », « sans cuisson » compris), filtres (sucré ou salé, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté, nombre de personnes), portions et moule ajustables, « Organiser mon temps ».
 - Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page et après un rechargement.
 - Menus composés par Yona (« Menu de Noël », « Goûter d'anniversaire »), chacun avec sa photo (visuel par défaut sans photo), toutes leurs recettes à la liste de courses en un geste.
 - Favoris, liste de courses rangée par rayon (portions de chaque recette réglables), notes personnelles : gardés dans le navigateur.
@@ -41,8 +41,8 @@ Sur téléphone, là où se lisent la plupart des recettes :
 
 - Éditeur de recettes (parties, étapes minutées, matériel, conseil, thème, publication programmée avec statut « Échec » et « Publier maintenant » si elle n'a pas pu se faire, mise à la une d'avance, brouillon gardé), « Remplir avec l'IA » (Gemini lit un texte collé ou la photo d'une recette), aperçu, liste triable (modification, création, titre, vues).
 - Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients et mots du glossaire, qui reviennent à leur place une fois restaurés.
-- Historique de 6 mois (qui a fait quoi, et quand), retours des visiteurs, titres de l'accueil modifiables.
-- Galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
+- Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur), retours des visiteurs, titres de l'accueil modifiables.
+- Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
 - Apparence (thèmes, polices), statistiques (dont le nombre de vues, les recettes les plus vues, la mémoire et le processeur), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
 
 Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).

@@ -98,8 +98,8 @@ public class Recipe {
 	private Image pinterestImage;
 
 	/**
-	 * One published recipe per theme at most. A scheduled draft may be featured ahead: it replaces the
-	 * featured recipe of its theme once published.
+	 * One published recipe at most (1.12; one per theme before). A scheduled draft may be featured ahead: it replaces the
+	 * featured recipe once published.
 	 */
 	private boolean featured;
 

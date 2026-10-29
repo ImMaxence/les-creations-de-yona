@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.menu;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.common.Slugs;
@@ -108,8 +109,14 @@ public class MenuService {
 		if (menuRepository.findByTitle(title).filter(other -> !other.getId().equals(id)).isPresent()) {
 			throw new ApiException(ErrorCode.MENU_ALREADY_EXISTS);
 		}
-		auditLog.record(AuditAction.UPDATED, AuditKind.MENU, title, id);
-		return save(menu, title, form);
+		AdminMenu before = toAdmin(menu);
+		AdminMenu updated = save(menu, title, form);
+		auditLog.record(AuditAction.UPDATED, AuditKind.MENU, title, id, new AuditChanges().add("Titre", before.title(), title)
+			.add("Présentation", before.intro(), updated.intro())
+			.add("Publié", before.published(), updated.published())
+			.addLines("Recettes", before.recipes().stream().map(MenuRecipe::title).toList(),
+					updated.recipes().stream().map(MenuRecipe::title).toList()));
+		return updated;
 	}
 
 	/** A new photo for a menu; the previous one stays in the gallery. */

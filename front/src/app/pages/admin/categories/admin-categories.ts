@@ -152,7 +152,7 @@ export default class AdminCategories {
       !theme ||
       (await this.confirm.ask({
         title: `Passer « ${category.name} » en ${themeLabel(theme)} ?`,
-        message: `Les recettes dont c'est la catégorie principale deviennent ${themeLabel(theme).toLowerCase()}es. Une recette à la une peut la perdre si son nouveau thème en a déjà une`,
+        message: `Les recettes dont c'est la catégorie principale deviennent ${themeLabel(theme).toLowerCase()}es`,
         confirmLabel: `Passer en ${themeLabel(theme)}`,
       }));
     if (!confirmed) {
@@ -193,6 +193,11 @@ export default class AdminCategories {
       this.toaster.success(imageId ? 'Photo enregistrée' : 'Photo retirée, elle reste dans la galerie');
       await this.siteData.load();
     }
+  }
+
+  /** "Retoucher": already in place, the categories are read again to show it. */
+  protected async onRetouched(): Promise<void> {
+    await this.siteData.load();
   }
 
   protected async remove(category: CategoryResponse): Promise<void> {

@@ -4,6 +4,7 @@ import { Api } from '../../../core/api/generated/api';
 import { listHistory } from '../../../core/api/generated/fn/admin-history/list-history';
 import { AuditEventResponse } from '../../../core/api/generated/models/audit-event-response';
 import { parisDateTime } from '../../../shared/format/paris-time';
+import { Icon } from '../../../shared/ui/icon/icon';
 import { Pagination } from '../../../shared/ui/pagination/pagination';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 
@@ -49,11 +50,12 @@ const ACTIONS: Record<Action, string> = {
 /**
  * "Historique": what was done in the back-office, by whom and when, the latest first, over the
  * last 6 months (older lines are erased every night). Filtered by kind, 20 a page, with the
- * pagination above and under the list.
+ * pagination above and under the list. An update says what it changed: each field, its value
+ * before (struck through) and after; for a list, the lines removed and added.
  */
 @Component({
   selector: 'yona-admin-history',
-  imports: [Pagination, RouterLink, Select],
+  imports: [Icon, Pagination, RouterLink, Select],
   template: `
     <section class="admin-section" aria-labelledby="history-title">
       <div class="admin-section__head">
@@ -93,6 +95,33 @@ const ACTIONS: Record<Action, string> = {
                   <span class="admin-row__meta">
                     {{ actions[event.action] }} · {{ dateTime(event.happenedAt) }} · {{ actorOf(event) }}
                   </span>
+                  @if (event.changes; as changes) {
+                    @if (changes.length) {
+                      <details class="changes" [open]="changes.length <= openedUpTo">
+                        <summary class="changes__summary">
+                          {{ changes.length }} champ{{ changes.length > 1 ? 's' : '' }} modifié{{ changes.length > 1 ? 's' : '' }}
+                        </summary>
+                        <dl class="changes__list">
+                          @for (change of changes; track $index) {
+                            <div class="change">
+                              <dt class="change__field">{{ change.field }}</dt>
+                              <dd class="change__values">
+                                <span class="change__before" [class.is-empty]="!change.before">
+                                  <span class="visually-hidden">Avant : </span>{{ change.before || 'vide' }}
+                                </span>
+                                <svg yonaIcon="arrow-right" class="change__arrow" [size]="14"></svg>
+                                <span class="change__after" [class.is-empty]="!change.after">
+                                  <span class="visually-hidden">Après : </span>{{ change.after || 'vide' }}
+                                </span>
+                              </dd>
+                            </div>
+                          }
+                        </dl>
+                      </details>
+                    } @else if (event.action === 'UPDATED') {
+                      <span class="admin-row__meta">Enregistré sans changement</span>
+                    }
+                  }
                 </div>
               </li>
             }
@@ -108,12 +137,80 @@ const ACTIONS: Record<Action, string> = {
       }
     </section>
   `,
+  styles: `
+    .changes {
+      margin-top: var(--space-1);
+      font-size: var(--text-sm);
+    }
+
+    .changes__summary {
+      width: fit-content;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-accent-strong);
+      cursor: pointer;
+    }
+
+    .changes__list {
+      display: grid;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+      padding-left: var(--space-3);
+      border-left: 2px solid var(--color-line);
+    }
+
+    .change__field {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .change__values {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--space-1) var(--space-2);
+      margin: 0;
+    }
+
+    /* Lists keep one line per ingredient or step; long texts wrap */
+    .change__before,
+    .change__after {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+
+    .change__before {
+      color: var(--color-text-muted);
+      text-decoration: line-through;
+      text-decoration-color: color-mix(in srgb, var(--color-danger) 60%, transparent);
+    }
+
+    .change__after {
+      color: var(--color-text);
+    }
+
+    .is-empty {
+      font-style: italic;
+      text-decoration: none;
+      color: var(--color-text-muted);
+    }
+
+    .change__arrow {
+      flex: none;
+      align-self: center;
+      color: var(--color-text-muted);
+    }
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class AdminHistory {
   private readonly api = inject(Api);
   private readonly document = inject(DOCUMENT);
 
+  /** A few changes show at once; more, folded under their count. */
+  protected readonly openedUpTo = 4;
   protected readonly kinds = KINDS;
   protected readonly actions = ACTIONS;
   protected readonly dateTime = parisDateTime;

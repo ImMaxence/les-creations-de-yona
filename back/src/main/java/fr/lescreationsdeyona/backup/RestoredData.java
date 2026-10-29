@@ -242,8 +242,8 @@ class RestoredData {
 			Map<Long, Long> ingredients) {
 		Set<String> existing = strings(site, "select slug from recipe");
 		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
-		// One featured recipe per theme
-		Set<String> featuredThemes = strings(site, "select theme from recipe where featured and status = 'PUBLISHED'");
+		// One featured recipe at most
+		boolean featuredTaken = !strings(site, "select slug from recipe where featured and status = 'PUBLISHED'").isEmpty();
 		long added = 0;
 		for (Map<String, Object> recipe : scratch.sql("select * from recipe order by id").query().listOfRows()) {
 			if (existing.contains((String) recipe.get("slug"))) {
@@ -256,7 +256,8 @@ class RestoredData {
 			// A publication scheduled in the backup is never done by surprise: the admin schedules it again.
 			// A recipe featured ahead of its publication is then featured no more.
 			boolean featured = Boolean.TRUE.equals(values.get("featured")) && "PUBLISHED".equals(values.get("status"))
-					&& featuredThemes.add((String) values.get("theme"));
+					&& !featuredTaken;
+			featuredTaken |= featured;
 			values.put("featured", featured);
 			values.put("scheduled_at", null);
 			long siteId = insertReturningId(site, "recipe", values);

@@ -41,8 +41,7 @@ class AdminCategoryController {
 	}
 
 	@Operation(summary = "Rename a category (its slug does not change), or change its theme",
-			description = "A new theme goes to every recipe whose main category it is; one of them featured is featured no "
-					+ "more when its new theme has a featured recipe already.")
+			description = "A new theme goes to every recipe whose main category it is.")
 	@PutMapping("/{id}")
 	CategoryResponse updateCategory(@PathVariable long id, @Valid @RequestBody CategoryForm form) {
 		return categoryService.update(id, form);

@@ -26,7 +26,7 @@ public record RecipeForm(
 		@Schema(description = "DRAFT or PUBLISHED: FAILED is set by the site only") @NotNull RecipeStatus status,
 		@Schema(description = "Used only when the main category holds both (its theme absent): the recipe then takes the "
 				+ "theme of its main category") @Nullable RecipeTheme theme,
-		@Schema(description = "Published, or scheduled: featured once published, in place of the featured recipe of its theme")
+		@Schema(description = "Published, or scheduled: featured once published, in place of the featured recipe")
 		@NotNull Boolean featured,
 		@Schema(description = "Each one once; the first one is the main category, in the recipe URL")
 		@NotEmpty @Size(max = 10) List<@NotNull Long> categoryIds,

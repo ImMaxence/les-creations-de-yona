@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.audit.AuditAction;
+import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.category.Category;
@@ -11,6 +12,7 @@ import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.image.Image;
 import fr.lescreationsdeyona.image.ImageKind;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
@@ -111,8 +113,8 @@ public class RecipeService {
 	}
 
 	/**
-	 * The featured recipe of this theme or, if none, its latest published one. Without theme, any
-	 * featured recipe, or the latest published one.
+	 * The featured recipe or, if none, the latest published one. With a theme (applications installed
+	 * before 1.12): the featured recipe if of that theme, otherwise its latest published one.
 	 */
 	public Optional<RecipeCard> findFeatured(@Nullable RecipeTheme theme) {
 		Optional<Recipe> featured = theme == null
@@ -187,12 +189,14 @@ public class RecipeService {
 	@Transactional
 	public RecipeDetail update(long id, RecipeForm form) {
 		Recipe recipe = find(id);
+		RecipeDetail before = recipeMapper.toDetail(recipe);
 		boolean firstPublication = apply(form, recipe);
 		// Changing only ingredients or steps leaves the recipe row untouched, and auditing would then
 		// skip updated_at: touching it makes every save count as an update.
 		recipe.setUpdatedAt(Instant.now());
-		auditLog.record(AuditAction.UPDATED, AuditKind.RECIPE, recipe.getTitle(), id);
-		return saveAndAnnounce(recipe, firstPublication);
+		RecipeDetail updated = saveAndAnnounce(recipe, firstPublication);
+		auditLog.record(AuditAction.UPDATED, AuditKind.RECIPE, recipe.getTitle(), id, RecipeChanges.between(before, updated));
+		return updated;
 	}
 
 	/**
@@ -322,7 +326,7 @@ public class RecipeService {
 
 	/**
 	 * "Publier maintenant": a draft or a failed recipe published at once, its schedule dropped.
-	 * Featured ahead, it becomes the featured recipe of its theme. Nothing changes for a recipe
+	 * Featured ahead, it becomes the featured recipe. Nothing changes for a recipe
 	 * already published.
 	 */
 	@Transactional
@@ -339,7 +343,7 @@ public class RecipeService {
 	private RecipeDetail publish(Recipe recipe, Instant now) {
 		if (recipe.isFeatured()) {
 			// Before the status changes: the flush preceding this update must not write a second featured recipe
-			recipeRepository.unfeatureAllExcept(recipe.getTheme(), recipe.getId());
+			recipeRepository.unfeatureAllExcept(recipe.getId());
 		}
 		boolean firstPublication = recipe.getPublishedAt() == null;
 		recipe.setStatus(RecipeStatus.PUBLISHED);
@@ -363,7 +367,9 @@ public class RecipeService {
 	@Transactional
 	public RecipeDetail replaceImage(long id, ProcessedImage processed) {
 		Recipe recipe = find(id);
+		Image before = recipe.getImage();
 		recipe.setImage(imageService.create(ImageKind.RECIPE, processed));
+		recordPhoto(recipe, "Photo", before, recipe.getImage());
 		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 
@@ -371,7 +377,9 @@ public class RecipeService {
 	@Transactional
 	public RecipeDetail chooseImage(long id, @Nullable UUID imageId) {
 		Recipe recipe = find(id);
+		Image before = recipe.getImage();
 		recipe.setImage(imageId == null ? null : imageService.getLandscape(imageId));
+		recordPhoto(recipe, "Photo", before, recipe.getImage());
 		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 
@@ -379,7 +387,9 @@ public class RecipeService {
 	@Transactional
 	public RecipeDetail replacePinterestImage(long id, ProcessedImage processed) {
 		Recipe recipe = find(id);
+		Image before = recipe.getPinterestImage();
 		recipe.setPinterestImage(imageService.create(ImageKind.PINTEREST, processed));
+		recordPhoto(recipe, "Photo Pinterest", before, recipe.getPinterestImage());
 		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 
@@ -387,12 +397,27 @@ public class RecipeService {
 	@Transactional
 	public RecipeDetail choosePinterestImage(long id, @Nullable UUID imageId) {
 		Recipe recipe = find(id);
+		Image before = recipe.getPinterestImage();
 		recipe.setPinterestImage(imageId == null ? null : imageService.getPortrait(imageId));
+		recordPhoto(recipe, "Photo Pinterest", before, recipe.getPinterestImage());
 		return recipeMapper.toDetail(recipeRepository.saveAndFlush(recipe));
 	}
 
 	private Recipe find(long id) {
 		return recipeRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.RECIPE_NOT_FOUND));
+	}
+
+	/** A photo is told apart by the time it was added to the gallery. */
+	private void recordPhoto(Recipe recipe, String field, @Nullable Image before, @Nullable Image after) {
+		auditLog.record(AuditAction.UPDATED, AuditKind.RECIPE, recipe.getTitle(), recipe.getId(),
+				new AuditChanges().add(field, photo(before), photo(after)));
+	}
+
+	private static @Nullable String photo(@Nullable Image image) {
+		if (image == null) {
+			return null;
+		}
+		return image.getCreatedAt() == null ? "Nouvelle photo" : "Photo ajoutée le " + AuditChanges.dateTime(image.getCreatedAt());
 	}
 
 	/** Subscribers are notified once the transaction is committed (see RecipePublished). */
@@ -449,7 +474,7 @@ public class RecipeService {
 			// Done before changing the entity: the flush preceding this update must not write a second
 			// featured recipe, which the database would reject. A scheduled one waits for its publication.
 			if (form.status() == RecipeStatus.PUBLISHED) {
-				recipeRepository.unfeatureAllExcept(theme, recipe.getId());
+				recipeRepository.unfeatureAllExcept(recipe.getId());
 			}
 		}
 		recipe.setTitle(Texts.capitalizeFirstLetter(form.title().strip()));

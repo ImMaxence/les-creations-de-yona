@@ -45,11 +45,10 @@ class CategoryThemeTest {
 	}
 
 	@Test
-	void givesItsNewThemeToItsRecipesUnfeaturingFirst() {
+	void givesItsNewThemeToItsRecipes() {
 		service.update(4L, new CategoryForm("Apéritifs", RecipeTheme.SAVORY));
 
 		InOrder order = inOrder(recipeRepository);
-		order.verify(recipeRepository).unfeatureMovingTo(4L, "SAVORY");
 		order.verify(recipeRepository).giveThemeOfMainCategory(4L, "SAVORY");
 		assertThat(aperitifs.getTheme()).isEqualTo(RecipeTheme.SAVORY);
 	}

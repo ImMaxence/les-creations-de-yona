@@ -82,6 +82,10 @@
                 <span class="badge badge--unused">Non utilisée</span>
               }
               <span class="admin-row__meta">{{ image.createdAt | parisDate }}</span>
+              <button type="button" class="link-button" [disabled]="uploadProgress() !== null" (click)="retouch(image)">
+                <svg yonaIcon="crop" [size]="14"></svg>
+                Retoucher
+              </button>
             </div>
             <button type="button" class="icon-button icon-button--danger tile__delete" aria-label="Mettre l'image à la corbeille" (click)="remove(image)">
               <svg yonaIcon="trash" [size]="18"></svg>
@@ -102,3 +106,11 @@
     <p class="admin-empty">Chargement…</p>
   }
 </section>
+
+<yona-photo-editor
+  [source]="editorSource()"
+  [portrait]="retouched()?.kind === 'PINTEREST'"
+  [retouch]="!!retouched()"
+  [(open)]="editorOpen"
+  (edited)="onEdited($event)"
+/>

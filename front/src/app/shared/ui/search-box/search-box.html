@@ -35,7 +35,7 @@
           >
             <svg yonaIcon="minus" [size]="14" [strokeWidth]="2.5"></svg>
           </button>
-          <svg yonaIcon="users" [size]="14" [strokeWidth]="2.25"></svg>
+          <svg yonaIcon="users" class="understood__icon" [size]="14" [strokeWidth]="2.25"></svg>
           <span aria-live="polite">{{ count }}<span class="understood__unit"> pers.</span></span>
           <button
             type="button"
@@ -70,6 +70,11 @@
     @if (servings(); as count) {
       <p class="suggestions__understood" aria-hidden="true">
         <svg yonaIcon="users" [size]="14"></svg> Quantités pour <strong>{{ count }} personne{{ count > 1 ? 's' : '' }}</strong>
+      </p>
+    }
+    @if (duration(); as duration) {
+      <p class="suggestions__understood" aria-hidden="true">
+        <svg yonaIcon="timer" [size]="14"></svg> Prêtes en <strong>{{ duration }}</strong> au plus
       </p>
     }
     @for (group of groups(); track group.label) {

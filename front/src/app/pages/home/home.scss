@@ -102,38 +102,6 @@
   }
 }
 
-// Sweet and savory: one under the other on phones, side by side from tablets on, a little less wide
-.hero--pair {
-  display: grid;
-  gap: var(--space-4);
-
-  @include m.from(md) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-5);
-  }
-
-  // Square on phones: the two of them leave the search in sight sooner
-  .hero__card {
-    aspect-ratio: 1 / 1;
-
-    @include m.from(sm) {
-      aspect-ratio: 16 / 10;
-    }
-
-    @include m.from(md) {
-      aspect-ratio: 4 / 5;
-    }
-
-    @include m.from(lg) {
-      aspect-ratio: 5 / 4;
-    }
-  }
-
-  .hero__title {
-    font-size: var(--text-2xl);
-  }
-}
-
 .hero__welcome {
   display: grid;
   gap: var(--space-3);
@@ -164,6 +132,7 @@
 
 .home-search__box {
   width: 100%;
+  min-width: 0;
   max-width: 40rem;
   // The suggestions float over the sections below
   position: relative;
@@ -267,6 +236,46 @@
 }
 
 // Latest recipes --------------------------------------------------------------
+
+// Each theme: its name, a link to all its recipes, its three latest
+.latest__theme + .latest__theme {
+  margin-top: var(--space-7);
+}
+
+.latest__theme-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.latest__theme-title {
+  font-size: var(--text-xl);
+}
+
+.latest__theme-all {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent-strong);
+  text-decoration: none;
+
+  svg {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  @include m.hover {
+    text-decoration: underline;
+
+    svg {
+      transform: translateX(3px);
+    }
+  }
+}
 
 // Three latest recipes: on two columns (tablets), the first one takes the whole row rather than
 // leaving the third alone on its line

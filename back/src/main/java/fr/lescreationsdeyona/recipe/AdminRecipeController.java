@@ -68,7 +68,7 @@ class AdminRecipeController {
 	}
 
 	@Operation(summary = "\"Publier maintenant\": a draft or a failed recipe published at once, its schedule dropped",
-			description = "Featured ahead, it becomes the featured recipe of its theme. Subscribers are notified of a first "
+			description = "Featured ahead, it becomes the featured recipe. Subscribers are notified of a first "
 					+ "publication. Nothing changes for a recipe already published.")
 	@PostMapping("/{id}/publish")
 	RecipeDetail publishRecipe(@PathVariable long id) {
@@ -82,7 +82,7 @@ class AdminRecipeController {
 	}
 
 	@Operation(summary = "Create a recipe",
-			description = "Featuring a published recipe unfeatures the previous one of its theme; a scheduled one is featured "
+			description = "Featuring a published recipe unfeatures the previous one; a scheduled one is featured "
 					+ "once published. Unknown ingredients are created.")
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)

@@ -32,6 +32,24 @@ export function servingsIn(text: string | null | undefined): number | null {
   return servingsMatch(text)?.servings ?? null;
 }
 
+/** A time typed, as the API reads it (SearchWords): "30 min", "45 minutes", "1 h", "1h30", "2 heures". */
+const DURATION = /(?<![\p{L}\p{N}])(?:(\d{1,2})\s*h(?:eures?)?(?:\s*(\d{1,2}))?(?:\s*(?:min|minutes?|mn))?|(\d{1,3})\s*(?:min|minutes?|mn))(?![\p{L}\p{N}])/gu;
+
+/**
+ * "tarte en 30 min" → 30, "brioche 1h30" → 90; the longest when several, null for none. The API
+ * then finds the recipes ready in that time at most, rest included.
+ */
+export function minutesIn(text: string | null | undefined): number | null {
+  let longest: number | null = null;
+  for (const match of (text ?? '').toLowerCase().matchAll(DURATION)) {
+    const minutes = match[3] ? Number(match[3]) : Number(match[1]) * 60 + Number(match[2] ?? 0);
+    if (minutes > 0 && (longest === null || minutes > longest)) {
+      longest = minutes;
+    }
+  }
+  return longest;
+}
+
 /** The search with another number of people: "gâteau 8 personnes" → "gâteau 10 personnes". */
 export function withServings(text: string, servings: number): string {
   const match = servingsMatch(text);

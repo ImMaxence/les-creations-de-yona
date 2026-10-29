@@ -1,0 +1,131 @@
+<yona-dialog
+  [title]="retouch() ? 'Retoucher la photo' : 'Préparer la photo'"
+  size="lg"
+  [closeOnBackdrop]="false"
+  [(open)]="open"
+  (closed)="onClosed()"
+>
+  <div #stage class="stage">
+    @if (loadFailed()) {
+      <p class="stage__message" role="alert">Cette photo n'a pas pu être ouverte. Choisissez-en une autre</p>
+    } @else if (!image()) {
+      <p class="stage__message" aria-live="polite">
+        <svg yonaIcon="loader-circle" class="spin" [size]="20"></svg> Ouverture de la photo…
+      </p>
+    }
+    <div class="frame" [hidden]="!image()">
+      <canvas #canvas class="frame__canvas" aria-hidden="true"></canvas>
+      <!-- The part kept: dragged, or its corners; the rest of the photo is dimmed around it -->
+      <div
+        class="crop"
+        tabindex="0"
+        role="group"
+        aria-label="Cadre de la photo : faites-le glisser, ou déplacez-le avec les flèches"
+        [style.left.%]="crop().x * 100"
+        [style.top.%]="crop().y * 100"
+        [style.width.%]="crop().width * 100"
+        [style.height.%]="crop().height * 100"
+        (pointerdown)="startDrag($event, null)"
+        (pointermove)="onDrag($event)"
+        (pointerup)="endDrag($event)"
+        (pointercancel)="endDrag($event)"
+        (keydown)="onFrameKey($event)"
+      >
+        @for (corner of corners; track $index) {
+          <span
+            class="crop__handle"
+            [class.crop__handle--right]="corner.right"
+            [class.crop__handle--bottom]="corner.bottom"
+            (pointerdown)="startDrag($event, corner)"
+            (pointermove)="onDrag($event)"
+            (pointerup)="endDrag($event)"
+            (pointercancel)="endDrag($event)"
+          ></span>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (image()) {
+    <p class="size" [class.size--problem]="problem()" aria-live="polite">
+      @if (problem(); as problem) {
+        <svg yonaIcon="triangle-alert" [size]="16"></svg>{{ problem }}
+      } @else {
+        {{ sizeLabel() }}
+      }
+    </p>
+
+    <div class="tools">
+      <div class="tools__group" role="group" aria-labelledby="photo-crop-label">
+        <p id="photo-crop-label" class="tools__label"><svg yonaIcon="crop" [size]="16"></svg>Cadrage</p>
+        <div class="tools__row">
+          @for (option of ratios(); track option.label) {
+            <button type="button" class="pill" [attr.aria-pressed]="ratio() === option.ratio" (click)="chooseRatio(option.ratio)">
+              {{ option.label }}
+            </button>
+          }
+        </div>
+        <div class="tools__row">
+          <button type="button" class="pill" aria-label="Tourner à gauche" (click)="turn(-1)">
+            <svg yonaIcon="rotate-ccw" [size]="18"></svg>
+          </button>
+          <button type="button" class="pill" aria-label="Tourner à droite" (click)="turn(1)">
+            <svg yonaIcon="rotate-cw" [size]="18"></svg>
+          </button>
+          <button type="button" class="pill" aria-label="Miroir" [attr.aria-pressed]="flipped()" (click)="flip()">
+            <svg yonaIcon="flip-horizontal-2" [size]="18"></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="tools__group" role="group" aria-labelledby="photo-filter-label">
+        <p id="photo-filter-label" class="tools__label"><svg yonaIcon="sparkles" [size]="16"></svg>Filtres</p>
+        <div class="tools__row">
+          @for (preset of presets; track preset.label) {
+            <button
+              type="button"
+              class="pill"
+              [attr.aria-pressed]="activePreset() === preset"
+              (click)="choosePreset(preset.adjustments)"
+            >
+              {{ preset.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="tools__group tools__group--sliders" role="group" aria-labelledby="photo-light-label">
+        <p id="photo-light-label" class="tools__label"><svg yonaIcon="sun" [size]="16"></svg>Réglages</p>
+        @for (slider of sliders; track slider.key) {
+          <label class="slider">
+            <span class="slider__name">{{ slider.label }}</span>
+            <input
+              type="range"
+              min="-100"
+              max="100"
+              step="1"
+              [value]="adjustments()[slider.key]"
+              (input)="adjust(slider.key, $event)"
+            />
+            <span class="slider__value">{{ adjustments()[slider.key] }}</span>
+          </label>
+        }
+      </div>
+    </div>
+  }
+
+  <ng-container dialogActions>
+    <button yonaButton variant="ghost" type="button" [disabled]="!image() || untouched()" (click)="reset()">
+      <svg yonaIcon="undo-2"></svg>Tout annuler
+    </button>
+    <button yonaButton variant="secondary" type="button" (click)="open.set(false)">Annuler</button>
+    <button
+      yonaButton
+      type="button"
+      [disabled]="!image() || !!problem() || busy() || (retouch() && untouched())"
+      (click)="confirm()"
+    >
+      <svg yonaIcon="check"></svg>{{ retouch() ? 'Enregistrer la retouche' : 'Utiliser cette photo' }}
+    </button>
+  </ng-container>
+</yona-dialog>

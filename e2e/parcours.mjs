@@ -53,8 +53,11 @@ await part('API', async () => {
   check('Catégories : leur thème, et les thèmes de leurs recettes publiées', themed.every((category) => 'publishedThemes' in category && (category.theme == null || ['SWEET', 'SAVORY'].includes(category.theme))));
   const sweet = await api('/api/recipes?theme=SWEET&size=50');
   check('Filtre par thème : des recettes sucrées seulement', sweet.content.every((card) => card.theme === 'SWEET'), `${sweet.totalElements} recette(s)`);
-  const featured = await fetch(`${BASE}/api/featured-recipe?theme=${recipe.theme}`);
-  check('À la une du thème de la recette', featured.status === 200, String(featured.status));
+  const featured = await fetch(`${BASE}/api/featured-recipe`);
+  check('Une recette à la une', featured.status === 200, String(featured.status));
+  const timed = await api(`/api/recipes?q=${encodeURIComponent('en 30 min')}&size=50`);
+  const quick = await api('/api/recipes?maxMinutes=30&size=1');
+  check('Recherche : « en 30 min » donne les recettes prêtes en 30 minutes au plus', timed.totalElements === quick.totalElements, `${timed.totalElements} pour ${quick.totalElements}`);
   const themes = await api(`/api/search-suggestions?q=${encodeURIComponent('cake salé')}`);
   check('Suggestions : « cake salé » propose le thème salé', themes.themes.includes('SAVORY'), themes.themes.join(', '));
   const yogurt = ingredients[0].name;

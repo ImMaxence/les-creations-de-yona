@@ -88,4 +88,25 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 	@Query(value = "update site_content set about_image_id = :imageId where about_image_id is null", nativeQuery = true)
 	int showOnAboutPage(UUID imageId);
 
+	// A retouched photo takes the place of the original wherever it is shown; updated_at left alone.
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = """
+			update recipe set image_id = case when image_id = :original then :replacement else image_id end,
+				pinterest_image_id = case when pinterest_image_id = :original then :replacement else pinterest_image_id end
+			where image_id = :original or pinterest_image_id = :original""", nativeQuery = true)
+	int replaceOnRecipes(UUID original, UUID replacement);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update category set image_id = :replacement where image_id = :original", nativeQuery = true)
+	int replaceOnCategories(UUID original, UUID replacement);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update menu set image_id = :replacement where image_id = :original", nativeQuery = true)
+	int replaceOnMenus(UUID original, UUID replacement);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update site_content set about_image_id = :replacement where about_image_id = :original", nativeQuery = true)
+	int replaceOnAboutPage(UUID original, UUID replacement);
+
 }

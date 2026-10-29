@@ -29,7 +29,8 @@ import org.springframework.web.multipart.MultipartFile;
  * <ul>
  * <li>JPEG or PNG only, recognised from the file content, never from its name.</li>
  * <li>Landscape, at least 1200 × 800 and 4:3; or portrait for Pinterest, at least 1000 × 1333 and 3:4.
- * Checked once the EXIF orientation is applied.</li>
+ * Checked once the EXIF orientation is applied. A photo of the site retouched in the back-office comes
+ * from its 1600 px file and may be cropped: 800 × 450 (portrait 600 × 800) are enough then.</li>
  * <li>Re-encoded from the pixels alone: EXIF metadata, GPS position included, is dropped.</li>
  * <li>Shrunk to 800 and 1600 px wide, never enlarged. The original is not kept.</li>
  * </ul>
@@ -46,6 +47,15 @@ public class ImageProcessor {
 	private static final int PORTRAIT_MIN_WIDTH = 1000;
 
 	private static final int PORTRAIT_MIN_HEIGHT = 1333;
+
+	/** A retouched photo: the smaller file of the site, filled. */
+	private static final int EDITED_MIN_WIDTH = 800;
+
+	private static final int EDITED_MIN_HEIGHT = 450;
+
+	private static final int EDITED_PORTRAIT_MIN_WIDTH = 600;
+
+	private static final int EDITED_PORTRAIT_MIN_HEIGHT = 800;
 
 	/** Stops decompression bombs: a small file declaring a huge canvas. */
 	private static final long MAX_PIXELS = 100_000_000;
@@ -70,17 +80,26 @@ public class ImageProcessor {
 
 	/** The vertical photo of a recipe, offered to Pinterest. */
 	public ProcessedImage processPortrait(MultipartFile file) {
-		return process(file, true);
+		return process(file, true, false);
+	}
+
+	/** A photo of the site retouched in the back-office (cropped, turned, lightened): smaller sizes accepted. */
+	public ProcessedImage processEdited(MultipartFile file, boolean portrait) {
+		return process(file, portrait, true);
 	}
 
 	private ProcessedImage process(MultipartFile file, boolean portrait) {
+		return process(file, portrait, false);
+	}
+
+	private ProcessedImage process(MultipartFile file, boolean portrait, boolean edited) {
 		if (file.isEmpty()) {
 			throw new ApiException(ErrorCode.IMAGE_REQUIRED);
 		}
 		byte[] content = readBytes(file);
 		String format = detectFormat(content);
 		ExifOrientation orientation = ExifOrientation.of(content);
-		BufferedImage upright = orientation.applyTo(toRgb(decode(content, format, orientation, portrait)));
+		BufferedImage upright = orientation.applyTo(toRgb(decode(content, format, orientation, portrait, edited)));
 		return new ProcessedImage(WIDTHS.stream()
 			.map(width -> new ProcessedImage.Variant(width, encodeWebp(shrinkToWidth(upright, width))))
 			.toList());
@@ -118,7 +137,7 @@ public class ImageProcessor {
 
 	/** Checks the size from the file header, then decodes only the pixels the largest output needs. */
 	private static BufferedImage decode(byte[] content, String format, ExifOrientation orientation,
-			boolean portrait) {
+			boolean portrait, boolean edited) {
 		ImageReader reader = ImageIO.getImageReadersByFormatName(format).next();
 		try (ImageInputStream input = new MemoryCacheImageInputStream(new ByteArrayInputStream(content))) {
 			reader.setInput(input, true, true);
@@ -129,7 +148,10 @@ public class ImageProcessor {
 			}
 			int width = orientation.swapsAxes() ? storedHeight : storedWidth;
 			int height = orientation.swapsAxes() ? storedWidth : storedHeight;
-			if (portrait) {
+			if (edited) {
+				checkEditedDimensions(width, height, portrait);
+			}
+			else if (portrait) {
 				checkPortraitDimensions(width, height);
 			}
 			else {
@@ -161,6 +183,17 @@ public class ImageProcessor {
 		// width / height >= 4 / 3, without rounding.
 		if (3L * width < 4L * height) {
 			throw new ApiException(ErrorCode.IMAGE_NOT_LANDSCAPE);
+		}
+	}
+
+	/** Same shapes as an upload, smaller sizes. */
+	private static void checkEditedDimensions(int width, int height, boolean portrait) {
+		if (portrait ? width < EDITED_PORTRAIT_MIN_WIDTH || height < EDITED_PORTRAIT_MIN_HEIGHT
+				: width < EDITED_MIN_WIDTH || height < EDITED_MIN_HEIGHT) {
+			throw new ApiException(ErrorCode.EDITED_IMAGE_TOO_SMALL);
+		}
+		if (portrait ? 3L * height < 4L * width : 3L * width < 4L * height) {
+			throw new ApiException(portrait ? ErrorCode.IMAGE_NOT_PORTRAIT : ErrorCode.IMAGE_NOT_LANDSCAPE);
 		}
 	}
 

@@ -127,13 +127,13 @@ class RecipePublicationTest {
 	}
 
 	@Test
-	void replacesTheFeaturedRecipeOfItsThemeOncePublished() {
+	void replacesTheFeaturedRecipeOncePublished() {
 		Recipe recipe = scheduledAt(NOW.minus(Duration.ofMinutes(1)));
 		recipe.setFeatured(true);
 
 		service.publishScheduled(7L, NOW);
 
-		verify(recipeRepository).unfeatureAllExcept(RecipeTheme.SWEET, 7L);
+		verify(recipeRepository).unfeatureAllExcept(7L);
 		assertThat(recipe.isFeatured()).isTrue();
 	}
 
@@ -166,14 +166,14 @@ class RecipePublicationTest {
 	void featuresAScheduledDraftAheadWithoutUnfeaturingTheCurrentOne() {
 		service.create(form(RecipeStatus.DRAFT, true, Instant.now().plus(Duration.ofDays(1))));
 
-		verify(recipeRepository, never()).unfeatureAllExcept(any(), any());
+		verify(recipeRepository, never()).unfeatureAllExcept(any());
 	}
 
 	@Test
-	void featuresAPublishedRecipeInPlaceOfTheOneOfItsTheme() {
+	void featuresAPublishedRecipeInPlaceOfTheFeaturedOne() {
 		service.create(form(RecipeStatus.PUBLISHED, true, null));
 
-		verify(recipeRepository).unfeatureAllExcept(RecipeTheme.SAVORY, null);
+		verify(recipeRepository).unfeatureAllExcept(null);
 	}
 
 	@Test

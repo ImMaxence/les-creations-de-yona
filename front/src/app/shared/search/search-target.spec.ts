@@ -1,4 +1,20 @@
-import { searchTarget, servingsIn, servingsMatch, withServings } from './search-target';
+import { minutesIn, searchTarget, servingsIn, servingsMatch, withServings } from './search-target';
+
+describe('minutesIn', () => {
+  it('reads a time, as the API does', () => {
+    expect(minutesIn('tarte en 30 min')).toBe(30);
+    expect(minutesIn('dessert moins de 45 minutes')).toBe(45);
+    expect(minutesIn('brioche 1h30')).toBe(90);
+    expect(minutesIn('pain 2 heures')).toBe(120);
+  });
+
+  it('leaves alone what is no time', () => {
+    expect(minutesIn('gâteau 8')).toBeNull();
+    expect(minutesIn('2 hamburgers')).toBeNull();
+    expect(servingsIn('brioche 1h30')).toBeNull();
+    expect(servingsIn('tarte en 30 min')).toBeNull();
+  });
+});
 
 describe('servingsIn', () => {
   it('reads a number of people, as typed by visitors', () => {
