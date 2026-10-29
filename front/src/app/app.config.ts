@@ -27,6 +27,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { adminErrorsInterceptor } from './core/api/admin-errors.interceptor';
 import { provideApiConfiguration } from './core/api/generated/api-configuration';
+import { apiCacheInterceptor } from './core/pwa/api-cache';
 import { AppUpdates } from './core/pwa/app-updates';
 import { ConnectionStatus } from './core/pwa/connection-status';
 import { versionCheckInterceptor } from './core/pwa/version-check';
@@ -79,7 +80,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TitleStrategy, useExisting: SeoStrategy },
     provideHttpClient(
       withFetch(),
-      withInterceptors([adminErrorsInterceptor, offlineWarmupInterceptor, serviceWorkerBypassInterceptor, versionCheckInterceptor]),
+      withInterceptors([adminErrorsInterceptor, offlineWarmupInterceptor, serviceWorkerBypassInterceptor, versionCheckInterceptor, apiCacheInterceptor]),
     ),
     provideClientHydration(
       withEventReplay(),

@@ -2,6 +2,14 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.14.1 - 2026-10-29
+
+Front and backend 1.14.1. No database migration.
+
+### Fixed
+
+- **Public pages slow to load** (1 to 5 s per request): the service worker, busy installing a new version, held every answer of the API. The page now asks the API directly, as the back-office does, and keeps its own copy in the browser for offline reading (used when the network does not answer within 3 s).
+
 ## 1.14.0 - 2026-10-29
 
 Front and backend 1.14.0. No database migration.
