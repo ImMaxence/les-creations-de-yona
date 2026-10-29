@@ -15,12 +15,17 @@ import { Icon } from '../../shared/ui/icon/icon';
           animate.enter="toast--enter"
           animate.leave="toast--leave"
         >
-          @if (toast.kind === 'error') {
+          @if (toast.icon) {
+            <svg [yonaIcon]="toast.icon" [size]="20"></svg>
+          } @else if (toast.kind === 'error') {
             <svg yonaIcon="circle-alert" [size]="20"></svg>
           } @else {
             <svg yonaIcon="circle-check" [size]="20"></svg>
           }
           <span class="toast__message">{{ toast.message }}</span>
+          @if (toast.action; as action) {
+            <button type="button" class="toast__action" (click)="toaster.dismiss(toast.id); action.run()">{{ action.label }}</button>
+          }
           <button type="button" class="toast__close" aria-label="Fermer" (click)="toaster.dismiss(toast.id)">
             <svg yonaIcon="x" [size]="16"></svg>
           </button>

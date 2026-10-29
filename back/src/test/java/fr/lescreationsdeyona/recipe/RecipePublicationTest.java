@@ -18,6 +18,7 @@ import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.category.CategoryRepository;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.ingredient.Ingredient;
@@ -205,7 +206,7 @@ class RecipePublicationTest {
 		RecipeService recipes = mock(RecipeService.class);
 		when(recipes.dueForPublication(any())).thenReturn(List.of(7L));
 		doThrow(new IllegalStateException("Base indisponible")).when(recipes).publishScheduled(eq(7L), any());
-		ScheduledPublication scheduler = new ScheduledPublication(recipes);
+		ScheduledPublication scheduler = new ScheduledPublication(recipes, mock(PublicCache.class));
 
 		scheduler.publishDueRecipes();
 		scheduler.publishDueRecipes();
@@ -213,6 +214,21 @@ class RecipePublicationTest {
 		scheduler.publishDueRecipes();
 
 		verify(recipes).failScheduled(7L, ScheduledPublication.ERROR_FAILURE);
+	}
+
+	@Test
+	void showsAScheduledRecipeAtOnceOnTheSite() {
+		RecipeService recipes = mock(RecipeService.class);
+		PublicCache publicCache = mock(PublicCache.class);
+		ScheduledPublication scheduler = new ScheduledPublication(recipes, publicCache);
+
+		when(recipes.dueForPublication(any())).thenReturn(List.of());
+		scheduler.publishDueRecipes();
+		verify(publicCache, never()).clear();
+
+		when(recipes.dueForPublication(any())).thenReturn(List.of(7L));
+		scheduler.publishDueRecipes();
+		verify(publicCache).clear();
 	}
 
 }

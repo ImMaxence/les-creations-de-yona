@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.search;
 
 import fr.lescreationsdeyona.category.CategoryRepository;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.common.SearchWords;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.ingredient.IngredientService;
@@ -15,6 +16,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +47,7 @@ public class SearchService {
 
 	private final IngredientService ingredientService;
 
+	@Cacheable(PublicCache.SEARCH_SUGGESTIONS)
 	public SearchSuggestions suggest(String text) {
 		List<String> words = SearchWords.of(text);
 		String typedTheme = SearchWords.theme(text);

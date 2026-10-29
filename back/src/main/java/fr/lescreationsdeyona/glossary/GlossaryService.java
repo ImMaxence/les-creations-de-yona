@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
@@ -17,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,7 @@ public class GlossaryService {
 	private final AuditLog auditLog;
 
 	/** Sorted by name, the French way. */
+	@Cacheable(PublicCache.GLOSSARY)
 	public List<GlossaryTermResponse> list() {
 		return termRepository.findAll(Sort.by("name")).stream().map(GlossaryService::toResponse).toList();
 	}

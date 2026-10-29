@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
@@ -33,6 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -60,6 +62,7 @@ public class MenuService {
 	// Public site: published menus, their published recipes only
 
 	/** The latest updated first; a menu without published recipe is left out. */
+	@Cacheable(PublicCache.MENUS)
 	public List<MenuSummary> listPublished() {
 		return menuRepository.findByPublishedTrueOrderByUpdatedAtDesc()
 			.stream()
@@ -68,6 +71,7 @@ public class MenuService {
 			.toList();
 	}
 
+	@Cacheable(PublicCache.MENU)
 	public MenuDetail getPublished(String slug) {
 		Menu menu = menuRepository.findBySlugAndPublishedTrue(slug)
 			.orElseThrow(() -> new ApiException(ErrorCode.MENU_NOT_FOUND));

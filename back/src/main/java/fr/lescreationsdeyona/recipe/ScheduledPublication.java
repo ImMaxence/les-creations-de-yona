@@ -1,6 +1,8 @@
 package fr.lescreationsdeyona.recipe;
 
+import fr.lescreationsdeyona.common.PublicCache;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
@@ -27,13 +29,16 @@ class ScheduledPublication {
 
 	private final RecipeService recipeService;
 
+	private final PublicCache publicCache;
+
 	/** Failed attempts by recipe, forgotten once it is published or failed. */
 	private final Map<Long, Integer> attempts = new ConcurrentHashMap<>();
 
 	@Scheduled(initialDelay = 20_000, fixedDelay = 60_000)
 	void publishDueRecipes() {
 		Instant now = Instant.now();
-		for (long id : recipeService.dueForPublication(now)) {
+		List<Long> due = recipeService.dueForPublication(now);
+		for (long id : due) {
 			try {
 				recipeService.publishScheduled(id, now);
 				attempts.remove(id);
@@ -47,6 +52,14 @@ class ScheduledPublication {
 					failQuietly(id);
 				}
 			}
+		}
+		forgetPublicAnswers(due);
+	}
+
+	/** Published or failed: the site shows them at once, not after the public cache expires. */
+	private void forgetPublicAnswers(List<Long> due) {
+		if (!due.isEmpty()) {
+			publicCache.clear();
 		}
 	}
 

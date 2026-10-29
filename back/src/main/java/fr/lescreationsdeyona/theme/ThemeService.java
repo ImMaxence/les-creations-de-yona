@@ -4,7 +4,9 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.common.PublicCache;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ public class ThemeService {
 
 	private final AuditLog auditLog;
 
+	@Cacheable(PublicCache.THEME)
 	public ThemeResponse get() {
 		return toResponse(find());
 	}

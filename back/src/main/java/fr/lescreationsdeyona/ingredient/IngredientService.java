@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
@@ -21,6 +22,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,11 +51,13 @@ public class IngredientService {
 	}
 
 	/** For the ingredient filter of the public recipes page. */
+	@Cacheable(PublicCache.INGREDIENTS)
 	public List<String> publishedNames() {
 		return ingredientRepository.findPublishedNames();
 	}
 
 	/** For the shopping list, sorted by aisle. */
+	@Cacheable(PublicCache.AISLES)
 	public List<IngredientAisle> publishedAisles() {
 		return ingredientRepository.findPublishedAisles();
 	}

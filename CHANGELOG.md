@@ -2,6 +2,26 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.14.0 - 2026-10-29
+
+Front and backend 1.14.0. No database migration.
+
+### Added
+
+- **Connection lost / back**: a toast says the site is offline (recipes already opened stay readable) until the connection comes back, then "Connexion retrouvée".
+- **"Mettre à jour"**: a page opened before a deployment offers the new version in a toast as soon as it is ready, instead of waiting for a change of page.
+
+### Changed
+
+- **Faster pages**: the answers of the public API (recipes, categories, menus, texts, theme, search suggestions) are kept in the backend's memory, emptied at every change made in the back-office, scheduled publication or restored backup. About 10 ms instead of 15 to 50 ms each; pages rendered by the server 80 to 100 ms instead of 110 to 200 ms (local measures).
+- **Back-office always up to date**: never served from the service worker's copy, it loads the version on the server.
+
+### Technical
+
+- Every API answer says the backend version (`X-App-Version`); a front older than it looks for its new version at once.
+- Spring Cache with Caffeine: 500 answers per cache at most, 10 minutes at most.
+- 134 backend tests, 104 front tests, 82 Chrome checks.
+
 ## 1.13.0 - 2026-10-29
 
 Front and backend 1.13.0. No database migration.

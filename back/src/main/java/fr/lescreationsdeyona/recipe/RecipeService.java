@@ -8,6 +8,7 @@ import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.category.CategoryRepository;
 import fr.lescreationsdeyona.category.CategoryResponse;
 import fr.lescreationsdeyona.common.Pageables;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
@@ -44,6 +45,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -103,6 +105,7 @@ public class RecipeService {
 	// Public site: published recipes only.
 
 	/** Published recipes only, whatever {@code filter.status()}; no back-office criteria. */
+	@Cacheable(PublicCache.RECIPES)
 	public Page<RecipeCard> searchPublished(RecipeFilter filter, Pageable pageable) {
 		RecipeFilter published = new RecipeFilter(null, filter.text(), filter.categorySlug(), filter.tagSlug(),
 				filter.ingredientNames(), null, null, RecipeStatus.PUBLISHED, filter.theme(), filter.maxMinutes(),
@@ -116,6 +119,7 @@ public class RecipeService {
 	 * The featured recipe or, if none, the latest published one. With a theme (applications installed
 	 * before 1.12): the featured recipe if of that theme, otherwise its latest published one.
 	 */
+	@Cacheable(PublicCache.FEATURED_RECIPE)
 	public Optional<RecipeCard> findFeatured(@Nullable RecipeTheme theme) {
 		Optional<Recipe> featured = theme == null
 				? recipeRepository.findFirstByFeaturedTrueAndStatus(RecipeStatus.PUBLISHED)
@@ -136,11 +140,13 @@ public class RecipeService {
 	}
 
 	/** A draft is reported as not found, like a recipe that does not exist. */
+	@Cacheable(PublicCache.RECIPE)
 	public RecipeDetail getPublished(String slug) {
 		return recipeMapper.toDetail(findPublished(slug));
 	}
 
 	/** "Vous aimerez aussi": 3 published recipes sharing its tags or categories, else the latest. */
+	@Cacheable(PublicCache.RELATED_RECIPES)
 	public List<RecipeCard> related(String slug) {
 		List<Long> ids = recipeRepository.findRelatedIds(findPublished(slug).getId(), RELATED_LIMIT);
 		Map<Long, Recipe> recipesById = recipeRepository.findAllById(ids)

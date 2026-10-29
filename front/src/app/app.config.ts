@@ -28,6 +28,8 @@ import { routes } from './app.routes';
 import { adminErrorsInterceptor } from './core/api/admin-errors.interceptor';
 import { provideApiConfiguration } from './core/api/generated/api-configuration';
 import { AppUpdates } from './core/pwa/app-updates';
+import { ConnectionStatus } from './core/pwa/connection-status';
+import { versionCheckInterceptor } from './core/pwa/version-check';
 import { InstallPrompt } from './core/pwa/install-prompt';
 import { offlineWarmupInterceptor } from './core/pwa/offline-warmup';
 import { serviceWorkerBypassInterceptor } from './core/pwa/service-worker-bypass';
@@ -77,7 +79,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TitleStrategy, useExisting: SeoStrategy },
     provideHttpClient(
       withFetch(),
-      withInterceptors([adminErrorsInterceptor, offlineWarmupInterceptor, serviceWorkerBypassInterceptor]),
+      withInterceptors([adminErrorsInterceptor, offlineWarmupInterceptor, serviceWorkerBypassInterceptor, versionCheckInterceptor]),
     ),
     provideClientHydration(
       withEventReplay(),
@@ -91,6 +93,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(SiteTheme).load()),
     provideAppInitializer(() => inject(InstallPrompt).listen()),
     provideAppInitializer(() => inject(AppUpdates).listen()),
+    provideAppInitializer(() => inject(ConnectionStatus).listen()),
     // Offline reading and installation as an app (PWA). Off in development, where it would cache stale code.
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +49,7 @@ public class CategoryService {
 	private final AuditLog auditLog;
 
 	/** Sorted by name, each with the themes of its published recipes (for the menus of the site). */
+	@Cacheable(PublicCache.CATEGORIES)
 	public List<CategoryResponse> list() {
 		Map<Long, List<RecipeTheme>> themes = new HashMap<>();
 		for (Object[] row : categoryRepository.findPublishedThemes()) {

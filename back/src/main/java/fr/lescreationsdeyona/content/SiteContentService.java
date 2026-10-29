@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.image.Image;
 import fr.lescreationsdeyona.image.ImageKind;
 import fr.lescreationsdeyona.image.ImageService;
@@ -11,6 +12,7 @@ import fr.lescreationsdeyona.image.ProcessedImage;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class SiteContentService {
 
 	private final AuditLog auditLog;
 
+	@Cacheable(PublicCache.SITE_CONTENT)
 	public SiteContentResponse get() {
 		return toResponse(find());
 	}

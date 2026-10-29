@@ -4,11 +4,13 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class SocialLinkService {
 
 	private final AuditLog auditLog;
 
+	@Cacheable(PublicCache.SOCIAL_LINKS)
 	public List<SocialLinkResponse> list() {
 		return socialLinkRepository.findAll(Sort.by("position")).stream().map(socialLinkMapper::toResponse).toList();
 	}

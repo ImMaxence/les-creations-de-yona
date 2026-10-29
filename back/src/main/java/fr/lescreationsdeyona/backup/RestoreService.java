@@ -3,6 +3,7 @@ package fr.lescreationsdeyona.backup;
 import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageStorage;
@@ -74,6 +75,8 @@ public class RestoreService {
 
 	private final AuditLog auditLog;
 
+	private final PublicCache publicCache;
+
 	private final ExecutorService worker = Executors.newSingleThreadExecutor(Thread.ofPlatform()
 		.name("restore")
 		.daemon(true)
@@ -82,12 +85,13 @@ public class RestoreService {
 	private @Nullable Session session;
 
 	RestoreService(ScratchDatabases scratchDatabases, RestoredData restoredData, ImageStorage imageStorage,
-			JdbcClient siteJdbc, AuditLog auditLog) {
+			JdbcClient siteJdbc, AuditLog auditLog, PublicCache publicCache) {
 		this.scratchDatabases = scratchDatabases;
 		this.restoredData = restoredData;
 		this.imageStorage = imageStorage;
 		this.siteJdbc = siteJdbc;
 		this.auditLog = auditLog;
+		this.publicCache = publicCache;
 	}
 
 	/** Mutable state of the restore in progress, guarded by the service's lock. */
@@ -229,6 +233,8 @@ public class RestoreService {
 				current.report = report;
 				current.state = RestoreStatus.State.DONE;
 			}
+			// The site shows the restored recipes at once
+			publicCache.clear();
 			log.info("Backup restored ({}): {}", mode, report);
 		}));
 		return current.status();
