@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.postgresql.PGConnection;
 import org.postgresql.copy.CopyManager;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -38,14 +39,26 @@ import org.springframework.transaction.support.TransactionTemplate;
  * <p>
  * Things are matched by what identifies them for the admin: a recipe, a category or a tag by its
  * slug (its URL), an ingredient, a tag or a saved look by its name (case and accents ignored), a
- * social link by its platform, an image by its id, a glossary word by its name. Ids of rows created
- * here are new. The trash is not merged: a recipe deleted on the site stays deleted.
+ * social link by its platform, an image by its id, a glossary word by its name, a menu by its title
+ * or slug. Ids of rows created here are new. The trash is not merged: a recipe deleted on the site
+ * stays deleted.
+ * <p>
+ * The texts of the site (Préférences) and its look (Apparence) are one row each, always there: the
+ * site "lacks" them while they are still those of the installation, never edited, and then a merge
+ * takes the backup's. Edited on the site, they stay as they are.
  */
 @Component
 @RequiredArgsConstructor
 class RestoredData {
 
 	private static final int LISTED_NAMES = 50;
+
+	/** {@code updated_by} of the single-row tables as the migrations created them, never edited since. */
+	private static final String INSTALLED_BY = "migration";
+
+	private static final String SITE_CONTENT = "site_content";
+
+	private static final String SITE_THEME = "site_theme";
 
 	static final String RESTORED_LATE_FAILURE = "Sauvegarde restaurée après l'heure prévue : la recette n'a pas été publiée";
 
@@ -80,7 +93,7 @@ class RestoredData {
 	RestoreStatus.Counts counts(JdbcClient db) {
 		return new RestoreStatus.Counts(count(db, "recipe"), count(db, "category"), count(db, "tag"),
 				count(db, "ingredient"), count(db, "image"), count(db, "social_link"), count(db, "appearance_preset"),
-				count(db, "glossary_term"));
+				count(db, "glossary_term"), count(db, "menu"));
 	}
 
 	RestoreStatus.Missing missing(JdbcClient scratch) {
@@ -114,9 +127,22 @@ class RestoredData {
 		Set<String> siteTerms = folded(strings(site, "select name from glossary_term"));
 		List<String> terms = scratch.sql("select name from glossary_term order by name").query(String.class).list()
 			.stream().filter(name -> !siteTerms.contains(Texts.foldCaseAndAccents(name))).toList();
+		Set<String> siteMenuSlugs = strings(site, "select slug from menu");
+		Set<String> siteMenuTitles = folded(strings(site, "select title from menu"));
+		List<String> menus = scratch.sql("select title, slug from menu order by title").query().listOfRows()
+			.stream()
+			.filter(row -> !siteMenuSlugs.contains((String) row.get("slug"))
+					&& !siteMenuTitles.contains(Texts.foldCaseAndAccents((String) row.get("title"))))
+			.map(row -> (String) row.get("title"))
+			.toList();
 		return new RestoreStatus.Missing(recipes.size(), first(recipes), categories.size(), first(categories), tags.size(),
 				first(tags), ingredients, images, platforms.size(), platforms, presets.size(), first(presets), terms.size(),
-				first(terms));
+				first(terms), menus.size(), first(menus), settingsMissing(scratch, site, SITE_CONTENT),
+				settingsMissing(scratch, site, SITE_THEME));
+	}
+
+	/** What a merge did: rows added, and whether the texts and the look of the site are now the backup's. */
+	record Merged(RestoreStatus.Counts added, boolean siteContent, boolean siteTheme) {
 	}
 
 	/**
@@ -124,7 +150,7 @@ class RestoredData {
 	 * its two files are in storage ({@code storedKeys}, after the upload of the archive's files).
 	 * Added recipes are never featured when the site already has a featured recipe.
 	 */
-	RestoreStatus.Counts merge(JdbcClient scratch, Set<String> storedKeys) {
+	Merged merge(JdbcClient scratch, Set<String> storedKeys) {
 		return transactions.execute(status -> {
 			JdbcClient site = JdbcClient.create(dataSource);
 			Added added = new Added();
@@ -136,9 +162,12 @@ class RestoredData {
 			added.socialLinks = mergeSocialLinks(scratch, site);
 			added.presets = mergePresets(scratch, site);
 			long glossaryTerms = mergeGlossary(scratch, site);
-			mergeMenus(scratch, site);
-			return new RestoreStatus.Counts(added.recipes, added.categories, added.tags, added.ingredients,
-					added.images, added.socialLinks, added.presets, glossaryTerms);
+			long menus = mergeMenus(scratch, site);
+			mergeSearchMisses(scratch, site);
+			boolean siteContent = mergeSettings(scratch, site, SITE_CONTENT);
+			boolean siteTheme = mergeSettings(scratch, site, SITE_THEME);
+			return new Merged(new RestoreStatus.Counts(added.recipes, added.categories, added.tags, added.ingredients,
+					added.images, added.socialLinks, added.presets, glossaryTerms, menus), siteContent, siteTheme);
 		});
 	}
 
@@ -369,8 +398,9 @@ class RestoredData {
 	 * A menu whose title or address the site already has is left out. Its recipes are found by their
 	 * address, once the backup's recipes are merged; those the site lacks are left out, as its photo.
 	 */
-	private void mergeMenus(JdbcClient scratch, JdbcClient site) {
+	private long mergeMenus(JdbcClient scratch, JdbcClient site) {
 		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
+		long added = 0;
 		for (Map<String, Object> menu : scratch.sql("select * from menu order by id").query().listOfRows()) {
 			Map<String, Object> values = new LinkedHashMap<>(menu);
 			long backupId = ((Number) values.remove("id")).longValue();
@@ -385,6 +415,7 @@ class RestoredData {
 			if (siteId == null) {
 				continue;
 			}
+			added++;
 			int position = 0;
 			for (String slug : scratch.sql("""
 					select recipe.slug from menu_recipe join recipe on recipe.id = menu_recipe.recipe_id
@@ -399,6 +430,50 @@ class RestoredData {
 					.update();
 			}
 		}
+		return added;
+	}
+
+	/** Searches that found nothing (Statistiques): the words the site lacks, with their count. */
+	private void mergeSearchMisses(JdbcClient scratch, JdbcClient site) {
+		for (Map<String, Object> row : scratch.sql("select term, count, first_searched_at, last_searched_at from search_miss")
+			.query().listOfRows()) {
+			site.sql("""
+					insert into search_miss (term, count, first_searched_at, last_searched_at)
+					values (:term, :count, :first_searched_at, :last_searched_at)
+					on conflict (term) do nothing""")
+				.params(row)
+				.update();
+		}
+	}
+
+	/**
+	 * The backup's row of a single-row table in place of the site's, if the site's was never edited.
+	 * The photo of "À propos" comes along if the site has it (in the gallery, or added from the backup).
+	 */
+	private boolean mergeSettings(JdbcClient scratch, JdbcClient site, String table) {
+		if (!settingsMissing(scratch, site, table)) {
+			return false;
+		}
+		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
+		Map<String, Object> values = new LinkedHashMap<>(scratch.sql("select * from " + table).query().singleRow());
+		values.remove("id");
+		values.computeIfPresent("about_image_id", (key, id) -> images.contains(id) ? id : null);
+		site.sql("update " + table + " set " + values.keySet().stream()
+			.map(column -> quoted(column) + " = :" + column)
+			.collect(Collectors.joining(", ")))
+			.params(values)
+			.update();
+		return true;
+	}
+
+	/** Still the installation's on the site, edited in the backup. */
+	private static boolean settingsMissing(JdbcClient scratch, JdbcClient site, String table) {
+		String backup = updatedBy(scratch, table);
+		return backup != null && !backup.equals(INSTALLED_BY) && INSTALLED_BY.equals(updatedBy(site, table));
+	}
+
+	private static @Nullable String updatedBy(JdbcClient db, String table) {
+		return db.sql("select updated_by from " + table).query(String.class).optional().orElse(null);
 	}
 
 	/**

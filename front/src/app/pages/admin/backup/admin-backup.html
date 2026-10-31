@@ -4,9 +4,13 @@
   </div>
   <div class="admin-panel">
     <p>
-      Télécharge une archive ZIP avec toute la base de données (recettes, catégories, tags, ingrédients, réseaux sociaux,
-      apparence) et toutes les photos. Gardez-la en lieu sûr, hors du serveur : sur votre ordinateur, un disque externe
-      ou un stockage en ligne
+      Télécharge une archive ZIP avec toute la base de données (recettes, catégories, tags, ingrédients, menus,
+      glossaire, réseaux sociaux, apparence, préférences, corbeille) et toutes les photos. Gardez-la en lieu sûr, hors du
+      serveur : sur votre ordinateur, un disque externe ou un stockage en ligne
+    </p>
+    <p class="field__hint">
+      Restent sur le serveur : l'historique, les retours des visiteurs (leurs e-mails ne quittent pas le site), les
+      abonnés aux notifications et le compte Google Drive
     </p>
     <p class="field__hint">
       La préparation commence aussitôt : le téléchargement peut durer quelques minutes selon le nombre de photos. Pensez
@@ -186,7 +190,8 @@
             <h4 class="choice__title">Ajouter ce qui manque (conseillé)</h4>
             <p class="field__hint">
               Seul ce que le site n'a pas est ajouté : rien n'est modifié ni supprimé. Une recette, une catégorie ou un tag
-              est reconnu à son adresse, un ingrédient à son nom
+              est reconnu à son adresse, un ingrédient à son nom. Les préférences et l'apparence de la sauvegarde ne sont
+              reprises que si celles du site n'ont jamais été modifiées
             </p>
             @if (nothingToMerge()) {
               <p class="admin-empty">Rien à ajouter : le site contient déjà tout ce que cette sauvegarde contient</p>
@@ -222,6 +227,15 @@
                 @if (found.missing.glossaryTerms) {
                   <li>Glossaire : {{ found.missing.glossaryTermNames.join(', ') }}</li>
                 }
+                @if (found.missing.menus) {
+                  <li>{{ plural(found.missing.menus, 'menu', 'menus') }} : {{ found.missing.menuTitles.join(', ') }}</li>
+                }
+                @if (found.missing.siteContent) {
+                  <li>Préférences : textes et photo de l'accueil, texte du pied de page</li>
+                }
+                @if (found.missing.siteTheme) {
+                  <li>Apparence : thème, polices et arrondis</li>
+                }
               </ul>
               <div>
                 <button yonaButton type="button" [disabled]="busy()" (click)="merge()">Ajouter ce qui manque</button>
@@ -249,7 +263,7 @@
                   {{ plural(found.imageFilesExtra, 'fichier photo absent', 'fichiers photo absents') }} de la sauvegarde
                   {{ found.imageFilesExtra > 1 ? 'sont supprimés' : 'est supprimé' }} du stockage
                 </li>
-                <li>L'apparence, les textes et les réseaux sociaux reprennent ceux de la sauvegarde</li>
+                <li>L'apparence, les préférences (textes et photo de l'accueil) et les réseaux sociaux reprennent ceux de la sauvegarde</li>
               </ul>
               <p class="field__hint">
                 Par précaution, téléchargez d'abord une sauvegarde de l'état actuel avec « Sauvegarder mes données » plus haut
@@ -288,8 +302,20 @@
               {{ plural(report.added.ingredients, 'ingrédient', 'ingrédients') }}, {{ plural(report.added.images, 'photo', 'photos') }},
               {{ plural(report.added.socialLinks, 'réseau social', 'réseaux sociaux') }},
               {{ plural(report.added.appearancePresets, 'préréglage', 'préréglages') }},
-              {{ plural(report.added.glossaryTerms, 'mot du glossaire', 'mots du glossaire') }}
+              {{ plural(report.added.glossaryTerms, 'mot du glossaire', 'mots du glossaire') }},
+              {{ plural(report.added.menus, 'menu', 'menus') }}
             </p>
+            @if (report.siteContent || report.siteTheme) {
+              <p>
+                {{
+                  report.siteContent && report.siteTheme
+                    ? 'Préférences et apparence reprises de la sauvegarde'
+                    : report.siteContent
+                      ? 'Préférences reprises de la sauvegarde'
+                      : 'Apparence reprise de la sauvegarde'
+                }}
+              </p>
+            }
           } @else {
             <p>
               Le site contient maintenant {{ plural(report.added.recipes, 'recette', 'recettes') }},

@@ -20,7 +20,8 @@ public enum ImageKind {
 		this.folder = folder;
 	}
 
-	String folder() {
+	/** Also the folders a backup archive may hold (BackupArchive). */
+	public String folder() {
 		return folder;
 	}
 

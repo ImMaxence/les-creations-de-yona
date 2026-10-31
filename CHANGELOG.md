@@ -2,6 +2,23 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.15.0 - 2026-10-31
+
+Front and backend 1.15.0. No database migration.
+
+### Added
+
+- **Restore, "Ajouter ce qui manque"**: also brings back the backup's Préférences (texts and photo of the home page, footer) and Apparence when the site's were never edited, e.g. on a new server. Edited ones stay as they are.
+- **Restore**: menus are counted, listed among what is missing and in the report; searches without a result (Statistiques) are merged too.
+
+### Fixed
+
+- **Restore refused any archive holding a menu photo** ("archive invalide"): the `menus/` folder was not accepted. The accepted folders now come from the image kinds, so a new kind cannot be forgotten again.
+
+### Changed
+
+- "Sauvegarde" page: lists everything the archive holds, and what stays on the server (history, visitors' messages, notification subscribers, Google Drive account).
+
 ## 1.14.1 - 2026-10-29
 
 Front and backend 1.14.1. No database migration.

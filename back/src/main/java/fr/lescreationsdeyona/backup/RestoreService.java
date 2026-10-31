@@ -317,8 +317,9 @@ public class RestoreService {
 		}
 		stored.addAll(imageStorage.sizes().keySet());
 		try (SingleConnectionDataSource source = scratch(current).open()) {
-			RestoreStatus.Counts added = restoredData.merge(JdbcClient.create(source), stored);
-			return new RestoreStatus.Report(RestoreStatus.Mode.MERGE, added, uploaded, 0, warnings);
+			RestoredData.Merged merged = restoredData.merge(JdbcClient.create(source), stored);
+			return new RestoreStatus.Report(RestoreStatus.Mode.MERGE, merged.added(), merged.siteContent(),
+					merged.siteTheme(), uploaded, 0, warnings);
 		}
 	}
 
@@ -354,7 +355,7 @@ public class RestoreService {
 		if (deleted < stored.keySet().stream().filter(key -> !archived.contains(key)).count()) {
 			warnings.add("Certaines anciennes photos n'ont pas pu être supprimées du stockage : elles restent en fichiers orphelins, sans effet sur le site");
 		}
-		return new RestoreStatus.Report(RestoreStatus.Mode.REPLACE, counts, uploaded, deleted, warnings);
+		return new RestoreStatus.Report(RestoreStatus.Mode.REPLACE, counts, true, true, uploaded, deleted, warnings);
 	}
 
 	/** A file that fails is reported; its image record is then not restored by a merge. */

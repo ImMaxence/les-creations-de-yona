@@ -7,6 +7,8 @@ export interface Report {
   filesDeleted: number;
   filesUploaded: number;
   mode: 'MERGE' | 'REPLACE';
+  siteContent: boolean;
+  siteTheme: boolean;
 
   /**
    * Things that could not be restored, in French

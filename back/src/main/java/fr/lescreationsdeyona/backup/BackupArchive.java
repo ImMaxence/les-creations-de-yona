@@ -2,6 +2,7 @@ package fr.lescreationsdeyona.backup;
 
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.image.ImageKind;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 import org.jspecify.annotations.Nullable;
 
@@ -35,8 +37,10 @@ final class BackupArchive implements AutoCloseable {
 
 	static final String IMAGES_FOLDER = "images/";
 
-	private static final Pattern IMAGE_KEY = Pattern
-		.compile("(recipes|categories|gallery|site|pinterest)/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/(800|1600)\\.webp");
+	/** The folder of every kind of image: one missing would have every archive holding such a photo refused. */
+	private static final Pattern IMAGE_KEY = Pattern.compile("("
+			+ Arrays.stream(ImageKind.values()).map(ImageKind::folder).collect(Collectors.joining("|"))
+			+ ")/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/(800|1600)\\.webp");
 
 	private static final Pattern MANIFEST_FIELD = Pattern.compile("\"(createdAt|version)\"\\s*:\\s*\"([^\"]{1,40})\"");
 

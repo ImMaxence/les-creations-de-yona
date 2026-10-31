@@ -7,6 +7,7 @@ export interface Counts {
   glossaryTerms: number;
   images: number;
   ingredients: number;
+  menus: number;
   recipes: number;
   socialLinks: number;
   tags: number;

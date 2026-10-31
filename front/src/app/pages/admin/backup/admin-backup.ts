@@ -45,6 +45,7 @@ const COUNT_ROWS: { key: keyof Counts; label: string }[] = [
   { key: 'socialLinks', label: 'Réseaux sociaux' },
   { key: 'appearancePresets', label: "Préréglages d'apparence" },
   { key: 'glossaryTerms', label: 'Mots du glossaire' },
+  { key: 'menus', label: 'Menus' },
 ];
 
 /**
@@ -101,8 +102,10 @@ export default class AdminBackup {
     return (
       !!missing &&
       missing.recipes + missing.categories + missing.tags + missing.ingredients + missing.images + missing.socialLinks +
-        missing.appearancePresets + missing.glossaryTerms ===
+        missing.appearancePresets + missing.glossaryTerms + missing.menus ===
         0 &&
+      !missing.siteContent &&
+      !missing.siteTheme &&
       this.analysis()!.imageFilesMissing === 0
     );
   });

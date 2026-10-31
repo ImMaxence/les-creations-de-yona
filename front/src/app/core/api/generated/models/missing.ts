@@ -10,8 +10,12 @@ export interface Missing {
   glossaryTerms: number;
   images: number;
   ingredients: number;
+  menuTitles: Array<string>;
+  menus: number;
   recipeTitles: Array<string>;
   recipes: number;
+  siteContent: boolean;
+  siteTheme: boolean;
   socialLinks: number;
   socialPlatforms: Array<string>;
   tagNames: Array<string>;
