@@ -12,6 +12,7 @@ import {
   INSTALL_PATH,
   MENUS_PATH,
   RECIPES_PATH,
+  TERMS_OF_USE_PATH,
   menuLink,
   recipeLink,
 } from '../app/shared/routing/links';
@@ -75,6 +76,7 @@ export function llmsTxt({ content, recipes, menus, glossary }: LlmsContent): str
     '## Optional',
     '',
     link("Installer l'application", INSTALL_PATH, 'les recettes sur téléphone, lisibles hors connexion'),
+    link("Conditions d'utilisation", TERMS_OF_USE_PATH, 'citation avec un lien bienvenue, entraînement des modèles refusé'),
     '',
   );
   return lines.join('\n');

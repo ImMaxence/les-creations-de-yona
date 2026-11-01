@@ -11,6 +11,7 @@ import {
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
   PRIVACY_POLICY_PATH,
+  TERMS_OF_USE_PATH,
 } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -28,6 +29,7 @@ export class Footer {
   protected readonly consent = inject(Consent);
   protected readonly socialPlatformLabel = socialPlatformLabel;
   protected readonly legalNoticePath = LEGAL_NOTICE_PATH;
+  protected readonly termsOfUsePath = TERMS_OF_USE_PATH;
   protected readonly privacyPolicyPath = PRIVACY_POLICY_PATH;
   protected readonly adminPath = ADMIN_PATH;
   protected readonly glossaryPath = GLOSSARY_PATH;

@@ -97,6 +97,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'conditions-d-utilisation',
+    loadComponent: () => import('./pages/legal/terms-of-use'),
+    data: {
+      [SEO_DATA_KEY]: {
+        title: "Conditions d'utilisation",
+        description: 'Accès au site, usage des recettes, partage des contenus et règles pour les assistants IA.',
+      } satisfies RouteSeo,
+    },
+  },
+  {
     path: 'politique-de-confidentialite',
     loadComponent: () => import('./pages/legal/privacy-policy'),
     data: {

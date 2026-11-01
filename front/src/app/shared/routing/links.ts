@@ -8,6 +8,7 @@ export const FAVORITES_PATH = '/favoris';
 export const SHOPPING_LIST_PATH = '/liste-de-courses';
 export const LEGAL_NOTICE_PATH = '/mentions-legales';
 export const PRIVACY_POLICY_PATH = '/politique-de-confidentialite';
+export const TERMS_OF_USE_PATH = '/conditions-d-utilisation';
 export const ADMIN_PATH = '/admin';
 export const FEEDBACK_PATH = '/donner-mon-avis';
 export const ABOUT_PATH = '/a-propos';

@@ -32,6 +32,7 @@ describe('llmsTxt', () => {
         '## Recettes sucrées\n\n- [Tarte](https://les-creations-de-yona.fr/recettes/desserts/tarte): Desserts\n',
     );
     expect(text).toContain('- [À propos de Yona](https://les-creations-de-yona.fr/a-propos)');
+    expect(text).toContain("- [Conditions d'utilisation](https://les-creations-de-yona.fr/conditions-d-utilisation)");
   });
 
   it('leaves out the menus and the glossary when there are none', () => {

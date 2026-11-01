@@ -2,6 +2,14 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.17.0 - 2026-11-01
+
+Front and backend 1.17.0. No database migration.
+
+### Added
+
+- **Conditions d'utilisation** page (`/conditions-d-utilisation`): free access, recipes to make with care (allergies, hygiene, indicative quantities and timers), visitor messages, forbidden uses, sharing and reuse of the contents, AI assistants welcome to quote with a link, AI training refused (article L122-5-3 of the French intellectual property code). Linked from the footer, the legal notice, the feedback page, the sitemap and `/llms.txt`.
+
 ## 1.16.0 - 2026-11-01
 
 Front and backend 1.16.0. Database migration: V18.

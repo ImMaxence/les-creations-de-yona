@@ -32,7 +32,7 @@ ReadMe.md, CHANGELOG.md (aussi affiché dans le back-office, « Nouveautés »),
 
 ## Écrire un texte du site
 
-Pas de point à la fin d'un texte affiché (paragraphe, aide, message, confirmation, erreur de l'API, description pour Google) ; les points entre deux phrases restent. Sauf les mentions légales et la politique de confidentialité. Détail : [architecture](architecture.md#général).
+Pas de point à la fin d'un texte affiché (paragraphe, aide, message, confirmation, erreur de l'API, description pour Google) ; les points entre deux phrases restent. Sauf les mentions légales, les conditions d'utilisation et la politique de confidentialité. Détail : [architecture](architecture.md#général).
 
 ## Monter la version
 

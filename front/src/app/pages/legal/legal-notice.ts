@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PRIVACY_POLICY_PATH } from '../../shared/routing/links';
+import { PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from '../../shared/routing/links';
 import { CONTACT_EMAIL, LEGAL_PAGES_UPDATED_ON } from './legal';
 
 @Component({
@@ -14,4 +14,5 @@ export default class LegalNotice {
   protected readonly contactEmail = CONTACT_EMAIL;
   protected readonly updatedOn = LEGAL_PAGES_UPDATED_ON;
   protected readonly privacyPolicyPath = PRIVACY_POLICY_PATH;
+  protected readonly termsOfUsePath = TERMS_OF_USE_PATH;
 }

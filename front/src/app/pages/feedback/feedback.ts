@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router, RouterLink } from '@angular/router';
 import { Api } from '../../core/api/generated/api';
 import { sendFeedback } from '../../core/api/generated/fn/feedback/send-feedback';
-import { PRIVACY_POLICY_PATH, RECIPES_PATH } from '../../shared/routing/links';
+import { PRIVACY_POLICY_PATH, RECIPES_PATH, TERMS_OF_USE_PATH } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { Icon } from '../../shared/ui/icon/icon';
 
@@ -79,7 +79,8 @@ const MAX_MESSAGE_LENGTH = 2000;
           </div>
           <p class="feedback__hint">
             Votre message et votre e-mail ne servent qu'à vous répondre, et sont effacés au bout de 12 mois au plus. Voir la
-            <a [routerLink]="privacyPolicyPath">politique de confidentialité</a>
+            <a [routerLink]="privacyPolicyPath">politique de confidentialité</a> et les
+            <a [routerLink]="termsOfUsePath">conditions d'utilisation</a>
           </p>
         </form>
       }
@@ -95,6 +96,7 @@ export default class Feedback {
   protected readonly maxMessageLength = MAX_MESSAGE_LENGTH;
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly privacyPolicyPath = PRIVACY_POLICY_PATH;
+  protected readonly termsOfUsePath = TERMS_OF_USE_PATH;
   protected readonly message = signal('');
   protected readonly email = signal('');
   protected readonly website = signal('');

@@ -15,7 +15,7 @@ Allow: /api/images/
 # /admin is not listed: its pages answer "noindex", which crawlers must be allowed to read.
 
 # Training of AI models: recipes, texts and photos belong to their author and may not be reused
-# without consent (see the licence). These robots only collect for training: blocking them leaves
+# without consent (see /conditions-d-utilisation). These robots only collect for training: blocking them leaves
 # the site in the assistants' answers above. Google-Extended stays allowed: it also feeds the
 # answers of the Gemini app.
 User-agent: GPTBot

@@ -6,5 +6,5 @@
 - Changelog ([CHANGELOG.md](CHANGELOG.md)) : toujours en anglais, synthétique, en points courts.
 - Ne pas modifier à la main `front/src/app/core/api/generated` (généré par `npm run api:generate`).
 - Tests : `npm test` dans `front/`, `./mvnw test` dans `back/`.
-- Textes affichés sur le site : pas de point à la fin d'un paragraphe, d'un message ou d'une erreur ; les points entre deux phrases restent. Sauf mentions légales et politique de confidentialité.
+- Textes affichés sur le site : pas de point à la fin d'un paragraphe, d'un message ou d'une erreur ; les points entre deux phrases restent. Sauf mentions légales, conditions d'utilisation et politique de confidentialité.
 - Ne pas commiter sans demande explicite.

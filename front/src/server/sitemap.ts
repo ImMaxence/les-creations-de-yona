@@ -11,13 +11,14 @@ import {
   MENUS_PATH,
   PRIVACY_POLICY_PATH,
   RECIPES_PATH,
+  TERMS_OF_USE_PATH,
   categoryQueryParams,
   menuLink,
   recipeLink,
 } from '../app/shared/routing/links';
 import { apiOrigin, fetchGlossary, fetchMenus, fetchPublishedRecipes } from './api';
 
-const STATIC_PATHS = ['/', RECIPES_PATH, ABOUT_PATH, INSTALL_PATH, LEGAL_NOTICE_PATH, PRIVACY_POLICY_PATH];
+const STATIC_PATHS = ['/', RECIPES_PATH, ABOUT_PATH, INSTALL_PATH, LEGAL_NOTICE_PATH, TERMS_OF_USE_PATH, PRIVACY_POLICY_PATH];
 
 /** Indexable pages only: no search results, no empty category nor glossary (all noindex). */
 function sitemapPaths(recipes: RecipeCard[], glossary: GlossaryTermResponse[], menus: MenuSummary[]): string[] {
