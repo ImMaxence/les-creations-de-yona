@@ -34,10 +34,30 @@ class RecipeChangesTest {
 		assertThat(RecipeChanges.between(recipe, recipe).isEmpty()).isTrue();
 	}
 
+	@Test
+	void listsTheQuestionsChanged() {
+		RecipeDetail before = recipe("Tarte", List.of(new RecipeQuestion("Peut-on la congeler ?", "Oui, 2 mois")));
+		RecipeDetail after = recipe("Tarte", List.of(new RecipeQuestion("Peut-on la congeler ?", "Oui, 3 mois"),
+				new RecipeQuestion("Sans gluten ?", "Avec une farine de riz")));
+
+		assertThat(RecipeChanges.between(before, after)).usingRecursiveComparison()
+			.isEqualTo(new AuditChanges().addLines("Questions fréquentes", List.of("Peut-on la congeler ? Oui, 2 mois"),
+					List.of("Peut-on la congeler ? Oui, 3 mois", "Sans gluten ? Avec une farine de riz")));
+	}
+
+	private static RecipeDetail recipe(String title, List<RecipeQuestion> questions) {
+		return recipe(title, 20, List.of(), List.of(new RecipeDetail.Step("Cuire", null, List.of())), questions);
+	}
+
 	private static RecipeDetail recipe(String title, Integer prepMinutes, List<RecipeDetail.IngredientLine> ingredients,
 			List<RecipeDetail.Step> steps) {
+		return recipe(title, prepMinutes, ingredients, steps, List.of());
+	}
+
+	private static RecipeDetail recipe(String title, Integer prepMinutes, List<RecipeDetail.IngredientLine> ingredients,
+			List<RecipeDetail.Step> steps, List<RecipeQuestion> questions) {
 		return new RecipeDetail(1L, title, "tarte", null, RecipeStatus.PUBLISHED, RecipeTheme.SWEET, false, null, List.of(),
-				List.of(), 6, prepMinutes, null, null, null, null, null, List.of(), null, null, null,
+				List.of(), 6, prepMinutes, null, null, null, null, null, List.of(), questions, null, null, null,
 				List.of(new RecipeDetail.Part(null, ingredients, steps)), Instant.EPOCH, Instant.EPOCH, null, null);
 	}
 

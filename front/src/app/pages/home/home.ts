@@ -6,7 +6,8 @@ import { categoryNames } from '../../shared/format/categories';
 import { themeLabel, themeSlug } from '../../shared/format/themes';
 import { Reveal } from '../../shared/motion/reveal';
 import { RECIPE_IMAGE_TRANSITION, isSameTabClick } from '../../shared/motion/view-transitions';
-import { MENUS_PATH, RECIPES_PATH, categoryQueryParams, recipeLink } from '../../shared/routing/links';
+import { ABOUT_PATH, MENUS_PATH, RECIPES_PATH, categoryQueryParams, recipeLink } from '../../shared/routing/links';
+import { paragraphs } from '../../shared/format/paragraphs';
 import { Button } from '../../shared/ui/button/button';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
@@ -33,6 +34,7 @@ export default class Home {
   /** The three latest updated menus. */
   protected readonly menus = computed(() => this.siteData.menus().slice(0, HOME_MENUS_COUNT));
   protected readonly menusPath = MENUS_PATH;
+  protected readonly aboutPath = ABOUT_PATH;
   private readonly notifications = inject(NewRecipeNotifications);
   protected readonly showNotify = computed(() => !['unknown', 'unsupported'].includes(this.notifications.state()));
   protected readonly categories = this.siteData.categories;
@@ -54,11 +56,4 @@ export default class Home {
       this.featuredTransition.set(slug);
     }
   }
-}
-
-function paragraphs(text: string): string[] {
-  return text
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
 }

@@ -3,6 +3,7 @@
 
 import { Mold } from '../models/mold';
 import { Part } from '../models/part';
+import { RecipeQuestion } from '../models/recipe-question';
 export interface RecipeForm {
 
   /**
@@ -37,6 +38,11 @@ export interface RecipeForm {
    */
   parts: Array<Part>;
   prepMinutes?: number;
+
+  /**
+   * "Questions fréquentes", in order; absent or empty for none
+   */
+  questions?: Array<RecipeQuestion>;
 
   /**
    * Resting, rising…, counted in the total time

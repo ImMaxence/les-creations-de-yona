@@ -25,6 +25,7 @@ import {
 } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
+import { AiVisits } from './core/analytics/ai-visits';
 import { adminErrorsInterceptor } from './core/api/admin-errors.interceptor';
 import { provideApiConfiguration } from './core/api/generated/api-configuration';
 import { apiCacheInterceptor } from './core/pwa/api-cache';
@@ -95,6 +96,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(InstallPrompt).listen()),
     provideAppInitializer(() => inject(AppUpdates).listen()),
     provideAppInitializer(() => inject(ConnectionStatus).listen()),
+    provideAppInitializer(() => inject(AiVisits).count()),
     // Offline reading and installation as an app (PWA). Off in development, where it would cache stale code.
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

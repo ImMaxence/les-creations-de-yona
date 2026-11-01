@@ -4,7 +4,9 @@ import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.image.Image;
 import fr.lescreationsdeyona.tag.Tag;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
@@ -140,6 +142,13 @@ public class Recipe {
 	@OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("position")
 	private List<RecipePart> parts = new ArrayList<>();
+
+	/** "Questions fréquentes", in order; none required. */
+	@Setter(AccessLevel.NONE)
+	@ElementCollection
+	@CollectionTable(name = "recipe_question", joinColumns = @JoinColumn(name = "recipe_id"))
+	@OrderColumn(name = "position")
+	private List<RecipeQuestion> questions = new ArrayList<>();
 
 	@CreatedDate
 	@Column(updatable = false)

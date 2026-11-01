@@ -43,11 +43,13 @@ public class StatsService {
 
 	private final SearchMissService searchMissService;
 
+	private final AiVisitService aiVisitService;
+
 	public SiteStats compute() {
 		return new SiteStats(recipes(), jdbc.sql("select count(*) from category").query(Long.class).single(),
 				ingredients(), images(), recipesPerCategory(), topIngredients(), mostViewedRecipes(), recipesPerMonth(), storage(),
 				ServerUsage.now(), incompleteRecipes(), datedRecipes("DRAFT", "30 days"), datedRecipes("PUBLISHED", "12 months"),
-				searchMissService.top(SEARCH_MISSES), count("push_subscription"), count("trash_item"),
+				searchMissService.top(SEARCH_MISSES), aiVisitService.summary(), count("push_subscription"), count("trash_item"),
 				count("glossary_term"), Instant.now());
 	}
 

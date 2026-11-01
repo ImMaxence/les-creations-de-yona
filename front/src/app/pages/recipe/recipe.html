@@ -197,6 +197,20 @@
       </aside>
     }
 
+    @if (questions().length) {
+      <section class="questions" yonaReveal [id]="questionsAnchor" aria-labelledby="questions-title">
+        <h2 id="questions-title">Questions fréquentes</h2>
+        <dl class="questions__list">
+          @for (item of questions(); track $index) {
+            <div class="questions__item">
+              <dt>{{ item.question }}</dt>
+              <dd>{{ item.answer }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+    }
+
     <yona-recipe-notes class="no-print" yonaReveal [slug]="recipe().slug" />
 
     @if (recipe().youtubeVideoId; as videoId) {
@@ -219,7 +233,7 @@
 
     <footer class="footer no-print" yonaReveal>
       <p>
-        Mise à jour le
+        Une recette de <a [routerLink]="aboutPath">Yona</a>, mise à jour le
         <time [attr.datetime]="recipe().updatedAt">{{ recipe().updatedAt | parisDate }}</time>
       </p>
       <a

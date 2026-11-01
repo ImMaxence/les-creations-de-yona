@@ -4,6 +4,7 @@ import { Consent } from '../../analytics/consent';
 import { SiteData } from '../../site/site-data';
 import { Reveal } from '../../../shared/motion/reveal';
 import {
+  ABOUT_PATH,
   ADMIN_PATH,
   FEEDBACK_PATH,
   GLOSSARY_PATH,
@@ -30,6 +31,7 @@ export class Footer {
   protected readonly privacyPolicyPath = PRIVACY_POLICY_PATH;
   protected readonly adminPath = ADMIN_PATH;
   protected readonly glossaryPath = GLOSSARY_PATH;
+  protected readonly aboutPath = ABOUT_PATH;
   protected readonly installPath = INSTALL_PATH;
   protected readonly feedbackPath = FEEDBACK_PATH;
   protected readonly year = new Date().getFullYear();

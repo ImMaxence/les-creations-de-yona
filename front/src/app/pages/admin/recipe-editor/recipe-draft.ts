@@ -37,6 +37,8 @@ export interface RecipeDraft {
   tip: string;
   /** Moule à tarte, fouet…: one item per line, as typed. */
   equipment: string;
+  /** "Questions fréquentes", in order: plain text. */
+  questions: QuestionDraft[];
   /** Mold the quantities are written for, so that visitors can adapt them to theirs. */
   moldShape: MoldShapeChoice;
   /** Diameter, side or length, in cm. */
@@ -52,6 +54,11 @@ export interface PartDraft {
   title: string;
   ingredients: IngredientDraft[];
   steps: StepDraft[];
+}
+
+export interface QuestionDraft {
+  question: string;
+  answer: string;
 }
 
 export interface IngredientDraft {
@@ -72,6 +79,10 @@ export interface StepDraft {
 
 export function emptyPart(): PartDraft {
   return { title: '', ingredients: [emptyIngredient()], steps: [emptyStep()] };
+}
+
+export function emptyQuestion(): QuestionDraft {
+  return { question: '', answer: '' };
 }
 
 export function emptyIngredient(): IngredientDraft {
@@ -109,6 +120,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       videoUrl: '',
       tip: '',
       equipment: '',
+      questions: [],
       moldShape: 'NONE',
       moldLengthCm: null,
       moldWidthCm: null,
@@ -134,6 +146,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
     videoUrl: recipe.youtubeVideoId ? youtubeUrl(recipe.youtubeVideoId) : '',
     tip: recipe.tip ?? '',
     equipment: recipe.equipment.join('\n'),
+    questions: recipe.questions.map(({ question, answer }) => ({ question, answer })),
     moldShape: recipe.mold?.shape ?? 'NONE',
     moldLengthCm: recipe.mold?.lengthCm ?? null,
     moldWidthCm: recipe.mold?.widthCm ?? null,
@@ -234,6 +247,7 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
     videoUrl: blankToUndefined(draft.videoUrl),
     tip: blankToUndefined(draft.tip),
     equipment: equipmentLines(draft.equipment),
+    questions: draft.questions.map((item) => ({ question: item.question.trim(), answer: item.answer.trim() })),
     mold:
       draft.moldShape === 'NONE' || draft.moldLengthCm == null
         ? undefined
@@ -276,6 +290,7 @@ function blankToUndefined(text: string): string | undefined {
 }
 
 const MAX_EQUIPMENT = 30;
+export const MAX_QUESTIONS = 15;
 
 /** One item per line, blank lines left out. */
 function equipmentLines(text: string): string[] {
@@ -304,6 +319,17 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
     return lines.some((line) => line.length > 100)
       ? { kind: 'equipmentTooLong', message: '100 caractères au maximum par ligne' }
       : undefined;
+  });
+  validate(recipe.questions, ({ value }) =>
+    value().length > MAX_QUESTIONS
+      ? { kind: 'tooManyQuestions', message: `${MAX_QUESTIONS} questions au maximum` }
+      : undefined,
+  );
+  applyEach(recipe.questions, (item) => {
+    required(item.question, { message: 'Écrivez la question' });
+    maxLength(item.question, 200, { message: '200 caractères au maximum' });
+    required(item.answer, { message: 'Écrivez la réponse' });
+    maxLength(item.answer, 2000, { message: '2 000 caractères au maximum' });
   });
   validate(recipe.categoryIds, ({ value }) =>
     value().length === 0 ? { kind: 'noCategory', message: 'Choisissez au moins une catégorie' } : undefined,

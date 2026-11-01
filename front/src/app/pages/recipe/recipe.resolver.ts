@@ -9,10 +9,11 @@ import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-t
 import { RecipeCard } from '../../core/api/generated/models/recipe-card';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Step } from '../../core/api/generated/models/step';
-import { PageSeo, SITE_URL, absoluteUrl, excerpt } from '../../core/seo/page-seo';
+import { AUTHOR_REF, WEBSITE_ID, breadcrumb } from '../../core/seo/json-ld';
+import { PageSeo, absoluteUrl, excerpt } from '../../core/seo/page-seo';
 import { isoDuration } from '../../shared/format/units';
-import { mainCategory, recipeLink } from '../../shared/routing/links';
-import { hasParts, stepAnchor, totalIngredients } from './recipe-parts';
+import { RECIPES_PATH, categoryQueryParams, mainCategory, recipeLink } from '../../shared/routing/links';
+import { QUESTIONS_ANCHOR, hasParts, stepAnchor, totalIngredients } from './recipe-parts';
 
 /** Not matched by any route: rendered by the catch-all 404 page, with the visitor's URL kept. */
 export const NOT_FOUND_PATH = '/page-introuvable';
@@ -67,43 +68,99 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
   // Resting and rising count: Google's totalTime is the whole time until ready
   const totalMinutes = (recipe.prepMinutes ?? 0) + (recipe.restMinutes ?? 0) + (recipe.cookMinutes ?? 0);
 
+  const url = absoluteUrl(path);
+  const category = mainCategory(recipe);
+  // A copy kept for offline reading before 1.16 has none
+  const questions = recipe.questions ?? [];
+
   return {
     title: recipe.title,
     description,
     canonicalPath: path,
     image,
     type: 'article',
-    // https://developers.google.com/search/docs/appearance/structured-data/recipe
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'Recipe',
-      name: recipe.title,
-      description,
-      image: image ? [absoluteUrl(image)] : undefined,
-      url: absoluteUrl(path),
-      author: { '@type': 'Person', name: 'Yona', url: SITE_URL },
-      datePublished: recipe.publishedAt ?? recipe.createdAt,
-      dateModified: recipe.updatedAt,
-      recipeCategory: recipe.categories.map((category) => category.name).join(', '),
-      keywords: recipe.tags.length ? recipe.tags.map((tag) => tag.name).join(', ') : undefined,
-      recipeYield: recipe.servings ? `${recipe.servings} portions` : undefined,
-      // Once one time is given, an empty one means none: a cake without baking, a sauce without preparation
-      prepTime: totalMinutes ? isoDuration(recipe.prepMinutes ?? 0) : undefined,
-      cookTime: totalMinutes ? isoDuration(recipe.cookMinutes ?? 0) : undefined,
-      totalTime: totalMinutes ? isoDuration(totalMinutes) : undefined,
-      // The whole recipe: quantities of an ingredient used in several parts are added up
-      recipeIngredient: totalIngredients(recipe.parts, 1).map((ingredient) =>
-        [ingredient.amount, ingredient.name, ingredient.note && `(${ingredient.note})`].filter(Boolean).join(' '),
-      ),
-      tool: recipe.equipment.length ? recipe.equipment.map((item) => ({ '@type': 'HowToTool', name: item })) : undefined,
-      recipeInstructions: hasParts(recipe.parts)
-        ? recipe.parts.map((part, index) => ({
-            '@type': 'HowToSection',
-            name: part.title,
-            itemListElement: howToSteps(part.steps, index + 1, path, image),
-          }))
-        : howToSteps(recipe.parts.flatMap((part) => part.steps), null, path, image),
-    },
+    markdownPath: `${path}.md`,
+    jsonLd: [
+      recipeNode(recipe, path, description, image, totalMinutes),
+      breadcrumb([
+        { name: 'Accueil', path: '/' },
+        { name: 'Recettes', path: RECIPES_PATH },
+        { name: category.name, path: `${RECIPES_PATH}?${new URLSearchParams(categoryQueryParams(category))}` },
+        { name: recipe.title, path },
+      ]),
+      ...(questions.length
+        ? [
+            {
+              '@type': 'FAQPage',
+              '@id': `${url}#${QUESTIONS_ANCHOR}`,
+              url: `${url}#${QUESTIONS_ANCHOR}`,
+              inLanguage: 'fr-FR',
+              mainEntity: questions.map((item) => ({
+                '@type': 'Question',
+                name: item.question,
+                acceptedAnswer: { '@type': 'Answer', text: item.answer },
+              })),
+            },
+          ]
+        : []),
+    ],
+  };
+}
+
+/** https://developers.google.com/search/docs/appearance/structured-data/recipe */
+function recipeNode(
+  recipe: RecipeDetail,
+  path: string,
+  description: string,
+  image: string | undefined,
+  totalMinutes: number,
+): object {
+  const url = absoluteUrl(path);
+  const videoId = recipe.youtubeVideoId;
+  return {
+    '@type': 'Recipe',
+    '@id': `${url}#recette`,
+    name: recipe.title,
+    description,
+    image: image ? [absoluteUrl(image)] : undefined,
+    url,
+    mainEntityOfPage: url,
+    isPartOf: { '@id': WEBSITE_ID },
+    inLanguage: 'fr-FR',
+    author: AUTHOR_REF,
+    datePublished: recipe.publishedAt ?? recipe.createdAt,
+    dateModified: recipe.updatedAt,
+    recipeCategory: recipe.categories.map((category) => category.name).join(', '),
+    keywords: recipe.tags.length ? recipe.tags.map((tag) => tag.name).join(', ') : undefined,
+    recipeYield: recipe.servings ? `${recipe.servings} portions` : undefined,
+    // Once one time is given, an empty one means none: a cake without baking, a sauce without preparation
+    prepTime: totalMinutes ? isoDuration(recipe.prepMinutes ?? 0) : undefined,
+    cookTime: totalMinutes ? isoDuration(recipe.cookMinutes ?? 0) : undefined,
+    totalTime: totalMinutes ? isoDuration(totalMinutes) : undefined,
+    // The whole recipe: quantities of an ingredient used in several parts are added up
+    recipeIngredient: totalIngredients(recipe.parts, 1).map((ingredient) =>
+      [ingredient.amount, ingredient.name, ingredient.note && `(${ingredient.note})`].filter(Boolean).join(' '),
+    ),
+    tool: recipe.equipment.length ? recipe.equipment.map((item) => ({ '@type': 'HowToTool', name: item })) : undefined,
+    recipeInstructions: hasParts(recipe.parts)
+      ? recipe.parts.map((part, index) => ({
+          '@type': 'HowToSection',
+          name: part.title,
+          itemListElement: howToSteps(part.steps, index + 1, path, image),
+        }))
+      : howToSteps(recipe.parts.flatMap((part) => part.steps), null, path, image),
+    video: videoId
+      ? {
+          '@type': 'VideoObject',
+          name: recipe.title,
+          description,
+          thumbnailUrl: [`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`],
+          // YouTube's own date is unknown to the site: the day the recipe first showed it
+          uploadDate: recipe.publishedAt ?? recipe.createdAt,
+          contentUrl: `https://www.youtube.com/watch?v=${videoId}`,
+          embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}`,
+        }
+      : undefined,
   };
 }
 

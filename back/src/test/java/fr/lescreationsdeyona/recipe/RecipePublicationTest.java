@@ -84,7 +84,7 @@ class RecipePublicationTest {
 
 	private static RecipeForm form(RecipeStatus status, boolean featured, Instant scheduledAt) {
 		return new RecipeForm("Tarte", null, status, RecipeTheme.SAVORY, featured, List.of(1L), null, null, null, null, null,
-				null, null, null, null, null, scheduledAt,
+				null, null, null, null, null, null, scheduledAt,
 				List.of(new RecipeForm.Part(null, List.of(new RecipeForm.IngredientLine("Farine", null, null, null)),
 						List.of(new RecipeForm.Step("Mélanger", null, List.of())))));
 	}
@@ -99,6 +99,7 @@ class RecipePublicationTest {
 		assertThat(recipe.getScheduledAt()).isNull();
 		assertThat(recipe.getPublishedAt()).isEqualTo(NOW);
 		verify(events).publishEvent(any(RecipePublished.class));
+		verify(events).publishEvent(new RecipePagesChanged(List.of("/recettes/desserts/tarte")));
 		verify(auditLog).record(AuditAction.PUBLISHED, AuditKind.RECIPE, "Tarte", 7L);
 	}
 

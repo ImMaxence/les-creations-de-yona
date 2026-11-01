@@ -127,6 +127,7 @@
     @for (paragraph of aboutParagraphs(); track $index) {
       <p>{{ paragraph }}</p>
     }
+    <a class="about__more" [routerLink]="aboutPath">En savoir plus sur Yona <svg yonaIcon="arrow-right" [size]="16"></svg></a>
   </div>
 </section>
 

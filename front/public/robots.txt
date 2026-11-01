@@ -1,7 +1,31 @@
+# Search engines, and AI assistants answering with a link to the site (ChatGPT Search, Perplexity,
+# Claude, Copilot through Bing, Google's AI answers through Googlebot): welcome. Named for clarity,
+# same rules as everyone. The API is not meant for search results; recipe photos are.
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: MistralAI-User
+User-agent: DuckAssistBot
 User-agent: *
-# The API is not meant for search results; recipe photos are.
 Disallow: /api/
 Allow: /api/images/
 # /admin is not listed: its pages answer "noindex", which crawlers must be allowed to read.
+
+# Training of AI models: recipes, texts and photos belong to their author and may not be reused
+# without consent (see the licence). These robots only collect for training: blocking them leaves
+# the site in the assistants' answers above. Google-Extended stays allowed: it also feeds the
+# answers of the Gemini app.
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: CCBot
+User-agent: Applebot-Extended
+User-agent: Meta-ExternalAgent
+User-agent: Bytespider
+User-agent: cohere-training-data-crawler
+Disallow: /
 
 Sitemap: https://les-creations-de-yona.fr/sitemap.xml

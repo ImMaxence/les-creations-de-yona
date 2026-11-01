@@ -401,6 +401,39 @@
     </div>
   </section>
 
+  <section class="admin-panel" aria-labelledby="questions-title">
+    <h3 id="questions-title" class="editor__title">Questions fréquentes (facultatif)</h3>
+    <p class="field__hint">
+      Les questions qu'on vous pose sur cette recette, avec votre réponse : « Peut-on la congeler ? », « Par quoi
+      remplacer les œufs ? ». Affichées sous la recette, elles aident aussi Google et les assistants IA (ChatGPT,
+      Perplexity…) à la recommander
+    </p>
+    @if (draft().questions.length) {
+      <ol class="lines">
+        @for (item of draft().questions; track $index; let i = $index, last = $last) {
+          <li class="line line--plain">
+            <div class="line__fields">
+              <span class="line__number">Question {{ i + 1 }}</span>
+              <input class="input" [attr.aria-label]="'Question ' + (i + 1)" placeholder="Peut-on la préparer la veille ?" [formField]="recipeForm.questions[i].question" [attr.aria-invalid]="isInvalid(recipeForm.questions[i].question)" />
+              <yona-field-error [field]="recipeForm.questions[i].question" />
+              <textarea class="input" rows="2" [attr.aria-label]="'Réponse à la question ' + (i + 1)" placeholder="Oui : elle se garde 2 jours au frais, bien couverte" [formField]="recipeForm.questions[i].answer" [attr.aria-invalid]="isInvalid(recipeForm.questions[i].answer)"></textarea>
+              <yona-field-error [field]="recipeForm.questions[i].answer" />
+            </div>
+            <div class="line__actions">
+              <button type="button" class="icon-button" aria-label="Monter" [disabled]="i === 0" (click)="moveQuestion(i, i - 1)"><svg yonaIcon="arrow-up" [size]="16"></svg></button>
+              <button type="button" class="icon-button" aria-label="Descendre" [disabled]="last" (click)="moveQuestion(i, i + 1)"><svg yonaIcon="arrow-down" [size]="16"></svg></button>
+              <button type="button" class="icon-button icon-button--danger" aria-label="Retirer la question" (click)="removeQuestion(i)"><svg yonaIcon="trash" [size]="16"></svg></button>
+            </div>
+          </li>
+        }
+      </ol>
+    }
+    @if (draft().questions.length < maxQuestions) {
+      <button yonaButton variant="secondary" type="button" class="lines__add" (click)="addQuestion()"><svg yonaIcon="plus"></svg>Ajouter une question</button>
+    }
+    <yona-field-error [field]="recipeForm.questions" />
+  </section>
+
   <div class="editor__bar">
     <!-- Phones: "Retour" and the preview's icon, so that the three actions hold on one line -->
     <a yonaButton variant="ghost" class="editor__back" routerLink="/admin/recettes">

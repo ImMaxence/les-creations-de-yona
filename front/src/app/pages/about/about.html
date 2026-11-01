@@ -1,0 +1,53 @@
+<article class="container about">
+  <div class="about__portrait enter">
+    <!-- The photo chosen in the back-office (Préférences), otherwise the one bundled with the site -->
+    @if (content().aboutImageId; as imageId) {
+      <img
+        [src]="'/api/images/' + imageId + '/800.webp'"
+        [srcset]="'/api/images/' + imageId + '/800.webp 800w, /api/images/' + imageId + '/1600.webp 1600w'"
+        sizes="(width >= 48rem) 16rem, 12rem"
+        width="480"
+        height="480"
+        fetchpriority="high"
+        alt="Yona, l'autrice des recettes"
+      />
+    } @else {
+      <img
+        src="images/yona-480.webp"
+        srcset="images/yona-480.webp 480w, images/yona-960.webp 960w"
+        sizes="(width >= 48rem) 16rem, 12rem"
+        width="480"
+        height="480"
+        fetchpriority="high"
+        alt="Yona, l'autrice des recettes"
+      />
+    }
+  </div>
+
+  <div class="about__text enter" style="--delay: 100ms">
+    <p class="eyebrow">À propos de Yona</p>
+    <h1>{{ content().aboutTitle }}</h1>
+    @for (paragraph of paragraphs(); track $index) {
+      <p>{{ paragraph }}</p>
+    }
+
+    @if (siteData.socialLinks().length) {
+      <h2 class="about__subtitle">Retrouver Yona</h2>
+      <ul role="list" class="about__socials">
+        @for (link of siteData.socialLinks(); track link.platform) {
+          <li>
+            <a [href]="link.url" target="_blank" rel="noopener noreferrer me">
+              <yona-brand-icon [platform]="link.platform" />
+              {{ socialPlatformLabel(link.platform) }}
+            </a>
+          </li>
+        }
+      </ul>
+    }
+
+    <div class="about__actions">
+      <a yonaButton [routerLink]="recipesPath">Voir les recettes <svg yonaIcon="arrow-right"></svg></a>
+      <a yonaButton variant="secondary" [routerLink]="feedbackPath">Écrire à Yona</a>
+    </div>
+  </div>
+</article>

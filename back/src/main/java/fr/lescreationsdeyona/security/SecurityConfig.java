@@ -31,6 +31,9 @@ class SecurityConfig {
 
 	private static final String RECIPE_VIEWS = "/api/recipes/*/views";
 
+	/** Visits coming from an AI assistant (Statistiques). */
+	private static final String AI_VISITS = "/api/ai-visits/*";
+
 	/** "Donner mon avis": sent by visitors, who have no CSRF token. */
 	private static final String FEEDBACK = "/api/feedback";
 
@@ -46,7 +49,7 @@ class SecurityConfig {
 				.permitAll()
 				.requestMatchers(HttpMethod.POST, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.DELETE, NOTIFICATION_SUBSCRIPTIONS).permitAll()
-				.requestMatchers(HttpMethod.POST, RECIPE_VIEWS).permitAll()
+				.requestMatchers(HttpMethod.POST, RECIPE_VIEWS, AI_VISITS).permitAll()
 				.requestMatchers(HttpMethod.POST, FEEDBACK).permitAll()
 				.requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll();
 			// Local runs only: in production the documentation is off and its URLs are denied like any other.
@@ -68,9 +71,9 @@ class SecurityConfig {
 			// XSRF-TOKEN cookie, sent back by Angular's HttpClient in the X-XSRF-TOKEN header. The token is
 			// deferred: only the back-office creates it (GET /api/admin/me), public visitors never get it.
 			// Visitors have no CSRF token. Forging a request could only subscribe a push service address or
-			// remove one, or count a view, which grants nothing.
+			// remove one, or count a view or a visit, which grants nothing.
 			.csrf(csrf -> csrf
-				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS, RECIPE_VIEWS, FEEDBACK)
+				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS, RECIPE_VIEWS, AI_VISITS, FEEDBACK)
 				.csrfTokenRepository(csrfTokenRepository())
 				.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
 			// Login always lands on /admin: no need to remember the request, nor to open a session for it.

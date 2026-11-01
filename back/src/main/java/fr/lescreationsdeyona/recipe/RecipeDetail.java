@@ -22,6 +22,7 @@ public record RecipeDetail(Long id, String title, String slug, @Nullable String 
 		@Schema(description = "Id of the YouTube video shown at the bottom of the recipe") @Nullable String youtubeVideoId,
 		@Schema(description = "\"Le conseil de Yona\", Markdown rendered by the front") @Nullable String tip,
 		@Schema(description = "Equipment needed (moule à tarte, fouet…), in order; empty when none") List<String> equipment,
+		@Schema(description = "\"Questions fréquentes\", in order; empty when none") List<RecipeQuestion> questions,
 		@Schema(description = "Mold the quantities are written for") @Nullable Mold mold,
 		@Nullable UUID imageId,
 		@Schema(description = "Vertical photo for Pinterest; absent: the main photo is offered") @Nullable UUID pinterestImageId,

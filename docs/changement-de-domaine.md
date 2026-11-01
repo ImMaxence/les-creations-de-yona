@@ -26,12 +26,12 @@ Prévoir un mot aux visiteurs (réseaux sociaux, encart sur le site) avant la ba
 | `front/src/app/core/analytics/analytics.ts` | `MEASURED_HOSTS` : sinon plus aucune mesure d'audience |
 | `front/src/app/pages/legal/legal-notice.html` | nom du site dans les mentions légales |
 | `front/src/app/pages/legal/legal.ts` | `LEGAL_PAGES_UPDATED_ON` (date de mise à jour) |
-| `back/src/main/resources/application.yaml` | valeur par défaut de `PUSH_SUBJECT` (ou la variable dans Coolify) |
+| `back/src/main/resources/application.yaml` | valeurs par défaut de `PUSH_SUBJECT` et de `SITE_URL` (adresses envoyées à IndexNow), ou les variables dans Coolify |
 | `devops/.env.example`, `devops/compose.prod.yaml` (commentaire), `docs/production.md`, `docs/google.md` | adresses d'exemple et documentation |
 
 Pour vérifier qu'il n'en reste pas : chercher `les-creations-de-yona.fr` dans tout le dépôt, en dehors de `CHANGELOG.md`, qui raconte le passé.
 
-Le backend n'a rien d'autre en dur : il lit le domaine dans les en-têtes `X-Forwarded-*` transmis par Coolify et la passerelle (adresses de retour Google comprises).
+Le backend n'a rien d'autre en dur : il lit le domaine dans les en-têtes `X-Forwarded-*` transmis par Coolify et la passerelle (adresses de retour Google comprises). Seul IndexNow, appelé sans requête à lire (publication programmée), prend `SITE_URL`. Après la bascule, ajouter aussi le nouveau domaine dans Bing Webmaster Tools ([production](production.md#assistants-ia)).
 
 Ne pas déployer ce commit avant les étapes 2 à 4 : le serveur refuserait encore le nouveau domaine, ou Google ses adresses de retour.
 

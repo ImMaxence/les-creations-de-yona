@@ -1,9 +1,10 @@
-import type { Request, RequestHandler } from 'express';
+import type { RequestHandler } from 'express';
+import type { GlossaryTermResponse } from '../app/core/api/generated/models/glossary-term-response';
 import type { MenuSummary } from '../app/core/api/generated/models/menu-summary';
-import type { PageResponseRecipeCard } from '../app/core/api/generated/models/page-response-recipe-card';
 import type { RecipeCard } from '../app/core/api/generated/models/recipe-card';
 import { SITE_URL } from '../app/core/seo/page-seo';
 import {
+  ABOUT_PATH,
   GLOSSARY_PATH,
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
@@ -14,70 +15,16 @@ import {
   menuLink,
   recipeLink,
 } from '../app/shared/routing/links';
+import { apiOrigin, fetchGlossary, fetchMenus, fetchPublishedRecipes } from './api';
 
-/** Largest page the API serves (spring.data.web.pageable.max-page-size). */
-const API_PAGE_SIZE = 50;
-const API_TIMEOUT_MS = 5_000;
-const STATIC_PATHS = ['/', RECIPES_PATH, INSTALL_PATH, LEGAL_NOTICE_PATH, PRIVACY_POLICY_PATH];
-
-/** Same origin as the SSR rendering: API_URL in Docker, else the site itself (dev server proxy). */
-function apiOrigin(req: Request): string {
-  return process.env['API_URL'] || `${req.protocol}://${req.get('host')}`;
-}
-
-async function fetchPublishedRecipes(origin: string): Promise<RecipeCard[]> {
-  const recipes: RecipeCard[] = [];
-  let totalPages = 1;
-  for (let page = 0; page < totalPages; page++) {
-    const url = new URL('/api/recipes', origin);
-    url.searchParams.set('page', String(page));
-    url.searchParams.set('size', String(API_PAGE_SIZE));
-    const response = await fetch(url, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(API_TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      throw new Error(`GET ${url} answered ${response.status}`);
-    }
-    const body = (await response.json()) as PageResponseRecipeCard;
-    recipes.push(...body.content);
-    totalPages = body.totalPages;
-  }
-  return recipes;
-}
-
-/** The glossary page is indexed once it has words; a failure only leaves it out. */
-async function hasGlossary(origin: string): Promise<boolean> {
-  try {
-    const response = await fetch(new URL('/api/glossary', origin), {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(API_TIMEOUT_MS),
-    });
-    return response.ok && ((await response.json()) as unknown[]).length > 0;
-  } catch {
-    return false;
-  }
-}
-
-/** Published menus; a failure only leaves them out. */
-async function fetchMenus(origin: string): Promise<MenuSummary[]> {
-  try {
-    const response = await fetch(new URL('/api/menus', origin), {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(API_TIMEOUT_MS),
-    });
-    return response.ok ? ((await response.json()) as MenuSummary[]) : [];
-  } catch {
-    return [];
-  }
-}
+const STATIC_PATHS = ['/', RECIPES_PATH, ABOUT_PATH, INSTALL_PATH, LEGAL_NOTICE_PATH, PRIVACY_POLICY_PATH];
 
 /** Indexable pages only: no search results, no empty category nor glossary (all noindex). */
-function sitemapPaths(recipes: RecipeCard[], glossary: boolean, menus: MenuSummary[]): string[] {
+function sitemapPaths(recipes: RecipeCard[], glossary: GlossaryTermResponse[], menus: MenuSummary[]): string[] {
   const categories = new Set(recipes.flatMap((recipe) => recipe.categories.map((category) => category.slug)));
   return [
     ...STATIC_PATHS,
-    ...(glossary ? [GLOSSARY_PATH] : []),
+    ...(glossary.length ? [GLOSSARY_PATH] : []),
     ...(menus.length ? [MENUS_PATH, ...menus.map((menu) => menuLink(menu).join('/'))] : []),
     ...[...categories].map(
       (slug) => `${RECIPES_PATH}?${new URLSearchParams(categoryQueryParams({ slug }))}`,
@@ -109,11 +56,12 @@ function toXml(paths: string[]): string {
  * hour. URLs use the production domain, the only one search engines should index.
  */
 export const sitemap: RequestHandler = async (req, res) => {
+  const origin = apiOrigin(req);
   try {
     const [recipes, glossary, menus] = await Promise.all([
-      fetchPublishedRecipes(apiOrigin(req)),
-      hasGlossary(apiOrigin(req)),
-      fetchMenus(apiOrigin(req)),
+      fetchPublishedRecipes(origin),
+      fetchGlossary(origin),
+      fetchMenus(origin),
     ]);
     res
       .type('application/xml')

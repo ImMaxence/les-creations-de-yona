@@ -2,6 +2,29 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.16.0 - 2026-11-01
+
+Front and backend 1.16.0. Database migration: V18.
+
+### Added
+
+- **Questions fréquentes** in the recipe editor: questions and answers shown under the recipe, given to search engines as FAQPage and kept in the history, the trash and the backups.
+- **"À propos de Yona"** page (`/a-propos`): the text, photo and networks of the home page's "À propos", linked from the home page, the footer and each recipe ("Une recette de Yona").
+- **`/llms.txt`**: the site described for AI assistants, with every published recipe, menu and page, built on each request like the sitemap.
+- **Recipes in Markdown**: the address of a recipe + `.md` (`/recettes/tartes/tarte-aux-pommes.md`), announced by each page, canonical address kept on the page.
+- **IndexNow**: Bing (ChatGPT Search, Copilot) and the other IndexNow engines are told at once of each recipe published, changed, unpublished or deleted. Production only.
+- **Statistiques, "Visites venant des assistants IA"**: visits coming from ChatGPT, Perplexity, Gemini, Copilot, Claude… over 30 days and 12 months, counted once per tab with nothing about the visitor.
+
+### Changed
+
+- **robots.txt**: AI assistants that answer with a link (OAI-SearchBot, PerplexityBot, Claude-SearchBot…) named and welcome; robots collecting for AI training (GPTBot, ClaudeBot, CCBot…) refused. Google-Extended stays allowed (Gemini's answers).
+- **Structured data**: one JSON-LD graph per page, the site (`WebSite`) and Yona (`Person`) shared by every page; recipes with `BreadcrumbList`, their YouTube video (`VideoObject`) and language; recipe lists and menus as `CollectionPage` and `ItemList`.
+
+### Technical
+
+- SSR server: API calls of the sitemap, `llms.txt` and Markdown versions in one module (`front/src/server/api.ts`).
+- Backend: `app.site-url` (`SITE_URL`) and `app.indexnow` (`INDEXNOW_ENABLED`, set in `compose.prod.yaml`), key file `front/public/f5d890788ccc4557ecd282dea7299d26.txt`.
+
 ## 1.15.0 - 2026-10-31
 
 Front and backend 1.15.0. No database migration.

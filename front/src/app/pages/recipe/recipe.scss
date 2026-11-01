@@ -226,6 +226,40 @@
   }
 }
 
+// "Questions fréquentes": each question, then Yona's answer
+.questions {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 48rem;
+
+  h2 {
+    font-size: var(--text-2xl);
+  }
+}
+
+.questions__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.questions__item {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+
+  dt {
+    font-weight: 700;
+  }
+
+  dd {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-muted);
+    // A line break typed in the back-office stays
+    white-space: pre-line;
+  }
+}
+
 // "Vous aimerez aussi": the same cards as the recipes page
 .related {
   display: grid;

@@ -8,6 +8,8 @@ import express from 'express';
 import { join } from 'node:path';
 import type { ServerRequestContext } from './app/core/security/csp-nonce';
 import { cspNonce, securityHeaders } from './server/security-headers';
+import { llms } from './server/llms';
+import { recipeMarkdown } from './server/recipe-markdown';
 import { sitemap } from './server/sitemap';
 
 const serverDistFolder = import.meta.dirname;
@@ -53,6 +55,8 @@ app.use('/admin', (_req, res, next) => {
 });
 
 app.get('/sitemap.xml', sitemap);
+app.get('/llms.txt', llms);
+app.get('/recettes/:categorySlug/:recipeSlug.md', recipeMarkdown);
 
 // Hashed files are cached for good; the others (favicon, author photo) can change under the same name
 app.use(

@@ -86,6 +86,8 @@ services:
       APP_ADMIN_EMAILS: ${APP_ADMIN_EMAILS:?}
       # Optional: "Remplir avec l'IA" in the recipe editor, greyed out without it.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Bing and the other IndexNow engines told of each published or changed recipe.
+      INDEXNOW_ENABLED: "true"
       # API_DOCS_ENABLED stays unset: no API documentation in production.
     depends_on:
       postgres:

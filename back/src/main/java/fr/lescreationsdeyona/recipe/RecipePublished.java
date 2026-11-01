@@ -13,7 +13,7 @@ public record RecipePublished(String title, String path, @Nullable String intro,
 
 	static RecipePublished of(Recipe recipe) {
 		return new RecipePublished(recipe.getTitle(),
-				"/recettes/" + recipe.getMainCategory().getSlug() + "/" + recipe.getSlug(), recipe.getIntro(),
+				RecipePagesChanged.path(recipe.getMainCategory().getSlug(), recipe.getSlug()), recipe.getIntro(),
 				recipe.getImage() == null ? null : recipe.getImage().getId());
 	}
 

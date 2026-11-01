@@ -3,6 +3,7 @@
 
 export type { AdminMenu } from './models/admin-menu';
 export type { AdminResponse } from './models/admin-response';
+export type { AiVisits } from './models/ai-visits';
 export type { Analysis } from './models/analysis';
 export type { AppearancePresetForm } from './models/appearance-preset-form';
 export type { AppearancePresetResponse } from './models/appearance-preset-response';
@@ -55,6 +56,7 @@ export type { RecipeAiStatus } from './models/recipe-ai-status';
 export type { RecipeCard } from './models/recipe-card';
 export type { RecipeDetail } from './models/recipe-detail';
 export type { RecipeForm } from './models/recipe-form';
+export type { RecipeQuestion } from './models/recipe-question';
 export type { Recipes } from './models/recipes';
 export type { RecipeSuggestion } from './models/recipe-suggestion';
 export type { Report } from './models/report';

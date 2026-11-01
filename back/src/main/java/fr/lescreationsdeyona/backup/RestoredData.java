@@ -164,6 +164,7 @@ class RestoredData {
 			long glossaryTerms = mergeGlossary(scratch, site);
 			long menus = mergeMenus(scratch, site);
 			mergeSearchMisses(scratch, site);
+			mergeAiVisits(scratch, site);
 			boolean siteContent = mergeSettings(scratch, site, SITE_CONTENT);
 			boolean siteTheme = mergeSettings(scratch, site, SITE_THEME);
 			return new Merged(new RestoreStatus.Counts(added.recipes, added.categories, added.tags, added.ingredients,
@@ -305,6 +306,13 @@ class RestoredData {
 					.param("tag", tags.get(tagId))
 					.update();
 			}
+			for (Map<String, Object> question : scratch.sql("select position, question, answer from recipe_question where recipe_id = :id")
+				.param("id", backupId).query().listOfRows()) {
+				site.sql("insert into recipe_question (recipe_id, position, question, answer) values (:recipe, :position, :question, :answer)")
+					.param("recipe", siteId)
+					.params(question)
+					.update();
+			}
 			for (Map<String, Object> part : scratch.sql("select id, position, title from recipe_part where recipe_id = :id")
 				.param("id", backupId).query().listOfRows()) {
 				long partId = site.sql("insert into recipe_part (recipe_id, position, title) values (:recipe, :position, :title) returning id")
@@ -441,6 +449,15 @@ class RestoredData {
 					insert into search_miss (term, count, first_searched_at, last_searched_at)
 					values (:term, :count, :first_searched_at, :last_searched_at)
 					on conflict (term) do nothing""")
+				.params(row)
+				.update();
+		}
+	}
+
+	/** Visits coming from AI assistants (Statistiques): the days the site has not counted yet. */
+	private void mergeAiVisits(JdbcClient scratch, JdbcClient site) {
+		for (Map<String, Object> row : scratch.sql("select day, assistant, count from ai_visit").query().listOfRows()) {
+			site.sql("insert into ai_visit (day, assistant, count) values (:day, :assistant, :count) on conflict do nothing")
 				.params(row)
 				.update();
 		}

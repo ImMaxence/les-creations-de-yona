@@ -36,6 +36,7 @@ final class RecipeChanges {
 			.add("Moule", mold(before.mold()), mold(after.mold()))
 			.addLines("Matériel", before.equipment(), after.equipment())
 			.add("Le conseil de Yona", before.tip(), after.tip())
+			.addLines("Questions fréquentes", questions(before), questions(after))
 			.add("Vidéo", video(before.youtubeVideoId()), video(after.youtubeVideoId()));
 		int partCount = Math.max(before.parts().size(), after.parts().size());
 		for (int index = 0; index < partCount; index++) {
@@ -109,6 +110,11 @@ final class RecipeChanges {
 			String note = line.note() == null || line.note().isBlank() ? "" : " (" + line.note().strip() + ")";
 			return String.join(" ", words) + note;
 		}).toList();
+	}
+
+	/** "Peut-on la congeler ? Oui, 2 mois". */
+	private static List<String> questions(RecipeDetail recipe) {
+		return recipe.questions().stream().map(item -> item.question() + " " + item.answer()).toList();
 	}
 
 	/** Its text, then its timer: "Cuire (25 min)". */

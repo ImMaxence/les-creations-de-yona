@@ -195,6 +195,15 @@ yona-select {
   }
 }
 
+// Without a drag handle (questions): the fields, then the arrows
+.line--plain {
+  grid-template-columns: 1fr;
+
+  @include m.from(md) {
+    grid-template-columns: 1fr auto;
+  }
+}
+
 .line__handle {
   cursor: grab;
   touch-action: none;

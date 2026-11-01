@@ -56,12 +56,14 @@ import { hasParts } from '../../recipe/recipe-parts';
 import RecipePreview from '../recipe-preview/recipe-preview';
 import { parisDateTime } from '../../../shared/format/paris-time';
 import {
+  MAX_QUESTIONS,
   MoldShapeChoice,
   PartDraft,
   RecipeTheme,
   RecipeDraft,
   emptyIngredient,
   emptyPart,
+  emptyQuestion,
   emptyStep,
   fromAiDraft,
   hasContent,
@@ -599,6 +601,30 @@ export default class AdminRecipeEditor implements UnsavedChanges {
       const moved = [...part[list]];
       moveItemInArray(moved, from, to);
       return { ...part, [list]: moved };
+    });
+  }
+
+  // Questions fréquentes
+
+  protected readonly maxQuestions = MAX_QUESTIONS;
+
+  protected addQuestion(): void {
+    this.draft.update((draft) => ({ ...draft, questions: [...draft.questions, emptyQuestion()] }));
+  }
+
+  protected removeQuestion(index: number): void {
+    this.draft.update((draft) => ({ ...draft, questions: draft.questions.filter((_item, position) => position !== index) }));
+  }
+
+  /** The arrow buttons: a short list, no drag and drop needed. */
+  protected moveQuestion(from: number, to: number): void {
+    this.draft.update((draft) => {
+      if (to < 0 || to >= draft.questions.length) {
+        return draft;
+      }
+      const questions = [...draft.questions];
+      moveItemInArray(questions, from, to);
+      return { ...draft, questions };
     });
   }
 

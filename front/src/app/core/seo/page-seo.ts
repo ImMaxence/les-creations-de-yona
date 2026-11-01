@@ -15,8 +15,13 @@ export interface PageSeo {
   /** Image for social cards, as a path or an absolute URL. */
   image?: string;
   type?: 'website' | 'article';
-  /** Structured data (schema.org), written as JSON-LD. */
-  jsonLd?: object;
+  /**
+   * Structured data (schema.org) of the page, without "@context": written as one JSON-LD graph,
+   * after the site itself (WEBSITE_NODE).
+   */
+  jsonLd?: object[];
+  /** Path of the same content in Markdown, for AI assistants (link rel="alternate"). */
+  markdownPath?: string;
   noIndex?: boolean;
 }
 

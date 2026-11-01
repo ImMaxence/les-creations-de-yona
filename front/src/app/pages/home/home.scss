@@ -166,9 +166,26 @@
     font-size: var(--text-2xl);
   }
 
-  p:last-child {
+  p:last-of-type {
     max-width: 38rem;
     color: var(--color-text-muted);
+  }
+}
+
+.about__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: var(--color-accent-strong);
+    }
   }
 }
 

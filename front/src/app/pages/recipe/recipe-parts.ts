@@ -18,6 +18,9 @@ export function hasParts(parts: Part[]): boolean {
   return parts.length > 1 || !!parts[0]?.title;
 }
 
+/** Anchor of the "Questions fréquentes" on the recipe page, also their address for search engines. */
+export const QUESTIONS_ANCHOR = 'questions';
+
 /**
  * Anchor of a step on the recipe page, also its address for Google: #etape-2, or #partie-1-etape-2
  * in a recipe in parts (numbers from 1).

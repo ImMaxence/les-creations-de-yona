@@ -1,5 +1,6 @@
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
+import { WEBSITE_ID } from '../../core/seo/json-ld';
 import { PageSeo, absoluteUrl } from '../../core/seo/page-seo';
 import { GLOSSARY_PATH } from '../../shared/routing/links';
 
@@ -15,19 +16,22 @@ export function glossarySeo(route: ActivatedRouteSnapshot): PageSeo {
     description:
       'Émulsionner, chemiser, blanchir, sabler… Les mots de la pâtisserie expliqués simplement, pour réussir les recettes',
     noIndex: terms.length === 0,
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'DefinedTermSet',
-      '@id': url,
-      name: 'Glossaire de pâtisserie',
-      url,
-      hasDefinedTerm: terms.map((term) => ({
-        '@type': 'DefinedTerm',
-        name: term.name,
-        description: term.definition,
-        url: `${url}#${term.slug}`,
-        inDefinedTermSet: url,
-      })),
-    },
+    jsonLd: [
+      {
+        '@type': 'DefinedTermSet',
+        '@id': url,
+        name: 'Glossaire de pâtisserie',
+        url,
+        inLanguage: 'fr-FR',
+        isPartOf: { '@id': WEBSITE_ID },
+        hasDefinedTerm: terms.map((term) => ({
+          '@type': 'DefinedTerm',
+          name: term.name,
+          description: term.definition,
+          url: `${url}#${term.slug}`,
+          inDefinedTermSet: url,
+        })),
+      },
+    ],
   };
 }

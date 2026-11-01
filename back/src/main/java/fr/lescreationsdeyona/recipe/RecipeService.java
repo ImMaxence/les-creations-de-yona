@@ -43,6 +43,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.Cacheable;
@@ -188,6 +189,7 @@ public class RecipeService {
 		recipe.setSlug(Slugs.uniqueSlug(form.title(), "recette", recipeRepository::existsBySlug));
 		boolean firstPublication = apply(form, recipe);
 		RecipeDetail created = saveAndAnnounce(recipe, firstPublication);
+		pagesChanged(Stream.of(publicPath(recipe)));
 		auditLog.record(AuditAction.CREATED, AuditKind.RECIPE, created.title(), created.id());
 		return created;
 	}
@@ -196,11 +198,14 @@ public class RecipeService {
 	public RecipeDetail update(long id, RecipeForm form) {
 		Recipe recipe = find(id);
 		RecipeDetail before = recipeMapper.toDetail(recipe);
+		// Unpublished, or moved to another main category: the previous address changes too
+		String pathBefore = publicPath(recipe);
 		boolean firstPublication = apply(form, recipe);
 		// Changing only ingredients or steps leaves the recipe row untouched, and auditing would then
 		// skip updated_at: touching it makes every save count as an update.
 		recipe.setUpdatedAt(Instant.now());
 		RecipeDetail updated = saveAndAnnounce(recipe, firstPublication);
+		pagesChanged(Stream.of(pathBefore, publicPath(recipe)));
 		auditLog.record(AuditAction.UPDATED, AuditKind.RECIPE, recipe.getTitle(), id, RecipeChanges.between(before, updated));
 		return updated;
 	}
@@ -292,6 +297,7 @@ public class RecipeService {
 		recipe.setImage(trashed.getImage());
 		recipe.setPinterestImage(trashed.getPinterestImage());
 		long id = recipeRepository.saveAndFlush(recipe).getId();
+		pagesChanged(Stream.of(publicPath(recipe)));
 		recipeRepository.restoreDates(id, kept.createdAt(), kept.publishedAt() != null || status != RecipeStatus.PUBLISHED
 				? kept.publishedAt()
 				: Instant.now(), trashed.getViewCount() == null ? 0 : trashed.getViewCount());
@@ -359,7 +365,9 @@ public class RecipeService {
 			recipe.setPublishedAt(now);
 		}
 		recipe.setUpdatedAt(now);
-		return saveAndAnnounce(recipe, firstPublication);
+		RecipeDetail published = saveAndAnnounce(recipe, firstPublication);
+		pagesChanged(Stream.of(publicPath(recipe)));
+		return published;
 	}
 
 	private void fail(Recipe recipe, String reason) {
@@ -445,7 +453,23 @@ public class RecipeService {
 					recipe.getImage(), recipe.getPinterestImage(), recipeMapper.toDetail(recipe),
 					new RecipeLinks(menuService.placesOf(recipe.getId())), recipe.getViewCount()));
 		}
+		pagesChanged(recipes.stream().map(RecipeService::publicPath));
 		recipeRepository.deleteAll(recipes);
+	}
+
+	/** Its address on the site once published; null for a draft or a failed one, not on the site. */
+	private static @Nullable String publicPath(Recipe recipe) {
+		return recipe.getStatus() == RecipeStatus.PUBLISHED
+				? RecipePagesChanged.path(recipe.getMainCategory().getSlug(), recipe.getSlug())
+				: null;
+	}
+
+	/** Search engines are told once the transaction is committed (see RecipePagesChanged). */
+	private void pagesChanged(Stream<@Nullable String> paths) {
+		List<String> changed = paths.filter(Objects::nonNull).distinct().toList();
+		if (!changed.isEmpty()) {
+			events.publishEvent(new RecipePagesChanged(changed));
+		}
 	}
 
 	/**
@@ -502,6 +526,8 @@ public class RecipeService {
 		recipe.setYoutubeVideoId(youtubeVideoId(form.videoUrl()));
 		recipe.setTip(StringUtils.hasText(form.tip()) ? form.tip().strip() : null);
 		recipe.setEquipment(equipment(form.equipment()));
+		recipe.getQuestions().clear();
+		recipe.getQuestions().addAll(questions(form.questions()));
 		RecipeForm.Mold mold = form.mold();
 		recipe.setMoldShape(mold == null ? null : mold.shape());
 		recipe.setMoldLengthCm(mold == null ? null : mold.lengthCm());
@@ -650,6 +676,15 @@ public class RecipeService {
 		return byKey.isEmpty() ? null : String.join("\n", byKey.values());
 	}
 
+	/** Trimmed, with a capital letter; a recipe trashed before the questions existed has none (null). */
+	static List<RecipeQuestion> questions(@Nullable List<RecipeQuestion> questions) {
+		return questions == null ? List.of()
+				: questions.stream()
+					.map(item -> new RecipeQuestion(Texts.capitalizeFirstLetter(item.question().strip()),
+							Texts.capitalizeFirstLetter(item.answer().strip())))
+					.toList();
+	}
+
 	/** The form that would save {@code recipe} again: duplicate, restore from the trash. */
 	private static RecipeForm formOf(RecipeDetail recipe, String title, RecipeStatus status, RecipeTheme theme,
 			List<Long> categoryIds, List<Long> tagIds) {
@@ -657,7 +692,7 @@ public class RecipeService {
 		return new RecipeForm(title, recipe.intro(), status, theme, false, categoryIds, tagIds, recipe.servings(),
 				recipe.prepMinutes(), recipe.cookMinutes(), recipe.restMinutes(), recipe.difficulty(),
 				recipe.youtubeVideoId() == null ? null : "https://www.youtube.com/watch?v=" + recipe.youtubeVideoId(),
-				recipe.tip(), recipe.equipment(), mold == null ? null : new RecipeForm.Mold(mold.shape(), mold.lengthCm(), mold.widthCm()),
+				recipe.tip(), recipe.equipment(), recipe.questions(), mold == null ? null : new RecipeForm.Mold(mold.shape(), mold.lengthCm(), mold.widthCm()),
 				null,
 				recipe.parts().stream().map(part -> new RecipeForm.Part(part.title(),
 						part.ingredients().stream()

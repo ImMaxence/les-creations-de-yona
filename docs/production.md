@@ -49,6 +49,19 @@ Ce que le code ne peut pas régler, et qui se fait une fois, en ligne :
 
 Les rapports « Données structurées : Recettes » sont des suggestions (non critiques). Depuis la 1.7, chaque étape a un nom (sa première phrase), son adresse (`#etape-2`, `#partie-1-etape-2`, ancre de la page) et une image (la photo de la recette), et les temps de préparation et de cuisson sont donnés dès que l'un des temps est rempli (un temps vide compte pour 0). Une recette sans aucun temps reste signalée : la remplir (Statistiques, « Recettes à compléter », « temps »). Après la mise en ligne, **Valider la correction** dans chaque rapport pour que Google repasse sur les pages.
 
+## Assistants IA
+
+Depuis la 1.16, le site est fait pour être cité par les assistants IA (ChatGPT, Perplexity, Gemini, Copilot, Claude) : ce que fait le code est dans [développement](developpement.md#référencement). Trois réglages restent hors du code.
+
+1. **Cloudflare** : depuis 2025, Cloudflare peut bloquer les robots d'IA d'un domaine sans rien demander. Dans **Security → Bots** (ou **AI Crawl Control**, selon l'offre) :
+   - « Block AI bots » : désactivé, ou limité aux robots d'entraînement. Les robots de recherche (OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot, Bingbot, Googlebot) doivent passer : sans eux, plus de citation ;
+   - « Managed robots.txt » (ou « Instruct AI bot traffic with robots.txt ») : désactivé. Le site a son propre `robots.txt`, qui refuse déjà les robots d'entraînement ; Cloudflare ajouterait ses lignes au début ;
+   - **Security → Events**, filtre « Bot » : aucune action *block* ou *challenge* contre ces robots. **Bot Fight Mode** laisse passer les robots vérifiés (« Verified bots »), dont ceux-ci.
+   
+   Vérifier : `https://les-creations-de-yona.fr/robots.txt` doit être exactement `front/public/robots.txt`. Un `curl` avec le nom d'un robot ne prouve rien : Cloudflare reconnaît les vrais robots à leurs adresses IP.
+2. **Bing Webmaster Tools** (https://www.bing.com/webmasters) : ChatGPT Search et Copilot cherchent dans l'index de Bing. Ajouter le site (« Importer depuis Google Search Console » le fait en un geste), déclarer `https://les-creations-de-yona.fr/sitemap.xml`. Les recettes publiées y arrivent ensuite par IndexNow, sans attendre le passage du robot : **IndexNow** dans le menu liste les adresses reçues. La clé (`f5d890788ccc4557ecd282dea7299d26`) est dans `application.yaml` et dans `front/public/` : les deux doivent rester identiques.
+3. **Google Analytics** : les visites venant des assistants sont comptées dans les statistiques du back-office. Pour les voir aussi dans Analytics : **Administration → Paramètres des données → Groupes de canaux**, copier le groupe par défaut, ajouter un canal « Assistants IA » (source correspondant à l'expression régulière `chatgpt|openai|perplexity|gemini|copilot|claude|mistral|deepseek|grok`) placé au-dessus de « Referral ».
+
 ## Services Google
 
 Réglages pas à pas (projet Google Cloud, client OAuth, Google Drive, Analytics, Search Console) et problèmes courants : [docs/google.md](./google.md).

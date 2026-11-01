@@ -346,6 +346,39 @@
       </section>
     </div>
 
+    <section class="admin-panel todo" aria-labelledby="ai-visits-title">
+      <h3 id="ai-visits-title" class="chart__title">Visites venant des assistants IA</h3>
+      <p class="chart__subtitle">
+        Les visiteurs arrivés par un lien dans une réponse de ChatGPT, Perplexity, Gemini… : la fréquence à laquelle ils
+        citent le site. Une visite comptée par onglet, sans rien sur le visiteur. Vos propres visites ne comptent pas
+      </p>
+      @if (data.aiVisits.length) {
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">Assistant</th>
+              <th scope="col">30 derniers jours</th>
+              <th scope="col">12 derniers mois</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (visits of data.aiVisits; track visits.assistant) {
+              <tr>
+                <td>{{ assistantLabel(visits.assistant) }}</td>
+                <td>{{ visits.last30Days.toLocaleString('fr-FR') }}</td>
+                <td>{{ visits.last12Months.toLocaleString('fr-FR') }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="admin-empty">
+          <svg yonaIcon="sparkles" [size]="20"></svg>
+          Aucune visite venant d'un assistant IA pour le moment : elles sont comptées depuis la version 1.16.0
+        </p>
+      }
+    </section>
+
     <section class="admin-panel todo" aria-labelledby="misses-title">
       <div class="todo__head">
         <div>

@@ -26,6 +26,8 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 		List<DatedRecipe> outdatedRecipes,
 		@Schema(description = "What visitors searched for without finding any recipe, the most searched first (30 at most)")
 		List<SearchMissService.SearchMiss> searchMisses,
+		@Schema(description = "AI assistants (ChatGPT, Perplexity…) that sent visitors these 12 months, the most first")
+		List<AiVisitService.AiVisits> aiVisits,
 		@Schema(description = "Browsers notified of new recipes") long notificationSubscribers,
 		@Schema(description = "Recipes, categories, menus and photos in the trash, erased 30 days after their deletion")
 		long trashedItems,

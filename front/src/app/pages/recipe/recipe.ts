@@ -28,6 +28,7 @@ import { formatMinutes } from '../../shared/format/units';
 import { Reveal } from '../../shared/motion/reveal';
 import { RECIPE_IMAGE_TRANSITION } from '../../shared/motion/view-transitions';
 import {
+  ABOUT_PATH,
   RECIPES_PATH,
   SHOPPING_LIST_PATH,
   categoryQueryParams,
@@ -46,7 +47,7 @@ import { IngredientList } from './ingredient-list/ingredient-list';
 import { RecipeIngredients } from './ingredients/recipe-ingredients';
 import { RecipeNotesEditor } from './notes/recipe-notes';
 import { RecipePlanner } from './planner/recipe-planner';
-import { hasParts, moldArea, shownIngredients, totalIngredients } from './recipe-parts';
+import { QUESTIONS_ANCHOR, hasParts, moldArea, shownIngredients, totalIngredients } from './recipe-parts';
 import { RecipeSteps } from './steps/recipe-steps';
 import { Icon } from '../../shared/ui/icon/icon';
 
@@ -86,6 +87,8 @@ export default class Recipe {
   readonly portions = input<string>();
 
   protected readonly recipesPath = RECIPES_PATH;
+  protected readonly aboutPath = ABOUT_PATH;
+  protected readonly questionsAnchor = QUESTIONS_ANCHOR;
   protected readonly shoppingListPath = SHOPPING_LIST_PATH;
   protected readonly categoryQueryParams = categoryQueryParams;
   protected readonly tagQueryParams = tagQueryParams;
@@ -130,6 +133,8 @@ export default class Recipe {
     return base && chosen ? chosen / base : 1;
   });
   protected readonly hasParts = computed(() => hasParts(this.recipe().parts));
+  /** A copy kept for offline reading before 1.16 has none. */
+  protected readonly questions = computed(() => this.recipe().questions ?? []);
   protected readonly ingredients = computed(() => totalIngredients(this.recipe().parts, this.ratio()));
   protected readonly parts = computed(() =>
     this.recipe().parts.map((part, index) => ({

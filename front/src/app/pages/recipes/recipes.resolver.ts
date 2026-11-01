@@ -6,10 +6,11 @@ import { listPublishedRecipes } from '../../core/api/generated/fn/recipes/list-p
 import { listTags } from '../../core/api/generated/fn/tags/list-tags';
 import { TagSummary } from '../../core/api/generated/models/tag-summary';
 import { PageResponseRecipeCard } from '../../core/api/generated/models/page-response-recipe-card';
-import { PageSeo, excerpt } from '../../core/seo/page-seo';
+import { WEBSITE_ID, itemList } from '../../core/seo/json-ld';
+import { PageSeo, absoluteUrl, excerpt } from '../../core/seo/page-seo';
 import { SiteData } from '../../core/site/site-data';
 import { Theme, themeOfSlug } from '../../shared/format/themes';
-import { RECIPES_PATH } from '../../shared/routing/links';
+import { RECIPES_PATH, recipeLink } from '../../shared/routing/links';
 
 export const PAGE_SIZES = [12, 24, 48] as const;
 export const DEFAULT_PAGE_SIZE = PAGE_SIZES[0];
@@ -140,15 +141,29 @@ export function recipesSeo(route: ActivatedRouteSnapshot): PageSeo {
     canonical.set(RECIPES_QUERY.page, String(filters.page));
   }
   const query = canonical.toString();
+  const canonicalPath = query ? `${RECIPES_PATH}?${query}` : RECIPES_PATH;
+  const title = category ? `${category.name} · Recettes` : 'Recettes';
 
   return {
-    title: category ? `${category.name} · Recettes` : 'Recettes',
+    title,
     description: excerpt(
       category
         ? `Toutes les recettes de la catégorie ${category.name.toLowerCase()} : des recettes maison, simples et gourmandes`
         : 'Toutes les recettes maison de Yona : plats, desserts, pâtisseries, à refaire chez soi',
     ),
-    canonicalPath: query ? `${RECIPES_PATH}?${query}` : RECIPES_PATH,
+    canonicalPath,
+    // The recipes of this page, each with its address
+    jsonLd: [
+      {
+        '@type': 'CollectionPage',
+        '@id': absoluteUrl(canonicalPath),
+        url: absoluteUrl(canonicalPath),
+        name: title,
+        inLanguage: 'fr-FR',
+        isPartOf: { '@id': WEBSITE_ID },
+        mainEntity: itemList(result.content.map((recipe) => ({ name: recipe.title, path: recipeLink(recipe).join('/') }))),
+      },
+    ],
     // Search results and pages past the end are not worth indexing
     noIndex:
       filters.search !== '' ||

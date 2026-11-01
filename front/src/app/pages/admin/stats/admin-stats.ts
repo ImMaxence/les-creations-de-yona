@@ -4,6 +4,7 @@ import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { getStats } from '../../../core/api/generated/fn/admin-stats/get-stats';
 import { deleteSearchMisses } from '../../../core/api/generated/fn/admin-search-misses/delete-search-misses';
+import { AiVisits } from '../../../core/api/generated/models/ai-visits';
 import { IncompleteRecipe } from '../../../core/api/generated/models/incomplete-recipe';
 import { NamedCount } from '../../../core/api/generated/models/named-count';
 import { Confirm } from '../../../core/dialog/confirm';
@@ -27,6 +28,17 @@ const MISSING_LABELS: Record<IncompleteRecipe['missing'][number], string> = {
   TIME: 'Temps',
   SERVINGS: 'Portions',
   DIFFICULTY: 'Difficulté',
+};
+
+const ASSISTANT_LABELS: Record<AiVisits['assistant'], string> = {
+  CHATGPT: 'ChatGPT',
+  PERPLEXITY: 'Perplexity',
+  GEMINI: 'Gemini',
+  COPILOT: 'Copilot',
+  CLAUDE: 'Claude',
+  MISTRAL: 'Le Chat (Mistral)',
+  DEEPSEEK: 'DeepSeek',
+  GROK: 'Grok',
 };
 
 /** "3 j 4 h", "2 h 05", "12 min": since the backend started. */
@@ -157,6 +169,10 @@ export default class AdminStats {
   protected percent(share: number): string {
     // A few hundred megabytes on a large disk: "< 0,1 %" rather than a misleading "0 %"
     return share > 0 && share < 0.001 ? '< 0,1 %' : PERCENT.format(share);
+  }
+
+  protected assistantLabel(assistant: AiVisits['assistant']): string {
+    return ASSISTANT_LABELS[assistant];
   }
 
   protected plural(count: number, one: string, many: string): string {

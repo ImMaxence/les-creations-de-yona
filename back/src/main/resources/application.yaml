@@ -68,8 +68,15 @@ server:
         same-site: lax
 
 app:
+  # Public address of the site, for what the backend sends without a request to read it from (IndexNow).
+  site-url: ${SITE_URL:https://les-creations-de-yona.fr}
   admin:
     emails: ${APP_ADMIN_EMAILS}
+  indexnow:
+    # Search engines told of each published or changed recipe. On in production only (compose.prod.yaml).
+    enabled: ${INDEXNOW_ENABLED:false}
+    # Public by design: the front serves it at /{key}.txt (front/public), which proves the site is ours.
+    key: f5d890788ccc4557ecd282dea7299d26
   s3:
     # Inside Docker Compose or Coolify: http://seaweedfs:8333.
     endpoint: ${S3_ENDPOINT:http://localhost:${S3_PORT:8333}}

@@ -4,6 +4,7 @@
 import { CategoryResponse } from '../models/category-response';
 import { Mold } from '../models/mold';
 import { Part } from '../models/part';
+import { RecipeQuestion } from '../models/recipe-question';
 import { TagResponse } from '../models/tag-response';
 export interface RecipeDetail {
 
@@ -53,6 +54,11 @@ export interface RecipeDetail {
    * First publication; absent for a recipe never published
    */
   publishedAt?: string;
+
+  /**
+   * "Questions fréquentes", in order; empty when none
+   */
+  questions: Array<RecipeQuestion>;
 
   /**
    * Resting, rising…, counted in the total time

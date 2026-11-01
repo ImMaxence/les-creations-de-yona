@@ -1,11 +1,12 @@
 import { Routes } from '@angular/router';
 import { RouteSeo, SEO_DATA_KEY } from './core/seo/page-seo';
+import { aboutSeo } from './pages/about/about.seo';
 import { homeResolver } from './pages/home/home.resolver';
 import { homeSeo } from './pages/home/home.seo';
 import { glossaryResolver, recipeResolver, recipeSeo, relatedRecipesResolver } from './pages/recipe/recipe.resolver';
 import { recipesResolver, recipesSeo } from './pages/recipes/recipes.resolver';
 import { glossarySeo } from './pages/glossary/glossary.seo';
-import { MENUS_SEO, menuResolver, menuSeo } from './pages/menus/menus.resolver';
+import { menuResolver, menuSeo, menusSeo } from './pages/menus/menus.resolver';
 
 const NO_INDEX: RouteSeo = { noIndex: true };
 
@@ -33,7 +34,7 @@ export const routes: Routes = [
   {
     path: 'menus',
     loadComponent: () => import('./pages/menus/menus'),
-    data: { [SEO_DATA_KEY]: MENUS_SEO satisfies RouteSeo },
+    data: { [SEO_DATA_KEY]: menusSeo satisfies RouteSeo },
   },
   {
     path: 'menus/:slug',
@@ -46,6 +47,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/glossary/glossary'),
     resolve: { terms: glossaryResolver },
     data: { [SEO_DATA_KEY]: glossarySeo satisfies RouteSeo },
+  },
+  {
+    path: 'a-propos',
+    loadComponent: () => import('./pages/about/about'),
+    data: { [SEO_DATA_KEY]: aboutSeo satisfies RouteSeo },
   },
   {
     path: 'installer',

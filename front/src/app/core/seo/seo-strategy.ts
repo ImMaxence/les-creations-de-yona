@@ -9,12 +9,13 @@ import {
   SITE_NAME,
   absoluteUrl,
 } from './page-seo';
+import { WEBSITE_NODE } from './json-ld';
 
 const JSON_LD_ID = 'page-json-ld';
 
 /**
  * Applies the SEO of the page after each navigation, on the server as in the browser: title,
- * meta description, Open Graph, canonical URL, robots and JSON-LD. Pages declare it in their
+ * meta description, Open Graph, canonical URL, Markdown version, robots and JSON-LD. Pages declare it in their
  * route (data.seo); the route "title" is used when the page gives no title of its own.
  */
 @Injectable({ providedIn: 'root' })
@@ -44,8 +45,10 @@ export class SeoStrategy extends TitleStrategy {
     this.setMeta('property', 'og:url', url);
     this.setMeta('property', 'og:image', seo.image ? absoluteUrl(seo.image) : null);
     this.setMeta('name', 'twitter:card', seo.image ? 'summary_large_image' : 'summary');
-    this.setCanonical(url);
-    this.setJsonLd(seo.jsonLd);
+    this.setLink('canonical', url);
+    this.setLink('alternate', seo.markdownPath ? absoluteUrl(seo.markdownPath) : null, 'text/markdown');
+    // A page kept out of search results describes nothing
+    this.setJsonLd(seo.noIndex ? undefined : [WEBSITE_NODE, ...(seo.jsonLd ?? [])]);
   }
 
   private seoOf(route: ActivatedRouteSnapshot): PageSeo {
@@ -64,19 +67,27 @@ export class SeoStrategy extends TitleStrategy {
     }
   }
 
-  private setCanonical(url: string): void {
-    let link = this.document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  /** A link of the head, one per rel; removed when the page has none. */
+  private setLink(rel: string, url: string | null, type?: string): void {
+    let link = this.document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+    if (url === null) {
+      link?.remove();
+      return;
+    }
     if (!link) {
       link = this.document.createElement('link');
-      link.rel = 'canonical';
+      link.rel = rel;
       this.document.head.appendChild(link);
+    }
+    if (type) {
+      link.type = type;
     }
     link.href = url;
   }
 
-  private setJsonLd(data: object | undefined): void {
+  private setJsonLd(nodes: object[] | undefined): void {
     let script = this.document.getElementById(JSON_LD_ID);
-    if (!data) {
+    if (!nodes) {
       script?.remove();
       return;
     }
@@ -87,7 +98,8 @@ export class SeoStrategy extends TitleStrategy {
       this.document.head.appendChild(script);
     }
     // "<" escaped: a recipe text containing "</script>" cannot close the tag
-    script.textContent = JSON.stringify(data).replace(/</g, '\\u003c');
+    const graph = { '@context': 'https://schema.org', '@graph': nodes };
+    script.textContent = JSON.stringify(graph).replace(/</g, '\\u003c');
   }
 }
 
