@@ -10,7 +10,7 @@ import { RecipeCard } from '../../core/api/generated/models/recipe-card';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Step } from '../../core/api/generated/models/step';
 import { AUTHOR_REF, WEBSITE_ID, breadcrumb } from '../../core/seo/json-ld';
-import { PageSeo, absoluteUrl, excerpt } from '../../core/seo/page-seo';
+import { PageSeo, absoluteUrl, excerpt, markdownPathOf } from '../../core/seo/page-seo';
 import { isoDuration } from '../../shared/format/units';
 import { RECIPES_PATH, categoryQueryParams, mainCategory, recipeLink } from '../../shared/routing/links';
 import { QUESTIONS_ANCHOR, hasParts, stepAnchor, totalIngredients } from './recipe-parts';
@@ -79,7 +79,7 @@ export function recipeSeo(route: ActivatedRouteSnapshot): PageSeo {
     canonicalPath: path,
     image,
     type: 'article',
-    markdownPath: `${path}.md`,
+    markdownPath: markdownPathOf(path),
     jsonLd: [
       recipeNode(recipe, path, description, image, totalMinutes),
       breadcrumb([

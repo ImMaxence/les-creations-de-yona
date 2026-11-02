@@ -54,11 +54,25 @@ Les rapports « Données structurées : Recettes » sont des suggestions (non cr
 Depuis la 1.16, le site est fait pour être cité par les assistants IA (ChatGPT, Perplexity, Gemini, Copilot, Claude) : ce que fait le code est dans [développement](developpement.md#référencement). Trois réglages restent hors du code.
 
 1. **Cloudflare** : depuis 2025, Cloudflare peut bloquer les robots d'IA d'un domaine sans rien demander. Dans **Security → Bots** (ou **AI Crawl Control**, selon l'offre) :
-   - « Block AI bots » : désactivé, ou limité aux robots d'entraînement. Les robots de recherche (OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot, Bingbot, Googlebot) doivent passer : sans eux, plus de citation ;
-   - « Managed robots.txt » (ou « Instruct AI bot traffic with robots.txt ») : désactivé. Le site a son propre `robots.txt`, qui refuse déjà les robots d'entraînement ; Cloudflare ajouterait ses lignes au début ;
+   - « Block AI bots » : désactivé. Depuis la 1.18, tous les robots d'IA doivent passer, ceux de recherche (OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot, Bingbot, Googlebot : sans eux, plus de citation) comme ceux d'entraînement (GPTBot, ClaudeBot, CCBot…) ; dans **AI Crawl Control**, chaque robot sur « Allow » ;
+   - « Managed robots.txt » (ou « Instruct AI bot traffic with robots.txt ») : désactivé. Le site a son propre `robots.txt` ; Cloudflare ajouterait ses lignes au début ;
    - **Security → Events**, filtre « Bot » : aucune action *block* ou *challenge* contre ces robots. **Bot Fight Mode** laisse passer les robots vérifiés (« Verified bots »), dont ceux-ci.
-   
-   Vérifier : `https://les-creations-de-yona.fr/robots.txt` doit être exactement `front/public/robots.txt`. Un `curl` avec le nom d'un robot ne prouve rien : Cloudflare reconnaît les vrais robots à leurs adresses IP.
+
+   Cloudflare garde `robots.txt` en cache (une heure depuis la 1.18, un jour avant) : après l'avoir changé, **Caching → Configuration → Purge Cache**, « Custom Purge », l'adresse `https://les-creations-de-yona.fr/robots.txt`.
+
+   Vérifier : `https://les-creations-de-yona.fr/robots.txt` doit être exactement `front/public/robots.txt`. Puis, depuis n'importe quel terminal, chaque robot doit recevoir 200 sur la page, `robots.txt`, `llms.txt`, `llms-full.txt`, le sitemap et une version Markdown :
+
+   ```bash
+   for bot in GPTBot OAI-SearchBot ChatGPT-User ClaudeBot Claude-SearchBot Claude-User PerplexityBot Google-Extended Googlebot Bingbot CCBot Applebot-Extended Meta-ExternalAgent; do
+     printf '%-20s' "$bot"
+     for path in / /robots.txt /llms.txt /llms-full.txt /sitemap.xml /index.md; do
+       printf '%s ' "$(curl -s -o /dev/null -w '%{http_code}' -A "Mozilla/5.0 (compatible; $bot/1.0)" "https://les-creations-de-yona.fr$path")"
+     done
+     echo
+   done
+   ```
+
+   Cela montre qu'aucune règle sur le nom du robot ne le bloque, pas plus : Cloudflare reconnaît les vrais robots à leurs adresses IP. Leurs vraies visites se voient dans **AI Crawl Control** (ou **Security → Events**, filtre « Bot »).
 2. **Bing Webmaster Tools** (https://www.bing.com/webmasters) : ChatGPT Search et Copilot cherchent dans l'index de Bing. Ajouter le site (« Importer depuis Google Search Console » le fait en un geste), déclarer `https://les-creations-de-yona.fr/sitemap.xml`. Les recettes publiées y arrivent ensuite par IndexNow, sans attendre le passage du robot : **IndexNow** dans le menu liste les adresses reçues. La clé (`f5d890788ccc4557ecd282dea7299d26`) est dans `application.yaml` et dans `front/public/` : les deux doivent rester identiques.
 3. **Google Analytics** : les visites venant des assistants sont comptées dans les statistiques du back-office. Pour les voir aussi dans Analytics : **Administration → Paramètres des données → Groupes de canaux**, copier le groupe par défaut, ajouter un canal « Assistants IA » (source correspondant à l'expression régulière `chatgpt|openai|perplexity|gemini|copilot|claude|mistral|deepseek|grok`) placé au-dessus de « Referral ».
 

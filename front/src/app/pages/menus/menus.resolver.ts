@@ -5,7 +5,7 @@ import { Api } from '../../core/api/generated/api';
 import { getMenu } from '../../core/api/generated/fn/menus/get-menu';
 import { MenuDetail } from '../../core/api/generated/models/menu-detail';
 import { WEBSITE_ID, itemList } from '../../core/seo/json-ld';
-import { PageSeo, absoluteUrl, excerpt } from '../../core/seo/page-seo';
+import { PageSeo, absoluteUrl, excerpt, markdownPathOf } from '../../core/seo/page-seo';
 import { SiteData } from '../../core/site/site-data';
 import { MENUS_PATH, menuLink, recipeLink } from '../../shared/routing/links';
 import { NOT_FOUND_PATH } from '../recipe/recipe.resolver';
@@ -33,6 +33,7 @@ export function menuSeo(route: ActivatedRouteSnapshot): PageSeo {
       menu.intro || `${menu.title} : ${menu.recipes.map((recipe) => recipe.title).join(', ')}. Des recettes maison`,
     ),
     canonicalPath: path,
+    markdownPath: markdownPathOf(path),
     image: menu.imageId ? `/api/images/${menu.imageId}/1600.webp` : undefined,
     jsonLd: [
       {
@@ -45,15 +46,17 @@ export function menuSeo(route: ActivatedRouteSnapshot): PageSeo {
   };
 }
 
+export const MENUS_DESCRIPTION =
+  'Des menus composés par Yona pour chaque occasion : fêtes, goûters, repas entre amis. Toutes les recettes à la liste de courses en un geste';
+
 /** The published menus as a list, each with its address. */
 export function menusSeo(): PageSeo {
   const menus = inject(SiteData).menus();
   return {
     title: 'Menus',
-    description: excerpt(
-      'Des menus composés par Yona pour chaque occasion : fêtes, goûters, repas entre amis. Toutes les recettes à la liste de courses en un geste',
-    ),
+    description: excerpt(MENUS_DESCRIPTION),
     canonicalPath: MENUS_PATH,
+    markdownPath: markdownPathOf(MENUS_PATH),
     jsonLd: menus.length
       ? [
           {

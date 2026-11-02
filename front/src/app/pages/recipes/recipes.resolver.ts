@@ -7,7 +7,7 @@ import { listTags } from '../../core/api/generated/fn/tags/list-tags';
 import { TagSummary } from '../../core/api/generated/models/tag-summary';
 import { PageResponseRecipeCard } from '../../core/api/generated/models/page-response-recipe-card';
 import { WEBSITE_ID, itemList } from '../../core/seo/json-ld';
-import { PageSeo, absoluteUrl, excerpt } from '../../core/seo/page-seo';
+import { PageSeo, absoluteUrl, excerpt, markdownPathOf } from '../../core/seo/page-seo';
 import { SiteData } from '../../core/site/site-data';
 import { Theme, themeOfSlug } from '../../shared/format/themes';
 import { RECIPES_PATH, recipeLink } from '../../shared/routing/links';
@@ -126,6 +126,13 @@ export const recipesResolver: ResolveFn<RecipesPageData> = async (route) => {
   return { filters, result, ingredients, tags: tags.filter((tag) => tag.recipeCount > 0) };
 };
 
+/** What the page holds, for search engines and its Markdown version: all the recipes, or those of a category. */
+export function recipesDescription(category?: { name: string }): string {
+  return category
+    ? `Toutes les recettes de la catégorie ${category.name.toLowerCase()} : des recettes maison, simples et gourmandes`
+    : 'Toutes les recettes maison de Yona : plats, desserts, pâtisseries, à refaire chez soi';
+}
+
 /** A category page is indexed on its own; search results and empty pages are not. */
 export function recipesSeo(route: ActivatedRouteSnapshot): PageSeo {
   const { filters, result } = route.data['data'] as RecipesPageData;
@@ -146,12 +153,10 @@ export function recipesSeo(route: ActivatedRouteSnapshot): PageSeo {
 
   return {
     title,
-    description: excerpt(
-      category
-        ? `Toutes les recettes de la catégorie ${category.name.toLowerCase()} : des recettes maison, simples et gourmandes`
-        : 'Toutes les recettes maison de Yona : plats, desserts, pâtisseries, à refaire chez soi',
-    ),
+    description: excerpt(recipesDescription(category)),
     canonicalPath,
+    image: category?.imageId ? `/api/images/${category.imageId}/1600.webp` : undefined,
+    markdownPath: markdownPathOf(canonicalPath),
     // The recipes of this page, each with its address
     jsonLd: [
       {

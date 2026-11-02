@@ -211,6 +211,10 @@
   padding: var(--space-5);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
+
+  &:not(.is-active) {
+    display: none;
+  }
 }
 
 .steps {
@@ -242,7 +246,8 @@
   }
 }
 
-.steps--enter {
+// Each time a tab is chosen: its panel goes from display: none to shown, which starts the animation again
+.panel.is-active .steps {
   animation: fade-in var(--duration-slow) var(--ease-out);
 }
 

@@ -1,8 +1,11 @@
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
 import { WEBSITE_ID } from '../../core/seo/json-ld';
-import { PageSeo, absoluteUrl } from '../../core/seo/page-seo';
+import { PageSeo, absoluteUrl, markdownPathOf } from '../../core/seo/page-seo';
 import { GLOSSARY_PATH } from '../../shared/routing/links';
+
+export const GLOSSARY_DESCRIPTION =
+  'Émulsionner, chemiser, blanchir, sabler… Les mots de la pâtisserie expliqués simplement, pour réussir les recettes';
 
 /**
  * The glossary as a set of defined terms (schema.org DefinedTermSet), each one with its own
@@ -13,8 +16,8 @@ export function glossarySeo(route: ActivatedRouteSnapshot): PageSeo {
   const url = absoluteUrl(GLOSSARY_PATH);
   return {
     title: 'Glossaire de pâtisserie',
-    description:
-      'Émulsionner, chemiser, blanchir, sabler… Les mots de la pâtisserie expliqués simplement, pour réussir les recettes',
+    description: GLOSSARY_DESCRIPTION,
+    markdownPath: markdownPathOf(GLOSSARY_PATH),
     noIndex: terms.length === 0,
     jsonLd: [
       {

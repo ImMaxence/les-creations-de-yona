@@ -1,6 +1,7 @@
 import type { RecipeCard } from '../app/core/api/generated/models/recipe-card';
+import type { RecipeDetail } from '../app/core/api/generated/models/recipe-detail';
 import type { SiteContentResponse } from '../app/core/api/generated/models/site-content-response';
-import { llmsTxt } from './llms';
+import { llmsFullTxt, llmsTxt } from './llms';
 
 function card(title: string, slug: string, theme: RecipeCard['theme'], category: string): RecipeCard {
   return {
@@ -41,5 +42,43 @@ describe('llmsTxt', () => {
     expect(text).not.toContain('## Menus');
     expect(text).not.toContain('Glossaire');
     expect(text).not.toContain('## Recettes');
+  });
+
+  it('points to the Markdown versions and to the whole text', () => {
+    const text = llmsTxt({ content: CONTENT, recipes: [], menus: [], glossary: [] });
+
+    expect(text).toContain('« Accept: text/markdown »');
+    expect(text).toContain('- [Tout le texte du site](https://les-creations-de-yona.fr/llms-full.txt)');
+  });
+});
+
+describe('llmsFullTxt', () => {
+  const recipe = {
+    title: 'Tarte aux pommes',
+    slug: 'tarte-aux-pommes',
+    categories: [{ id: 1, name: 'Tartes', slug: 'tartes' }],
+    tags: [],
+    equipment: [],
+    questions: [],
+    parts: [{ ingredients: [{ name: 'Pommes', quantity: 4 }], steps: [{ description: 'Épluchez les pommes' }] }],
+    createdAt: '2026-10-01T10:00:00Z',
+    updatedAt: '2026-10-01T10:00:00Z',
+  } as unknown as RecipeDetail;
+
+  it('gives Yona, then every recipe in full, one page after the other', () => {
+    const text = llmsFullTxt({
+      content: { ...CONTENT, aboutTitle: 'Bienvenue' },
+      socialLinks: [],
+      recipes: [recipe],
+      menus: [],
+      glossary: [],
+    });
+
+    expect(text.startsWith('# Les créations de Yona : tout le texte\n\n> Le blog de cuisine')).toBe(true);
+    expect(text).toContain('Ci-dessous : Yona, puis 1 recette en entier');
+    expect(text).toContain('\n---\n\n# À propos de Yona\n\n## Bienvenue\n');
+    expect(text).toContain('\n---\n\n# Tarte aux pommes\n');
+    expect(text).toContain('1. Épluchez les pommes');
+    expect(text).not.toContain('Glossaire');
   });
 });

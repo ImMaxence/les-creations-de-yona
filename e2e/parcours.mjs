@@ -68,6 +68,36 @@ await part('API', async () => {
   check('Un nombre seul n’est pas cherché (« titre 8 »)', number.content.some((card) => card.slug === recipe.slug));
 });
 
+await part('Robots et assistants IA', async () => {
+  const robots = await (await fetch(`${BASE}/robots.txt`)).text();
+  check('robots.txt : les robots d’IA nommés, aucun refusé partout', robots.includes('User-agent: GPTBot') && robots.includes('User-agent: ClaudeBot') && !/^Disallow: \/\s*$/m.test(robots));
+  const pages = ['/', recipeUrl(recipe).slice(BASE.length), '/robots.txt', '/llms.txt', '/llms-full.txt', '/sitemap.xml', '/index.md'];
+  const refused = [];
+  for (const bot of ['GPTBot', 'ClaudeBot', 'PerplexityBot', 'OAI-SearchBot', 'Google-Extended', 'CCBot']) {
+    for (const path of pages) {
+      const response = await fetch(BASE + path, { headers: { 'User-Agent': `Mozilla/5.0 (compatible; ${bot}/1.0)` } });
+      if (response.status !== 200) {
+        refused.push(`${bot} ${path} ${response.status}`);
+      }
+    }
+  }
+  check('Robots d’IA : 200 sur les pages, robots.txt, llms.txt, llms-full.txt, sitemap et Markdown', refused.length === 0, refused.join(', '));
+  const full = await (await fetch(`${BASE}/llms-full.txt`)).text();
+  check('llms-full.txt : la recette en entier', full.includes(`# ${recipe.title}\n`) && full.includes('## Préparation'));
+  const asked = await fetch(recipeUrl(recipe), { headers: { Accept: 'text/markdown' } });
+  const markdown = await asked.text();
+  check('Accept: text/markdown : la recette en Markdown, à son adresse', asked.headers.get('content-type')?.startsWith('text/markdown') && markdown.startsWith(`# ${recipe.title}\n`) && asked.headers.get('vary')?.includes('Accept'), asked.headers.get('content-type'));
+  const page = await fetch(recipeUrl(recipe), { headers: { Accept: 'text/html,application/xhtml+xml,*/*;q=0.8' } });
+  const html = await page.text();
+  check('Navigateur : la page en HTML, qui annonce son Markdown', page.headers.get('content-type')?.startsWith('text/html') && html.includes('type="text/markdown"'));
+  for (const path of ['/index.md', '/recettes.md', '/a-propos.md', '/a-propos/index.md', '/menus.md', '/installer.md', '/mentions-legales.md']) {
+    const response = await fetch(BASE + path);
+    check(`${path} en Markdown`, response.status === 200 && response.headers.get('content-type')?.startsWith('text/markdown'), String(response.status));
+  }
+  const install = await (await fetch(`${BASE}/installer`)).text();
+  check('Installation : les étapes de chaque appareil dans la page, sans JavaScript', ['panel-ios', 'panel-android', 'panel-desktop'].every((id) => install.includes(`id="${id}"`)) && install.includes('Ajouter au Dock') && install.includes('Samsung Internet'));
+});
+
 await part('Recherche intelligente (ordinateur)', async () => {
   const page = await newPage(browser, DESKTOP, errors);
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });

@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { AUTHOR_ID } from '../../core/seo/json-ld';
-import { PageSeo, absoluteUrl, excerpt } from '../../core/seo/page-seo';
+import { PageSeo, absoluteUrl, excerpt, markdownPathOf } from '../../core/seo/page-seo';
 import { SiteData } from '../../core/site/site-data';
 import { ABOUT_PATH } from '../../shared/routing/links';
 
@@ -32,5 +32,5 @@ export function authorNode(siteData: SiteData): object {
 
 export function homeSeo(): PageSeo {
   const siteData = inject(SiteData);
-  return { image: authorPhoto(siteData), jsonLd: [authorNode(siteData)] };
+  return { image: authorPhoto(siteData), markdownPath: markdownPathOf('/'), jsonLd: [authorNode(siteData)] };
 }

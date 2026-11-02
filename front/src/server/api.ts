@@ -1,11 +1,14 @@
 import type { Request } from 'express';
+import type { CategoryResponse } from '../app/core/api/generated/models/category-response';
 import type { GlossaryTermResponse } from '../app/core/api/generated/models/glossary-term-response';
+import type { MenuDetail } from '../app/core/api/generated/models/menu-detail';
 import type { MenuSummary } from '../app/core/api/generated/models/menu-summary';
 import type { PageResponseRecipeCard } from '../app/core/api/generated/models/page-response-recipe-card';
 import type { RecipeCard } from '../app/core/api/generated/models/recipe-card';
 import type { RecipeDetail } from '../app/core/api/generated/models/recipe-detail';
 import type { SiteContentResponse } from '../app/core/api/generated/models/site-content-response';
 import type { SocialLinkResponse } from '../app/core/api/generated/models/social-link-response';
+import type { Theme } from '../app/shared/format/themes';
 
 /** Largest page the API serves (spring.data.web.pageable.max-page-size). */
 const API_PAGE_SIZE = 50;
@@ -36,15 +39,17 @@ async function get<T>(origin: string, path: string, params: Record<string, strin
   if (!response.ok) {
     throw new ApiError(url, response.status);
   }
-  return (await response.json()) as T;
+  // 204: nothing to give (no featured recipe before the first publication)
+  return response.status === 204 ? (null as T) : ((await response.json()) as T);
 }
 
-/** Every published recipe, the latest first, page after page. */
-export async function fetchPublishedRecipes(origin: string): Promise<RecipeCard[]> {
+/** Every published recipe, the latest first, page after page; only those of a category when given. */
+export async function fetchPublishedRecipes(origin: string, filters: { category?: string } = {}): Promise<RecipeCard[]> {
   const recipes: RecipeCard[] = [];
   let totalPages = 1;
   for (let page = 0; page < totalPages; page++) {
     const body = await get<PageResponseRecipeCard>(origin, '/api/recipes', {
+      ...filters,
       page: String(page),
       size: String(API_PAGE_SIZE),
     });
@@ -56,6 +61,27 @@ export async function fetchPublishedRecipes(origin: string): Promise<RecipeCard[
 
 export function fetchRecipe(origin: string, slug: string): Promise<RecipeDetail> {
   return get<RecipeDetail>(origin, `/api/recipes/${encodeURIComponent(slug)}`);
+}
+
+/** The latest published recipes of a theme, as on the home page. */
+export async function fetchLatestRecipes(origin: string, theme: Theme, count: number): Promise<RecipeCard[]> {
+  const body = await get<PageResponseRecipeCard>(origin, '/api/recipes', { theme, size: String(count) });
+  return body.content;
+}
+
+/** The recipe at the top of the home page (the latest one unless chosen); null before the first one. */
+export function fetchFeaturedRecipe(origin: string): Promise<RecipeCard | null> {
+  return get<RecipeCard | null>(origin, '/api/featured-recipe');
+}
+
+/** Categories with the themes of their published recipes. */
+export function fetchCategories(origin: string): Promise<CategoryResponse[]> {
+  return get<CategoryResponse[]>(origin, '/api/categories');
+}
+
+/** A published menu and its published recipes. */
+export function fetchMenu(origin: string, slug: string): Promise<MenuDetail> {
+  return get<MenuDetail>(origin, `/api/menus/${encodeURIComponent(slug)}`);
 }
 
 /** Words of the glossary; a failure only leaves them out. */

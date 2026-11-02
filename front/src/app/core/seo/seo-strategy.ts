@@ -3,6 +3,7 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, TitleStrategy } from '@angular/router';
 import {
   DEFAULT_DESCRIPTION,
+  DEFAULT_IMAGE,
   PageSeo,
   RouteSeo,
   SEO_DATA_KEY,
@@ -43,10 +44,14 @@ export class SeoStrategy extends TitleStrategy {
     this.setMeta('property', 'og:title', pageTitle ?? SITE_NAME);
     this.setMeta('property', 'og:description', description);
     this.setMeta('property', 'og:url', url);
-    this.setMeta('property', 'og:image', seo.image ? absoluteUrl(seo.image) : null);
+    this.setMeta('property', 'og:image', absoluteUrl(seo.image ?? DEFAULT_IMAGE));
     this.setMeta('name', 'twitter:card', seo.image ? 'summary_large_image' : 'summary');
     this.setLink('canonical', url);
-    this.setLink('alternate', seo.markdownPath ? absoluteUrl(seo.markdownPath) : null, 'text/markdown');
+    this.setLink(
+      'alternate',
+      seo.markdownPath && !seo.noIndex ? absoluteUrl(seo.markdownPath) : null,
+      'text/markdown',
+    );
     // A page kept out of search results describes nothing
     this.setJsonLd(seo.noIndex ? undefined : [WEBSITE_NODE, ...(seo.jsonLd ?? [])]);
   }

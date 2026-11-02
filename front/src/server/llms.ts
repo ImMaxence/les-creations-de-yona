@@ -1,11 +1,13 @@
 import type { RequestHandler } from 'express';
 import type { GlossaryTermResponse } from '../app/core/api/generated/models/glossary-term-response';
+import type { MenuDetail } from '../app/core/api/generated/models/menu-detail';
 import type { MenuSummary } from '../app/core/api/generated/models/menu-summary';
 import type { RecipeCard } from '../app/core/api/generated/models/recipe-card';
+import type { RecipeDetail } from '../app/core/api/generated/models/recipe-detail';
 import type { SiteContentResponse } from '../app/core/api/generated/models/site-content-response';
+import type { SocialLinkResponse } from '../app/core/api/generated/models/social-link-response';
 import { SITE_NAME, absoluteUrl, excerpt } from '../app/core/seo/page-seo';
-import { paragraphs } from '../app/shared/format/paragraphs';
-import { THEMES, Theme } from '../app/shared/format/themes';
+import { THEMES } from '../app/shared/format/themes';
 import {
   ABOUT_PATH,
   GLOSSARY_PATH,
@@ -14,11 +16,26 @@ import {
   RECIPES_PATH,
   TERMS_OF_USE_PATH,
   menuLink,
-  recipeLink,
 } from '../app/shared/routing/links';
-import { apiOrigin, fetchGlossary, fetchMenus, fetchPublishedRecipes, fetchSiteContent } from './api';
+import {
+  apiOrigin,
+  fetchGlossary,
+  fetchMenu,
+  fetchMenus,
+  fetchPublishedRecipes,
+  fetchRecipe,
+  fetchSiteContent,
+  fetchSocialLinks,
+} from './api';
+import { aboutMarkdown, glossaryMarkdown, link, menuMarkdown, recipesByTheme, textParagraphs } from './page-markdown';
+import { recipeToMarkdown } from './recipe-markdown';
 
-const THEME_HEADINGS: Record<Theme, string> = { SAVORY: 'Recettes salées', SWEET: 'Recettes sucrées' };
+const SUMMARY =
+  'Le blog de cuisine et de pâtisserie de Yona, en français : des recettes maison, simples et gourmandes, ' +
+  'salées et sucrées, écrites et testées par Yona';
+
+/** Recipes read at once from the API for llms-full.txt: the backend keeps its answers in memory anyway. */
+const PARALLEL_REQUESTS = 5;
 
 export interface LlmsContent {
   content: SiteContentResponse;
@@ -35,26 +52,21 @@ export function llmsTxt({ content, recipes, menus, glossary }: LlmsContent): str
   const lines = [
     `# ${SITE_NAME}`,
     '',
-    '> Le blog de cuisine et de pâtisserie de Yona, en français : des recettes maison, simples et gourmandes, ' +
-      'salées et sucrées, écrites et testées par Yona',
+    `> ${SUMMARY}`,
     '',
-    // One line per paragraph: Markdown would join the lines of a paragraph anyway
-    ...paragraphs(content.aboutText).flatMap((paragraph) => [paragraph.replace(/\s+/g, ' '), '']),
+    ...textParagraphs(content.aboutText),
     'Chaque recette donne ses ingrédients et leurs quantités, son matériel, ses étapes, ses temps (préparation, ' +
-      'repos, cuisson), sa difficulté, le nombre de personnes, souvent un conseil et des questions fréquentes. ' +
-      'Chaque recette existe aussi en Markdown : ajouter « .md » à son adresse',
+      'repos, cuisson), sa difficulté, le nombre de personnes, souvent un conseil et des questions fréquentes',
+    '',
+    "Chaque page existe aussi en Markdown : son adresse suivie de « .md » (« /index.md » pour l'accueil), ou la " +
+      "même adresse demandée avec l'en-tête « Accept: text/markdown ». Tout le texte du site, recettes complètes " +
+      `comprises, en un seul fichier : ${absoluteUrl('/llms-full.txt')}`,
     '',
     'Les recettes, textes et photos appartiennent à leur autrice : les citer avec un lien vers la recette plutôt ' +
       'que les reproduire en entier',
     '',
+    ...recipesByTheme(recipes, '##'),
   ];
-  // Savory, then sweet, as the site shows them; every recipe has one since 1.10
-  for (const theme of THEMES) {
-    const ofTheme = recipes.filter((recipe) => (recipe.theme ?? 'SWEET') === theme.value);
-    if (ofTheme.length) {
-      lines.push(`## ${THEME_HEADINGS[theme.value]}`, '', ...ofTheme.map(recipeLine), '');
-    }
-  }
   if (menus.length) {
     lines.push(
       '## Menus',
@@ -75,20 +87,54 @@ export function llmsTxt({ content, recipes, menus, glossary }: LlmsContent): str
     '',
     '## Optional',
     '',
+    link('Tout le texte du site', '/llms-full.txt', 'chaque recette en entier, en un seul fichier'),
     link("Installer l'application", INSTALL_PATH, 'les recettes sur téléphone, lisibles hors connexion'),
-    link("Conditions d'utilisation", TERMS_OF_USE_PATH, 'citation avec un lien bienvenue, entraînement des modèles refusé'),
+    link(
+      "Conditions d'utilisation",
+      TERMS_OF_USE_PATH,
+      'citation avec un lien bienvenue, exploration et entraînement des modèles permis',
+    ),
     '',
   );
   return lines.join('\n');
 }
 
-/** "- [Tarte aux pommes](…): Tartes, Desserts". */
-function recipeLine(recipe: RecipeCard): string {
-  return link(recipe.title, recipeLink(recipe).join('/'), recipe.categories.map((category) => category.name).join(', '));
+export interface LlmsFullContent {
+  content: SiteContentResponse;
+  socialLinks: SocialLinkResponse[];
+  /** Savory, then sweet, the latest first in each. */
+  recipes: RecipeDetail[];
+  menus: MenuDetail[];
+  glossary: GlossaryTermResponse[];
 }
 
-function link(title: string, path: string, notes?: string | null): string {
-  return `- [${title.replace(/[[\]]/g, '')}](${absoluteUrl(path)})${notes ? `: ${notes.replace(/\s+/g, ' ').trim()}` : ''}`;
+/**
+ * llms-full.txt: the whole text of the site in one file, for an assistant that reads it all at once
+ * rather than page by page. The pages one after the other, as their Markdown versions, between "---".
+ */
+export function llmsFullTxt({ content, socialLinks, recipes, menus, glossary }: LlmsFullContent): string {
+  const pages = [
+    aboutMarkdown(content, socialLinks),
+    ...recipes.map(recipeToMarkdown),
+    ...menus.map(menuMarkdown),
+    ...(glossary.length ? [glossaryMarkdown(glossary)] : []),
+  ];
+  const head = [
+    `# ${SITE_NAME} : tout le texte`,
+    '',
+    `> ${SUMMARY}`,
+    '',
+    `Ci-dessous : Yona, puis ${recipes.length} recette${recipes.length > 1 ? 's' : ''} en entier (salées, puis ` +
+      'sucrées, les plus récentes en premier)' +
+      `${menus.length ? ', les menus' : ''}${glossary.length ? ' et le glossaire de pâtisserie' : ''}. ` +
+      `La liste des pages est dans ${absoluteUrl('/llms.txt')} ; chacune existe aussi seule en Markdown, ` +
+      'à son adresse suivie de « .md »',
+    '',
+    'Les recettes, textes et photos appartiennent à leur autrice : les citer avec un lien vers la recette plutôt ' +
+      'que les reproduire en entier',
+    '',
+  ];
+  return [head.join('\n'), ...pages.map((page) => page.trim() + '\n')].join('\n---\n\n');
 }
 
 /** /llms.txt, built on each request from the API like the sitemap, cached one hour. */
@@ -101,17 +147,51 @@ export const llms: RequestHandler = async (req, res) => {
       fetchMenus(origin),
       fetchGlossary(origin),
     ]);
-    res
-      .type('text/plain; charset=utf-8')
-      .set('Cache-Control', 'public, max-age=3600')
-      .send(llmsTxt({ content, recipes, menus, glossary }));
+    sendText(res, llmsTxt({ content, recipes, menus, glossary }));
   } catch (error) {
     console.error('llms.txt unavailable', error);
-    res
-      .status(503)
-      .set('Cache-Control', 'no-store')
-      .set('Retry-After', '300')
-      .type('text/plain')
-      .send('Fichier temporairement indisponible');
+    sendUnavailable(res);
   }
 };
+
+/** /llms-full.txt, every recipe read from the API, a few at a time; cached one hour like llms.txt. */
+export const llmsFull: RequestHandler = async (req, res) => {
+  const origin = apiOrigin(req);
+  try {
+    const [content, socialLinks, cards, menuSummaries, glossary] = await Promise.all([
+      fetchSiteContent(origin),
+      fetchSocialLinks(origin),
+      fetchPublishedRecipes(origin),
+      fetchMenus(origin),
+      fetchGlossary(origin),
+    ]);
+    const ordered = THEMES.flatMap((theme) => cards.filter((card) => (card.theme ?? 'SWEET') === theme.value));
+    const recipes = await inBatches(ordered, (card) => fetchRecipe(origin, card.slug));
+    const menus = await Promise.all(menuSummaries.map((menu) => fetchMenu(origin, menu.slug)));
+    sendText(res, llmsFullTxt({ content, socialLinks, recipes, menus, glossary }));
+  } catch (error) {
+    console.error('llms-full.txt unavailable', error);
+    sendUnavailable(res);
+  }
+};
+
+async function inBatches<T, R>(items: T[], read: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  for (let start = 0; start < items.length; start += PARALLEL_REQUESTS) {
+    results.push(...(await Promise.all(items.slice(start, start + PARALLEL_REQUESTS).map(read))));
+  }
+  return results;
+}
+
+function sendText(res: Parameters<RequestHandler>[1], text: string): void {
+  res.type('text/plain; charset=utf-8').set('Cache-Control', 'public, max-age=3600').send(text);
+}
+
+function sendUnavailable(res: Parameters<RequestHandler>[1]): void {
+  res
+    .status(503)
+    .set('Cache-Control', 'no-store')
+    .set('Retry-After', '300')
+    .type('text/plain')
+    .send('Fichier temporairement indisponible');
+}

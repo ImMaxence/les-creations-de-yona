@@ -2,6 +2,26 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.18.0 - 2026-11-02
+
+Front and backend 1.18.0. No database migration.
+
+### Added
+
+- **Every page in Markdown**: the address of an indexable page + `.md` (`/index.md` for the home page, `/recettes.md?categorie=desserts` for a category, `…/index.md` too), or the page's own address asked for with `Accept: text/markdown`. Announced by each page, canonical address kept on the page.
+- **`/llms-full.txt`**: the whole text of the site in one file (Yona, every recipe in full, the menus, the glossary), linked from `/llms.txt`.
+
+### Changed
+
+- **robots.txt**: every robot allowed, AI training included (GPTBot, ClaudeBot, CCBot…), named with the AI search robots. Cached one hour instead of one day.
+- **Conditions d'utilisation**: AI training no longer refused (text and data mining, article L122-5-3); reproducing the contents still needs the author's consent.
+- **Installer l'application**: the steps for iPhone, Android and computer are all in the page, readable without JavaScript.
+- **Social cards**: the site's icon for a page without a photo, the category's photo for a category page.
+
+### Technical
+
+- SSR server: pages in Markdown in `front/src/server/markdown.ts`, written from the API (`page-markdown.ts`) or converted from the rendered page with Turndown (`rendered-markdown.ts`: installation, legal pages).
+
 ## 1.17.0 - 2026-11-01
 
 Front and backend 1.17.0. No database migration.

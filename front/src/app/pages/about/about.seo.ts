@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { AUTHOR_ID, WEBSITE_ID } from '../../core/seo/json-ld';
-import { PageSeo, absoluteUrl, excerpt } from '../../core/seo/page-seo';
+import { PageSeo, absoluteUrl, excerpt, markdownPathOf } from '../../core/seo/page-seo';
 import { SiteData } from '../../core/site/site-data';
 import { ABOUT_PATH } from '../../shared/routing/links';
 import { authorNode, authorPhoto } from '../home/home.seo';
@@ -13,6 +13,7 @@ export function aboutSeo(): PageSeo {
     title: 'À propos de Yona',
     description: excerpt(siteData.content().aboutText),
     image: authorPhoto(siteData),
+    markdownPath: markdownPathOf(ABOUT_PATH),
     jsonLd: [
       {
         '@type': 'ProfilePage',

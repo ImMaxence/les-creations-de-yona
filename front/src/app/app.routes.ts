@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { RouteSeo, SEO_DATA_KEY } from './core/seo/page-seo';
+import { RouteSeo, SEO_DATA_KEY, markdownPathOf } from './core/seo/page-seo';
 import { aboutSeo } from './pages/about/about.seo';
 import { homeResolver } from './pages/home/home.resolver';
 import { homeSeo } from './pages/home/home.seo';
@@ -7,6 +7,7 @@ import { glossaryResolver, recipeResolver, recipeSeo, relatedRecipesResolver } f
 import { recipesResolver, recipesSeo } from './pages/recipes/recipes.resolver';
 import { glossarySeo } from './pages/glossary/glossary.seo';
 import { menuResolver, menuSeo, menusSeo } from './pages/menus/menus.resolver';
+import { INSTALL_PATH, LEGAL_NOTICE_PATH, PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from './shared/routing/links';
 
 const NO_INDEX: RouteSeo = { noIndex: true };
 
@@ -61,6 +62,7 @@ export const routes: Routes = [
         title: "Installer l'application",
         description:
           "Installez Les créations de Yona sur votre téléphone ou votre ordinateur : gratuit, sans store, et les recettes restent lisibles hors connexion",
+        markdownPath: markdownPathOf(INSTALL_PATH),
       } satisfies RouteSeo,
     },
   },
@@ -93,6 +95,7 @@ export const routes: Routes = [
       [SEO_DATA_KEY]: {
         title: 'Mentions légales',
         description: 'Éditeur, hébergement et propriété intellectuelle du site Les créations de Yona.',
+        markdownPath: markdownPathOf(LEGAL_NOTICE_PATH),
       } satisfies RouteSeo,
     },
   },
@@ -103,6 +106,7 @@ export const routes: Routes = [
       [SEO_DATA_KEY]: {
         title: "Conditions d'utilisation",
         description: 'Accès au site, usage des recettes, partage des contenus et règles pour les assistants IA.',
+        markdownPath: markdownPathOf(TERMS_OF_USE_PATH),
       } satisfies RouteSeo,
     },
   },
@@ -113,6 +117,7 @@ export const routes: Routes = [
       [SEO_DATA_KEY]: {
         title: 'Politique de confidentialité',
         description: 'Données personnelles et cookies : ce que le site collecte (presque rien) et pourquoi.',
+        markdownPath: markdownPathOf(PRIVACY_POLICY_PATH),
       } satisfies RouteSeo,
     },
   },

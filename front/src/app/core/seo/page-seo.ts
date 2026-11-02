@@ -4,6 +4,8 @@ export const SITE_NAME = 'Les créations de Yona';
 export const SITE_URL = 'https://les-creations-de-yona.fr';
 export const DEFAULT_DESCRIPTION =
   'Recettes maison, simples et gourmandes : plats, desserts et pâtisseries à refaire chez soi';
+/** Social card of a page without a photo of its own: the site's icon (PNG, read by every network). */
+export const DEFAULT_IMAGE = '/icons/icon-512.png';
 
 /** What a page tells search engines and social networks. Every field has a site-wide default. */
 export interface PageSeo {
@@ -20,7 +22,10 @@ export interface PageSeo {
    * after the site itself (WEBSITE_NODE).
    */
   jsonLd?: object[];
-  /** Path of the same content in Markdown, for AI assistants (link rel="alternate"). */
+  /**
+   * Path of the same content in Markdown, for AI assistants (link rel="alternate"): markdownPathOf(),
+   * for the pages the server writes in Markdown (src/server/markdown.ts). Left out of noindex pages.
+   */
   markdownPath?: string;
   noIndex?: boolean;
 }
@@ -35,6 +40,15 @@ export const SEO_DATA_KEY = 'seo';
 
 export function absoluteUrl(path: string): string {
   return new URL(path, SITE_URL).href;
+}
+
+/**
+ * The Markdown version of a page (llms.txt convention): its address + ".md", "/index.md" for the
+ * home page, before the query: /recettes.md?categorie=desserts.
+ */
+export function markdownPathOf(path: string): string {
+  const [pathname, query] = path.split('?');
+  return `${pathname === '/' ? '/index' : pathname}.md${query ? `?${query}` : ''}`;
 }
 
 /** Plain text excerpt for meta descriptions, cut on a word boundary. */
