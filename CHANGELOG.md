@@ -2,6 +2,21 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.18.1 - 2026-11-02
+
+Front and backend 1.18.1. Database migration: V19.
+
+### Fixed
+
+- **Security, notifications**: new subscriptions limited to 10 an hour per address and 300 an hour for the whole site, so a script can no longer fill the 20,000 places; a subscription its push service refuses 3 times in a row (400, 403…) is removed.
+- **Security, `/sitemap.xml`, `/llms.txt`, `/llms-full.txt`**: an address with a query string is redirected (301) to the plain one, instead of being built again from the API past Cloudflare's cache.
+- **Dependencies**: Angular 22.2.4 (build tools 22.2.5, Vite 8.3.5) and body-parser 2.4.0, `npm audit` clean.
+
+### Technical
+
+- Backend: the visitor's address for the public limits in `common/ClientAddress` (feedback and notifications).
+- Security review of 2026-11-02 in [SECURITY-REVIEW.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/SECURITY-REVIEW.md).
+
 ## 1.18.0 - 2026-11-02
 
 Front and backend 1.18.0. No database migration.

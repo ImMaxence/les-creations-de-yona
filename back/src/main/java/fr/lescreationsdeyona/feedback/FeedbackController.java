@@ -1,12 +1,12 @@
 package fr.lescreationsdeyona.feedback;
 
+import fr.lescreationsdeyona.common.ClientAddress;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,17 +27,7 @@ class FeedbackController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void sendFeedback(@Valid @RequestBody FeedbackForm form, HttpServletRequest request) {
-		feedbackService.submit(form, senderOf(request));
-	}
-
-	/**
-	 * The visitor's address, kept in memory only. Cloudflare gives it in CF-Connecting-IP, which it
-	 * always overwrites; without it (locally), the address read from the proxies' headers
-	 * (forward-headers-strategy).
-	 */
-	static String senderOf(HttpServletRequest request) {
-		String cloudflare = request.getHeader("CF-Connecting-IP");
-		return StringUtils.hasText(cloudflare) && cloudflare.length() <= 45 ? cloudflare.strip() : request.getRemoteAddr();
+		feedbackService.submit(form, ClientAddress.of(request));
 	}
 
 }

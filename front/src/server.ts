@@ -59,6 +59,16 @@ app.use('/admin', (_req, res, next) => {
   next();
 });
 
+// Built from the API on each request: an address with a query string, which Cloudflare caches apart
+// from the plain one, is sent to the plain one rather than built again
+app.get(['/sitemap.xml', '/llms.txt', '/llms-full.txt'], (req, res, next) => {
+  const query = req.originalUrl.indexOf('?');
+  if (query === -1) {
+    next();
+    return;
+  }
+  res.redirect(301, req.originalUrl.slice(0, query));
+});
 app.get('/sitemap.xml', sitemap);
 app.get('/llms.txt', llms);
 app.get('/llms-full.txt', llmsFull);

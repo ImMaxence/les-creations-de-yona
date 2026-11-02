@@ -1,7 +1,9 @@
 package fr.lescreationsdeyona.push;
 
+import fr.lescreationsdeyona.common.ClientAddress;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -36,11 +38,12 @@ class PushController {
 	}
 
 	@Operation(summary = "Notify this browser of new recipes",
-			description = "The body of PushSubscription.toJSON(). Only the push services of browsers are accepted.")
+			description = "The body of PushSubscription.toJSON(). Only the push services of browsers are accepted. "
+					+ "New subscriptions: 10 an hour from an address, 300 an hour for the whole site.")
 	@PostMapping("/subscriptions")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	void subscribeToNotifications(@Valid @RequestBody PushSubscriptionForm form) {
-		pushService.subscribe(form);
+	void subscribeToNotifications(@Valid @RequestBody PushSubscriptionForm form, HttpServletRequest request) {
+		pushService.subscribe(form, ClientAddress.of(request));
 	}
 
 	@Operation(summary = "Stop notifying this browser")

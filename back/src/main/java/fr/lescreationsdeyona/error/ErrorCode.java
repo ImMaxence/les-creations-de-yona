@@ -66,6 +66,8 @@ public enum ErrorCode {
 	// Notifications of new recipes
 	PUSH_SUBSCRIPTION_INVALID(HttpStatus.BAD_REQUEST, "Cet abonnement aux notifications n'est pas valide"),
 	PUSH_SUBSCRIPTIONS_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les abonnements aux notifications sont complets pour le moment"),
+	PUSH_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Plusieurs abonnements sont partis de votre connexion : réessayez dans une heure"),
+	PUSH_BUSY(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup d'abonnements arrivent en ce moment : réessayez dans une heure"),
 
 	// Visitors' messages
 	FEEDBACK_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Vous avez envoyé plusieurs messages en peu de temps : réessayez dans une heure"),

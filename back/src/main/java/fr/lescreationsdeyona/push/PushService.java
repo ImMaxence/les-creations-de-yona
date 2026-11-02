@@ -13,16 +13,22 @@ import java.security.GeneralSecurityException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionalEventListener;
 import tools.jackson.databind.json.JsonMapper;
@@ -34,6 +40,11 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>
  * The server only ever calls the push services of the browsers (Google, Mozilla, Apple, Microsoft):
  * any other address is refused, so that a subscription cannot make it call anything else.
+ * <p>
+ * A script cannot fill the table with forged subscriptions either: an address subscribes
+ * {@link #PER_HOUR} browsers an hour at most, the whole site {@link #SITE_PER_HOUR} (remembered in
+ * memory only, never written), and a subscription its push service refuses
+ * {@link #MAX_FAILURES} times in a row is removed.
  */
 @Service
 public class PushService {
@@ -45,6 +56,15 @@ public class PushService {
 			"push.apple.com", "notify.windows.com");
 
 	private static final int MAX_SUBSCRIPTIONS = 20_000;
+
+	/** New subscriptions from an address: a visitor with a few devices behind the same box. */
+	static final int PER_HOUR = 10;
+
+	/** New subscriptions for the whole site: many addresses (a botnet) cannot fill the table either. */
+	static final int SITE_PER_HOUR = 300;
+
+	/** Sendings refused in a row (400, 403…) before a subscription is removed: forged, or no longer ours. */
+	static final int MAX_FAILURES = 3;
 
 	/** A notification nobody saw within a day is about an old recipe already. */
 	private static final Duration TIME_TO_LIVE = Duration.ofDays(1);
@@ -66,6 +86,12 @@ public class PushService {
 	/** One sending at a time, in the background: publishing does not wait for it. */
 	private final ExecutorService sender = Executors.newSingleThreadExecutor(Thread.ofVirtual().name("web-push").factory());
 
+	/** Times of the last new subscriptions, by address: forgotten after an hour. */
+	private final Map<String, Deque<Instant>> subscribedBy = new ConcurrentHashMap<>();
+
+	/** Times of the last new subscriptions, all addresses together. */
+	private final Deque<Instant> subscribedBySite = new ArrayDeque<>();
+
 	PushService(JdbcClient jdbc, WebPushKeys keys, JsonMapper jsonMapper, @Value("${app.push.subject}") String subject) {
 		this.jdbc = jdbc;
 		this.keys = keys;
@@ -73,7 +99,7 @@ public class PushService {
 		this.subject = subject;
 	}
 
-	record Subscription(long id, String endpoint, String p256dh, String auth) {
+	record Subscription(long id, String endpoint, String p256dh, String auth, int failures) {
 	}
 
 	/** Given to the browser when it subscribes (applicationServerKey). */
@@ -81,8 +107,11 @@ public class PushService {
 		return keys.get().publicKey();
 	}
 
-	/** Subscribing again (new keys after a browser update) replaces the previous keys. */
-	public void subscribe(PushSubscriptionForm form) {
+	/**
+	 * Subscribing again (new keys after a browser update) replaces the previous keys, and is not
+	 * counted against the sender's limit.
+	 */
+	public void subscribe(PushSubscriptionForm form, String sender) {
 		requirePushService(form.endpoint());
 		try {
 			WebPushCrypto.decodePublicKey(WebPushCrypto.fromBase64Url(form.keys().p256dh()));
@@ -93,12 +122,22 @@ public class PushService {
 		catch (GeneralSecurityException | IllegalArgumentException ex) {
 			throw new ApiException(ErrorCode.PUSH_SUBSCRIPTION_INVALID, ex);
 		}
-		if (count() >= MAX_SUBSCRIPTIONS) {
-			throw new ApiException(ErrorCode.PUSH_SUBSCRIPTIONS_FULL);
+		boolean known = jdbc.sql("select count(*) from push_subscription where endpoint = :endpoint")
+			.param("endpoint", form.endpoint())
+			.query(Long.class)
+			.single() > 0;
+		if (!known) {
+			if (count() >= MAX_SUBSCRIPTIONS) {
+				throw new ApiException(ErrorCode.PUSH_SUBSCRIPTIONS_FULL);
+			}
+			ErrorCode refused = refusal(sender, Instant.now());
+			if (refused != null) {
+				throw new ApiException(refused);
+			}
 		}
 		jdbc.sql("""
 				insert into push_subscription (endpoint, p256dh, auth, created_at) values (:endpoint, :p256dh, :auth, :now)
-				on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth""")
+				on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth, failures = 0""")
 			.param("endpoint", form.endpoint())
 			.param("p256dh", form.keys().p256dh())
 			.param("auth", form.keys().auth())
@@ -128,21 +167,29 @@ public class PushService {
 
 	private void notifyAll(RecipePublished recipe) {
 		byte[] payload = jsonMapper.writeValueAsBytes(Map.of("notification", notification(recipe)));
-		List<Subscription> subscriptions = jdbc.sql("select id, endpoint, p256dh, auth from push_subscription")
+		List<Subscription> subscriptions = jdbc.sql("select id, endpoint, p256dh, auth, failures from push_subscription")
 			.query(Subscription.class)
 			.list();
 		int delivered = 0;
 		int expired = 0;
+		List<Subscription> refused = new ArrayList<>();
 		for (Subscription subscription : subscriptions) {
 			try {
 				int status = send(subscription, payload);
 				if (status / 100 == 2) {
 					delivered++;
+					if (subscription.failures() > 0) {
+						jdbc.sql("update push_subscription set failures = 0 where id = :id").param("id", subscription.id()).update();
+					}
 				}
 				else if (status == 404 || status == 410) {
 					// Unsubscribed in the browser, or expired: never valid again
-					jdbc.sql("delete from push_subscription where id = :id").param("id", subscription.id()).update();
+					delete(subscription);
 					expired++;
+				}
+				else if (status / 100 == 4 && status != 429) {
+					// Malformed, or signed for another key: a forged subscription is never accepted
+					refused.add(subscription);
 				}
 				else {
 					log.warn("Push service {} answered {}", URI.create(subscription.endpoint()).getHost(), status);
@@ -156,8 +203,68 @@ public class PushService {
 				log.warn("Notification to {} failed", URI.create(subscription.endpoint()).getHost(), ex);
 			}
 		}
-		log.info("New recipe \"{}\" notified: {} delivered, {} expired subscriptions removed, {} in all", recipe.title(),
-				delivered, expired, subscriptions.size());
+		// Nothing delivered at all: the fault is more likely the site's (keys, clock) than the subscriptions'
+		int removed = 0;
+		if (delivered > 0) {
+			for (Subscription subscription : refused) {
+				if (subscription.failures() + 1 >= MAX_FAILURES) {
+					delete(subscription);
+					removed++;
+				}
+				else {
+					jdbc.sql("update push_subscription set failures = failures + 1 where id = :id")
+						.param("id", subscription.id())
+						.update();
+				}
+			}
+		}
+		log.info("New recipe \"{}\" notified: {} delivered, {} expired subscriptions removed, {} refused ({} removed), {} in all",
+				recipe.title(), delivered, expired, refused.size(), removed, subscriptions.size());
+	}
+
+	private void delete(Subscription subscription) {
+		jdbc.sql("delete from push_subscription where id = :id").param("id", subscription.id()).update();
+	}
+
+	/**
+	 * Why a new subscription from this sender is refused now, or null: {@link #PER_HOUR} an hour from
+	 * an address, {@link #SITE_PER_HOUR} an hour for the whole site. An accepted one is counted.
+	 */
+	@Nullable ErrorCode refusal(String sender, Instant now) {
+		Instant hourAgo = now.minus(Duration.ofHours(1));
+		Deque<Instant> times = subscribedBy.computeIfAbsent(sender, key -> new ArrayDeque<>());
+		synchronized (times) {
+			dropBefore(times, hourAgo);
+			if (times.size() >= PER_HOUR) {
+				return ErrorCode.PUSH_TOO_MANY;
+			}
+			synchronized (subscribedBySite) {
+				dropBefore(subscribedBySite, hourAgo);
+				if (subscribedBySite.size() >= SITE_PER_HOUR) {
+					return ErrorCode.PUSH_BUSY;
+				}
+				subscribedBySite.addLast(now);
+			}
+			times.addLast(now);
+			return null;
+		}
+	}
+
+	/** Every hour, the addresses not heard from for an hour. */
+	@Scheduled(initialDelay = 3_600_000, fixedDelay = 3_600_000)
+	void forgetSenders() {
+		Instant hourAgo = Instant.now().minus(Duration.ofHours(1));
+		subscribedBy.values().removeIf(times -> {
+			synchronized (times) {
+				return times.isEmpty() || times.peekLast().isBefore(hourAgo);
+			}
+		});
+	}
+
+	private static void dropBefore(Deque<Instant> times, Instant limit) {
+		while (!times.isEmpty() && times.peekFirst().isBefore(limit)) {
+			times.pollFirst();
+		}
 	}
 
 	/**

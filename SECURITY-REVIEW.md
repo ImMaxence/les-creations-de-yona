@@ -132,3 +132,34 @@ Ces tests ont utilisé une image du backend construite localement avec la route 
 
 - Le rôle temporaire de restauration peut se connecter à la base du site (droit `CONNECT` par défaut de PostgreSQL) mais n'y a aucun droit sur les tables, et seul le backend connaît son mot de passe, le temps d'une restauration.
 - Une restauration n'est pas annulable une fois appliquée : « Tout remplacer » est volontairement caché (zone danger repliée, avertissements, case à cocher, mot REMPLACER, confirmation finale), et la page conseille de télécharger une sauvegarde juste avant.
+
+## Audit du 2 novembre 2026 (version 1.18.1)
+
+Portée : tout le dépôt, en priorité ce qui a changé depuis le 26 octobre (1.10 à 1.18) : retours des visiteurs, visites venant des assistants IA, « Remplir avec l'IA », sauvegardes Google Drive, IndexNow, pages en Markdown, `llms.txt` et `llms-full.txt`. Lecture du code et de la configuration, `npm audit`, recherche de secrets dans tout l'historique git, puis tests des corrections sur la pile Docker locale.
+
+Résultat : aucune faille critique ni haute. Un point moyen-faible et deux faibles corrigés, un point faible à vérifier sur le serveur.
+
+| # | Gravité | Fichier | Problème | Statut |
+|---|---------|---------|----------|--------|
+| 7 | Moyenne-faible | `push/PushService.java` | Abonnements aux notifications sans limite de débit : un script pouvait remplir les 20 000 places avec des abonnements forgés, et ceux que le service refusait (400, 403) restaient pour toujours | Corrigé |
+| 8 | Faible | `front/package-lock.json` | `npm audit` : Vite 8.3.0 (serveur de développement seulement) et body-parser 2.3.0 (non utilisé par le serveur SSR, aucun `express.json()`) | Corrigé |
+| 9 | Info | `front/src/server/llms.ts`, `sitemap.ts` | Une adresse avec paramètres (`/llms-full.txt?x=1`) passe à côté du cache de Cloudflare ; chaque requête coûte 1 + N appels à l'API (amortis par le cache du backend) | Corrigé |
+| 10 | Faible | `feedback/FeedbackController.java`, déploiement | Les limites par adresse se fient à `CF-Connecting-IP` : si le serveur répond à qui l'appelle directement par son IP, sans Cloudflare, l'en-tête peut être falsifié et les limites par adresse contournées (celles de tout le site tiennent) | À vérifier sur le serveur |
+
+### Corrections
+
+- 7 : nouveaux abonnements limités à 10 par heure par adresse et 300 par heure pour tout le site, en mémoire seulement (`PUSH_TOO_MANY`, `PUSH_BUSY`, 429) ; un réabonnement du même navigateur n'est pas compté. Un abonnement refusé 3 fois de suite par son service (4xx hors 404, 410 et 429) est supprimé (migration V19, colonne `failures`, remise à 0 après un envoi réussi). Un refus n'est compté que si l'envoi est passé pour d'autres abonnés : une panne du site (clés, horloge) ne vide pas la table. L'adresse du visiteur est lue au même endroit pour les avis et les abonnements (`common/ClientAddress`). Testé sur la pile locale : 10 abonnements acceptés, le 11e refusé (429), réabonnement accepté.
+- 8 : Angular 22.2.4, outils de build 22.2.5 (Vite 8.3.5), body-parser 2.4.0 ; `npm audit` sans vulnérabilité, `e2e/` aussi.
+- 9 : `/sitemap.xml`, `/llms.txt` et `/llms-full.txt` avec paramètres redirigés (301) vers l'adresse sans paramètre. Les pages `.md` font un seul appel à l'API, déjà en cache : laissées telles quelles.
+- 10 : rien à changer dans le code. Vérifier que le serveur refuse les connexions qui ne viennent pas de Cloudflare (pare-feu limité aux [plages d'IP de Cloudflare](https://www.cloudflare.com/ips/), ou Authenticated Origin Pulls). La commande de vérification est dans la [roadmap](docs/roadmap.md#points-ouverts).
+
+### Points vérifiés sans faille exploitable
+
+- Notifications : seuls les services des navigateurs (Google, Mozilla, Apple, Microsoft), en `https` sur le port 443, sans identifiants dans l'adresse : un abonnement ne peut pas faire appeler une autre adresse par le serveur (SSRF).
+- Retours des visiteurs et visites venant des assistants IA : routes publiques sans jeton CSRF, bornées comme décrit plus haut ; l'assistant est une liste fermée (`AiAssistant`), compté par jour sans rien sur le visiteur. Le pire : gonfler un compteur du back-office (risque déjà accepté pour les vues).
+- Google Drive : `state` aléatoire gardé dans la session de l'admin et effacé à la première réponse, adresse de retour fixe, portée `drive.file` vérifiée ; le jeton est conservé dans une table propre au serveur, jamais sauvegardée.
+- « Remplir avec l'IA » : réservé aux admins, clé Gemini envoyée dans un en-tête (jamais dans l'URL ni dans les journaux), image vérifiée à son contenu, réponse bornée aux règles du formulaire.
+- Pages en Markdown, `llms.txt` : l'API est appelée sans cookie (`fetch` du serveur, slugs encodés), donc les brouillons répondent 404 ; adresses absolues construites sur une constante (`SITE_URL`), `allowedHosts` fixé en production ; CSP et en-têtes de sécurité appliqués à toutes les réponses.
+- Routes publiques `GET` : recettes et menus publiés seulement, recherche et tri bornés.
+- Affichage : le seul contournement du sanitizer d'Angular reste le lecteur YouTube ; Markdown et glossaire passent par `[innerHTML]` et le sanitizer.
+- Secrets : aucune clé Google, AWS ou privée, ni aucun `.env`, dans l'historique git.
