@@ -17,6 +17,22 @@ const MAX_TEXT_LENGTH = 20_000;
 /** Errors after which the button must be greyed out: the editor asks for the status again. */
 const LASTING_ERRORS = new Set(['AI_NOT_CONFIGURED', 'AI_KEY_REFUSED', 'AI_DAILY_QUOTA']);
 
+/** "Essayer avec un exemple": parts, quantities, times and a mold, to see what the AI fills in. */
+const EXAMPLE_RECIPE = `Tarte aux pommes et caramel au beurre salé, pour 8 personnes.
+Préparation 30 min, repos 1 h au frigo, cuisson 40 min à 180 °C.
+Moule rond de 26 cm.
+
+Pour la pâte : 250 g de farine, 125 g de beurre froid, 80 g de sucre glace, 1 œuf, 1 pincée de sel.
+Pour le caramel : 150 g de sucre, 60 g de beurre demi-sel, 20 cl de crème liquide.
+Pour la garniture : 6 pommes, 1 sachet de sucre vanillé.
+
+Mélange la farine, le sucre glace et le sel. Ajoute le beurre en morceaux et sable du bout des doigts. Incorpore l'œuf puis forme une boule. Laisse reposer 1 heure au frigo.
+Fais fondre le sucre à sec dans une casserole jusqu'à obtenir un caramel ambré. Ajoute le beurre puis la crème chaude en remuant. Laisse tiédir.
+Étale la pâte et fonce le moule. Pèle les pommes et coupe-les en fines lamelles. Dispose-les en rosace et saupoudre de sucre vanillé.
+Enfourne 40 minutes à 180 °C. Verse le caramel sur la tarte à la sortie du four.
+
+Astuce : encore meilleure tiède, avec une boule de glace à la vanille.`;
+
 type Engine = 'gemini' | 'local';
 
 const ENGINE_KEY = 'yona-recipe-ai-engine';
@@ -39,11 +55,17 @@ function storedEngine(): Engine {
   selector: 'yona-recipe-ai-dialog',
   imports: [Button, Dialog, Icon, LocalModelSetup],
   template: `
-    <yona-dialog title="Remplir avec l'IA" subtitle="Gemini ou IA locale" [closeOnBackdrop]="!reading()" [(open)]="open">
+    <yona-dialog title="Remplir avec l'IA" [subtitle]="engine() === 'gemini' ? 'Gemini, de Google, en ligne' : recipeModel.name + ', sur cet ordinateur'" [closeOnBackdrop]="!reading()" [(open)]="open">
       <div class="ai">
-        <div class="ai__engines" role="group" aria-label="Quelle IA">
-          <button type="button" class="pill" [attr.aria-pressed]="engine() === 'gemini'" [disabled]="reading() || !!geminiUnavailable()" (click)="chooseEngine('gemini')">Gemini</button>
-          <button type="button" class="pill" [attr.aria-pressed]="engine() === 'local'" [disabled]="reading()" (click)="chooseEngine('local')">IA locale</button>
+        <div class="ai__engines" role="group" aria-label="Quelle IA utiliser">
+          <button type="button" class="engine" [attr.aria-pressed]="engine() === 'gemini'" [disabled]="reading() || !!geminiUnavailable()" (click)="chooseEngine('gemini')">
+            <span class="engine__name">Gemini</span>
+            <span class="engine__detail">Google, en ligne. Texte ou photo</span>
+          </button>
+          <button type="button" class="engine" [attr.aria-pressed]="engine() === 'local'" [disabled]="reading()" (click)="chooseEngine('local')">
+            <span class="engine__name">IA locale</span>
+            <span class="engine__detail">{{ recipeModel.name }}, sur cet ordinateur. Texte seulement</span>
+          </button>
         </div>
         @if (engine() === 'gemini') {
           <p class="field__hint">
@@ -54,7 +76,7 @@ function storedEngine(): Engine {
         } @else {
           <p class="field__hint">
             Collez une recette : le modèle tourne sur cet ordinateur, le texte n'est envoyé à aucun service d'IA. Plus lent
-            que Gemini. Relisez tout avant d'enregistrer
+            que Gemini. Pour lire une photo, choisissez Gemini. Relisez tout avant d'enregistrer
           </p>
           @if (open()) {
             <yona-local-model-setup [localModel]="recipeModel" [(ready)]="localReady" />
@@ -72,7 +94,15 @@ function storedEngine(): Engine {
             [value]="text()"
             (input)="text.set($any($event.target).value)"
           ></textarea>
-          <span class="field__hint">{{ text().length }} / {{ maxTextLength }} caractères</span>
+          <div class="ai__below-text">
+            <span class="field__hint">{{ text().length }} / {{ maxTextLength }} caractères</span>
+            <!-- Only on an empty field: never in place of a recipe already pasted -->
+            @if (!text()) {
+              <button yonaButton variant="ghost" type="button" [disabled]="reading()" (click)="text.set(example)">
+                <svg yonaIcon="sparkles"></svg>Essayer avec un exemple
+              </button>
+            }
+          </div>
         </div>
         @if (engine() === 'gemini') {
         <div class="field">
@@ -92,7 +122,7 @@ function storedEngine(): Engine {
               </button>
             </div>
           }
-          <span class="field__hint">JPEG ou PNG, 10 Mo maximum : recette manuscrite, capture d'écran</span>
+          <span class="field__hint">JPEG ou PNG, 10 Mo maximum : recette manuscrite, capture d'écran. Une photo est toujours lue par Gemini, de Google</span>
         </div>
         }
         @if (reading()) {
@@ -103,7 +133,7 @@ function storedEngine(): Engine {
             } @else if (written() > 0) {
               Écriture de la recette… {{ written() }} caractères
             } @else {
-              Chargement du modèle… Cela peut prendre quelques minutes
+              Chargement de {{ recipeModel.name }}… Cela peut prendre quelques minutes
             }
           </p>
         } @else if (error(); as message) {
@@ -132,12 +162,52 @@ function storedEngine(): Engine {
     }
 
     .ai__engines {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
       gap: var(--space-2);
+    }
+
+    .engine {
+      display: grid;
+      gap: var(--space-1);
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-md);
+      background: none;
+      color: var(--color-text);
+      text-align: left;
+      cursor: pointer;
+
+      &[aria-pressed='true'] {
+        border-color: var(--color-accent);
+        box-shadow: inset 0 0 0 1px var(--color-accent);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .engine__name {
+      font-weight: 600;
+    }
+
+    .engine__detail {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
     }
 
     .ai__text {
       min-height: 8rem;
+    }
+
+    .ai__below-text {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
     }
 
     .ai__photo {
@@ -198,6 +268,7 @@ export class RecipeAiDialog {
   private controller: AbortController | null = null;
   protected readonly accept = PHOTO_ACCEPT;
   protected readonly maxTextLength = MAX_TEXT_LENGTH;
+  protected readonly example = EXAMPLE_RECIPE;
   protected readonly text = signal('');
   private readonly photo = signal<File | null>(null);
   protected readonly photoUrl = signal<string | null>(null);

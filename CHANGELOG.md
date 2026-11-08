@@ -2,6 +2,20 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.21.1 - 2026-11-08
+
+Front and backend 1.21.1. No database migration.
+
+### Fixed
+
+- **Remplir avec l'IA**: the choice between Gemini and the local AI looks like two real buttons, and says what each one reads.
+
+### Changed
+
+- **Remplir avec l'IA, Générer avec l'IA**: the model in use is named (Gemini, Gemma 4 E4B, FLUX.2 klein 4B); a photo is announced as read by Gemini.
+- **Remplir avec l'IA**: "Essayer avec un exemple" writes a sample recipe in the empty text field.
+- **Privacy policy**: names the local models, and says a recipe photo only goes to Gemini.
+
 ## 1.21.0 - 2026-11-08
 
 Front and backend 1.21.0. No database migration.

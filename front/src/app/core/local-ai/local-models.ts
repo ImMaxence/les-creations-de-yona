@@ -4,6 +4,8 @@ export interface LocalModelFile {
 }
 
 export interface LocalModel {
+  /** Shown to the admin. */
+  name: string;
   repo: string;
   /** A commit, not "main": what was tested is what is downloaded. */
   revision: string;
@@ -12,6 +14,7 @@ export interface LocalModel {
 
 /** Reads the pasted recipes (Gemma 4 E4B, Apache 2.0, about 5 GB). */
 export const RECIPE_MODEL: LocalModel = {
+  name: 'Gemma 4 E4B',
   repo: 'onnx-community/gemma-4-E4B-it-ONNX',
   revision: '2b6d2e26a962f70a33da8f7cd81e1afdd8d9cfb2',
   files: [
@@ -36,6 +39,7 @@ export const RECIPE_MODEL: LocalModel = {
 
 /** Draws the images (FLUX.2 klein 4B and its Qwen3 text encoder, Apache 2.0, about 6.5 GB). */
 export const IMAGE_MODEL: LocalModel = {
+  name: 'FLUX.2 klein 4B',
   repo: 'cgb/flux2-klein-4b-onnx-webgpu',
   revision: '3bffc0efef1d9f84727036cdbc44df3b6ab51131',
   files: [

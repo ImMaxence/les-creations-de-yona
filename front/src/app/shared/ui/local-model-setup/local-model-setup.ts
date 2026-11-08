@@ -20,7 +20,9 @@ type State = 'checking' | 'unsupported' | 'missing' | 'downloading' | 'ready';
       }
       @case ('missing') {
         <div class="row">
-          <p class="field__hint">À télécharger une seule fois ({{ size() }}), puis gardé dans ce navigateur. Prévoyez du temps et une bonne connexion</p>
+          <p class="field__hint">
+            <strong>{{ localModel().name }}</strong> : à télécharger une seule fois ({{ size() }}), puis gardé dans ce navigateur. Prévoyez du temps et une bonne connexion
+          </p>
           <button yonaButton variant="secondary" type="button" (click)="download()"><svg yonaIcon="download"></svg>Télécharger le modèle</button>
         </div>
         @if (problem(); as message) {
@@ -29,7 +31,7 @@ type State = 'checking' | 'unsupported' | 'missing' | 'downloading' | 'ready';
       }
       @case ('downloading') {
         <div class="progress">
-          <span aria-live="polite">Téléchargement du modèle… {{ percent() }} %</span>
+          <span aria-live="polite">Téléchargement de {{ localModel().name }}… {{ percent() }} %</span>
           <div class="track" role="progressbar" aria-label="Téléchargement du modèle" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="percent()">
             <div class="bar" [style.transform]="'scaleX(' + share() + ')'"></div>
           </div>
@@ -38,7 +40,7 @@ type State = 'checking' | 'unsupported' | 'missing' | 'downloading' | 'ready';
       }
       @case ('ready') {
         <div class="row">
-          <p class="status"><svg yonaIcon="circle-check" [size]="18"></svg>Modèle prêt dans ce navigateur</p>
+          <p class="status"><svg yonaIcon="circle-check" [size]="18"></svg>{{ localModel().name }}, prêt dans ce navigateur</p>
           <button yonaButton variant="ghost" type="button" (click)="remove()"><svg yonaIcon="trash"></svg>Supprimer ({{ size() }})</button>
         </div>
       }

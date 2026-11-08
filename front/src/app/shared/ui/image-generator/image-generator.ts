@@ -16,7 +16,7 @@ const MAX_DESCRIPTION_LENGTH = 1000;
   selector: 'yona-image-generator',
   imports: [Button, Dialog, Icon, LocalModelSetup],
   template: `
-    <yona-dialog title="Générer une image avec l'IA" subtitle="Sur cet ordinateur, rien n'est envoyé" [closeOnBackdrop]="!progress()" [(open)]="open">
+    <yona-dialog title="Générer une image avec l'IA" [subtitle]="imageModel.name + ', sur cet ordinateur : rien n’est envoyé'" [closeOnBackdrop]="!progress()" [(open)]="open">
       @if (open()) {
         <div class="generator">
           <yona-local-model-setup [localModel]="imageModel" [(ready)]="ready" />
