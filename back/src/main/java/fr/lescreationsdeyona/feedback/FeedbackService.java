@@ -24,13 +24,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Messages of the visitors ("Donner mon avis"), read in the back-office. No third-party service:
- * a field hidden from people catches robots; "Je ne suis pas un robot" is a challenge the browser
- * solves ({@link FeedbackCaptcha}); an address sends one
+ * Messages of the visitors ("Donner mon avis"), read in the back-office. A field hidden from
+ * people catches the simplest robots; "Je ne suis pas un robot" is Google's reCAPTCHA
+ * ({@link Recaptcha}); an address sends one
  * message a minute and 5 an hour at most (remembered in memory only, never written); the same
  * message sent again within the hour is kept once; the whole site takes 30 messages an hour at
  * most, whatever the addresses; and the unread ones stop at 500. Kept 12 months at most.
@@ -48,6 +49,9 @@ public class FeedbackService {
 	/** For the whole site: many addresses (a botnet) cannot flood the back-office either. */
 	static final int SITE_PER_HOUR = 30;
 
+	/** Questions to Google for an address: more than messages, a checkbox can expire and be ticked again. */
+	static final int CHECKS_PER_HOUR = 20;
+
 	static final int MAX_UNREAD = 500;
 
 	static final Duration KEPT = Duration.ofDays(365);
@@ -58,10 +62,13 @@ public class FeedbackService {
 
 	private final AuditLog auditLog;
 
-	private final FeedbackCaptcha captcha;
+	private final Recaptcha captcha;
 
 	/** Times of the last messages, by address of the sender: forgotten after an hour. */
 	private final Map<String, Deque<Instant>> sentBy = new ConcurrentHashMap<>();
+
+	/** Times of the last questions to Google, by address: forgotten after an hour. */
+	private final Map<String, Deque<Instant>> checkedBy = new ConcurrentHashMap<>();
 
 	/** Times of the last messages, all senders together. */
 	private final Deque<Instant> sentBySite = new ArrayDeque<>();
@@ -69,18 +76,26 @@ public class FeedbackService {
 	/** Folded messages of the last hour, with their time: a message sent twice is kept once. */
 	private final Map<String, Instant> recentMessages = new ConcurrentHashMap<>();
 
-	public FeedbackChallenge challenge() {
-		return captcha.challenge(Instant.now());
+	public String captchaSiteKey() {
+		return captcha.siteKey();
 	}
 
-	@Transactional
+	/** Without a surrounding transaction: no database connection held while Google answers. */
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	public void submit(FeedbackForm form, String sender) {
 		// A robot fills every field: answered as a success, so that it learns nothing
 		if (StringUtils.hasText(form.website())) {
 			return;
 		}
 		Instant now = Instant.now();
-		if (!captcha.accepts(form.captchaToken(), form.captchaSolution(), now)) {
+		String token = form.captchaToken();
+		if (token == null || token.isBlank()) {
+			throw new ApiException(ErrorCode.FEEDBACK_CAPTCHA);
+		}
+		if (tooManyChecks(sender, now)) {
+			throw new ApiException(ErrorCode.FEEDBACK_TOO_MANY);
+		}
+		if (!captcha.accepts(token)) {
 			throw new ApiException(ErrorCode.FEEDBACK_CAPTCHA);
 		}
 		Instant hourAgo = now.minus(Duration.ofHours(1));
@@ -137,11 +152,29 @@ public class FeedbackService {
 			log.info("{} visitor message(s) erased after 12 months", erased);
 		}
 		Instant hourAgo = Instant.now().minus(Duration.ofHours(1));
-		sentBy.values().removeIf(times -> {
+		forgetSilent(sentBy, hourAgo);
+		forgetSilent(checkedBy, hourAgo);
+	}
+
+	private static void forgetSilent(Map<String, Deque<Instant>> byAddress, Instant hourAgo) {
+		byAddress.values().removeIf(times -> {
 			synchronized (times) {
 				return times.isEmpty() || times.peekLast().isBefore(hourAgo);
 			}
 		});
+	}
+
+	/** Each answer checked is a call to Google, sent for anyone who posts: at most {@link #CHECKS_PER_HOUR}. */
+	private boolean tooManyChecks(String sender, Instant now) {
+		Deque<Instant> times = checkedBy.computeIfAbsent(sender, key -> new ArrayDeque<>());
+		synchronized (times) {
+			dropBefore(times, now.minus(Duration.ofHours(1)));
+			if (times.size() >= CHECKS_PER_HOUR) {
+				return true;
+			}
+			times.addLast(now);
+			return false;
+		}
 	}
 
 	/**

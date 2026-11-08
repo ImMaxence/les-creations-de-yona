@@ -90,6 +90,10 @@ app:
   push:
     # Contact given to the push services with each notification (VAPID "sub"): an https URL or mailto:.
     subject: ${PUSH_SUBJECT:https://les-creations-de-yona.fr}
+  recaptcha:
+    # "Je ne suis pas un robot" of "Donner mon avis" (reCAPTCHA v2 checkbox). See docs/google.md.
+    site-key: ${RECAPTCHA_SITE_KEY:}
+    secret-key: ${RECAPTCHA_SECRET_KEY:}
   gemini:
     # "Remplir avec l'IA" in the recipe editor. Without a key, its button stays greyed out.
     api-key: ${GEMINI_API_KEY:}

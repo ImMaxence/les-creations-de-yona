@@ -21,13 +21,13 @@ class FeedbackServiceTest {
 
 	private final FeedbackRepository repository = mock(FeedbackRepository.class);
 
-	private final FeedbackCaptcha captcha = mock(FeedbackCaptcha.class);
+	private final Recaptcha captcha = mock(Recaptcha.class);
 
 	private final FeedbackService service = new FeedbackService(repository, mock(AuditLog.class), captcha);
 
 	@BeforeEach
 	void passTheCaptcha() {
-		when(captcha.accepts(any(), any(), any())).thenReturn(true);
+		when(captcha.accepts(any())).thenReturn(true);
 	}
 
 	@Test
@@ -50,12 +50,35 @@ class FeedbackServiceTest {
 
 	@Test
 	void refusesAMessageWithoutASolvedCaptcha() {
-		when(captcha.accepts(any(), any(), any())).thenReturn(false);
+		when(captcha.accepts(any())).thenReturn(false);
 
 		assertThatThrownBy(() -> service.submit(form("Bonjour", null, null, null), "1.2.3.4"))
 			.extracting("code")
 			.isEqualTo(ErrorCode.FEEDBACK_CAPTCHA);
 		verify(repository, never()).save(any());
+	}
+
+	@Test
+	void doesNotAskGoogleWithoutAnAnswer() {
+		assertThatThrownBy(() -> service.submit(new FeedbackForm("Bonjour", null, null, null, " "), "1.2.3.4"))
+			.extracting("code")
+			.isEqualTo(ErrorCode.FEEDBACK_CAPTCHA);
+		verify(captcha, never()).accepts(any());
+	}
+
+	@Test
+	void limitsTheQuestionsToGoogleFromAnAddress() {
+		when(captcha.accepts(any())).thenReturn(false);
+		for (int attempt = 0; attempt < FeedbackService.CHECKS_PER_HOUR; attempt++) {
+			assertThatThrownBy(() -> service.submit(form("Bonjour", null, null, null), "1.2.3.4"))
+				.extracting("code")
+				.isEqualTo(ErrorCode.FEEDBACK_CAPTCHA);
+		}
+
+		assertThatThrownBy(() -> service.submit(form("Bonjour", null, null, null), "1.2.3.4"))
+			.extracting("code")
+			.isEqualTo(ErrorCode.FEEDBACK_TOO_MANY);
+		verify(captcha, times(FeedbackService.CHECKS_PER_HOUR)).accepts(any());
 	}
 
 	@Test
@@ -109,7 +132,7 @@ class FeedbackServiceTest {
 	}
 
 	private static FeedbackForm form(String message, String email, String page, String website) {
-		return new FeedbackForm(message, email, page, website, "token", "1");
+		return new FeedbackForm(message, email, page, website, "token");
 	}
 
 }

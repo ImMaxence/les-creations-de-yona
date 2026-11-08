@@ -99,34 +99,14 @@ textarea.feedback__input {
   overflow: hidden;
 }
 
-.feedback__robot {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  width: fit-content;
-  min-height: 3rem;
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  cursor: pointer;
+.feedback__captcha {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
 
-  input {
-    flex: none;
-    width: 1.25rem;
-    height: 1.25rem;
-    margin: 0;
-    accent-color: var(--color-accent);
-    cursor: inherit;
-  }
-
-  svg {
-    flex: none;
-    color: var(--color-accent);
-  }
-
-  .feedback__hint {
-    font-weight: 400;
+  // Empty until the visitor's click: no gap above the button
+  > div:empty {
+    display: none;
   }
 }
 

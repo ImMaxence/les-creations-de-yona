@@ -1,22 +1,23 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { safeParse } from '../../core/api/admin-errors.interceptor';
 import { Api } from '../../core/api/generated/api';
-import { getFeedbackChallenge } from '../../core/api/generated/fn/feedback/get-feedback-challenge';
+import { getFeedbackCaptcha } from '../../core/api/generated/fn/feedback/get-feedback-captcha';
 import { sendFeedback } from '../../core/api/generated/fn/feedback/send-feedback';
 import { PRIVACY_POLICY_PATH, RECIPES_PATH, TERMS_OF_USE_PATH } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { Icon } from '../../shared/ui/icon/icon';
-import { solveChallenge } from './solve-challenge';
+import { ColorScheme } from '../../core/theme/color-scheme';
+import { Recaptcha, loadRecaptcha } from './recaptcha';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
 /**
  * "Donner mon avis": a message to Yona, an idea, a problem met on the site. Read in the back-office
  * ("Retours"); the email is optional, only to get an answer. A field hidden from people catches the
- * simplest robots; "Je ne suis pas un robot" has the browser solve a challenge of the backend, without
- * a third-party service or a cookie. A challenge serves once: a refused message asks to tick it again.
+ * simplest robots; "Je ne suis pas un robot" is Google's reCAPTCHA, loaded only after the visitor's
+ * click, like the YouTube videos. Its answer serves once: a refused message asks to tick it again.
  */
 @Component({
   selector: 'yona-feedback',
@@ -73,15 +74,15 @@ const MAX_MESSAGE_LENGTH = 2000;
             <label for="feedback-website">Site web</label>
             <input id="feedback-website" tabindex="-1" autocomplete="off" [value]="website()" (input)="website.set($any($event.target).value)" />
           </div>
-          <label class="feedback__robot">
-            <input type="checkbox" [checked]="verifying() || captcha() !== null" [disabled]="verifying() || captcha() !== null" (change)="verify()" />
-            <span>Je ne suis pas un robot</span>
-            @if (verifying()) {
-              <span class="feedback__hint" role="status">Vérification…</span>
-            } @else if (captcha()) {
-              <svg yonaIcon="circle-check" [size]="20"></svg>
+          <div class="feedback__captcha">
+            <div #captchaBox></div>
+            @if (!captchaShown()) {
+              <button yonaButton variant="secondary" type="button" [disabled]="loadingCaptcha()" (click)="showCaptcha()">
+                {{ loadingCaptcha() ? 'Chargement…' : 'Je ne suis pas un robot' }}
+              </button>
+              <span class="feedback__hint">Vérification par Google reCAPTCHA : elle ne se charge qu'après votre clic</span>
             }
-          </label>
+          </div>
           @if (error(); as text) {
             <p class="feedback__error" role="alert"><svg yonaIcon="circle-alert" [size]="18"></svg>{{ text }}</p>
           }
@@ -105,6 +106,8 @@ const MAX_MESSAGE_LENGTH = 2000;
 export default class Feedback {
   private readonly api = inject(Api);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
+  private readonly colorScheme = inject(ColorScheme);
 
   protected readonly maxMessageLength = MAX_MESSAGE_LENGTH;
   protected readonly recipesPath = RECIPES_PATH;
@@ -116,23 +119,40 @@ export default class Feedback {
   protected readonly sending = signal(false);
   protected readonly sent = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly verifying = signal(false);
-  /** The solved challenge, sent with the message. */
-  protected readonly captcha = signal<{ token: string; solution: string } | null>(null);
-  protected readonly canSend = computed(() => !this.sending() && this.captcha() !== null && this.message().trim().length > 0);
+  protected readonly captchaShown = signal(false);
+  protected readonly loadingCaptcha = signal(false);
+  /** The answer of the checkbox, sent with the message. */
+  private readonly captchaToken = signal<string | null>(null);
+  protected readonly canSend = computed(() => !this.sending() && this.captchaToken() !== null && this.message().trim().length > 0);
+  private readonly captchaBox = viewChild<ElementRef<HTMLElement>>('captchaBox');
+  private recaptcha: Recaptcha | null = null;
+  private captchaWidget = 0;
   /** The page the visitor came from, to know what the message is about. */
   private readonly fromPage = this.previousUrl();
 
-  protected async verify(): Promise<void> {
-    this.verifying.set(true);
+  protected async showCaptcha(): Promise<void> {
+    this.loadingCaptcha.set(true);
     this.error.set(null);
     try {
-      const { token, difficulty } = await this.api.invoke(getFeedbackChallenge);
-      this.captcha.set({ token, solution: await solveChallenge(token, difficulty) });
+      const { siteKey } = await this.api.invoke(getFeedbackCaptcha);
+      this.recaptcha = await loadRecaptcha(this.document);
+      const view = this.document.defaultView!;
+      const preference = this.colorScheme.preference();
+      const dark = preference === 'auto' ? view.matchMedia('(prefers-color-scheme: dark)').matches : preference === 'dark';
+      this.captchaWidget = this.recaptcha.render(this.captchaBox()!.nativeElement, {
+        sitekey: siteKey,
+        theme: dark ? 'dark' : 'light',
+        // The normal widget is 304 px wide: too much for the smallest phones
+        size: view.innerWidth < 360 ? 'compact' : 'normal',
+        callback: (token) => this.captchaToken.set(token),
+        'expired-callback': () => this.captchaToken.set(null),
+        'error-callback': () => this.captchaToken.set(null),
+      });
+      this.captchaShown.set(true);
     } catch {
-      this.error.set('La vérification n’a pas abouti : vérifiez votre connexion et cochez à nouveau la case');
+      this.error.set('La vérification Google n’a pas pu se charger : vérifiez votre connexion ou votre bloqueur de publicités, puis réessayez');
     } finally {
-      this.verifying.set(false);
+      this.loadingCaptcha.set(false);
     }
   }
 
@@ -150,13 +170,14 @@ export default class Feedback {
           email: this.email().trim() || undefined,
           page: this.fromPage ?? undefined,
           website: this.website() || undefined,
-          captchaToken: this.captcha()?.token,
-          captchaSolution: this.captcha()?.solution,
+          captchaToken: this.captchaToken() ?? undefined,
         },
       });
       this.sent.set(true);
     } catch (error) {
-      this.captcha.set(null);
+      // Google accepts an answer once: the box is to be ticked again
+      this.captchaToken.set(null);
+      this.recaptcha?.reset(this.captchaWidget);
       // This endpoint answers text: the problem arrives as a string
       const problem = error instanceof HttpErrorResponse && typeof error.error === 'string' ? safeParse(error.error) : null;
       const detail = (problem as { detail?: string } | null)?.detail;

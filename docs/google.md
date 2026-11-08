@@ -1,4 +1,4 @@
-# Services Google : connexion admin, Google Drive, Analytics, Search Console
+# Services Google : connexion admin, Google Drive, Analytics, Search Console, reCAPTCHA
 
 Tout ce que le site attend de Google, et comment le régler. L'interface de la console Google change souvent : les noms de menus ci-dessous sont ceux d'octobre 2026 ; en cas de doute, la barre de recherche en haut de la console retrouve chaque page par son nom.
 
@@ -137,3 +137,16 @@ Un échec est affiché dans le back-office, et un nouvel essai a lieu automatiqu
 - **Pages** : les exclusions par `noindex` (favoris, liste de courses, recherches filtrées, back-office) sont voulues. Les 404 sont des recettes supprimées ou d'anciennes adresses : sans gravité.
 - **Inspection de l'URL** sur une recette, puis « Tester l'URL en ligne » : page indexable, recette détectée.
 - Test des données structurées : https://search.google.com/test/rich-results.
+
+## 5. reCAPTCHA
+
+La case « Je ne suis pas un robot » de « Donner mon avis » (reCAPTCHA v2). En local, les clés de test publiques de Google sont utilisées d'office : la case passe toujours, avec un bandeau d'avertissement sur le widget. En production, les deux variables sont obligatoires : sans elles, le déploiement échoue.
+
+1. https://www.google.com/recaptcha/admin/create (ou Google Cloud, page **Fraud Defense**, onglet **Keys**, **Create key**).
+2. Type **Challenge (v2)**, case « Je ne suis pas un robot » (dans Google Cloud : **Application type** Web, puis **Will you use challenges?** activé).
+3. Domaine : `les-creations-de-yona.fr`. Ne pas y ajouter `localhost` : le local a ses clés de test.
+4. Copier la clé du site dans `RECAPTCHA_SITE_KEY` et la clé secrète dans `RECAPTCHA_SECRET_KEY` (Coolify, **Environment Variables**). Dans Google Cloud, la clé secrète se trouve sur la clé, onglet **Integration**, **Use legacy key**.
+
+Gratuit jusqu'à 10 000 vérifications par mois. Si Google demande d'activer la facturation, utiliser un projet Google Cloud à part : la clé Gemini doit rester sur un projet sans facturation pour garder son offre gratuite.
+
+La clé secrète refusée par Google se voit dans les journaux du backend (« reCAPTCHA refuses the secret key »). En cas de changement de domaine, ajouter le nouveau domaine à la clé.

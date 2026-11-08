@@ -4,12 +4,7 @@
 export interface FeedbackForm {
 
   /**
-   * Number found by the browser for this token
-   */
-  captchaSolution?: string;
-
-  /**
-   * Token of GET /api/feedback/challenge
+   * Answer of the reCAPTCHA checkbox
    */
   captchaToken?: string;
 

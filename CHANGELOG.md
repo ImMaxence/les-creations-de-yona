@@ -2,6 +2,21 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.20.0 - 2026-11-08
+
+Front and backend 1.20.0. No database migration. New required production variables: `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`.
+
+### Changed
+
+- **Donner mon avis**: Google reCAPTCHA v2 checkbox instead of the 1.19.0 check, loaded only after the visitor's click.
+- **Privacy policy**: what Google receives with the reCAPTCHA.
+
+### Technical
+
+- Backend: `GET /api/feedback/captcha` replaces `GET /api/feedback/challenge`; each answer checked with Google outside any transaction, 20 checks an hour per address, message refused when Google cannot answer.
+- SSR server: CSP opened to Google's reCAPTCHA (scripts and frame).
+- Keys: [docs/google.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/google.md#5-recaptcha); Google's public test keys by default in the local stack.
+
 ## 1.19.0 - 2026-11-08
 
 Front and backend 1.19.0. No database migration.

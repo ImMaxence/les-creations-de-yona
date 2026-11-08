@@ -7,13 +7,13 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { FeedbackChallenge } from '../../models/feedback-challenge';
+import { FeedbackCaptcha } from '../../models/feedback-captcha';
 
-export interface GetFeedbackChallenge$Params {
+export interface GetFeedbackCaptcha$Params {
 }
 
-export function getFeedbackChallenge(http: HttpClient, rootUrl: string, params?: GetFeedbackChallenge$Params, context?: HttpContext): Observable<StrictHttpResponse<FeedbackChallenge>> {
-  const rb = new RequestBuilder(rootUrl, getFeedbackChallenge.PATH, 'get');
+export function getFeedbackCaptcha(http: HttpClient, rootUrl: string, params?: GetFeedbackCaptcha$Params, context?: HttpContext): Observable<StrictHttpResponse<FeedbackCaptcha>> {
+  const rb = new RequestBuilder(rootUrl, getFeedbackCaptcha.PATH, 'get');
   if (params) {
   }
 
@@ -22,9 +22,9 @@ export function getFeedbackChallenge(http: HttpClient, rootUrl: string, params?:
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<FeedbackChallenge>;
+      return r as StrictHttpResponse<FeedbackCaptcha>;
     })
   );
 }
 
-getFeedbackChallenge.PATH = '/api/feedback/challenge';
+getFeedbackCaptcha.PATH = '/api/feedback/captcha';

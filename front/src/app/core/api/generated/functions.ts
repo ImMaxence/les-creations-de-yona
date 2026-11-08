@@ -147,8 +147,8 @@ export type { GetPushPublicKey$Params as GetPushPublicKey$Params } from './fn/no
 export { getPushPublicKey as getPushPublicKey } from './fn/notifications/get-push-public-key';
 export type { SendFeedback$Params as SendFeedback$Params } from './fn/feedback/send-feedback';
 export { sendFeedback as sendFeedback } from './fn/feedback/send-feedback';
-export type { GetFeedbackChallenge$Params as GetFeedbackChallenge$Params } from './fn/feedback/get-feedback-challenge';
-export { getFeedbackChallenge as getFeedbackChallenge } from './fn/feedback/get-feedback-challenge';
+export type { GetFeedbackCaptcha$Params as GetFeedbackCaptcha$Params } from './fn/feedback/get-feedback-captcha';
+export { getFeedbackCaptcha as getFeedbackCaptcha } from './fn/feedback/get-feedback-captcha';
 export type { RecordAiVisit$Params as RecordAiVisit$Params } from './fn/stats/record-ai-visit';
 export { recordAiVisit as recordAiVisit } from './fn/stats/record-ai-visit';
 export type { RestoreFromTrash$Params as RestoreFromTrash$Params } from './fn/admin-trash/restore-from-trash';

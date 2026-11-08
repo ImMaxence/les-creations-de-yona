@@ -27,15 +27,16 @@ function contentSecurityPolicy(nonce: string, scriptHashes: string[]): string {
     // Scripts: the site's own files, the build's inline scripts (hashes) and the one Angular
     // writes while rendering (nonce). Nothing else, so an injected script would not run.
     // Google Analytics: its script, loaded only once the visitor has accepted (core/analytics).
-    `script-src 'self' 'nonce-${nonce}' ${scriptHashes.join(' ')} https://www.googletagmanager.com`,
+    // reCAPTCHA of "Donner mon avis": loaded only after the visitor's click.
+    `script-src 'self' 'nonce-${nonce}' ${scriptHashes.join(' ')} https://www.googletagmanager.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/`,
     // Angular sets component styles and style bindings inline: no nonce on that side.
     "style-src 'self' 'unsafe-inline'",
     // blob: preview of a photo before upload in the back-office.
     "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com",
-    // Google Analytics sends its measures there.
-    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
+    // Google Analytics sends its measures there; reCAPTCHA calls its own API from the page.
+    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.google.com/recaptcha/",
     // Recipe videos: YouTube's privacy-enhanced player, loaded only after a click (YoutubeVideo).
-    'frame-src https://www.youtube-nocookie.com',
+    'frame-src https://www.youtube-nocookie.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/',
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
