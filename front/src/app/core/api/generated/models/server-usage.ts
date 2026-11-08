@@ -29,7 +29,7 @@ export interface ServerUsage {
   machineCpuLoad?: number;
 
   /**
-   * Of which free, in bytes
+   * Of which available, disk cache the system gives back included, in bytes
    */
   machineFreeMemoryBytes: number;
 

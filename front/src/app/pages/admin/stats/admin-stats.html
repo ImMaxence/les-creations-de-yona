@@ -154,8 +154,8 @@
           </div>
           <div>
             <span class="tile__label">Mémoire de la machine</span>
-            <strong class="storage__value">{{ formatBytes(usage.machineFreeMemoryBytes) }} libres</strong>
-            <span class="tile__detail">sur {{ formatBytes(usage.machineMemoryBytes) }} · {{ percent(usage.usedShare) }} utilisée</span>
+            <strong class="storage__value">{{ formatBytes(usage.machineMemoryBytes - usage.machineFreeMemoryBytes) }} utilisés</strong>
+            <span class="tile__detail">sur {{ formatBytes(usage.machineMemoryBytes) }} · {{ percent(usage.usedShare) }} · {{ formatBytes(usage.machineFreeMemoryBytes) }} libres</span>
           </div>
         </div>
         <div
@@ -177,7 +177,7 @@
         <p class="field__hint">
           Mesuré à l'ouverture de la page, depuis le backend : son processus Java, et la machine telle que son conteneur la voit
           (la limite du conteneur s'il en a une, sinon tout le serveur). Les pages du site, la base et les photos tournent à
-          part. Backend démarré il y a {{ usage.uptime }}
+          part. Le cache disque, que le système rend dès qu'il le faut, compte comme libre. Backend démarré il y a {{ usage.uptime }}
         </p>
         <!-- Live curves: a measure every few seconds, only while asked -->
         <yona-server-live class="no-print" />

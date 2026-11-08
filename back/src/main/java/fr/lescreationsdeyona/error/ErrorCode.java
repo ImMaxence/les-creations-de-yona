@@ -75,6 +75,7 @@ public enum ErrorCode {
 	FEEDBACK_BUSY(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup de messages arrivent en ce moment : réessayez dans une heure"),
 	FEEDBACK_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les messages ne peuvent pas être reçus pour le moment : réessayez dans quelques jours"),
 	FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
+	FEEDBACK_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre message"),
 
 	// Ingredients
 	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable"),

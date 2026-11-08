@@ -28,8 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Messages of the visitors ("Donner mon avis"), read in the back-office. Without a captcha (and
- * its third-party service): a field hidden from people catches robots; an address sends one
+ * Messages of the visitors ("Donner mon avis"), read in the back-office. No third-party service:
+ * a field hidden from people catches robots; "Je ne suis pas un robot" is a challenge the browser
+ * solves ({@link FeedbackCaptcha}); an address sends one
  * message a minute and 5 an hour at most (remembered in memory only, never written); the same
  * message sent again within the hour is kept once; the whole site takes 30 messages an hour at
  * most, whatever the addresses; and the unread ones stop at 500. Kept 12 months at most.
@@ -57,6 +58,8 @@ public class FeedbackService {
 
 	private final AuditLog auditLog;
 
+	private final FeedbackCaptcha captcha;
+
 	/** Times of the last messages, by address of the sender: forgotten after an hour. */
 	private final Map<String, Deque<Instant>> sentBy = new ConcurrentHashMap<>();
 
@@ -66,6 +69,10 @@ public class FeedbackService {
 	/** Folded messages of the last hour, with their time: a message sent twice is kept once. */
 	private final Map<String, Instant> recentMessages = new ConcurrentHashMap<>();
 
+	public FeedbackChallenge challenge() {
+		return captcha.challenge(Instant.now());
+	}
+
 	@Transactional
 	public void submit(FeedbackForm form, String sender) {
 		// A robot fills every field: answered as a success, so that it learns nothing
@@ -73,6 +80,9 @@ public class FeedbackService {
 			return;
 		}
 		Instant now = Instant.now();
+		if (!captcha.accepts(form.captchaToken(), form.captchaSolution(), now)) {
+			throw new ApiException(ErrorCode.FEEDBACK_CAPTCHA);
+		}
 		Instant hourAgo = now.minus(Duration.ofHours(1));
 		String folded = Texts.foldCaseAndAccents(form.message()).replaceAll("\\s+", " ").strip();
 		recentMessages.values().removeIf(time -> time.isBefore(hourAgo));

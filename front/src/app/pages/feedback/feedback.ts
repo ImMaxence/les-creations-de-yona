@@ -1,18 +1,22 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { safeParse } from '../../core/api/admin-errors.interceptor';
 import { Api } from '../../core/api/generated/api';
+import { getFeedbackChallenge } from '../../core/api/generated/fn/feedback/get-feedback-challenge';
 import { sendFeedback } from '../../core/api/generated/fn/feedback/send-feedback';
 import { PRIVACY_POLICY_PATH, RECIPES_PATH, TERMS_OF_USE_PATH } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { Icon } from '../../shared/ui/icon/icon';
+import { solveChallenge } from './solve-challenge';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
 /**
  * "Donner mon avis": a message to Yona, an idea, a problem met on the site. Read in the back-office
  * ("Retours"); the email is optional, only to get an answer. A field hidden from people catches the
- * robots, without a captcha.
+ * simplest robots; "Je ne suis pas un robot" has the browser solve a challenge of the backend, without
+ * a third-party service or a cookie. A challenge serves once: a refused message asks to tick it again.
  */
 @Component({
   selector: 'yona-feedback',
@@ -69,6 +73,15 @@ const MAX_MESSAGE_LENGTH = 2000;
             <label for="feedback-website">Site web</label>
             <input id="feedback-website" tabindex="-1" autocomplete="off" [value]="website()" (input)="website.set($any($event.target).value)" />
           </div>
+          <label class="feedback__robot">
+            <input type="checkbox" [checked]="verifying() || captcha() !== null" [disabled]="verifying() || captcha() !== null" (change)="verify()" />
+            <span>Je ne suis pas un robot</span>
+            @if (verifying()) {
+              <span class="feedback__hint" role="status">Vérification…</span>
+            } @else if (captcha()) {
+              <svg yonaIcon="circle-check" [size]="20"></svg>
+            }
+          </label>
           @if (error(); as text) {
             <p class="feedback__error" role="alert"><svg yonaIcon="circle-alert" [size]="18"></svg>{{ text }}</p>
           }
@@ -103,9 +116,25 @@ export default class Feedback {
   protected readonly sending = signal(false);
   protected readonly sent = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly canSend = computed(() => !this.sending() && this.message().trim().length > 0);
+  protected readonly verifying = signal(false);
+  /** The solved challenge, sent with the message. */
+  protected readonly captcha = signal<{ token: string; solution: string } | null>(null);
+  protected readonly canSend = computed(() => !this.sending() && this.captcha() !== null && this.message().trim().length > 0);
   /** The page the visitor came from, to know what the message is about. */
   private readonly fromPage = this.previousUrl();
+
+  protected async verify(): Promise<void> {
+    this.verifying.set(true);
+    this.error.set(null);
+    try {
+      const { token, difficulty } = await this.api.invoke(getFeedbackChallenge);
+      this.captcha.set({ token, solution: await solveChallenge(token, difficulty) });
+    } catch {
+      this.error.set('La vérification n’a pas abouti : vérifiez votre connexion et cochez à nouveau la case');
+    } finally {
+      this.verifying.set(false);
+    }
+  }
 
   protected async send(event: Event): Promise<void> {
     event.preventDefault();
@@ -121,11 +150,16 @@ export default class Feedback {
           email: this.email().trim() || undefined,
           page: this.fromPage ?? undefined,
           website: this.website() || undefined,
+          captchaToken: this.captcha()?.token,
+          captchaSolution: this.captcha()?.solution,
         },
       });
       this.sent.set(true);
     } catch (error) {
-      const detail = error instanceof HttpErrorResponse ? (error.error as { detail?: string } | null)?.detail : null;
+      this.captcha.set(null);
+      // This endpoint answers text: the problem arrives as a string
+      const problem = error instanceof HttpErrorResponse && typeof error.error === 'string' ? safeParse(error.error) : null;
+      const detail = (problem as { detail?: string } | null)?.detail;
       this.error.set(detail ?? 'Le message n’a pas pu être envoyé : vérifiez votre connexion et réessayez');
     } finally {
       this.sending.set(false);

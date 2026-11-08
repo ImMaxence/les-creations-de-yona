@@ -45,7 +45,7 @@ class SecurityConfig {
 			requests.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
 				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/search-suggestions", "/api/menus", "/api/menus/*",
 						"/api/ingredients", "/api/ingredients/aisles", "/api/site-content", "/api/categories/**", "/api/tags", "/api/social-links/**",
-						"/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key")
+						"/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key", "/api/feedback/challenge")
 				.permitAll()
 				.requestMatchers(HttpMethod.POST, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.DELETE, NOTIFICATION_SUBSCRIPTIONS).permitAll()

@@ -13,6 +13,7 @@ import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.time.Duration;
 import java.time.Instant;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -20,11 +21,18 @@ class FeedbackServiceTest {
 
 	private final FeedbackRepository repository = mock(FeedbackRepository.class);
 
-	private final FeedbackService service = new FeedbackService(repository, mock(AuditLog.class));
+	private final FeedbackCaptcha captcha = mock(FeedbackCaptcha.class);
+
+	private final FeedbackService service = new FeedbackService(repository, mock(AuditLog.class), captcha);
+
+	@BeforeEach
+	void passTheCaptcha() {
+		when(captcha.accepts(any(), any(), any())).thenReturn(true);
+	}
 
 	@Test
 	void keepsTheMessageTrimmedWithoutABlankEmail() {
-		service.submit(new FeedbackForm("  Super site !  ", " ", "/recettes", null), "1.2.3.4");
+		service.submit(form("  Super site !  ", " ", "/recettes", null), "1.2.3.4");
 
 		ArgumentCaptor<Feedback> saved = ArgumentCaptor.forClass(Feedback.class);
 		verify(repository).save(saved.capture());
@@ -35,8 +43,18 @@ class FeedbackServiceTest {
 
 	@Test
 	void ignoresARobotFillingTheHiddenField() {
-		service.submit(new FeedbackForm("Buy now", null, null, "https://spam.example"), "1.2.3.4");
+		service.submit(form("Buy now", null, null, "https://spam.example"), "1.2.3.4");
 
+		verify(repository, never()).save(any());
+	}
+
+	@Test
+	void refusesAMessageWithoutASolvedCaptcha() {
+		when(captcha.accepts(any(), any(), any())).thenReturn(false);
+
+		assertThatThrownBy(() -> service.submit(form("Bonjour", null, null, null), "1.2.3.4"))
+			.extracting("code")
+			.isEqualTo(ErrorCode.FEEDBACK_CAPTCHA);
 		verify(repository, never()).save(any());
 	}
 
@@ -75,8 +93,8 @@ class FeedbackServiceTest {
 
 	@Test
 	void keepsTheSameMessageOnce() {
-		service.submit(new FeedbackForm("Super   site !", null, null, null), "1.2.3.4");
-		service.submit(new FeedbackForm("super site !", null, null, null), "5.6.7.8");
+		service.submit(form("Super   site !", null, null, null), "1.2.3.4");
+		service.submit(form("super site !", null, null, null), "5.6.7.8");
 
 		verify(repository, times(1)).save(any());
 	}
@@ -85,9 +103,13 @@ class FeedbackServiceTest {
 	void stopsAtFiveHundredUnreadMessages() {
 		when(repository.countByReadAtIsNull()).thenReturn((long) FeedbackService.MAX_UNREAD);
 
-		assertThatThrownBy(() -> service.submit(new FeedbackForm("Bonjour", null, null, null), "1.2.3.4"))
+		assertThatThrownBy(() -> service.submit(form("Bonjour", null, null, null), "1.2.3.4"))
 			.extracting("code")
 			.isEqualTo(ErrorCode.FEEDBACK_FULL);
+	}
+
+	private static FeedbackForm form(String message, String email, String page, String website) {
+		return new FeedbackForm(message, email, page, website, "token", "1");
 	}
 
 }

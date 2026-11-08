@@ -2,6 +2,24 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.19.0 - 2026-11-08
+
+Front and backend 1.19.0. No database migration.
+
+### Added
+
+- **Donner mon avis**: "Je ne suis pas un robot" checkbox, required to send a message. The browser solves a one-time challenge from the backend: no third-party service, no cookie.
+
+### Fixed
+
+- **Statistics, machine memory**: the disk cache no longer counts as used (a server up for a while looked almost full); the tile now leads with the memory used, not the free part.
+- **Donner mon avis**: a refused message shows the real reason (one a minute, too many messages…) instead of a generic connection error.
+
+### Technical
+
+- Backend: `GET /api/feedback/challenge`, `feedback/FeedbackCaptcha` (signed SHA-256 proof of work); `POST /api/feedback` refused without a solved challenge.
+- Backend: available memory from `MemAvailable`, or the free memory plus the inactive disk cache in a container with a limit.
+
 ## 1.18.1 - 2026-11-02
 
 Front and backend 1.18.1. Database migration: V19.

@@ -27,10 +27,16 @@ public record ServerUsage(
 		@Schema(description = "Java objects in memory now, in bytes") long heapUsedBytes,
 		@Schema(description = "Most the Java objects may take, in bytes") long heapMaxBytes,
 		@Schema(description = "Memory of the machine, or limit of the container, in bytes") long machineMemoryBytes,
-		@Schema(description = "Of which free, in bytes") long machineFreeMemoryBytes,
+		@Schema(description = "Of which available, disk cache the system gives back included, in bytes") long machineFreeMemoryBytes,
 		@Schema(description = "Since the backend started, in seconds") long uptimeSeconds) {
 
 	private static final Pattern RESIDENT = Pattern.compile("^VmRSS:\\s+(\\d+)\\s+kB", Pattern.MULTILINE);
+
+	private static final Pattern MEM_TOTAL = Pattern.compile("^MemTotal:\\s+(\\d+)\\s+kB", Pattern.MULTILINE);
+
+	private static final Pattern MEM_AVAILABLE = Pattern.compile("^MemAvailable:\\s+(\\d+)\\s+kB", Pattern.MULTILINE);
+
+	private static final Pattern INACTIVE_FILE = Pattern.compile("^inactive_file\\s+(\\d+)$", Pattern.MULTILINE);
 
 	static ServerUsage now() {
 		MemoryUsage heap = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
@@ -42,7 +48,7 @@ public record ServerUsage(
 		Double machineCpu = null;
 		if (ManagementFactory.getOperatingSystemMXBean() instanceof com.sun.management.OperatingSystemMXBean os) {
 			machineMemory = os.getTotalMemorySize();
-			machineFree = os.getFreeMemorySize();
+			machineFree = availableBytes(machineMemory, os.getFreeMemorySize(), Path.of("/proc/meminfo"), Path.of("/sys/fs/cgroup/memory.stat"));
 			backendCpu = load(os.getProcessCpuLoad());
 			machineCpu = load(os.getCpuLoad());
 		}
@@ -58,9 +64,30 @@ public record ServerUsage(
 
 	/** "VmRSS: 123456 kB" of /proc/self/status: the memory the process really holds. */
 	static @Nullable Long residentBytes(Path status) {
+		Long kilobytes = number(RESIDENT, status);
+		return kilobytes == null ? null : kilobytes * 1024;
+	}
+
+	/**
+	 * Memory really at hand. Java's "free" leaves out the disk cache, which Linux fills as it reads
+	 * files and gives back on demand: a server up for a while would look full. So: MemAvailable for
+	 * the whole machine; for a container with a limit, its free memory plus its inactive disk cache.
+	 * Java's figure stays when these files cannot be read (not Linux).
+	 */
+	static long availableBytes(long total, long free, Path memInfo, Path containerStat) {
+		Long machineKilobytes = number(MEM_TOTAL, memInfo);
+		if (machineKilobytes != null && total >= machineKilobytes * 1024) {
+			Long available = number(MEM_AVAILABLE, memInfo);
+			return available == null ? free : Math.min(total, available * 1024);
+		}
+		Long inactive = number(INACTIVE_FILE, containerStat);
+		return inactive == null ? free : Math.min(total, free + inactive);
+	}
+
+	private static @Nullable Long number(Pattern pattern, Path file) {
 		try {
-			Matcher matcher = RESIDENT.matcher(Files.readString(status));
-			return matcher.find() ? Long.parseLong(matcher.group(1)) * 1024 : null;
+			Matcher matcher = pattern.matcher(Files.readString(file));
+			return matcher.find() ? Long.valueOf(matcher.group(1)) : null;
 		}
 		catch (IOException | RuntimeException ex) {
 			// Not Linux, or not readable: the other figures are still given

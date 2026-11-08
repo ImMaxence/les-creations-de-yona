@@ -6,7 +6,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,9 +24,15 @@ class FeedbackController {
 
 	private final FeedbackService feedbackService;
 
+	@Operation(summary = "\"Je ne suis pas un robot\": a challenge for the browser to solve, for one message")
+	@GetMapping("/challenge")
+	ResponseEntity<FeedbackChallenge> getFeedbackChallenge() {
+		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(feedbackService.challenge());
+	}
+
 	@Operation(summary = "\"Donner mon avis\": a visitor's message, read in the back-office",
-			description = "No CSRF token: visitors have none. From an address, one message a minute and 5 an hour at "
-					+ "most; 30 an hour for the whole site; the same message sent twice is kept once.")
+			description = "No CSRF token: visitors have none. Needs a solved challenge. From an address, one message a "
+					+ "minute and 5 an hour at most; 30 an hour for the whole site; the same message sent twice is kept once.")
 	@PostMapping
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void sendFeedback(@Valid @RequestBody FeedbackForm form, HttpServletRequest request) {

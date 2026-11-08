@@ -24,6 +24,30 @@ class ServerUsageTest {
 	}
 
 	@Test
+	void countsTheDiskCacheAsAvailableOnTheWholeMachine(@TempDir Path folder) throws IOException {
+		Path memInfo = folder.resolve("meminfo");
+		Files.writeString(memInfo, "MemTotal:       16000000 kB\nMemFree:         4000000 kB\nMemAvailable:   12500000 kB\n");
+
+		assertThat(ServerUsage.availableBytes(16_000_000L * 1024, 4_000_000L * 1024, memInfo, folder.resolve("absent")))
+			.isEqualTo(12_500_000L * 1024);
+	}
+
+	@Test
+	void addsTheInactiveDiskCacheInAContainerWithALimit(@TempDir Path folder) throws IOException {
+		Path memInfo = folder.resolve("meminfo");
+		Files.writeString(memInfo, "MemTotal:       16000000 kB\nMemAvailable:   12500000 kB\n");
+		Path stat = folder.resolve("memory.stat");
+		Files.writeString(stat, "anon 300\nfile 900\ninactive_file 700\nactive_file 200\n");
+
+		assertThat(ServerUsage.availableBytes(2_000, 500, memInfo, stat)).isEqualTo(1_200);
+	}
+
+	@Test
+	void keepsJavasFigureWithoutLinux(@TempDir Path folder) {
+		assertThat(ServerUsage.availableBytes(2_000, 500, folder.resolve("absent"), folder.resolve("absent"))).isEqualTo(500);
+	}
+
+	@Test
 	void measuresThisProcess() {
 		ServerUsage usage = ServerUsage.now();
 

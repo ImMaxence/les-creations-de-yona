@@ -15,6 +15,7 @@ export type { Counts } from './models/counts';
 export type { DatedRecipe } from './models/dated-recipe';
 export type { DriveStatus } from './models/drive-status';
 export type { Failure } from './models/failure';
+export type { FeedbackChallenge } from './models/feedback-challenge';
 export type { FeedbackForm } from './models/feedback-form';
 export type { FeedbackResponse } from './models/feedback-response';
 export type { GalleryImage } from './models/gallery-image';

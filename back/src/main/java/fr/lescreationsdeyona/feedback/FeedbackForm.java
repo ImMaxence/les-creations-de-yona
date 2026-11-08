@@ -10,5 +10,7 @@ import org.jspecify.annotations.Nullable;
 public record FeedbackForm(@NotBlank @Size(max = 2000) String message,
 		@Schema(description = "Optional, for an answer") @Email @Size(max = 200) @Nullable String email,
 		@Schema(description = "Where the visitor was") @Size(max = 300) @Nullable String page,
-		@Schema(description = "Left empty by people: a robot filling every field is ignored") @Nullable String website) {
+		@Schema(description = "Left empty by people: a robot filling every field is ignored") @Nullable String website,
+		@Schema(description = "Token of GET /api/feedback/challenge") @Size(max = 200) @Nullable String captchaToken,
+		@Schema(description = "Number found by the browser for this token") @Size(max = 20) @Nullable String captchaSolution) {
 }
