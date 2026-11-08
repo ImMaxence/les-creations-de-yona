@@ -2,6 +2,25 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.22.0 - 2026-11-08
+
+Front and backend 1.22.0. No database migration.
+
+### Added
+
+- **Local AI, download**: amount downloaded, amount left, speed and time left.
+- **Local AI, download**: a link to report a failed download on GitHub, already filled in.
+- **Local AI, while it runs**: the list of what is being done, the time elapsed, the time left for an image, and a warning that the computer may slow down.
+- **Phones and tablets**: local AI greyed out, with the reason.
+- **ReadMe**: the AI of the back-office, with screenshots.
+- **Recipe editor**: a "Publier" button in the bar always in sight, with a confirmation, next to "Enregistrer le brouillon".
+
+### Changed
+
+- **Models named in full**: Gemma 4 E4B by Google, FLUX.2 klein 4B by Black Forest Labs, Qwen3 4B by Alibaba; where they come from (Hugging Face) and where they are kept (the browser's cache).
+- **Remplir avec l'IA**: taller text field.
+- **Legal pages**: the three local models named, with their makers; kept in the browser's cache until deleted.
+
 ## 1.21.1 - 2026-11-08
 
 Front and backend 1.21.1. No database migration.

@@ -1,4 +1,7 @@
+import { isPhoneOrTablet } from './local-ai-format';
 import { LocalModel, LocalModelFile, modelBytes } from './local-models';
+
+export const PHONE_MESSAGE = 'L’IA locale demande un ordinateur : elle ne peut pas fonctionner sur un téléphone ou une tablette';
 
 /** Kept by the browser in its Cache storage: a model is downloaded once per browser. */
 const CACHE_NAME = 'yona-local-ai';
@@ -24,7 +27,7 @@ export async function missingFiles(model: LocalModel): Promise<LocalModelFile[]>
  */
 export async function downloadModel(
   model: LocalModel,
-  onProgress: (share: number) => void,
+  onProgress: (done: number, total: number) => void,
   signal: AbortSignal,
 ): Promise<void> {
   const missing = await missingFiles(model);
@@ -37,7 +40,7 @@ export async function downloadModel(
   const cache = await caches.open(CACHE_NAME);
   const total = modelBytes(model);
   let done = total - remaining;
-  onProgress(done / total);
+  onProgress(done, total);
   for (const file of missing) {
     const url = modelFileUrl(model, file.path);
     // no-store: not a second copy in the browser's HTTP cache
@@ -50,7 +53,7 @@ export async function downloadModel(
       new TransformStream<Uint8Array, Uint8Array>({
         transform(chunk, controller) {
           received += chunk.byteLength;
-          onProgress((done + received) / total);
+          onProgress(done + received, total);
           controller.enqueue(chunk);
         },
       }),
@@ -86,6 +89,9 @@ export class NotEnoughSpaceError extends Error {}
 
 /** Why this browser cannot run the models, in French; null when it can. */
 export async function webGpuProblem(): Promise<string | null> {
+  if (isPhoneOrTablet()) {
+    return PHONE_MESSAGE;
+  }
   const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<{ features: Set<string> } | null> } }).gpu;
   if (!gpu || typeof caches === 'undefined') {
     return 'Ce navigateur ne permet pas de faire tourner l’IA locale : utilisez une version récente de Chrome, Edge ou Safari';

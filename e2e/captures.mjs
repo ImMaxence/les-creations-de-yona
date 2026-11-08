@@ -45,10 +45,33 @@ if (wanted('pc-accueil', 'pc-recettes', 'pc-recette')) {
 // Le back-office sans connexion Google : la page « Nouveautés », la seule sans données de l'API admin
 if (wanted('pc-administration')) {
   const admin = await newPage(browser, DESKTOP);
-  await fakeAdmin(admin, '1.21.1');
+  await fakeAdmin(admin, '1.22.0');
   await admin.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
   await admin.locator('details.changelog__version').first().waitFor();
   await shoot(admin, 'pc-administration');
+  await admin.context().close();
+}
+
+// Les IA du back-office, sans connexion Google : les listes de l'API admin sont vides
+if (wanted('pc-ia-recette', 'pc-ia-image')) {
+  const admin = await newPage(browser, DESKTOP);
+  await admin.route('**/api/admin/**', (route) => route.fulfill({ json: [] }));
+  await fakeAdmin(admin, '1.22.0');
+  await admin.route('**/api/admin/recipe-ai', (route) => route.fulfill({ json: { available: true } }));
+  const open = async () => {
+    await admin.goto(BASE + '/admin/recettes/nouvelle', { waitUntil: 'load' });
+    await admin.getByRole('button', { name: "Remplir avec l'IA" }).first().waitFor();
+    await answerCookies(admin);
+  };
+  await open();
+  await shoot(admin, 'pc-ia-recette', async () => {
+    await admin.getByRole('button', { name: "Remplir avec l'IA" }).first().click();
+    const dialog = admin.locator('yona-recipe-ai-dialog');
+    await dialog.getByRole('button', { name: /IA locale/ }).click();
+    await dialog.getByRole('button', { name: 'Essayer avec un exemple' }).click();
+  });
+  await open();
+  await shoot(admin, 'pc-ia-image', () => admin.getByRole('button', { name: "Générer avec l'IA" }).first().click());
   await admin.context().close();
 }
 

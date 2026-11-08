@@ -443,9 +443,22 @@
     <button yonaButton variant="secondary" type="button" class="editor__preview" aria-label="Aperçu" [disabled]="previewing()" (click)="openPreview()">
       <svg yonaIcon="eye"></svg><span class="editor__wide">Aperçu</span>
     </button>
-    <button yonaButton type="submit" [disabled]="saving()">
-      {{ saving() ? 'Enregistrement…' : isNew() ? 'Créer la recette' : 'Enregistrer' }}
-    </button>
+    @if (draft().status === 'DRAFT') {
+      <button yonaButton variant="secondary" type="submit" class="editor__save-draft" [disabled]="saving()">
+        @if (saving()) {
+          Enregistrement…
+        } @else {
+          <span class="editor__narrow">Enregistrer</span><span class="editor__wide">Enregistrer le brouillon</span>
+        }
+      </button>
+      <button yonaButton type="button" class="editor__publish" [disabled]="saving()" (click)="publish()">
+        <svg yonaIcon="send"></svg>Publier
+      </button>
+    } @else {
+      <button yonaButton type="submit" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement…' : isNew() ? 'Créer la recette' : 'Enregistrer' }}
+      </button>
+    }
   </div>
 </form>
 

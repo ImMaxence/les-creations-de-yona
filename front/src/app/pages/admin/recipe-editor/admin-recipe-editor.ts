@@ -720,7 +720,26 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     }
   }
 
-  protected async save(): Promise<void> {
+  /** "Publier", in the bar always in sight: saves the form as published, and goes back to a draft if that fails. */
+  protected async publish(): Promise<void> {
+    const confirmed = await this.confirm.ask({
+      title: 'Publier cette recette ?',
+      message: 'Elle sera visible sur le site, et les abonnés aux notifications seront prévenus',
+      confirmLabel: 'Publier',
+    });
+    if (!confirmed) {
+      return;
+    }
+    const { status, scheduledAt } = this.draft();
+    this.draft.update((draft) => ({ ...draft, status: 'PUBLISHED', scheduledAt: '' }));
+    if (!(await this.save(true))) {
+      this.draft.update((draft) => ({ ...draft, status, scheduledAt }));
+    }
+  }
+
+  /** False when nothing was saved: the form is not valid, or the API refused. */
+  protected async save(publishing = false): Promise<boolean> {
+    let saved = false;
     await submit(this.recipeForm, async () => {
       this.saving.set(true);
       try {
@@ -732,7 +751,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
           this.savedSnapshot.set(JSON.stringify(this.draft()));
           removeStoredDraft(this.storageKey());
           this.aiFilled.set(false);
-          this.toaster.success('Recette enregistrée');
+          this.toaster.success(publishing ? 'Recette publiée' : 'Recette enregistrée');
         } else {
           const created = await this.api.invoke(createRecipe, { body });
           this.savedSnapshot.set(JSON.stringify(this.draft()));
@@ -745,9 +764,10 @@ export default class AdminRecipeEditor implements UnsavedChanges {
               await this.chooseImage(created.id, image.imageId, slot);
             }
           }
-          this.toaster.success('Recette créée');
+          this.toaster.success(publishing ? 'Recette publiée' : 'Recette créée');
           await this.router.navigate(['/admin/recettes', created.id], { replaceUrl: true });
         }
+        saved = true;
       } catch {
         // The API error is already shown as a toast
       } finally {
@@ -755,6 +775,7 @@ export default class AdminRecipeEditor implements UnsavedChanges {
       }
       return undefined;
     });
+    return saved;
   }
 
   private async uploadImage(recipeId: number, file: File, slot: PhotoSlot): Promise<void> {

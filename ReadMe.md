@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 1.21.1 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 1.22.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -23,6 +23,23 @@ Sur téléphone, là où se lisent la plupart des recettes :
 | Notifications | Notification reçue | Glossaire |
 | --- | --- | --- |
 | ![Notifications sur téléphone](docs/captures/telephone-notifications.png) | ![Notification d'une nouvelle recette sur l'écran verrouillé d'un iPhone](docs/captures/telephone-notification-recue.jpg) | ![Glossaire sur téléphone](docs/captures/telephone-glossaire.png) |
+
+## L'IA au service de Yona
+
+Le back-office écrit une recette à partir d'un texte collé et dessine ses photos. Trois IA tournent **directement dans le navigateur de l'admin**, sur son ordinateur, gratuites et sans rien envoyer à personne ; Gemini reste disponible en ligne, notamment pour lire une photo de recette.
+
+| IA | De | Où elle tourne | Ce qu'elle fait |
+| --- | --- | --- | --- |
+| **Gemma 4 E4B** | Google | Navigateur | Lit une recette collée et remplit le formulaire (4,8 Go) |
+| **FLUX.2 klein 4B** | Black Forest Labs | Navigateur | Dessine une image à partir d'une description (6,1 Go avec Qwen3) |
+| **Qwen3 4B** | Alibaba | Navigateur | Lit la description de l'image pour FLUX.2 |
+| **Gemini** | Google | En ligne | Lit un texte ou la photo d'une recette |
+
+Chaque modèle se télécharge une seule fois, directement depuis Hugging Face, et reste dans le cache du navigateur (sur le disque de l'ordinateur) : effacer les données du site le supprime. Il faut un ordinateur avec WebGPU, pas un téléphone ni une tablette. Détails : [docs/ia.md](docs/ia.md).
+
+| Remplir une recette | Générer une image | Image générée sur l'ordinateur |
+| --- | --- | --- |
+| ![Choix entre Gemini et l'IA locale pour remplir une recette](docs/captures/pc-ia-recette.png) | ![Fenêtre de génération d'image](docs/captures/pc-ia-image.png) | ![Part de tarte au citron générée par FLUX.2 klein](docs/captures/ia-image-exemple.jpg) |
 
 ## Ce que fait le site
 

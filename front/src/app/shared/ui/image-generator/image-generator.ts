@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
-import { ImageProgress, generateImage } from '../../../core/local-ai/generate-image';
+import { ImageProgress, generateImage, imageSize, imageStages } from '../../../core/local-ai/generate-image';
 import { IMAGE_MODEL } from '../../../core/local-ai/local-models';
 import { Button } from '../button/button';
 import { Dialog } from '../dialog/dialog';
 import { Icon } from '../icon/icon';
+import { LocalAiProgress } from '../local-ai-progress/local-ai-progress';
 import { LocalModelSetup } from '../local-model-setup/local-model-setup';
 
 const MAX_DESCRIPTION_LENGTH = 1000;
@@ -14,7 +15,7 @@ const MAX_DESCRIPTION_LENGTH = 1000;
  */
 @Component({
   selector: 'yona-image-generator',
-  imports: [Button, Dialog, Icon, LocalModelSetup],
+  imports: [Button, Dialog, Icon, LocalAiProgress, LocalModelSetup],
   template: `
     <yona-dialog title="Générer une image avec l'IA" [subtitle]="imageModel.name + ', sur cet ordinateur : rien n’est envoyé'" [closeOnBackdrop]="!progress()" [(open)]="open">
       @if (open()) {
@@ -33,16 +34,11 @@ const MAX_DESCRIPTION_LENGTH = 1000;
                 [value]="description()"
                 (input)="description.set($any($event.target).value)"
               ></textarea>
-              <span class="field__hint">Comptez de 5 à 20 minutes selon l’ordinateur. Fermez les applications lourdes pendant la génération</span>
+              <span class="field__hint">Comptez de 5 à 20 minutes selon l’ordinateur. L’ordinateur peut ralentir : fermez les applications lourdes</span>
             </div>
           }
           @if (progress(); as current) {
-            <div class="progress">
-              <span aria-live="polite">{{ current.label }}</span>
-              <div class="track" role="progressbar" aria-label="Génération de l'image" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="current.share * 100">
-                <div class="bar" [style.transform]="'scaleX(' + current.share + ')'"></div>
-              </div>
-            </div>
+            <yona-local-ai-progress [stages]="stages()" [share]="current.share" />
           } @else if (resultUrl(); as url) {
             <img class="result" [src]="url" alt="Image générée" />
           }
@@ -77,25 +73,6 @@ const MAX_DESCRIPTION_LENGTH = 1000;
       border-radius: var(--radius-md);
     }
 
-    .progress {
-      display: grid;
-      gap: var(--space-2);
-    }
-
-    .track {
-      height: 0.5rem;
-      overflow: hidden;
-      border-radius: var(--radius-md);
-      background-color: var(--color-surface);
-    }
-
-    .bar {
-      height: 100%;
-      background-color: var(--color-accent);
-      transform-origin: left;
-      transition: transform var(--duration-base) var(--ease-out);
-    }
-
     .error {
       display: flex;
       align-items: center;
@@ -119,6 +96,11 @@ export class ImageGenerator {
   protected readonly progress = signal<ImageProgress | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly resultUrl = signal<string | null>(null);
+  protected readonly stages = computed(() => {
+    const progress = this.progress();
+    const { width, height } = imageSize(this.portrait());
+    return progress ? imageStages(progress, width, height) : [];
+  });
   protected readonly canGenerate = computed(() => this.ready() && !this.progress() && !!this.description().trim());
   private result: Blob | null = null;
   private controller: AbortController | null = null;

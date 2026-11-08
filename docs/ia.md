@@ -43,10 +43,11 @@ Dans **« Remplir avec l'IA »**, le bouton **« IA locale »** lit une recette 
 
 | | Modèle | Téléchargement | Licence |
 | --- | --- | --- | --- |
-| Lire une recette collée (texte seul) | Gemma 4 E4B (`q4f16`) | 5,2 Go | Apache 2.0 |
-| Générer une image (1024 × 768, ou 768 × 1024 en portrait) | FLUX.2 klein 4B, encodeur Qwen3 | 6,5 Go | Apache 2.0 |
+| Lire une recette collée (texte seul) | Gemma 4 E4B de Google (`q4f16`) | 4,8 Go | Apache 2.0 |
+| Générer une image (1024 × 768, ou 768 × 1024 en portrait) | FLUX.2 klein 4B de Black Forest Labs, avec Qwen3 4B d'Alibaba qui lit la description | 6,1 Go | Apache 2.0 |
 
-- Chaque modèle se télécharge une fois, depuis Hugging Face, puis reste dans ce navigateur, sur cet appareil. **« Supprimer »** rend la place.
+- Chaque modèle se télécharge une fois, directement depuis Hugging Face (le serveur du site n'en sert aucun), puis reste dans le cache de ce navigateur, sur le disque de cet ordinateur. **« Supprimer »** rend la place ; effacer les données du site dans le navigateur le supprime aussi, il faudra alors le retélécharger.
+- Sur téléphone et tablette, l'IA locale est grisée : ils n'ont pas assez de mémoire graphique.
 - Il faut un navigateur récent avec WebGPU (Chrome, Edge, Safari) et assez de mémoire : fermer les applications lourdes.
 - Gemma n'a pas de format imposé : on lui demande du JSON, que le backend contrôle comme une réponse de Gemini.
 - L'IA locale ne lit pas les photos, seulement le texte collé : essayé le 2026-11-08, le modèle lisait mal les quantités d'une recette manuscrite (250 g lu 350 g) et oubliait des étapes. Pour une photo, Gemini.

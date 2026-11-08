@@ -6,11 +6,13 @@ import { getRecipeAiLocalPrompt } from '../../../core/api/generated/fn/admin-rec
 import { readRecipeAiLocalAnswer } from '../../../core/api/generated/fn/admin-recipe-ai/read-recipe-ai-local-answer';
 import { RecipeAiDraft } from '../../../core/api/generated/models/recipe-ai-draft';
 import { RECIPE_MODEL } from '../../../core/local-ai/local-models';
-import { readRecipeLocally } from '../../../core/local-ai/read-recipe-locally';
+import { AiStage, isPhoneOrTablet } from '../../../core/local-ai/local-ai-format';
+import { RecipeReaderProgress, readRecipeLocally } from '../../../core/local-ai/read-recipe-locally';
 import { Button } from '../../../shared/ui/button/button';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { PHOTO_ACCEPT, photoFileError } from '../../../shared/ui/image-upload/photo-file';
+import { LocalAiProgress } from '../../../shared/ui/local-ai-progress/local-ai-progress';
 import { LocalModelSetup } from '../../../shared/ui/local-model-setup/local-model-setup';
 
 const MAX_TEXT_LENGTH = 20_000;
@@ -35,6 +37,27 @@ Astuce : encore meilleure tiède, avec une boule de glace à la vanille.`;
 
 type Engine = 'gemini' | 'local';
 
+/** What the model of the browser is doing, in the order it happens. */
+function recipeStages(progress: RecipeReaderProgress): AiStage[] {
+  const filesDone = progress.type !== 'files' || progress.share >= 1;
+  const current = progress.type === 'writing' ? 3 : progress.type === 'reading' ? 2 : filesDone ? 1 : 0;
+  const state = (stage: number): AiStage['state'] => (stage < current ? 'done' : stage === current ? 'running' : 'waiting');
+  return [
+    {
+      label: 'Ouverture du modèle',
+      detail: progress.type === 'files' && !filesDone ? `Lecture des fichiers sur le disque, ${Math.round(progress.share * 100)} %` : 'Lecture des fichiers sur le disque',
+      state: state(0),
+    },
+    { label: 'Installation dans la carte graphique', detail: 'Le plus long au démarrage : de quelques secondes à quelques minutes', state: state(1) },
+    { label: 'Analyse de la recette', detail: 'Le modèle lit le texte et les consignes du site', state: state(2) },
+    {
+      label: 'Écriture de la recette',
+      detail: progress.type === 'writing' ? `${progress.characters} caractères écrits` : 'Le formulaire se remplira à la fin',
+      state: state(3),
+    },
+  ];
+}
+
 const ENGINE_KEY = 'yona-recipe-ai-engine';
 
 function storedEngine(): Engine {
@@ -53,18 +76,18 @@ function storedEngine(): Engine {
  */
 @Component({
   selector: 'yona-recipe-ai-dialog',
-  imports: [Button, Dialog, Icon, LocalModelSetup],
+  imports: [Button, Dialog, Icon, LocalAiProgress, LocalModelSetup],
   template: `
-    <yona-dialog title="Remplir avec l'IA" [subtitle]="engine() === 'gemini' ? 'Gemini, de Google, en ligne' : recipeModel.name + ', sur cet ordinateur'" [closeOnBackdrop]="!reading()" [(open)]="open">
+    <yona-dialog title="Remplir avec l'IA" [subtitle]="engine() === 'gemini' ? 'Gemini de Google, en ligne' : recipeModel.name + ', sur cet ordinateur'" [closeOnBackdrop]="!reading()" [(open)]="open">
       <div class="ai">
         <div class="ai__engines" role="group" aria-label="Quelle IA utiliser">
           <button type="button" class="engine" [attr.aria-pressed]="engine() === 'gemini'" [disabled]="reading() || !!geminiUnavailable()" (click)="chooseEngine('gemini')">
             <span class="engine__name">Gemini</span>
             <span class="engine__detail">Google, en ligne. Texte ou photo</span>
           </button>
-          <button type="button" class="engine" [attr.aria-pressed]="engine() === 'local'" [disabled]="reading()" (click)="chooseEngine('local')">
+          <button type="button" class="engine" [attr.aria-pressed]="engine() === 'local'" [disabled]="reading() || onPhone" (click)="chooseEngine('local')">
             <span class="engine__name">IA locale</span>
-            <span class="engine__detail">{{ recipeModel.name }}, sur cet ordinateur. Texte seulement</span>
+            <span class="engine__detail">{{ onPhone ? 'Sur ordinateur seulement : ne fonctionne pas sur téléphone ou tablette' : recipeModel.name + ', sur cet ordinateur. Texte seulement' }}</span>
           </button>
         </div>
         @if (engine() === 'gemini') {
@@ -75,8 +98,9 @@ function storedEngine(): Engine {
           </p>
         } @else {
           <p class="field__hint">
-            Collez une recette : le modèle tourne sur cet ordinateur, le texte n'est envoyé à aucun service d'IA. Plus lent
-            que Gemini. Pour lire une photo, choisissez Gemini. Relisez tout avant d'enregistrer
+            Collez une recette : le modèle tourne sur cet ordinateur, rien n'est envoyé à Google ni à un autre service d'IA.
+            Plus lent que Gemini, et l'ordinateur peut ralentir pendant la lecture. Pour lire une photo, choisissez Gemini.
+            Relisez tout avant d'enregistrer
           </p>
           @if (open()) {
             <yona-local-model-setup [localModel]="recipeModel" [(ready)]="localReady" />
@@ -87,7 +111,7 @@ function storedEngine(): Engine {
           <textarea
             id="ai-text"
             class="input ai__text"
-            rows="6"
+            rows="14"
             [maxLength]="maxTextLength"
             placeholder="Crêpes pour 4 : 250 g de farine, 4 œufs, 50 cl de lait…"
             [disabled]="reading()"
@@ -125,16 +149,12 @@ function storedEngine(): Engine {
           <span class="field__hint">JPEG ou PNG, 10 Mo maximum : recette manuscrite, capture d'écran. Une photo est toujours lue par Gemini, de Google</span>
         </div>
         }
-        @if (reading()) {
+        @if (reading() && engine() === 'local') {
+          <yona-local-ai-progress [stages]="localStages()" />
+        } @else if (reading()) {
           <p class="ai__status" role="status">
             <svg yonaIcon="loader-circle" class="spin" [size]="18"></svg>
-            @if (engine() === 'gemini') {
-              Gemini lit la recette… Cela prend de quelques secondes à une minute
-            } @else if (written() > 0) {
-              Écriture de la recette… {{ written() }} caractères
-            } @else {
-              Chargement de {{ recipeModel.name }}… Cela peut prendre quelques minutes
-            }
+            Gemini lit la recette… Cela prend de quelques secondes à une minute
           </p>
         } @else if (error(); as message) {
           <p class="ai__status ai__status--error" role="alert">
@@ -199,7 +219,7 @@ function storedEngine(): Engine {
     }
 
     .ai__text {
-      min-height: 8rem;
+      min-height: 20rem;
     }
 
     .ai__below-text {
@@ -260,11 +280,18 @@ export class RecipeAiDialog {
   readonly geminiUnavailable = input<string | null>(null);
 
   protected readonly recipeModel = RECIPE_MODEL;
+  protected readonly onPhone = isPhoneOrTablet();
   private readonly chosenEngine = signal<Engine>(storedEngine());
-  /** Gemini out of service: the local model, whatever was chosen. */
-  protected readonly engine = computed<Engine>(() => (this.geminiUnavailable() ? 'local' : this.chosenEngine()));
+  /** Gemini out of service: the local model, whatever was chosen. On a phone: Gemini, the only one that can work. */
+  protected readonly engine = computed<Engine>(() => {
+    if (this.geminiUnavailable()) {
+      return 'local';
+    }
+    return this.onPhone ? 'gemini' : this.chosenEngine();
+  });
   protected readonly localReady = signal(false);
-  protected readonly written = signal(0);
+  private readonly localProgress = signal<RecipeReaderProgress>({ type: 'files', share: 0 });
+  protected readonly localStages = computed<AiStage[]>(() => recipeStages(this.localProgress()));
   private controller: AbortController | null = null;
   protected readonly accept = PHOTO_ACCEPT;
   protected readonly maxTextLength = MAX_TEXT_LENGTH;
@@ -324,7 +351,7 @@ export class RecipeAiDialog {
 
   protected async read(): Promise<void> {
     this.reading.set(true);
-    this.written.set(0);
+    this.localProgress.set({ type: 'files', share: 0 });
     this.error.set(null);
     this.controller = new AbortController();
     try {
@@ -364,7 +391,7 @@ export class RecipeAiDialog {
     const { instructions, context } = await this.api.invoke(getRecipeAiLocalPrompt);
     const answer = await readRecipeLocally(
       { instructions, message: `${context}\n\nRecette :\n${this.text().trim()}` },
-      (characters) => this.written.set(characters),
+      (progress) => this.localProgress.set(progress),
       signal,
     );
     return this.api.invoke(readRecipeAiLocalAnswer, { body: { answer } });

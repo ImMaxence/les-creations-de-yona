@@ -9,6 +9,8 @@ export interface RecipeReaderRequest {
 }
 
 export type RecipeReaderEvent =
+  | { type: 'files'; share: number }
+  | { type: 'reading' }
   | { type: 'writing'; characters: number }
   | { type: 'done'; answer: string }
   | { type: 'error'; message: string };
@@ -26,7 +28,17 @@ async function read({ instructions, message }: RecipeReaderRequest): Promise<voi
   setUpTransformers();
   const { repo, revision } = RECIPE_MODEL;
   const processor = await AutoProcessor.from_pretrained(repo, { revision });
-  const model = await Gemma4ForConditionalGeneration.from_pretrained(repo, { revision, dtype: 'q4f16', device: 'webgpu' });
+  const model = await Gemma4ForConditionalGeneration.from_pretrained(repo, {
+    revision,
+    dtype: 'q4f16',
+    device: 'webgpu',
+    progress_callback: (info: { status: string; progress?: number }) => {
+      if (info.status === 'progress_total') {
+        post({ type: 'files', share: (info.progress ?? 0) / 100 });
+      }
+    },
+  });
+  post({ type: 'reading' });
   const prompt = processor.apply_chat_template(
     [
       { role: 'system', content: instructions },

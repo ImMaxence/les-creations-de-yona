@@ -14,6 +14,7 @@ import { attempt } from '../../../core/api/attempt';
 import { replaceImage } from '../../../core/api/generated/fn/admin-images/replace-image';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
 import { ImageUploads } from '../../../core/api/image-uploads';
+import { isPhoneOrTablet } from '../../../core/local-ai/local-ai-format';
 import { Toaster } from '../../../core/notifications/toaster';
 import { CoverImage } from '../cover-image/cover-image';
 import { GalleryPicker } from '../gallery-picker/gallery-picker';
@@ -76,7 +77,7 @@ import { Icon } from '../icon/icon';
         <svg yonaIcon="images" [size]="18"></svg>
         Choisir dans la galerie
       </button>
-      <button type="button" class="pick" [disabled]="working()" (click)="generatorOpen.set(true)">
+      <button type="button" class="pick" [disabled]="working() || onPhone" (click)="generatorOpen.set(true)">
         <svg yonaIcon="sparkles" [size]="18"></svg>
         Générer avec l'IA
       </button>
@@ -101,6 +102,9 @@ import { Icon } from '../icon/icon';
         Format paysage ou carré, 800 × 450 px minimum. Recadrage, rotation et filtres avant l'envoi
       }
     </p>
+    @if (onPhone) {
+      <p class="field__hint">« Générer avec l'IA » demande un ordinateur : pas possible sur téléphone ou tablette</p>
+    }
     <yona-gallery-picker #picker [portrait]="portrait()" (chosen)="galleryImageChosen.emit($event)" />
     <yona-image-generator [portrait]="portrait()" [suggestion]="aiSuggestion()" [(open)]="generatorOpen" (generated)="openEditor($event)" />
     <yona-photo-editor
@@ -134,6 +138,7 @@ export class ImageUpload {
   readonly retouched = output<string>();
 
   protected readonly accept = EDITABLE_PHOTO_ACCEPT;
+  protected readonly onPhone = isPhoneOrTablet();
   protected readonly generatorOpen = signal(false);
   protected readonly editorOpen = signal(false);
   protected readonly editorSource = signal<File | string | null>(null);
