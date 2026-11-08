@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { safeParse } from '../../core/api/admin-errors.interceptor';
 import { Api } from '../../core/api/generated/api';
@@ -16,8 +16,8 @@ const MAX_MESSAGE_LENGTH = 2000;
 /**
  * "Donner mon avis": a message to Yona, an idea, a problem met on the site. Read in the back-office
  * ("Retours"); the email is optional, only to get an answer. A field hidden from people catches the
- * simplest robots; "Je ne suis pas un robot" is Google's reCAPTCHA, loaded only after the visitor's
- * click, like the YouTube videos. Its answer serves once: a refused message asks to tick it again.
+ * simplest robots; "Je ne suis pas un robot" is Google's reCAPTCHA, shown as soon as the page opens.
+ * Its answer serves once: a refused message asks to tick it again.
  */
 @Component({
   selector: 'yona-feedback',
@@ -75,12 +75,9 @@ const MAX_MESSAGE_LENGTH = 2000;
             <input id="feedback-website" tabindex="-1" autocomplete="off" [value]="website()" (input)="website.set($any($event.target).value)" />
           </div>
           <div class="feedback__captcha">
-            <div #captchaBox></div>
-            @if (!captchaShown()) {
-              <button yonaButton variant="secondary" type="button" [disabled]="loadingCaptcha()" (click)="showCaptcha()">
-                {{ loadingCaptcha() ? 'Chargement…' : 'Je ne suis pas un robot' }}
-              </button>
-              <span class="feedback__hint">Vérification par Google reCAPTCHA : elle ne se charge qu'après votre clic</span>
+            <div #captchaBox class="feedback__captcha-box"></div>
+            @if (captchaFailed()) {
+              <button yonaButton variant="secondary" type="button" (click)="showCaptcha()">Réessayer</button>
             }
           </div>
           @if (error(); as text) {
@@ -119,8 +116,7 @@ export default class Feedback {
   protected readonly sending = signal(false);
   protected readonly sent = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly captchaShown = signal(false);
-  protected readonly loadingCaptcha = signal(false);
+  protected readonly captchaFailed = signal(false);
   /** The answer of the checkbox, sent with the message. */
   private readonly captchaToken = signal<string | null>(null);
   protected readonly canSend = computed(() => !this.sending() && this.captchaToken() !== null && this.message().trim().length > 0);
@@ -130,8 +126,12 @@ export default class Feedback {
   /** The page the visitor came from, to know what the message is about. */
   private readonly fromPage = this.previousUrl();
 
+  constructor() {
+    afterNextRender(() => void this.showCaptcha());
+  }
+
   protected async showCaptcha(): Promise<void> {
-    this.loadingCaptcha.set(true);
+    this.captchaFailed.set(false);
     this.error.set(null);
     try {
       const { siteKey } = await this.api.invoke(getFeedbackCaptcha);
@@ -148,11 +148,9 @@ export default class Feedback {
         'expired-callback': () => this.captchaToken.set(null),
         'error-callback': () => this.captchaToken.set(null),
       });
-      this.captchaShown.set(true);
     } catch {
+      this.captchaFailed.set(true);
       this.error.set('La vérification Google n’a pas pu se charger : vérifiez votre connexion ou votre bloqueur de publicités, puis réessayez');
-    } finally {
-      this.loadingCaptcha.set(false);
     }
   }
 

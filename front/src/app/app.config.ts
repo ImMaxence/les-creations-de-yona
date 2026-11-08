@@ -98,7 +98,9 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(ConnectionStatus).listen()),
     provideAppInitializer(() => inject(AiVisits).count()),
     // Offline reading and installation as an app (PWA). Off in development, where it would cache stale code.
-    provideServiceWorker('ngsw-worker.js', {
+    // "v": a browser reinstalls the worker only when its file or address changes, and an installed
+    // worker keeps its Content-Security-Policy. To raise after a change of connect-src (security-headers.ts).
+    provideServiceWorker('ngsw-worker.js?v=2', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
     }),

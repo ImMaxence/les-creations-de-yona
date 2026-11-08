@@ -2,6 +2,23 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.20.1 - 2026-11-08
+
+Front and backend 1.20.1. No database migration.
+
+### Fixed
+
+- **Donner mon avis**: the reCAPTCHA failed to load, or stayed on "Chargement…", in browsers with the service worker: its Content-Security-Policy did not allow Google's scripts.
+
+### Changed
+
+- **Donner mon avis**: the reCAPTCHA is shown as soon as the page opens, without a first click; privacy policy updated.
+- **`devops/.env.example`**: `RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` set to Google's public test keys, with where to create the production ones.
+
+### Technical
+
+- Service worker registered at a new address (`ngsw-worker.js?v=2`), so installed browsers replace the one holding the old policy.
+
 ## 1.20.0 - 2026-11-08
 
 Front and backend 1.20.0. No database migration. New required production variables: `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`.

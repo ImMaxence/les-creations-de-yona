@@ -27,14 +27,17 @@ function contentSecurityPolicy(nonce: string, scriptHashes: string[]): string {
     // Scripts: the site's own files, the build's inline scripts (hashes) and the one Angular
     // writes while rendering (nonce). Nothing else, so an injected script would not run.
     // Google Analytics: its script, loaded only once the visitor has accepted (core/analytics).
-    // reCAPTCHA of "Donner mon avis": loaded only after the visitor's click.
+    // reCAPTCHA of "Donner mon avis".
     `script-src 'self' 'nonce-${nonce}' ${scriptHashes.join(' ')} https://www.googletagmanager.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/`,
     // Angular sets component styles and style bindings inline: no nonce on that side.
     "style-src 'self' 'unsafe-inline'",
     // blob: preview of a photo before upload in the back-office.
     "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com",
     // Google Analytics sends its measures there; reCAPTCHA calls its own API from the page.
-    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.google.com/recaptcha/",
+    // The service worker fetches a page's scripts under this directive, not script-src: a host of
+    // script-src also goes here. An installed worker keeps the policy it was installed with: after
+    // a change here, change its address too (provideServiceWorker, app.config.ts).
+    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
     // Recipe videos: YouTube's privacy-enhanced player, loaded only after a click (YoutubeVideo).
     'frame-src https://www.youtube-nocookie.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/',
     "object-src 'none'",

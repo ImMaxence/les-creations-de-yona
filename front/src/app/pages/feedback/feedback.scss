@@ -103,11 +103,11 @@ textarea.feedback__input {
   display: grid;
   gap: var(--space-2);
   justify-items: start;
+}
 
-  // Empty until the visitor's click: no gap above the button
-  > div:empty {
-    display: none;
-  }
+// The height of Google's widget: the page does not jump when it appears
+.feedback__captcha-box {
+  min-height: 78px;
 }
 
 .feedback__error {
