@@ -52,6 +52,8 @@ export type { PublicKeyResponse } from './models/public-key-response';
 export type { PushSubscriptionForm } from './models/push-subscription-form';
 export type { RecipeAdminSummary } from './models/recipe-admin-summary';
 export type { RecipeAiDraft } from './models/recipe-ai-draft';
+export type { RecipeAiLocalAnswer } from './models/recipe-ai-local-answer';
+export type { RecipeAiLocalPrompt } from './models/recipe-ai-local-prompt';
 export type { RecipeAiRequest } from './models/recipe-ai-request';
 export type { RecipeAiStatus } from './models/recipe-ai-status';
 export type { RecipeCard } from './models/recipe-card';

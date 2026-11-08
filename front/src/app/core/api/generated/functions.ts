@@ -169,6 +169,10 @@ export type { GetRecipeAiStatus$Params as GetRecipeAiStatus$Params } from './fn/
 export { getRecipeAiStatus as getRecipeAiStatus } from './fn/admin-recipe-ai/get-recipe-ai-status';
 export type { FillRecipeWithAi$Params as FillRecipeWithAi$Params } from './fn/admin-recipe-ai/fill-recipe-with-ai';
 export { fillRecipeWithAi as fillRecipeWithAi } from './fn/admin-recipe-ai/fill-recipe-with-ai';
+export type { ReadRecipeAiLocalAnswer$Params as ReadRecipeAiLocalAnswer$Params } from './fn/admin-recipe-ai/read-recipe-ai-local-answer';
+export { readRecipeAiLocalAnswer as readRecipeAiLocalAnswer } from './fn/admin-recipe-ai/read-recipe-ai-local-answer';
+export type { GetRecipeAiLocalPrompt$Params as GetRecipeAiLocalPrompt$Params } from './fn/admin-recipe-ai/get-recipe-ai-local-prompt';
+export { getRecipeAiLocalPrompt as getRecipeAiLocalPrompt } from './fn/admin-recipe-ai/get-recipe-ai-local-prompt';
 export type { BackUpToDriveNow$Params as BackUpToDriveNow$Params } from './fn/admin-google-drive/back-up-to-drive-now';
 export { backUpToDriveNow as backUpToDriveNow } from './fn/admin-google-drive/back-up-to-drive-now';
 export type { GetDriveStatus$Params as GetDriveStatus$Params } from './fn/admin-google-drive/get-drive-status';

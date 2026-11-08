@@ -44,6 +44,7 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "webWorkerTsConfig": "tsconfig.worker.json",
             "inlineStyleLanguage": "scss",
             "loader": {
               ".md": "text"
@@ -52,6 +53,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "ort-wasm-simd-threaded.{asyncify,jsep}.{mjs,wasm}",
+                "input": "node_modules/onnxruntime-web/dist",
+                "output": "ort"
               }
             ],
             "styles": [

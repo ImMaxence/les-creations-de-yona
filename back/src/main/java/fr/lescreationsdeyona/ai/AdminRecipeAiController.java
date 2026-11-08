@@ -2,10 +2,12 @@ package fr.lescreationsdeyona.ai;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,6 +34,18 @@ class AdminRecipeAiController {
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	RecipeAiDraft fillRecipeWithAi(@ModelAttribute RecipeAiRequest request) {
 		return recipeAiService.draft(request.text(), request.image());
+	}
+
+	@Operation(summary = "What the model running in the browser is told to read a recipe")
+	@GetMapping("/local-prompt")
+	RecipeAiLocalPrompt getRecipeAiLocalPrompt() {
+		return recipeAiService.localPrompt();
+	}
+
+	@Operation(summary = "Check the answer of the model running in the browser, to fill the editor; nothing is saved")
+	@PostMapping("/local-draft")
+	RecipeAiDraft readRecipeAiLocalAnswer(@Valid @RequestBody RecipeAiLocalAnswer answer) {
+		return recipeAiService.localDraft(answer.answer());
 	}
 
 }

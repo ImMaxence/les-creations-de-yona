@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 1.20.1 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 1.21.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -39,7 +39,7 @@ Sur téléphone, là où se lisent la plupart des recettes :
 
 **Pour Yona (back-office, connexion Google)**
 
-- Éditeur de recettes (parties, étapes minutées, matériel, conseil, thème, publication programmée avec statut « Échec » et « Publier maintenant » si elle n'a pas pu se faire, mise à la une d'avance, brouillon gardé), « Remplir avec l'IA » (Gemini lit un texte collé ou la photo d'une recette), aperçu, liste triable (modification, création, titre, vues).
+- Éditeur de recettes (parties, étapes minutées, matériel, conseil, thème, publication programmée avec statut « Échec » et « Publier maintenant » si elle n'a pas pu se faire, mise à la une d'avance, brouillon gardé), « Remplir avec l'IA » (Gemini lit un texte collé ou la photo d'une recette ; un modèle qui tourne dans le navigateur lit le texte collé), « Générer avec l'IA » (images dessinées dans le navigateur), aperçu, liste triable (modification, création, titre, vues).
 - Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients et mots du glossaire, qui reviennent à leur place une fois restaurés.
 - Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur), retours des visiteurs, titres de l'accueil modifiables.
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
@@ -78,7 +78,7 @@ cd e2e && npm test     # parcours dans Chrome (dont accessibilité et Lighthouse
 | [Roadmap](docs/roadmap.md) | Versions passées et points à vérifier |
 | [CHANGELOG](CHANGELOG.md) | Le détail de chaque version, aussi affiché dans le back-office |
 | [Sécurité](SECURITY-REVIEW.md) · [Restauration](docs/restauration.md) · [Google](docs/google.md) · [Domaine](docs/changement-de-domaine.md) | Revue de sécurité, procédures |
-| [IA](docs/ia.md) | « Remplir avec l'IA » : utilisation, erreurs, clé Gemini, fonctionnement |
+| [IA](docs/ia.md) | « Remplir avec l'IA » et « Générer avec l'IA » : Gemini, modèles locaux, erreurs, fonctionnement |
 
 ## Licence
 

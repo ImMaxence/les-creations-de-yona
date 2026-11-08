@@ -43,11 +43,29 @@ final class RecipeAiPrompt {
 			- categories et tags : seulement des noms exacts des listes du site données plus bas ; une ou deux catégories, \
 			la plus juste en premier ; listes vides si rien ne convient.""";
 
+	/** Where the small model of the browser went wrong, on real recipes: it rounded to kilograms and dropped steps. */
+	private static final String LOCAL_RULES = """
+
+			- Recopie chaque quantité et chaque unité telles qu'elles sont écrites : 250 g reste quantity 250 et unit g, jamais 0.25 kg. \
+			Ne convertis et n'arrondis rien.
+			- Recopie toutes les étapes, jusqu'à la dernière, sans en oublier ni en regrouper.
+			- equipment, mold, difficulty : seulement ce que la recette écrit ; n'en déduis rien.""";
+
 	/** The site's names, then the recipe. */
 	static String message(String recipe, Collection<String> categories, Collection<String> tags,
 			Collection<String> ingredients) {
+		return context(categories, tags, ingredients) + "\n\nRecette :\n" + (recipe.isBlank() ? "(voir la photo)" : recipe);
+	}
+
+	/** The site's names, which the recipe follows. */
+	static String context(Collection<String> categories, Collection<String> tags, Collection<String> ingredients) {
 		return "Catégories du site : " + names(categories) + "\nTags du site : " + names(tags) + "\nIngrédients déjà connus : "
-				+ names(ingredients) + "\n\nRecette :\n" + (recipe.isBlank() ? "(voir la photo)" : recipe);
+				+ names(ingredients);
+	}
+
+	/** For the model of the browser: nothing forces its answer into the schema, it is asked to follow it. */
+	static String localInstructions(String schema) {
+		return INSTRUCTIONS + LOCAL_RULES + "\n\nRéponds uniquement avec un objet JSON conforme à ce schéma, sans aucun texte autour :\n" + schema;
 	}
 
 	private static String names(Collection<String> names) {

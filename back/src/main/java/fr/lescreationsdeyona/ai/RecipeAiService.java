@@ -126,6 +126,36 @@ public class RecipeAiService {
 		}
 	}
 
+	/** Same rules and same names of the site as Gemini: only who reads the recipe changes. */
+	public RecipeAiLocalPrompt localPrompt() {
+		RecipeAiReader.Known known = known();
+		return new RecipeAiLocalPrompt(RecipeAiPrompt.localInstructions(jsonMapper.writeValueAsString(RecipeAiPrompt.schema())),
+				RecipeAiPrompt.context(known.categories().keySet(), known.tags().keySet(), known.ingredients()));
+	}
+
+	/** Checked exactly as an answer of Gemini: nothing the model wrote is taken as it is. */
+	public RecipeAiDraft localDraft(String answer) {
+		try {
+			RecipeAiDraft draft = RecipeAiReader.read(jsonMapper.readTree(jsonIn(answer)), known());
+			if (draft == null) {
+				throw new ApiException(ErrorCode.AI_NOT_A_RECIPE);
+			}
+			return draft;
+		} catch (JacksonException e) {
+			throw new ApiException(ErrorCode.AI_LOCAL_BAD_RESPONSE);
+		}
+	}
+
+	/** The object in the answer: without a schema to force it, a model likes to put a code fence around. */
+	static String jsonIn(String answer) {
+		int start = answer.indexOf('{');
+		int end = answer.lastIndexOf('}');
+		if (start < 0 || end < start) {
+			throw new ApiException(ErrorCode.AI_LOCAL_BAD_RESPONSE);
+		}
+		return answer.substring(start, end + 1);
+	}
+
 	static ErrorCode errorCode(Gemini.Failure failure) {
 		return switch (failure) {
 			case KEY_REFUSED -> ErrorCode.AI_KEY_REFUSED;

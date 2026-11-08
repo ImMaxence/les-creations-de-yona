@@ -99,6 +99,7 @@ public enum ErrorCode {
 	AI_NOT_A_RECIPE(HttpStatus.BAD_REQUEST, "L'IA n'a pas trouvé de recette dans ce texte ou cette photo"),
 	AI_BLOCKED(HttpStatus.BAD_REQUEST, "Gemini a refusé de lire ce contenu"),
 	AI_BAD_RESPONSE(HttpStatus.BAD_GATEWAY, "La réponse de Gemini est illisible : réessayez"),
+	AI_LOCAL_BAD_RESPONSE(HttpStatus.BAD_REQUEST, "La réponse de l'IA locale est illisible : réessayez"),
 
 	// Images
 	IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Image introuvable"),

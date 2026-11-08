@@ -1,0 +1,9 @@
+/* The Web Workers of the models running in the back-office. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["esnext", "webworker", "dom"],
+    "types": []
+  },
+  "include": ["src/**/*.worker.ts"]
+}

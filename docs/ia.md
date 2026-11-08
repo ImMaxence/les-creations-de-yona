@@ -1,4 +1,4 @@
-# Remplir une recette avec l'IA (Gemini)
+# L'IA du back-office : Gemini et modèles locaux
 
 Depuis la 1.8.0, l'éditeur de recettes du back-office a un bouton **« Remplir avec l'IA »** : Gemini, l'IA de Google, lit une recette collée ou photographiée et remplit le formulaire. Gratuit (offre gratuite de l'API Gemini). Retour au [ReadMe](../ReadMe.md).
 
@@ -37,7 +37,29 @@ Les erreurs passagères (surcharge, trop de demandes) ne grisent pas le bouton :
 
 Ne jamais mettre la clé dans le code, ni la donner au navigateur : seul le backend l'utilise.
 
-## Fonctionnement
+## IA locale (1.21)
+
+Dans **« Remplir avec l'IA »**, le bouton **« IA locale »** lit une recette collée sur l'ordinateur, sans passer par Google : utile quand le quota Gemini est épuisé, ou pour ne rien envoyer. **« Générer avec l'IA »**, sur chaque champ photo du back-office, dessine une image à partir d'une description ; elle passe ensuite par l'éditeur de photos, comme un fichier.
+
+| | Modèle | Téléchargement | Licence |
+| --- | --- | --- | --- |
+| Lire une recette collée (texte seul) | Gemma 4 E4B (`q4f16`) | 5,2 Go | Apache 2.0 |
+| Générer une image (1024 × 768, ou 768 × 1024 en portrait) | FLUX.2 klein 4B, encodeur Qwen3 | 6,5 Go | Apache 2.0 |
+
+- Chaque modèle se télécharge une fois, depuis Hugging Face, puis reste dans ce navigateur, sur cet appareil. **« Supprimer »** rend la place.
+- Il faut un navigateur récent avec WebGPU (Chrome, Edge, Safari) et assez de mémoire : fermer les applications lourdes.
+- Gemma n'a pas de format imposé : on lui demande du JSON, que le backend contrôle comme une réponse de Gemini.
+- L'IA locale ne lit pas les photos, seulement le texte collé : essayé le 2026-11-08, le modèle lisait mal les quantités d'une recette manuscrite (250 g lu 350 g) et oubliait des étapes. Pour une photo, Gemini.
+- Essai du 2026-11-08 (Chrome, Radeon RX 5700 XT) : recette tapée, juste en 83 s ; image 1024 × 768, environ 5 min. À mesurer sur le MacBook M2 16 Go, qui sera plus lent.
+
+Fonctionnement :
+
+- Front (`core/local-ai/`) : `local-models.ts` (fichiers et commit figés), `model-store.ts` (téléchargement dans le Cache storage, hors service worker), `recipe-reader.worker.ts` (Transformers.js), `image.worker.ts` et `generate-image.ts` (ONNX Runtime Web).
+- Un worker par réseau de neurones, terminé avant le suivant : c'est la seule façon de rendre la mémoire graphique. Le WebAssembly d'ONNX Runtime est servi par le site (`/ort/`, copié par `angular.json`), pas par un CDN.
+- Changer de modèle : mettre à jour `local-models.ts` (dépôt, commit, fichiers et tailles).
+- Backend : `GET /api/admin/recipe-ai/local-prompt` (consigne, schéma, noms du site) et `POST /api/admin/recipe-ai/local-draft` (la réponse, passée à `RecipeAiReader`).
+
+## Fonctionnement de Gemini
 
 - Front : `pages/admin/recipe-editor/recipe-ai-dialog.ts` (fenêtre), `fromAiDraft` dans `recipe-draft.ts` (le brouillon reçu devient le formulaire), état du bouton par `GET /api/admin/recipe-ai`.
 - Backend (`ai/`) : `POST /api/admin/recipe-ai` (multipart : `text`, 20 000 caractères au plus, et/ou `image`, JPEG ou PNG reconnu à son contenu, 10 Mo). Une seule lecture à la fois (sinon 409). Gemini est appelé hors de toute transaction.

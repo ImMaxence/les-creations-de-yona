@@ -276,10 +276,11 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly aiOpen = signal(false);
   /** The form was filled by the AI and not saved since: a banner asks to check it. */
   protected readonly aiFilled = signal(false);
-  protected readonly aiTitle = computed(() => {
+  /** Why Gemini cannot be used now; null when it can. */
+  protected readonly geminiUnavailable = computed(() => {
     const status = this.aiStatus.value();
     if (!status || status.available) {
-      return 'Remplir le formulaire depuis le texte ou la photo d’une recette';
+      return null;
     }
     return status.availableAgainAt ? `${status.reason} (vers ${parisDateTime(status.availableAgainAt)})` : (status.reason ?? '');
   });

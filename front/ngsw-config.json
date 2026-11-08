@@ -21,7 +21,8 @@
           "/index.csr.html",
           "/manifest.webmanifest",
           "/*.css",
-          "/*.js"
+          "/*.js",
+          "!/worker-*.js"
         ]
       }
     },

@@ -6,8 +6,7 @@
         yonaButton
         variant="secondary"
         type="button"
-        [disabled]="aiStatus.value()?.available !== true"
-        [title]="aiTitle()"
+        title="Remplir le formulaire depuis le texte ou la photo d’une recette"
         (click)="aiOpen.set(true)"
       >
         <svg yonaIcon="sparkles"></svg>Remplir avec l'IA
@@ -26,7 +25,7 @@
     @if (!status.available) {
       <p class="field__hint ai-unavailable">
         <svg yonaIcon="sparkles" [size]="14"></svg>
-        Remplir avec l'IA : {{ aiTitle() }}
+        Gemini : {{ geminiUnavailable() }}. L'IA locale reste possible
       </p>
     }
   }
@@ -300,6 +299,7 @@
       <yona-image-upload
         [imageId]="imageId()"
         [previewUrl]="pendingPreview()"
+        [aiSuggestion]="draft().title"
         [busy]="uploading()"
         [progress]="uploadProgress()"
         (fileChosen)="onImageChosen($event)"
@@ -320,6 +320,7 @@
       portrait
       [imageId]="pinterestImageId()"
       [previewUrl]="pinterestPreview()"
+      [aiSuggestion]="draft().title"
       [busy]="pinterestUploading()"
       [progress]="pinterestProgress()"
       (fileChosen)="onImageChosen($event, 'pinterest')"
@@ -448,7 +449,7 @@
   </div>
 </form>
 
-<yona-recipe-ai-dialog [(open)]="aiOpen" (filled)="fillWithAi($event)" (unavailable)="aiStatus.reload()" />
+<yona-recipe-ai-dialog [(open)]="aiOpen" [geminiUnavailable]="geminiUnavailable()" (filled)="fillWithAi($event)" (unavailable)="aiStatus.reload()" />
 
 <yona-dialog size="full" title="Aperçu" [subtitle]="previewStatus()" [(open)]="previewOpen">
   @if (preview(); as recipe) {

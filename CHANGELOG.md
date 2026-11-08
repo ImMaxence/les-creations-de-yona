@@ -2,6 +2,25 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 1.21.0 - 2026-11-08
+
+Front and backend 1.21.0. No database migration.
+
+### Added
+
+- **Remplir avec l'IA, local model**: Gemma 4 E4B runs in the admin's browser (WebGPU), for pasted text only, next to Gemini; downloaded once from Hugging Face (5.2 GB), kept in the browser, removable. Still usable when Gemini is out of quota.
+- **Générer avec l'IA**: every photo field of the back-office can draw an image in the browser with FLUX.2 klein 4B (6.5 GB), then send it to the photo editor.
+
+### Changed
+
+- **Legal pages**: privacy policy and legal notice cover the models running in the admin's browser.
+
+### Technical
+
+- Front: `core/local-ai/` (pinned model files, Cache storage, one Web Worker per network so that graphics memory is freed); ONNX Runtime's WebAssembly served by the site (`/ort/`).
+- Backend: `GET /api/admin/recipe-ai/local-prompt` and `POST /api/admin/recipe-ai/local-draft`: same rules and same checks as Gemini.
+- CSP: `wasm-unsafe-eval`, and Hugging Face in `connect-src`.
+
 ## 1.20.1 - 2026-11-08
 
 Front and backend 1.20.1. No database migration.

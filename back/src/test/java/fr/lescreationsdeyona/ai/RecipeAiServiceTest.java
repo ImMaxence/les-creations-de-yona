@@ -25,6 +25,45 @@ class RecipeAiServiceTest {
 			mock(CategoryRepository.class), mock(TagRepository.class), mock(IngredientRepository.class));
 
 	@Test
+	void findsTheJsonInTheAnswerOfTheLocalModel() {
+		assertThat(RecipeAiService.jsonIn("```json\n{\"isRecipe\":true}\n```")).isEqualTo("{\"isRecipe\":true}");
+		assertThat(RecipeAiService.jsonIn("{\"a\":{\"b\":1}}")).isEqualTo("{\"a\":{\"b\":1}}");
+	}
+
+	@Test
+	void refusesALocalAnswerWithoutJson() {
+		assertThatThrownBy(() -> service.localDraft("Je ne peux pas lire cette recette"))
+			.extracting("code")
+			.isEqualTo(ErrorCode.AI_LOCAL_BAD_RESPONSE);
+		assertThatThrownBy(() -> service.localDraft("{\"isRecipe\": tru"))
+			.extracting("code")
+			.isEqualTo(ErrorCode.AI_LOCAL_BAD_RESPONSE);
+	}
+
+	@Test
+	void refusesALocalAnswerThatIsNotARecipe() {
+		assertThatThrownBy(() -> service.localDraft("{\"isRecipe\":false}"))
+			.extracting("code")
+			.isEqualTo(ErrorCode.AI_NOT_A_RECIPE);
+	}
+
+	@Test
+	void acceptsAKeyWrittenTwiceByTheLocalModel() {
+		// Seen on a real answer: "tip" twice. Still a readable answer (here: not a recipe)
+		assertThatThrownBy(() -> service.localDraft("{\"isRecipe\":false,\"tip\":\"a\",\"tip\":\"b\"}"))
+			.extracting("code")
+			.isEqualTo(ErrorCode.AI_NOT_A_RECIPE);
+	}
+
+	@Test
+	void tellsTheLocalModelTheSiteNamesAndTheExpectedJson() {
+		RecipeAiLocalPrompt prompt = service.localPrompt();
+
+		assertThat(prompt.instructions()).startsWith(RecipeAiPrompt.INSTRUCTIONS).contains("\"isRecipe\"");
+		assertThat(prompt.context()).contains("Catégories du site : aucun");
+	}
+
+	@Test
 	void greysTheButtonOutWithoutAKeyOrWithARefusedOne() {
 		assertThat(service.status().available()).isFalse();
 
