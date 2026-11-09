@@ -254,6 +254,8 @@ await part('Menu (téléphone)', async () => {
   await menu.locator('summary').first().click();
   await menu.locator('summary').nth(1).click();
   check('Menu : une section ouverte à la fois', (await menu.locator('details[open]').count()) === 1);
+  const kinds = await menu.locator('.entry').evaluateAll((rows) => rows.map((row) => row.tagName));
+  check('Menu : les pages d’abord, les sections ensuite', kinds.lastIndexOf('A') < kinds.indexOf('SUMMARY'), kinds.join(' '));
   await menu.getByRole('link', { name: 'Recettes', exact: true }).click();
   await page.waitForURL('**/recettes');
   await menu.waitFor({ state: 'hidden' });
@@ -519,6 +521,15 @@ await part('Connexion et cadre du back-office', async () => {
   await side.locator('.account__email').hover();
   await desktop.locator('.tooltip.is-open').waitFor();
   check('Ordinateur : l’e-mail complet au survol', (await desktop.locator('.tooltip.is-open').innerText()) === 'yona@example.fr');
+  const blog = side.locator('.group__toggle', { hasText: 'Blog' });
+  await blog.click();
+  await desktop.waitForTimeout(400);
+  check('Ordinateur : une section se ferme', (await blog.getAttribute('aria-expanded')) === 'false' && !(await side.locator('a.link', { hasText: 'Tags' }).isVisible()));
+  await desktop.reload({ waitUntil: 'load' });
+  await blog.waitFor();
+  check('Ordinateur : fermée, elle le reste', (await blog.getAttribute('aria-expanded')) === 'false');
+  await blog.click();
+  check('Ordinateur : elle se rouvre', (await blog.getAttribute('aria-expanded')) === 'true');
   await desktop.context().close();
 });
 

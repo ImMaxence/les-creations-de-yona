@@ -18,8 +18,6 @@
   width: var(--admin-side);
   border-right: 1px solid var(--color-line);
   background-color: var(--color-bg);
-  // Out of the page transition (see _motion.scss): only the section beside it changes
-  view-transition-name: admin-nav;
 }
 
 .admin__bar {
@@ -34,7 +32,6 @@
   padding-inline: var(--container-padding);
   border-bottom: 1px solid var(--color-line);
   background-color: var(--color-bg);
-  view-transition-name: admin-nav;
 }
 
 .admin__menu {

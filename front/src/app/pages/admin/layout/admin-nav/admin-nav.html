@@ -12,29 +12,22 @@
 <nav class="groups" aria-label="Sections du back-office">
   @for (group of groups; track group.id) {
     <section class="group" routerLinkActive="is-current" [attr.aria-label]="group.label">
-      <!-- Phones: one group unfolded at a time, the one holding the page shown to start with -->
-      @if (drawer()) {
-        <button
-          type="button"
-          class="group__toggle"
-          [attr.aria-expanded]="openGroup() === group.id"
-          [attr.aria-controls]="'admin-menu-' + group.id"
-          (click)="toggleGroup(group.id)"
-        >
-          <svg [yonaIcon]="group.icon" [size]="22"></svg>
-          {{ group.label }}
-          @if (groupCount(group); as count) {
-            <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
-          }
-          <span class="group__chevron"><svg yonaIcon="chevron-down" [size]="20" aria-hidden="true"></svg></span>
-        </button>
-      } @else {
-        <p class="group__title">
-          <span class="group__badge"><svg [yonaIcon]="group.icon" [size]="16"></svg></span>
-          {{ group.label }}
-        </p>
-      }
-      <ul role="list" class="links" [id]="'admin-menu-' + group.id" [hidden]="drawer() && openGroup() !== group.id">
+      <button
+        type="button"
+        class="group__toggle"
+        [attr.aria-expanded]="isOpen(group.id)"
+        [attr.aria-controls]="'admin-menu-' + group.id"
+        (click)="toggleGroup(group.id)"
+      >
+        <span class="group__badge"><svg [yonaIcon]="group.icon" [size]="drawer() ? 20 : 16"></svg></span>
+        <span class="group__label">{{ group.label }}</span>
+        <!-- Open, each section says it itself -->
+        @if (!isOpen(group.id) && groupCount(group); as count) {
+          <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
+        }
+        <span class="group__chevron"><svg yonaIcon="chevron-down" [size]="drawer() ? 20 : 16" aria-hidden="true"></svg></span>
+      </button>
+      <ul role="list" class="links" [class.is-closed]="!isOpen(group.id)" [id]="'admin-menu-' + group.id">
         @for (link of group.links; track link.path) {
           <li>
             <a class="link" [routerLink]="link.path" routerLinkActive="is-active">

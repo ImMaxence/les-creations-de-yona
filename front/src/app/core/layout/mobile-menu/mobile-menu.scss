@@ -41,10 +41,11 @@
   background-color: var(--color-accent);
   color: var(--color-on-accent);
   clip-path: circle(0 at var(--menu-origin));
+  // Leaving is quick: this is the closing; the opening has its own, in [open]
   transition:
-    clip-path var(--duration-reveal) var(--ease-out),
-    overlay var(--duration-reveal) allow-discrete,
-    display var(--duration-reveal) allow-discrete;
+    clip-path var(--duration-base) var(--ease-out),
+    overlay var(--duration-base) allow-discrete,
+    display var(--duration-base) allow-discrete;
 
   &:not([open]) {
     display: none;
@@ -52,6 +53,10 @@
 
   &[open] {
     clip-path: circle(150% at var(--menu-origin));
+    transition:
+      clip-path var(--duration-reveal) var(--ease-out),
+      overlay var(--duration-reveal) allow-discrete,
+      display var(--duration-reveal) allow-discrete;
 
     @starting-style {
       clip-path: circle(0 at var(--menu-origin));
@@ -126,6 +131,11 @@ yona-navigation-progress {
 .menu__search {
   display: block;
   margin-bottom: var(--space-2);
+}
+
+// The sections, apart from the pages
+.menu__sections {
+  margin-top: var(--space-4);
 }
 
 .entry {
@@ -213,81 +223,52 @@ yona-navigation-progress {
   }
 }
 
-.section__body {
-  display: grid;
-  gap: var(--space-2);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-on-accent) 22%, transparent);
-}
-
 .section__title {
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
+  padding-left: var(--space-4);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-
-  &:first-child {
-    margin-top: 0;
-  }
 }
 
-.pills {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-
-.pills--list {
-  grid-template-columns: minmax(0, 1fr);
-
-  .pill {
-    justify-content: flex-start;
-  }
-
-  .entry__count {
-    margin-left: auto;
-  }
-}
-
-.pills__wide {
-  grid-column: 1 / -1;
-}
-
-.pill {
+// Inside a section: the same rows, one step down
+.sub {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-3);
-  min-height: 3.25rem;
-  padding: var(--space-2) var(--space-5);
-  border-radius: var(--radius-pill);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-on-accent) 50%, transparent);
-  font-weight: 600;
+  min-height: 3rem;
+  padding-left: var(--space-4);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-on-accent) 14%, transparent);
+  font-family: var(--font-display);
+  font-size: clamp(1.125rem, 5vw, 1.25rem);
+  font-weight: 500;
   line-height: 1.2;
-  text-align: center;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition: transform var(--duration-fast) var(--ease-out);
 
   svg {
     flex: none;
+    opacity: 0.8;
+    transition: transform var(--duration-base) var(--ease-out);
   }
 
-  &:active {
-    transform: scale(0.97);
+  &:active svg {
+    transform: translateX(4px);
   }
 
-  &.is-active {
-    background-color: color-mix(in srgb, var(--color-on-accent) 18%, transparent);
+  &.is-active .sub__label {
+    font-style: italic;
   }
 }
 
-// "Toutes les recettes salées": the way into the theme, before its categories
-.pill--solid {
-  background-color: var(--color-on-accent);
-  box-shadow: none;
-  color: var(--color-accent);
+.sub--all {
+  font-weight: 600;
+}
+
+.sub__label {
+  flex: 1;
+  min-width: 0;
 }
 
 // The light/dark choice and the networks follow the panel: their colours, redefined for them

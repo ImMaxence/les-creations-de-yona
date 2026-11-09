@@ -58,7 +58,7 @@
   display: grid;
   flex: 1;
   align-content: start;
-  gap: var(--space-4);
+  gap: var(--space-3);
   // Only the sections scroll, the account stays in sight. No bar: the last rows fade out instead.
   min-height: 0;
   padding-bottom: var(--space-6);
@@ -89,16 +89,48 @@
   }
 }
 
-// Each group announces itself: its badge, its name in the type of the titles
-.group__title {
+// Each group announces itself and folds away: its badge, its name in the type of the titles, a chevron
+.group__toggle {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-2);
+  width: 100%;
+  min-height: 2.5rem;
+  border-radius: var(--radius-sm);
   font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: 600;
   line-height: 1.2;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+
+  .nav-count {
+    font-family: var(--font-body);
+  }
+
+  @include m.hover {
+    .group__chevron {
+      color: var(--color-text);
+    }
+  }
+
+  // Inside the list that scrolls: drawn within, not cut off by its edges
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
+
+  .is-current > & {
+    color: var(--color-accent);
+  }
+
+  :host(.is-drawer) & {
+    gap: var(--space-3);
+    min-height: 4rem;
+    padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+    border-radius: inherit;
+    font-size: var(--text-xl);
+  }
 }
 
 .group__badge {
@@ -110,10 +142,44 @@
   border-radius: var(--radius-sm);
   background-color: var(--color-accent);
   color: var(--color-on-accent);
+
+  :host(.is-drawer) & {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+
+.group__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.group__chevron {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-text-muted);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+
+  [aria-expanded='true'] > & {
+    transform: rotate(180deg);
+  }
+
+  :host(.is-drawer) & {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
 }
 
 .group + .group {
-  padding-top: var(--space-4);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--color-line);
 
   :host(.is-drawer) & {
@@ -122,65 +188,28 @@
   }
 }
 
-.group__toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  width: 100%;
-  min-height: 4rem;
-  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
-  border-radius: inherit;
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 600;
-  text-align: left;
-  -webkit-tap-highlight-color: transparent;
-
-  > svg {
-    flex: none;
-    color: var(--color-accent);
-  }
-
-  .nav-count {
-    font-family: var(--font-body);
-  }
-
-  .is-current > & {
-    color: var(--color-accent);
-  }
-
-  &:focus-visible {
-    @include m.focus-ring;
-  }
-}
-
-.group__chevron {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  margin-left: auto;
-  border-radius: 50%;
-  background-color: var(--color-bg);
-  transition: transform var(--duration-base) var(--ease-out);
-
-  [aria-expanded='true'] > & {
-    transform: rotate(180deg);
-  }
-}
-
+// Folds smoothly where the browser can; elsewhere, at once
 .links {
   display: grid;
   gap: 1px;
+  overflow: clip;
+  interpolate-size: allow-keywords;
+  transition:
+    height var(--duration-base) var(--ease-out),
+    visibility var(--duration-base) allow-discrete;
 
-  &[hidden] {
-    display: none;
+  &.is-closed {
+    height: 0;
+    visibility: hidden;
   }
 
   :host(.is-drawer) & {
     gap: var(--space-2);
     padding: 0 var(--space-3) var(--space-3);
+
+    &.is-closed {
+      padding-block: 0;
+    }
   }
 }
 
@@ -209,6 +238,12 @@
 
   .nav-count {
     margin-left: auto;
+  }
+
+  // Inside a group that clips: drawn within, not cut off
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
   }
 
   &.is-active {

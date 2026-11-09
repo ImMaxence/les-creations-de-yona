@@ -2,6 +2,23 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 2.2.0 - 2026-11-09
+
+Front and backend 2.2.0. No database migration.
+
+### Added
+
+- **Back-office panel**: each group opens and closes, and stays as you left it.
+
+### Changed
+
+- **Phone menu**: pages first, then sections; plain rows inside a section; closing is faster.
+
+### Fixed
+
+- **Back-office**: no more page transition, which blocked scrolling and clicks during a change of section.
+- **Light/dark choice**: "Sombre" no longer touches the edge in the panel.
+
 ## 2.1.1 - 2026-11-09
 
 Front and backend 2.1.1. No database migration.

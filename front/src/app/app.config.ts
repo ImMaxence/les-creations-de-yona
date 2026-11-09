@@ -38,10 +38,13 @@ import { serviceWorkerBypassInterceptor } from './core/pwa/service-worker-bypass
 import { SeoStrategy } from './core/seo/seo-strategy';
 import { SiteData } from './core/site/site-data';
 import { SiteTheme } from './core/theme/site-theme';
+import { isBackOfficeUrl } from './shared/routing/links';
 
 /**
  * No page transition when only the query changes (search, filter): same page.
  * Nor while the phone menu is open: its own fade-out reveals the new page.
+ * Nor in or out of the back-office: while a transition lasts, its overlay takes every click and
+ * scroll, and the admin goes from one section to another quickly.
  */
 function skipTransitionWhenNeeded({ transition }: ViewTransitionInfo): void {
   const router = inject(Router);
@@ -55,7 +58,8 @@ function skipTransitionWhenNeeded({ transition }: ViewTransitionInfo): void {
       queryParams: 'ignored',
       fragment: 'ignored',
     });
-  if (samePage || menuOpen) {
+  const backOffice = isBackOfficeUrl(router.url) || (!!target && isBackOfficeUrl(router.serializeUrl(target)));
+  if (samePage || menuOpen || backOffice) {
     // Angular logs the resulting AbortError in development builds only
     transition.skipTransition();
   }

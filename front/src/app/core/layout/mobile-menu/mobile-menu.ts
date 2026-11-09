@@ -40,12 +40,9 @@ import { SiteSearch } from '../../../shared/ui/site-search/site-search';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
 import { NavigationProgress } from '../navigation-progress/navigation-progress';
 import { Icon } from '../../../shared/ui/icon/icon';
-import { IconName } from '../../../shared/ui/icon/icons';
 
 /** One page: an arrow leads there. */
 interface MenuPage {
-  kind: 'page';
-  id: string;
   label: string;
   path: string;
   /** Marked as current on this very page only, not on the pages under it. */
@@ -56,7 +53,6 @@ interface MenuPage {
 interface MenuLink {
   path: string;
   label: string;
-  icon: IconName;
   /** How many it holds, and of what. */
   count?: number;
   unit?: string;
@@ -64,7 +60,6 @@ interface MenuLink {
 
 /** Several pages under one entry: a plus unfolds them on the spot. */
 interface MenuSection {
-  kind: 'section';
   id: string;
   label: string;
   links: MenuLink[];
@@ -73,13 +68,11 @@ interface MenuSection {
   count: number;
 }
 
-type MenuEntry = MenuPage | MenuSection;
-
 /** Once a section has finished unfolding (--duration-slow), it can be brought into view. */
 const UNFOLDED_AFTER_MS = 350;
 
 function page(path: string, label: string, exact = false): MenuPage {
-  return { kind: 'page', id: path, path, label, exact };
+  return { path, label, exact };
 }
 
 /**
@@ -111,55 +104,56 @@ export class MobileMenu {
   private readonly favorites = inject(Favorites);
   private readonly shoppingList = inject(ShoppingList);
   protected readonly recipesPath = RECIPES_PATH;
-  /** In the order of a visit: the recipes and what surrounds them, then the rest of the site. */
-  protected readonly entries = computed(() => {
+  /** One tap, one page; all together, for the visitor to know what the arrow does. */
+  protected readonly pages = computed(() => {
+    const pages = [page('/', 'Accueil', true), page(RECIPES_PATH, 'Recettes', true)];
+    if (this.siteData.menus().length) {
+      pages.push(page(MENUS_PATH, 'Menus'));
+    }
+    if (this.siteData.capPublished()) {
+      pages.push(page(CAP_PATH, 'Mon CAP'));
+    }
+    if (this.siteData.shopOpen()) {
+      pages.push(page(SHOP_PATH, 'Boutique'));
+    }
+    if (this.adminSession.isAdmin()) {
+      pages.push(page('/admin', 'Administration'));
+    }
+    return pages;
+  });
+  /** Several pages under one entry, after the pages. */
+  protected readonly sections = computed(() => {
     const themes = themeGroupsOf(this.siteData.categories());
     const favorites = this.favorites.count();
     const shoppingList = this.shoppingList.count();
-
-    const entries: MenuEntry[] = [page('/', 'Accueil', true), page(RECIPES_PATH, 'Recettes', true)];
-    if (themes.some((theme) => theme.categories.length)) {
-      entries.push({ kind: 'section', id: 'categories', label: 'Catégories', links: [], themes, count: 0 });
-    }
-    if (this.siteData.menus().length) {
-      entries.push(page(MENUS_PATH, 'Menus'));
-    }
-    if (this.siteData.capPublished()) {
-      entries.push(page(CAP_PATH, 'Mon CAP'));
-    }
-    if (this.siteData.shopOpen()) {
-      entries.push(page(SHOP_PATH, 'Boutique'));
-    }
-    entries.push(
+    const sections: MenuSection[] = [
       {
-        kind: 'section',
         id: 'kitchen',
         label: 'Ma cuisine',
         links: [
-          { path: FAVORITES_PATH, label: 'Mes favoris', icon: 'heart', count: favorites, unit: 'recette' },
-          { path: SHOPPING_LIST_PATH, label: 'Ma liste de courses', icon: 'shopping-basket', count: shoppingList, unit: 'élément' },
-          { path: GLOSSARY_PATH, label: 'Glossaire', icon: 'book-a' },
+          { path: FAVORITES_PATH, label: 'Mes favoris', count: favorites, unit: 'recette' },
+          { path: SHOPPING_LIST_PATH, label: 'Ma liste de courses', count: shoppingList, unit: 'élément' },
+          { path: GLOSSARY_PATH, label: 'Glossaire' },
         ],
         themes: [],
         count: favorites + shoppingList,
       },
       {
-        kind: 'section',
         id: 'site',
         label: 'Le site',
         links: [
-          { path: ABOUT_PATH, label: 'À propos de Yona', icon: 'chef-hat' },
-          { path: FEEDBACK_PATH, label: 'Donner mon avis', icon: 'message-square' },
-          { path: INSTALL_PATH, label: "Installer l'application", icon: 'smartphone' },
+          { path: ABOUT_PATH, label: 'À propos de Yona' },
+          { path: FEEDBACK_PATH, label: 'Donner mon avis' },
+          { path: INSTALL_PATH, label: "Installer l'application" },
         ],
         themes: [],
         count: 0,
       },
-    );
-    if (this.adminSession.isAdmin()) {
-      entries.push(page('/admin', 'Administration'));
+    ];
+    if (themes.some((theme) => theme.categories.length)) {
+      sections.unshift({ id: 'categories', label: 'Catégories', links: [], themes, count: 0 });
     }
-    return entries;
+    return sections;
   });
   protected readonly socialPlatformLabel = socialPlatformLabel;
 

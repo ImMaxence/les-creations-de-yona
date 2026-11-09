@@ -7,9 +7,9 @@ import {
   booleanAttribute,
   inject,
   input,
+  linkedSignal,
   output,
   resource,
-  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
@@ -40,14 +40,26 @@ interface AdminLink {
 interface AdminGroup {
   id: string;
   label: string;
-  /** In the drawer, where each group is a card. */
   icon: IconName;
   links: AdminLink[];
 }
 
+const CLOSED_GROUPS_KEY = 'admin-closed-groups';
+
+/** Read at once, the panel must not fold before the eyes: the back-office is not rendered by the server. */
+function readClosedGroups(): string[] {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem(CLOSED_GROUPS_KEY) ?? '[]');
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * What the back-office panel holds: every section, grouped, then the account of the admin. A
- * compact side panel on computers; with `drawer`, large rows and groups that unfold, for the thumb.
+ * compact side panel on computers, its groups opened and closed at will and remembered; with
+ * `drawer`, large rows and one group open at a time, for the thumb.
  */
 @Component({
   selector: 'yona-admin-nav',
@@ -115,8 +127,15 @@ export class AdminNav {
       ],
     },
   ];
-  /** In the drawer: the group unfolded, the one holding the page shown to start with. */
-  protected readonly openGroup = signal(this.currentGroup());
+  /** The one holding the page shown is always open on arrival. */
+  protected readonly openGroups = linkedSignal<ReadonlySet<string>>(() => {
+    const current = this.currentGroup();
+    if (this.drawer()) {
+      return new Set(current ? [current] : []);
+    }
+    const closed = readClosedGroups();
+    return new Set(this.groups.map((group) => group.id).filter((id) => id === current || !closed.includes(id)));
+  });
 
   constructor() {
     // The list scrolls: on arrival, the section shown must not be below the fold
@@ -128,11 +147,38 @@ export class AdminNav {
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.openGroup.set(this.currentGroup()));
+      .subscribe(() => {
+        const current = this.currentGroup();
+        if (current) {
+          this.openGroups.update((open) => (this.drawer() ? new Set([current]) : new Set(open).add(current)));
+        }
+      });
+  }
+
+  protected isOpen(id: string): boolean {
+    return this.openGroups().has(id);
   }
 
   protected toggleGroup(id: string): void {
-    this.openGroup.update((open) => (open === id ? null : id));
+    const open = new Set(this.openGroups());
+    if (!open.delete(id)) {
+      if (this.drawer()) {
+        open.clear();
+      }
+      open.add(id);
+    }
+    this.openGroups.set(open);
+    if (!this.drawer()) {
+      this.rememberClosedGroups(open);
+    }
+  }
+
+  private rememberClosedGroups(open: ReadonlySet<string>): void {
+    try {
+      localStorage.setItem(CLOSED_GROUPS_KEY, JSON.stringify(this.groups.map((group) => group.id).filter((id) => !open.has(id))));
+    } catch {
+      // Storage blocked or full: kept for this visit only
+    }
   }
 
   /** What waits in all the sections of an entry, shown while it is closed. */
