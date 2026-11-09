@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from '../../core/auth/admin.guard';
+import { adminGuard, signedOutGuard } from '../../core/auth/admin.guard';
 import { RouteSeo, SEO_DATA_KEY } from '../../core/seo/page-seo';
 import { adminRecipePreviewResolver, adminRecipeResolver } from './recipe-editor/admin-recipe.resolver';
 import { unsavedChangesGuard } from './recipe-editor/unsaved-changes.guard';
@@ -9,10 +9,17 @@ const NO_INDEX: RouteSeo = { noIndex: true };
 /** Back-office, loaded only when an admin opens it. */
 export const adminRoutes: Routes = [
   {
-    path: 'acces-refuse',
-    loadComponent: () => import('./access-denied/access-denied'),
-    title: 'Accès refusé',
+    path: 'connexion',
+    loadComponent: () => import('./login/admin-login'),
+    canActivate: [signedOutGuard],
+    title: 'Connexion · Back-office',
     data: { [SEO_DATA_KEY]: NO_INDEX },
+  },
+  {
+    path: 'acces-refuse',
+    loadComponent: () => import('./login/admin-login'),
+    title: 'Accès refusé',
+    data: { [SEO_DATA_KEY]: NO_INDEX, denied: true },
   },
   // A recipe as visitors see it, drafts included: outside the back-office layout, within the site's
   {

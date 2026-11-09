@@ -1,3 +1,4 @@
+import { DOCUMENT, Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,7 +7,9 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { CookieBanner } from './core/analytics/cookie-banner';
 import { TimersBar } from './core/kitchen/timers-bar';
 import { InstallBanner } from './core/pwa/install-banner';
@@ -15,6 +18,7 @@ import { Footer } from './core/layout/footer/footer';
 import { Header } from './core/layout/header/header';
 import { NavigationProgress } from './core/layout/navigation-progress/navigation-progress';
 import { Toasts } from './core/notifications/toasts';
+import { isBackOfficeUrl } from './shared/routing/links';
 
 @Component({
   selector: 'yona-root',
@@ -25,6 +29,16 @@ import { Toasts } from './core/notifications/toasts';
 })
 export class App {
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
+  private readonly document = inject(DOCUMENT);
+
+  /** Known from the address on arrival: the site's header never shows before the back-office. */
+  protected readonly backOffice = toSignal(
+    inject(Router).events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map((event) => isBackOfficeUrl(event.urlAfterRedirects)),
+    ),
+    { initialValue: isBackOfficeUrl(inject(Location).path()) },
+  );
 
   constructor() {
     const adminSession = inject(AdminSession);
@@ -34,6 +48,7 @@ export class App {
   /** A "#contenu" link would navigate to the home page because of <base href="/">. */
   protected skipToContent(event: Event): void {
     event.preventDefault();
-    this.main().nativeElement.focus();
+    // In the back-office, past the side panel
+    (this.document.getElementById('admin-content') ?? this.main().nativeElement).focus();
   }
 }

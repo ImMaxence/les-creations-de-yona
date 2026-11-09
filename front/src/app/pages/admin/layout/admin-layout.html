@@ -1,23 +1,33 @@
-<div class="container admin">
-  <header class="admin__head">
-    <div>
-      <p class="eyebrow">Back-office</p>
-      <h1 class="admin__title">Bonjour {{ firstName() }}</h1>
-      <p class="admin__email">{{ email() }}</p>
-      <p class="admin__versions">
-        Site v{{ frontVersion }} · API v{{ backVersion.value()?.version ?? '…' }} ·
-        <a routerLink="nouveautes">Nouveautés</a>
-      </p>
-    </div>
-    <button yonaButton variant="secondary" type="button" (click)="signOut()">
-      <svg yonaIcon="log-out"></svg>
-      Se déconnecter
-    </button>
-  </header>
+<div class="admin">
+  @if (wide()) {
+    <aside class="admin__side">
+      <yona-admin-nav />
+    </aside>
+  } @else {
+    <header class="admin__bar">
+      <button type="button" class="admin__menu" aria-haspopup="dialog" (click)="openDrawer()">
+        <svg yonaIcon="menu" [size]="24"></svg>
+        Menu
+        @if (waiting(); as count) {
+          <span class="admin__waiting" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
+        }
+      </button>
+      @if (session.admin(); as admin) {
+        <button type="button" class="admin__me" aria-label="Mon compte" aria-haspopup="dialog" (click)="openDrawer()">
+          <yona-admin-avatar [name]="admin.name || admin.email" [picture]="admin.picture" />
+        </button>
+      }
+    </header>
 
-  <yona-admin-nav />
+    <!-- Focusable (tabindex -1) so that opening it focuses the panel itself, not its first link -->
+    <dialog #drawer class="admin__drawer" aria-label="Menu du back-office" tabindex="-1" (click)="closeOnBackdrop($event)">
+      <yona-admin-nav drawer (closed)="closeDrawer()" />
+    </dialog>
+  }
 
-  <router-outlet />
+  <div id="admin-content" class="admin__content" tabindex="-1">
+    <router-outlet />
+  </div>
 </div>
 <!-- Confirmations are asked in the back-office only: loaded with it, not by every visitor -->
 <yona-confirm-dialog />

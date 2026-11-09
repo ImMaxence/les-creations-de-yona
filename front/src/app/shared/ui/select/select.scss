@@ -73,12 +73,6 @@
   box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
   list-style: none;
   transform-origin: top center;
-
-  :host(.opens-up) & {
-    top: auto;
-    bottom: calc(100% + var(--space-2));
-    transform-origin: bottom center;
-  }
 }
 
 // Only the options scroll, without visible scroll bars: the filter field stays in place above them

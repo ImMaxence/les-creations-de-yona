@@ -33,7 +33,7 @@ function contentSecurityPolicy(nonce: string, scriptHashes: string[]): string {
     // Angular sets component styles and style bindings inline: no nonce on that side.
     "style-src 'self' 'unsafe-inline'",
     // blob: preview of a photo before upload in the back-office.
-    "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com",
+    "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://*.googleusercontent.com",
     // Google Analytics sends its measures there; reCAPTCHA calls its own API from the page.
     // The service worker fetches a page's scripts under this directive, not script-src: a host of
     // script-src also goes here. An installed worker keeps the policy it was installed with: after

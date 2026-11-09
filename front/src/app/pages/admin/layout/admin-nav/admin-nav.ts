@@ -1,17 +1,37 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Signal, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Signal,
+  afterNextRender,
+  booleanAttribute,
+  inject,
+  input,
+  output,
+  resource,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
+import { Api } from '../../../../core/api/generated/api';
+import { getVersion } from '../../../../core/api/generated/fn/admin-version/get-version';
+import { AdminSession } from '../../../../core/auth/admin-session';
+import { ColorSchemeSwitch } from '../../../../core/layout/color-scheme-switch/color-scheme-switch';
+import { Toaster } from '../../../../core/notifications/toaster';
+import { FRONT_VERSION } from '../../../../core/version';
+import { ADMIN_PATH } from '../../../../shared/routing/links';
+import { BrandLogo } from '../../../../shared/ui/brand-logo/brand-logo';
 import { Icon } from '../../../../shared/ui/icon/icon';
 import { IconName } from '../../../../shared/ui/icon/icons';
 import { UnreadFeedback } from '../../feedback/unread-feedback';
 import { NewOrders } from '../../shop/new-orders';
+import { AdminAvatar } from '../admin-avatar/admin-avatar';
+
 
 interface AdminLink {
   path: string;
   label: string;
-  /** Under its name, from tablets up. */
-  hint: string;
   icon: IconName;
   /** What waits there: unread messages, new orders. */
   count?: Signal<number>;
@@ -20,87 +40,99 @@ interface AdminLink {
 interface AdminGroup {
   id: string;
   label: string;
+  /** In the drawer, where each group is a card. */
+  icon: IconName;
   links: AdminLink[];
 }
 
-/** The sections of the back-office: one bar of three entries, each opening its panel over the page. */
+/**
+ * What the back-office panel holds: every section, grouped, then the account of the admin. A
+ * compact side panel on computers; with `drawer`, large rows and groups that unfold, for the thumb.
+ */
 @Component({
   selector: 'yona-admin-nav',
-  imports: [Icon, RouterLink, RouterLinkActive],
+  imports: [AdminAvatar, BrandLogo, ColorSchemeSwitch, Icon, RouterLink, RouterLinkActive],
   templateUrl: './admin-nav.html',
   styleUrl: './admin-nav.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    role: 'navigation',
-    'aria-label': 'Sections du back-office',
-    // Hidden when printing (styles/_print.scss)
-    class: 'admin__nav',
-    '(document:click)': 'closeOnOutsideClick($event)',
-    '(keydown.escape)': 'closeAndFocusTrigger()',
-  },
+  host: { '[class.is-drawer]': 'drawer()' },
 })
 export class AdminNav {
-  private readonly host: HTMLElement = inject(ElementRef).nativeElement;
+  readonly drawer = input(false, { transform: booleanAttribute });
+  /** "Fermer le menu", in the drawer. */
+  readonly closed = output();
+
+  protected readonly session = inject(AdminSession);
+  private readonly toaster = inject(Toaster);
+  private readonly router = inject(Router);
+  private readonly api = inject(Api);
+
+  protected readonly frontVersion = FRONT_VERSION;
+  /** Loaded once with the back-office; shown as "…" until then. */
+  protected readonly backVersion = resource({ loader: () => this.api.invoke(getVersion) });
 
   protected readonly groups: AdminGroup[] = [
     {
       id: 'blog',
       label: 'Blog',
+      icon: 'book-open',
       links: [
-        { path: 'recettes', label: 'Recettes', hint: 'Écrire et publier', icon: 'book-open' },
-        { path: 'categories', label: 'Catégories', hint: 'Ranger les recettes', icon: 'tags' },
-        { path: 'tags', label: 'Tags', hint: 'Végétarien, de saison…', icon: 'tag' },
-        { path: 'menus', label: 'Menus', hint: 'Des recettes pour une occasion', icon: 'list' },
-        { path: 'ingredients', label: 'Ingrédients', hint: 'Doublons, rayons, équivalents', icon: 'carrot' },
-        { path: 'glossaire', label: 'Glossaire', hint: 'Les mots de la pâtisserie', icon: 'book-a' },
-        { path: 'mon-cap', label: 'Mon CAP', hint: 'Les étapes du diplôme', icon: 'graduation-cap' },
-        { path: 'observations', label: 'Observations', hint: 'Les notes en cuisinant', icon: 'notebook-pen' },
+        { path: 'recettes', label: 'Recettes', icon: 'book-open' },
+        { path: 'categories', label: 'Catégories', icon: 'tags' },
+        { path: 'tags', label: 'Tags', icon: 'tag' },
+        { path: 'menus', label: 'Menus', icon: 'list' },
+        { path: 'ingredients', label: 'Ingrédients', icon: 'carrot' },
+        { path: 'glossaire', label: 'Glossaire', icon: 'book-a' },
+        { path: 'mon-cap', label: 'Mon CAP', icon: 'graduation-cap' },
+        { path: 'observations', label: 'Observations', icon: 'notebook-pen' },
       ],
     },
     {
       id: 'boutique',
       label: 'Boutique',
+      icon: 'store',
       links: [
-        { path: 'boutique/commandes', label: 'Commandes', hint: 'Suivre et traiter', icon: 'package', count: inject(NewOrders).count },
-        { path: 'boutique/produits', label: 'Produits', hint: 'Prix, ouverture de la boutique', icon: 'store' },
-        { path: 'boutique/comptabilite', label: 'Comptabilité', hint: 'Entrées, dépenses, export', icon: 'receipt' },
+        { path: 'boutique/commandes', label: 'Commandes', icon: 'package', count: inject(NewOrders).count },
+        { path: 'boutique/produits', label: 'Produits', icon: 'store' },
+        { path: 'boutique/comptabilite', label: 'Comptabilité', icon: 'receipt' },
       ],
     },
     {
       id: 'site',
       label: 'Site',
+      icon: 'sliders-horizontal',
       links: [
-        { path: 'statistiques', label: 'Statistiques', hint: 'Vues, stockage, à compléter', icon: 'chart-column' },
-        { path: 'galerie', label: 'Galerie', hint: 'Toutes les photos', icon: 'images' },
-        { path: 'retours', label: 'Retours', hint: 'Les messages des visiteurs', icon: 'message-square', count: inject(UnreadFeedback).count },
-        { path: 'reseaux-sociaux', label: 'Réseaux sociaux', hint: 'Les liens du pied de page', icon: 'share-2' },
-        { path: 'apparence', label: 'Apparence', hint: 'Thèmes et polices', icon: 'palette' },
-        { path: 'preferences', label: 'Préférences', hint: "Les textes de l'accueil", icon: 'sliders-horizontal' },
-        { path: 'sauvegarde', label: 'Sauvegarde', hint: 'Archive, Drive, restauration', icon: 'database-backup' },
-        { path: 'corbeille', label: 'Corbeille', hint: 'Restaurer sous 30 jours', icon: 'trash' },
-        { path: 'historique', label: 'Historique', hint: 'Qui a fait quoi', icon: 'history' },
-        { path: 'nouveautes', label: 'Nouveautés', hint: 'Les dernières versions', icon: 'sparkles' },
+        { path: 'statistiques', label: 'Statistiques', icon: 'chart-column' },
+        { path: 'galerie', label: 'Galerie', icon: 'images' },
+        { path: 'retours', label: 'Retours', icon: 'message-square', count: inject(UnreadFeedback).count },
+        { path: 'reseaux-sociaux', label: 'Réseaux sociaux', icon: 'share-2' },
+        { path: 'apparence', label: 'Apparence', icon: 'palette' },
+        { path: 'preferences', label: 'Préférences', icon: 'sliders-horizontal' },
+        { path: 'sauvegarde', label: 'Sauvegarde', icon: 'database-backup' },
+        { path: 'corbeille', label: 'Corbeille', icon: 'trash' },
+        { path: 'historique', label: 'Historique', icon: 'history' },
+        { path: 'nouveautes', label: 'Nouveautés', icon: 'sparkles' },
       ],
     },
   ];
-  /** The entry whose panel is open; null when they are all closed. */
-  protected readonly openGroup = signal<string | null>(null);
+  /** In the drawer: the group unfolded, the one holding the page shown to start with. */
+  protected readonly openGroup = signal(this.currentGroup());
 
   constructor() {
-    inject(Router)
-      .events.pipe(
+    // The list scrolls: on arrival, the section shown must not be below the fold
+    const host: HTMLElement = inject(ElementRef).nativeElement;
+    afterNextRender(() => requestAnimationFrame(() => host.querySelector('.link.is-active')?.scrollIntoView({ block: 'nearest' })));
+
+    this.router.events
+      .pipe(
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.close());
+      .subscribe(() => this.openGroup.set(this.currentGroup()));
   }
 
   protected toggleGroup(id: string): void {
     this.openGroup.update((open) => (open === id ? null : id));
-  }
-
-  protected close(): void {
-    this.openGroup.set(null);
   }
 
   /** What waits in all the sections of an entry, shown while it is closed. */
@@ -108,16 +140,14 @@ export class AdminNav {
     return group.links.reduce((sum, link) => sum + (link.count?.() ?? 0), 0);
   }
 
-  protected closeOnOutsideClick(event: MouseEvent): void {
-    if (this.openGroup() && !this.host.contains(event.target as Node)) {
-      this.close();
-    }
+  protected async signOut(): Promise<void> {
+    await this.session.signOut();
+    this.toaster.success('Vous êtes déconnecté');
+    await this.router.navigateByUrl('/');
   }
 
-  protected closeAndFocusTrigger(): void {
-    if (this.openGroup()) {
-      this.host.querySelector<HTMLElement>('[aria-expanded="true"]')?.focus();
-      this.close();
-    }
+  private currentGroup(): string | null {
+    const url = this.router.url;
+    return this.groups.find((group) => group.links.some((link) => url.startsWith(`${ADMIN_PATH}/${link.path}`)))?.id ?? null;
   }
 }

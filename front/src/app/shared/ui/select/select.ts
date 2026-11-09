@@ -28,7 +28,7 @@ let nextId = 0;
  * Drop-down list styled like the rest of the site (a native <select> opens the system's own
  * list). Follows the ARIA "select-only combobox" pattern: arrows, Home/End, Enter or Space to
  * choose, Escape to close, and typing a letter jumps to the matching option.
- * Two-way binding: <yona-select [(value)]="size" [options]="sizes" label="Recettes par page" />
+ * Two-way binding: <yona-select [(value)]="sort" [options]="sorts" label="Trier" />
  * Long lists (ingredients) can be "searchable": a field at the top of the open list filters them.
  */
 @Component({
@@ -38,7 +38,6 @@ let nextId = 0;
   styleUrl: './select.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.opens-up]': "direction() === 'up'",
     '[class.is-large]': "size() === 'large'",
     '(document:click)': 'closeOnOutsideClick($event)',
   },
@@ -49,8 +48,6 @@ export class Select<T> {
   /** Accessible name, read by screen readers. */
   readonly label = input.required<string>();
   readonly placeholder = input('Choisir…');
-  /** "up" near the bottom of the page. */
-  readonly direction = input<'up' | 'down'>('down');
   readonly disabled = input(false);
   /** "large": as tall as the site's search fields, next to them. */
   readonly size = input<'medium' | 'large'>('medium');

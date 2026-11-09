@@ -82,7 +82,7 @@ Portées déclarées :
 
 | Portée | Pour |
 | --- | --- |
-| `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile` | Connexion admin : adresse et nom |
+| `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile` | Connexion admin : adresse, nom et photo |
 | `.../auth/drive.file` | Sauvegardes : le site ne voit et ne modifie que les fichiers qu'il a créés lui-même, rien d'autre du Drive |
 
 ### Ajouter ou retirer un admin

@@ -10,6 +10,13 @@ export const LEGAL_NOTICE_PATH = '/mentions-legales';
 export const PRIVACY_POLICY_PATH = '/politique-de-confidentialite';
 export const TERMS_OF_USE_PATH = '/conditions-d-utilisation';
 export const ADMIN_PATH = '/admin';
+export const ADMIN_SIGN_IN_PATH = '/admin/connexion';
+
+/** The back-office has its own frame, without the site's header and footer; a preview stays within them. */
+export function isBackOfficeUrl(url: string): boolean {
+  return /^\/admin($|[/?#])/.test(url) && !url.startsWith('/admin/apercu');
+}
+
 export const FEEDBACK_PATH = '/donner-mon-avis';
 export const ABOUT_PATH = '/a-propos';
 export const CAP_PATH = '/mon-cap';

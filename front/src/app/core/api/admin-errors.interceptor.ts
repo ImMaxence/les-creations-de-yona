@@ -17,7 +17,7 @@ interface ProblemDetail {
 
 /**
  * Back-office API errors become a toast with the API's own message. An expired session sends
- * the admin back to the Google sign-in. Public API calls are left alone: their pages handle them.
+ * the admin back to the sign-in page. Public API calls are left alone: their pages handle them.
  */
 export const adminErrorsInterceptor: HttpInterceptorFn = (request, next) => {
   if (!request.url.startsWith(ADMIN_API) || request.url.startsWith(SESSION_PROBE)) {
@@ -30,7 +30,7 @@ export const adminErrorsInterceptor: HttpInterceptorFn = (request, next) => {
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse) {
         if (error.status === 401) {
-          session.signIn();
+          session.expire();
         } else {
           toaster.error(messageOf(error));
         }

@@ -4,4 +4,5 @@
 export interface AdminResponse {
   email: string;
   name: string;
+  picture?: string;
 }

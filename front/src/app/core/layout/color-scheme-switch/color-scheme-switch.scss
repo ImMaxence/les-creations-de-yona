@@ -85,7 +85,8 @@
 // Full: three choices side by side ---------------------------------------------
 
 .segments {
-  display: inline-flex;
+  container-type: inline-size;
+  display: flex;
   gap: var(--space-1);
   padding: var(--space-1);
   border-radius: var(--radius-pill);
@@ -94,8 +95,11 @@
 
 .segment {
   display: inline-flex;
+  flex: 1;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
+  min-height: 2.75rem;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-pill);
   font-size: var(--text-sm);
@@ -111,5 +115,18 @@
     background-color: var(--color-bg);
     color: var(--color-accent);
     box-shadow: var(--shadow-sm);
+  }
+
+  svg {
+    flex: none;
+  }
+
+  // The side panel of the back-office: the three names only just fit
+  @container (width < 18rem) {
+    padding-inline: var(--space-2);
+
+    svg {
+      display: none;
+    }
   }
 }

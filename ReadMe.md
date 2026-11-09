@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.0.1 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.1.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -45,8 +45,9 @@ Chaque modèle se télécharge une seule fois, directement depuis Hugging Face, 
 
 **Pour les visiteurs, sans compte**
 
-- Recettes salées et sucrées, rangées par catégorie sous les menus « Salé » et « Sucré » ; sur l'accueil, une recette à la une et les 3 dernières de chaque thème.
-- Recherche partout (loupe de l'en-tête et grande barre sur l'accueil : chaque mot cherché dans les titres, catégories, tags, ingrédients, matériel et étapes, suggestions par type ; « gâteau 8 » ouvre les recettes pour 8, réglable avec − et + ; « dessert en 30 min », « tarte facile », « sans cuisson » compris), filtres (sucré ou salé, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté, nombre de personnes), portions et moule ajustables, « Organiser mon temps ».
+- Recettes salées et sucrées, rangées par catégorie, côté salé et côté sucré ; sur l'accueil, une recette à la une et les 3 dernières de chaque thème.
+- Recherche partout (dans l'en-tête, dans le menu sur téléphone, et grande barre sur l'accueil : chaque mot cherché dans les titres, catégories, tags, ingrédients, matériel et étapes, suggestions par type ; « gâteau 8 » ouvre les recettes pour 8, réglable avec − et + ; « dessert en 30 min », « tarte facile », « sans cuisson » compris), filtres (sucré ou salé, plusieurs ingrédients à la fois, catégorie, tag, temps, difficulté, nombre de personnes), portions et moule ajustables, « Organiser mon temps ».
+- Liste des recettes en défilement infini, filtres repliés sur téléphone, retour à la même place en revenant d'une recette.
 - Mode cuisine : une étape par écran, mise en place à cocher (ingrédients et matériel), minuteurs qui sonnent et vibrent, gardés en changeant de page et après un rechargement.
 - Menus composés par Yona (« Menu de Noël », « Goûter d'anniversaire »), chacun avec sa photo (visuel par défaut sans photo), toutes leurs recettes à la liste de courses en un geste.
 - Favoris, liste de courses rangée par rayon (portions de chaque recette réglables), notes personnelles : gardés dans le navigateur.
@@ -65,7 +66,8 @@ Chaque modèle se télécharge une seule fois, directement depuis Hugging Face, 
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
 - Apparence (thèmes, polices), statistiques (dont le nombre de vues, les recettes les plus vues, la mémoire et le processeur), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
 - Boutique : commandes et statuts, notification sur le téléphone à chaque nouvelle commande, produits et prix, comptabilité par admin (entrées, dépenses, totaux, export CSV).
-- Mon CAP et observations, rangés avec les recettes : le back-office est en trois groupes, Blog, Boutique et Site.
+- Tableau de bord sans la barre du site : toutes les sections dans un panneau à gauche (Blog, Boutique, Site), ouvert d'un bouton sur téléphone ; page de connexion Google, photo du compte.
+- Mon CAP et observations, rangés avec les recettes.
 
 Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).
 

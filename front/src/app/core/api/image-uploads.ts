@@ -69,7 +69,7 @@ export class ImageUploads {
           return;
         }
         if (request.status === 401) {
-          this.session.signIn();
+          this.session.expire();
         } else {
           const body = typeof request.response === 'string' ? safeParse(request.response) : request.response;
           this.toaster.error(problemMessage(body));

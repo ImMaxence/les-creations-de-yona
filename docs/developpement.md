@@ -136,6 +136,7 @@ npm run fonts:generate # régénère src/styles/_fonts.scss après une mise à j
 - Client API généré par `ng-openapi-gen` dans `src/app/core/api/generated` (versionné, ne pas modifier à la main). À régénérer après chaque changement d'API du backend.
 - Budgets de build (`angular.json`) : bundle initial 800 Ko (avertissement), styles d'un composant 8 Ko.
 - Icônes : composant maison `<svg yonaIcon="heart" [size]="18">` (`shared/ui/icon/`), dessiné en SVG inline depuis `icons.ts`, qui ne contient que les icônes utilisées (tracés Lucide, licence ISC). Remplace `@lucide/angular` (1.1.0) : bundle initial ramené de 730 à 505 Ko de JavaScript brut (`main` de 448 à 223 Ko), nouvelles fonctionnalités comprises, soit moins de code à analyser au premier chargement sur téléphone ; le poids transféré, déjà bien compressé, change peu (135 → 133 Ko). Ajouter une icône : copier ses formes depuis lucide.dev dans `icons.ts`, sous son nom.
+- Liste longue : pas de pagination (2.1). `new InfiniteList({ load, key, params })` dans un champ du composant (`first` si un resolver a déjà la première page), `<yona-infinite-scroll [list]="liste" />` après la liste (`linked` pour un vrai lien `?page=n` sur les pages publiques). Grille de photos : `yonaVirtualItem` sur chaque élément et `@if (item.near())` autour de son contenu. Liste de texte du back-office : classe `admin-list--infinite`.
 - Ajouter une police : paquet `@fontsource-variable/…` (version exacte), ligne dans `scripts/generate-fonts.mjs`, `npm run fonts:generate`, entrée dans `core/theme/theme-fonts.ts`, enum et contrainte CHECK côté backend (migration), crédits des mentions légales.
 - Serveur SSR de production : `npm run serve:ssr` (port `PORT`, 4000 par défaut). Variables :
   - `API_URL` : URL interne du backend (ex. `http://back:8080`). Le serveur SSR l'appelle directement, sans repasser par Cloudflare. Sans elle, il appelle l'origine publique du site.
@@ -191,7 +192,7 @@ Avant une mise en ligne, le site lancé en local (`docker compose --profile app 
 
 ```bash
 npm ci
-npm test               # 95 vérifications dans Chrome (environ 4 min), captures d'écran dans e2e/resultats/
+npm test               # 116 vérifications dans Chrome (environ 4 min), captures d'écran dans e2e/resultats/
 npm run captures       # refait les images du ReadMe (docs/captures/) avec les données de la base locale
 ```
 
@@ -215,7 +216,7 @@ npm run captures       # refait les images du ReadMe (docs/captures/) avec les d
 | Auth | Connexion : `/api/oauth2/authorization/google`. Déconnexion : `POST /api/auth/logout` |
 
 - Erreurs : ProblemDetail avec `code` stable (`ErrorCode`) et `detail` en français. Erreurs de validation listées dans `errors` (`field`, `message`).
-- Écritures admin : en-tête `X-XSRF-TOKEN` recopié du cookie `XSRF-TOKEN`, que `GET /api/admin/me` crée. Angular le fait automatiquement. Aucun cookie n'est posé pour un visiteur public.
+- Écritures admin : en-tête `X-XSRF-TOKEN` recopié du cookie `XSRF-TOKEN`, que `GET /api/admin/me` crée (cette route répond aussi l'adresse, le nom et, si le compte en a une, la photo Google : `picture`). Angular le fait automatiquement. Aucun cookie n'est posé pour un visiteur public.
 - Images : le front construit l'URL à partir du `imageId` des recettes et catégories. Réponse `Cache-Control: public, max-age=31536000, immutable` : une nouvelle photo a un nouvel identifiant, donc une nouvelle URL.
 - Sauvegarde : à ouvrir comme un lien classique (`<a href="/api/admin/backup">`), pas via `HttpClient`, qui chargerait toute l'archive en mémoire. Restauration : morceaux envoyés par `XMLHttpRequest` (progression), comme les photos (`core/api/image-uploads.ts`).
 - Toute route non listée est refusée.

@@ -2,41 +2,6 @@
 
 // Back-office building blocks. Not encapsulated, namespaced under .admin, loaded with the back-office only.
 
-.admin {
-  display: grid;
-  gap: var(--space-6);
-  padding-top: var(--space-6);
-
-  @include m.from(md) {
-    padding-top: var(--space-8);
-  }
-}
-
-.admin__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-4);
-  // Out of the page transition (see _motion.scss): only the section below changes between tabs
-  view-transition-name: admin-head;
-}
-
-.admin__title {
-  font-size: var(--text-3xl);
-}
-
-.admin__email {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
-.admin__versions {
-  color: var(--color-text-muted);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
-
 .admin-section {
   display: grid;
   gap: var(--space-5);

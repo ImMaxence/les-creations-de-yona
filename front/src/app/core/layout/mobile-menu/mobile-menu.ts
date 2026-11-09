@@ -41,6 +41,31 @@ import { SiteSearch } from '../../../shared/ui/site-search/site-search';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
 import { NavigationProgress } from '../navigation-progress/navigation-progress';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { IconName } from '../../../shared/ui/icon/icons';
+
+interface MenuLink {
+  path: string;
+  label: string;
+  icon: IconName;
+  /** Marked as current on this very page only, not on the pages under it. */
+  exact?: boolean;
+  /** How many it holds, and of what. */
+  count?: number;
+  unit?: string;
+}
+
+/** Several pages under one entry, unfolded on the spot. */
+interface MenuSection {
+  id: string;
+  label: string;
+  /** What is inside, while it is folded. */
+  hint: string;
+  icon: IconName;
+  links: MenuLink[];
+  /** Categories only: Salé, then Sucré. */
+  themes: ReturnType<typeof themeGroupsOf>;
+  count: number;
+}
 
 /**
  * Phone menu: a full screen native <dialog>. showModal() brings focus trapping, Escape to close
@@ -69,19 +94,67 @@ export class MobileMenu {
   protected readonly siteData = inject(SiteData);
   protected readonly adminSession = inject(AdminSession);
   /** Counts shown next to their link: phones have no header icons for them. */
-  protected readonly favorites = inject(Favorites);
-  protected readonly shoppingList = inject(ShoppingList);
+  private readonly favorites = inject(Favorites);
+  private readonly shoppingList = inject(ShoppingList);
   protected readonly recipesPath = RECIPES_PATH;
-  protected readonly menusPath = MENUS_PATH;
-  protected readonly capPath = CAP_PATH;
-  protected readonly shopPath = SHOP_PATH;
-  protected readonly aboutPath = ABOUT_PATH;
-  protected readonly installPath = INSTALL_PATH;
-  protected readonly glossaryPath = GLOSSARY_PATH;
-  protected readonly feedbackPath = FEEDBACK_PATH;
-  protected readonly favoritesPath = FAVORITES_PATH;
-  protected readonly shoppingListPath = SHOPPING_LIST_PATH;
-  protected readonly themeGroups = computed(() => themeGroupsOf(this.siteData.categories()));
+  /** One tap, one page. */
+  protected readonly pages = computed(() => {
+    const pages: MenuLink[] = [
+      { path: '/', label: 'Accueil', icon: 'house', exact: true },
+      { path: RECIPES_PATH, label: 'Toutes les recettes', icon: 'book-open', exact: true },
+    ];
+    if (this.siteData.menus().length) {
+      pages.push({ path: MENUS_PATH, label: 'Menus', icon: 'utensils-crossed' });
+    }
+    if (this.siteData.capPublished()) {
+      pages.push({ path: CAP_PATH, label: 'Mon CAP', icon: 'graduation-cap' });
+    }
+    if (this.siteData.shopOpen()) {
+      pages.push({ path: SHOP_PATH, label: 'Boutique', icon: 'store' });
+    }
+    if (this.adminSession.isAdmin()) {
+      pages.push({ path: '/admin', label: 'Administration', icon: 'lock' });
+    }
+    return pages;
+  });
+  protected readonly sections = computed(() => {
+    const sections: MenuSection[] = [];
+    const themes = themeGroupsOf(this.siteData.categories());
+    if (themes.some((theme) => theme.categories.length)) {
+      sections.push({ id: 'categories', label: 'Catégories', hint: 'Salé et sucré', icon: 'layout-grid', links: [], themes, count: 0 });
+    }
+    const favorites = this.favorites.count();
+    const shoppingList = this.shoppingList.count();
+    sections.push(
+      {
+        id: 'kitchen',
+        label: 'Ma cuisine',
+        hint: 'Favoris, courses, glossaire',
+        icon: 'cooking-pot',
+        links: [
+          { path: FAVORITES_PATH, label: 'Mes favoris', icon: 'heart', count: favorites, unit: 'recette' },
+          { path: SHOPPING_LIST_PATH, label: 'Ma liste de courses', icon: 'shopping-basket', count: shoppingList, unit: 'élément' },
+          { path: GLOSSARY_PATH, label: 'Glossaire', icon: 'book-a' },
+        ],
+        themes: [],
+        count: favorites + shoppingList,
+      },
+      {
+        id: 'site',
+        label: 'Le site',
+        hint: 'À propos, avis, application',
+        icon: 'info',
+        links: [
+          { path: ABOUT_PATH, label: 'À propos de Yona', icon: 'chef-hat' },
+          { path: FEEDBACK_PATH, label: 'Donner mon avis', icon: 'message-square' },
+          { path: INSTALL_PATH, label: "Installer l'application", icon: 'smartphone' },
+        ],
+        themes: [],
+        count: 0,
+      },
+    );
+    return sections;
+  });
   protected readonly socialPlatformLabel = socialPlatformLabel;
 
   protected readonly isOpen = signal(false);
@@ -114,6 +187,14 @@ export class MobileMenu {
   protected close(): void {
     if (this.isOpen()) {
       this.dialog().nativeElement.close();
+    }
+  }
+
+  /** A section unfolded near the bottom of the screen would run past it. */
+  protected reveal(event: Event): void {
+    const section = event.target as HTMLDetailsElement;
+    if (section.open) {
+      section.scrollIntoView({ block: 'nearest' });
     }
   }
 

@@ -1,10 +1,14 @@
 <a class="skip-link" href="#contenu" (click)="skipToContent($event)">Aller au contenu</a>
 <yona-navigation-progress />
-<yona-header />
-<main #main id="contenu" class="main" tabindex="-1">
+@if (!backOffice()) {
+  <yona-header />
+}
+<main #main id="contenu" class="main" [class.main--bare]="backOffice()" tabindex="-1">
   <router-outlet />
 </main>
-<yona-footer />
+@if (!backOffice()) {
+  <yona-footer />
+}
 <yona-toasts />
 <yona-cookie-banner />
 <yona-install-banner />

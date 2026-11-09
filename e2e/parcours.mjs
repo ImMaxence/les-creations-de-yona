@@ -239,7 +239,30 @@ await part('Recherche (téléphone)', async () => {
   await page.context().close();
 });
 
+await part('Menu (téléphone)', async () => {
+  const page = await newPage(browser, PHONE, errors);
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  check('Barre du haut sans recherche', !(await page.locator('yona-header .search-toggle').isVisible()));
+  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
+  const menu = page.getByRole('dialog', { name: 'Menu' });
+  await menu.waitFor();
+  check('Menu : la recherche du site', await menu.getByRole('combobox').first().isVisible());
+  const heights = await menu.locator('a.page, summary').evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
+  check('Menu : des lignes assez hautes pour le pouce', heights.length > 0 && heights.every((height) => height >= 44), heights.map(Math.round).join(', '));
+  check('Menu : une page a sa flèche, une section son bouton', (await menu.locator('a.page .page__go').count()) === (await menu.locator('a.page').count()) && (await menu.locator('summary .section__toggle').count()) === (await menu.locator('summary').count()));
+  await menu.locator('summary').first().click();
+  await menu.locator('summary').nth(1).click();
+  check('Menu : une section ouverte à la fois', (await menu.locator('details[open]').count()) === 1);
+  await menu.getByRole('link', { name: 'Toutes les recettes', exact: true }).click();
+  await page.waitForURL('**/recettes');
+  await menu.waitFor({ state: 'hidden' });
+  check('Menu : se ferme en arrivant sur la page', true);
+  await page.context().close();
+});
+
 await part('Recette et mode cuisine (téléphone, horloge maîtrisée)', async () => {
+
   const page = await newPage(browser, PHONE, errors);
   await page.clock.install();
   await page.goto(recipeUrl(recipe), { waitUntil: 'load' });
@@ -451,7 +474,52 @@ await part('Vitesse et qualité (Lighthouse, téléphone simulé)', async () => 
   await audited.close();
 });
 
+await part('Connexion et cadre du back-office', async () => {
+  // Sans session : l'API répond 401, ce qui n'est pas une erreur de la page
+  const visitor = await newPage(browser, PHONE, []);
+  await visitor.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  await answerCookies(visitor);
+  check('Sans session : la page de connexion', new URL(visitor.url()).pathname === '/admin/connexion', visitor.url());
+  check('Connexion : ni barre ni pied du site', (await visitor.locator('yona-header, yona-footer').count()) === 0);
+  const google = visitor.getByRole('button', { name: 'Se connecter avec Google' });
+  check('Connexion : bouton Google assez haut', (await google.isVisible()) && (await google.boundingBox()).height >= 44);
+  await visitor.context().close();
+
+  const phone = await newPage(browser, PHONE, errors);
+  await fakeAdmin(phone);
+  await phone.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
+  const menu = phone.getByRole('button', { name: /^Menu/ });
+  await menu.waitFor();
+  await answerCookies(phone);
+  check('Téléphone : ni barre ni pied du site', (await phone.locator('yona-header, yona-footer').count()) === 0);
+  check('Téléphone : la première lettre du nom sans photo', (await phone.locator('.admin__me').innerText()).trim() === 'Y');
+  await menu.click();
+  const drawer = phone.getByRole('dialog', { name: 'Menu du back-office' });
+  await drawer.waitFor();
+  check('Téléphone : le groupe de la page est déplié', (await drawer.locator('.group__toggle[aria-expanded="true"]').innerText()).includes('Site'));
+  await drawer.locator('.group__toggle', { hasText: 'Boutique' }).click();
+  check('Téléphone : un groupe déplié à la fois', (await drawer.locator('.group__toggle[aria-expanded="true"]').count()) === 1);
+  const heights = await drawer.locator('.group__toggle, a.link:visible').evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
+  check('Téléphone : des lignes assez hautes pour le pouce', heights.every((height) => height >= 44), heights.map(Math.round).join(', '));
+  check('Téléphone : « Se déconnecter »', await drawer.getByRole('button', { name: 'Se déconnecter' }).isVisible());
+  await drawer.getByRole('button', { name: 'Fermer le menu' }).click();
+  await drawer.waitFor({ state: 'hidden' });
+  check('Téléphone : le panneau se ferme', true);
+  await phone.context().close();
+
+  const desktop = await newPage(browser, DESKTOP, errors);
+  await fakeAdmin(desktop);
+  await desktop.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
+  const side = desktop.locator('.admin__side');
+  await side.waitFor();
+  check('Ordinateur : ni barre ni pied du site', (await desktop.locator('yona-header, yona-footer').count()) === 0);
+  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 21 && (await side.boundingBox()).x === 0);
+  check('Ordinateur : section courante marquée', (await side.locator('a.link.is-active').innerText()).includes('Nouveautés'));
+  await desktop.context().close();
+});
+
 await part('Back-office (session simulée)', async () => {
+
   const page = await newPage(browser, PHONE, errors);
   await fakeAdmin(page);
   await page.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });

@@ -10,6 +10,11 @@
   outline: none;
 }
 
+// No header above it: the back-office has its own frame
+.main--bare {
+  padding-top: 0;
+}
+
 .skip-link {
   position: fixed;
   top: var(--space-2);

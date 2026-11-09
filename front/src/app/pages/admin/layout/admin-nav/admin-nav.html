@@ -1,30 +1,42 @@
-@for (group of groups; track group.id) {
-  <!-- Kept in the page while closed: the entry knows it holds the section shown -->
-  <div class="admin__group" routerLinkActive="is-current">
-    <button
-      type="button"
-      class="admin__trigger"
-      [class.is-open]="openGroup() === group.id"
-      [attr.aria-expanded]="openGroup() === group.id"
-      [attr.aria-controls]="'admin-menu-' + group.id"
-      (click)="toggleGroup(group.id)"
-    >
-      {{ group.label }}
-      @if (groupCount(group); as count) {
-        <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
-      }
-      <svg yonaIcon="chevron-down" class="admin__chevron" [size]="16"></svg>
+<div class="top">
+  <yona-brand-logo />
+  @if (drawer()) {
+    <button type="button" class="round" aria-label="Fermer le menu" (click)="closed.emit()">
+      <svg yonaIcon="x" [size]="24"></svg>
     </button>
-    <div class="admin__panel" [id]="'admin-menu-' + group.id" [hidden]="openGroup() !== group.id">
-      <ul role="list" class="admin__links">
+  }
+</div>
+
+<a class="site-link" routerLink="/"><svg yonaIcon="chevron-left" [size]="18"></svg>Retour au site</a>
+
+<nav class="groups" aria-label="Sections du back-office">
+  @for (group of groups; track group.id) {
+    <section class="group" routerLinkActive="is-current" [attr.aria-label]="group.label">
+      <!-- Phones: one group unfolded at a time, the one holding the page shown to start with -->
+      @if (drawer()) {
+        <button
+          type="button"
+          class="group__toggle"
+          [attr.aria-expanded]="openGroup() === group.id"
+          [attr.aria-controls]="'admin-menu-' + group.id"
+          (click)="toggleGroup(group.id)"
+        >
+          <svg [yonaIcon]="group.icon" [size]="22"></svg>
+          {{ group.label }}
+          @if (groupCount(group); as count) {
+            <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
+          }
+          <span class="group__chevron"><svg yonaIcon="chevron-down" [size]="20" aria-hidden="true"></svg></span>
+        </button>
+      } @else {
+        <p class="group__title">{{ group.label }}</p>
+      }
+      <ul role="list" class="links" [id]="'admin-menu-' + group.id" [hidden]="drawer() && openGroup() !== group.id">
         @for (link of group.links; track link.path) {
           <li>
-            <a class="admin__link" [routerLink]="link.path" routerLinkActive="is-active" (click)="close()">
-              <svg [yonaIcon]="link.icon" [size]="20"></svg>
-              <span class="admin__link-text">
-                <span class="admin__link-label">{{ link.label }}</span>
-                <span class="admin__link-hint">{{ link.hint }}</span>
-              </span>
+            <a class="link" [routerLink]="link.path" routerLinkActive="is-active">
+              <svg [yonaIcon]="link.icon" [size]="drawer() ? 20 : 18"></svg>
+              <span class="link__label">{{ link.label }}</span>
               @if (link.count?.(); as count) {
                 <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
               }
@@ -32,6 +44,26 @@
           </li>
         }
       </ul>
+    </section>
+  }
+</nav>
+
+<div class="account">
+  @if (session.admin(); as admin) {
+    <div class="account__who">
+      <yona-admin-avatar [name]="admin.name || admin.email" [picture]="admin.picture" />
+      <span class="account__text">
+        <span class="account__name">{{ admin.name }}</span>
+        <span class="account__email">{{ admin.email }}</span>
+      </span>
+      @if (!drawer()) {
+        <button type="button" class="round" aria-label="Se déconnecter" (click)="signOut()"><svg yonaIcon="log-out" [size]="18"></svg></button>
+      }
     </div>
-  </div>
-}
+  }
+  <yona-color-scheme-switch layout="full" />
+  @if (drawer()) {
+    <button type="button" class="account__out" (click)="signOut()"><svg yonaIcon="log-out" [size]="18"></svg>Se déconnecter</button>
+  }
+  <p class="account__versions">Site v{{ frontVersion }} · API v{{ backVersion.value()?.version ?? '…' }}</p>
+</div>

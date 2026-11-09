@@ -2,17 +2,32 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 2.1.0 - 2026-11-09
+
+Front and backend 2.1.0. No database migration.
+
+### Added
+
+- **Back-office dashboard**: the site's bar and footer give way to a side panel with every section; on phones, a bar opens the same panel with large rows.
+- **Sign-in page** (`/admin/connexion`): Google's button in colour, also shown when a session expires.
+- **Admin photo**: the picture of the Google account, or the first letter of the name.
+- **Infinite scroll**: every paged list loads as you go down, in place of page numbers and "per page". Cards far from the screen are not rendered, and Back returns to the same spot.
+
+### Changed
+
+- **Navigation**: one "Recettes" panel in the bar.
+- **Phone menu**: large rows for single pages, cards that unfold for sections of several pages, and the search at the top.
+- **Phone header**: the site's name on one line, beside the menu button only.
+- **Recipes on phones**: all filters fold behind one "Filtres" button showing how many are active.
+- **Notifications button**: shorter on the home page; once on, the status and "Désactiver" are separate.
+- **Phones**: larger navigation buttons in the footer and the back-office bar.
+
 ## 2.0.1 - 2026-11-09
 
 Front and backend 2.0.1. No database migration.
 
 ### Changed
 
-- **Infinite scroll**: every paged list loads as you go down, in place of page numbers and "per page". Cards far from the screen are not rendered, and Back returns to the same spot.
-- **Navigation**: one "Recettes" panel in the bar; the phone menu has sections, the search, and folding "Salé" and "Sucré".
-- **Phone header**: the site's name on one line, beside the menu button only.
-- **Recipes on phones**: all filters fold behind one "Filtres" button showing how many are active.
-- **Notifications button**: shorter on the home page; once on, the status and "Désactiver" are separate.
 - **Back-office menu**: three entries (Blog, Boutique, Site), each opening a panel, in place of three rows of links.
 - **Observations, shop products**: the recipe is found with a search field instead of a drop-down list.
 - **Orders**: the alert for new orders says plainly what it does.

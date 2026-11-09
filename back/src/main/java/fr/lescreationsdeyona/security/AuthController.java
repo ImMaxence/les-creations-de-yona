@@ -23,7 +23,7 @@ class AuthController {
 		// The CSRF token is lazy: reading it makes Spring Security write the XSRF-TOKEN cookie for the
 		// back-office only, so public visitors never get it.
 		csrfToken.getToken();
-		return new AdminResponse(admin.getEmail(), admin.getFullName());
+		return new AdminResponse(admin.getEmail(), admin.getFullName(), admin.getPicture());
 	}
 
 }

@@ -1,9 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { DOCUMENT, Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../api/generated/api';
 import { getCurrentAdmin } from '../api/generated/fn/authentication/get-current-admin';
 import { AdminResponse } from '../api/generated/models/admin-response';
+import { ADMIN_SIGN_IN_PATH } from '../../shared/routing/links';
 
 const XSRF_COOKIE = 'XSRF-TOKEN=';
 /** Spring Security endpoint starting the Google sign-in; it comes back to /admin. */
@@ -17,6 +19,7 @@ export class AdminSession {
   private readonly api = inject(Api);
   private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
 
   private readonly adminState = signal<AdminResponse | null>(null);
 
@@ -41,6 +44,12 @@ export class AdminSession {
       this.adminState.set(null);
     }
     return this.adminState();
+  }
+
+  /** The API no longer knows this session: back to the sign-in page. */
+  expire(): void {
+    this.adminState.set(null);
+    void this.router.navigateByUrl(ADMIN_SIGN_IN_PATH);
   }
 
   /** Full page navigation: the Google sign-in happens outside the application. */
