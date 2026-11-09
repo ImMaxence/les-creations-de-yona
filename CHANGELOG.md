@@ -2,6 +2,19 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 2.3.0 - 2026-11-09
+
+Front and backend 2.3.0. No database migration.
+
+### Added
+
+- **Phone menu**: the page shown stands out, and its section comes unfolded.
+- **Sign-in page**: a scallop pattern on the left panel.
+
+### Fixed
+
+- **Phone menu**: the text typed in the search, and its suggestions, were invisible.
+
 ## 2.2.0 - 2026-11-09
 
 Front and backend 2.2.0. No database migration.

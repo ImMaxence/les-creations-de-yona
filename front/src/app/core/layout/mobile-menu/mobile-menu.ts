@@ -106,7 +106,7 @@ export class MobileMenu {
   protected readonly recipesPath = RECIPES_PATH;
   /** One tap, one page; all together, for the visitor to know what the arrow does. */
   protected readonly pages = computed(() => {
-    const pages = [page('/', 'Accueil', true), page(RECIPES_PATH, 'Recettes', true)];
+    const pages = [page('/', 'Accueil', true), page(RECIPES_PATH, 'Recettes')];
     if (this.siteData.menus().length) {
       pages.push(page(MENUS_PATH, 'Menus'));
     }
@@ -178,6 +178,8 @@ export class MobileMenu {
 
   protected open(): void {
     const dialog = this.dialog().nativeElement;
+    // The section holding the page shown comes unfolded, for that page to be seen
+    dialog.querySelectorAll('details').forEach((section) => (section.open = !!section.querySelector('.sub.is-active')));
     dialog.showModal();
     // showModal() focuses the first link or button, and Safari then shows its focus ring after a tap
     dialog.focus();

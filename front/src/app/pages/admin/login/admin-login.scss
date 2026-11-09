@@ -13,6 +13,9 @@
 }
 
 .brand {
+  // Above its own background, below its text
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -20,6 +23,31 @@
   padding: var(--space-5) var(--container-padding);
   background-color: var(--color-accent);
   color: var(--color-on-accent);
+
+  // Scallops, as on the boxes of a pâtisserie. Decorative: gone before the text they would disturb.
+  &::before {
+    --ground: var(--color-accent);
+    --scallop: color-mix(in srgb, var(--color-on-accent) 15%, var(--color-accent));
+
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--ground);
+    background-image:
+      radial-gradient(circle at 100% 150%, var(--ground) 24%, var(--scallop) 24%, var(--scallop) 28%, var(--ground) 28%, var(--ground) 36%, var(--scallop) 36%, var(--scallop) 40%, transparent 40%),
+      radial-gradient(circle at 0 150%, var(--ground) 24%, var(--scallop) 24%, var(--scallop) 28%, var(--ground) 28%, var(--ground) 36%, var(--scallop) 36%, var(--scallop) 40%, transparent 40%),
+      radial-gradient(circle at 50% 100%, var(--scallop) 10%, var(--ground) 10%, var(--ground) 23%, var(--scallop) 23%, var(--scallop) 30%, var(--ground) 30%, var(--ground) 43%, var(--scallop) 43%, var(--scallop) 50%, var(--ground) 50%, var(--ground) 63%, var(--scallop) 63%, var(--scallop) 71%, transparent 71%),
+      radial-gradient(circle at 100% 50%, var(--scallop) 5%, var(--ground) 5%, var(--ground) 15%, var(--scallop) 15%, var(--scallop) 20%, var(--ground) 20%, var(--ground) 29%, var(--scallop) 29%, var(--scallop) 34%, var(--ground) 34%, var(--ground) 44%, var(--scallop) 44%, var(--scallop) 49%, transparent 49%),
+      radial-gradient(circle at 0 50%, var(--scallop) 5%, var(--ground) 5%, var(--ground) 15%, var(--scallop) 15%, var(--scallop) 20%, var(--ground) 20%, var(--ground) 29%, var(--scallop) 29%, var(--scallop) 34%, var(--ground) 34%, var(--ground) 44%, var(--scallop) 44%, var(--scallop) 49%, transparent 49%);
+    background-size: 88px 44px;
+    mask-image: linear-gradient(to left, #000 15%, transparent 85%);
+
+    @include m.from(lg) {
+      background-size: 128px 64px;
+      mask-image: linear-gradient(to bottom left, #000 20%, transparent 68%);
+    }
+  }
 
   @include m.from(lg) {
     padding: var(--space-7);

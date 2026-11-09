@@ -30,7 +30,7 @@
     <ul role="list">
       @for (page of pages(); track page.path; let i = $index) {
         <li class="stagger" [style.--i]="i + 1">
-          <a class="entry" [routerLink]="page.path" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: !!page.exact }">
+          <a class="entry" [routerLink]="page.path" routerLinkActive="is-active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: !!page.exact }">
             <span class="entry__label">{{ page.label }}</span>
             <svg yonaIcon="arrow-right" class="entry__mark" [size]="24" aria-hidden="true"></svg>
           </a>
@@ -54,14 +54,14 @@
               <p class="section__title">{{ group.label }}</p>
               <ul role="list">
                 <li>
-                  <a class="sub sub--all" [routerLink]="recipesPath" [queryParams]="group.allQueryParams">
+                  <a class="sub sub--all" [routerLink]="recipesPath" [queryParams]="group.allQueryParams" routerLinkActive="is-active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">
                     <span class="sub__label">{{ group.allLabel }}</span>
                     <svg yonaIcon="arrow-right" [size]="20" aria-hidden="true"></svg>
                   </a>
                 </li>
                 @for (category of group.categories; track category.id) {
                   <li>
-                    <a class="sub" [routerLink]="recipesPath" [queryParams]="group.queryParams(category)">
+                    <a class="sub" [routerLink]="recipesPath" [queryParams]="group.queryParams(category)" routerLinkActive="is-active" ariaCurrentWhenActive="page">
                       <span class="sub__label">{{ category.name }}</span>
                       <svg yonaIcon="arrow-right" [size]="20" aria-hidden="true"></svg>
                     </a>
@@ -74,7 +74,7 @@
               <ul role="list">
                 @for (link of section.links; track link.path) {
                   <li>
-                    <a class="sub" [routerLink]="link.path" routerLinkActive="is-active">
+                    <a class="sub" [routerLink]="link.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">
                       <span class="sub__label">{{ link.label }}</span>
                       @if (link.count; as count) {
                         <span class="entry__count">{{ count }}<span class="visually-hidden"> {{ link.unit }}{{ count > 1 ? 's' : '' }}</span></span>

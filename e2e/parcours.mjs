@@ -248,6 +248,13 @@ await part('Menu (téléphone)', async () => {
   const menu = page.getByRole('dialog', { name: 'Menu' });
   await menu.waitFor();
   check('Menu : la recherche du site', await menu.getByRole('combobox').first().isVisible());
+  const field = menu.getByRole('combobox').first();
+  await field.fill('tarte');
+  const [typed, ground] = await field.evaluate((input) => [getComputedStyle(input).color, getComputedStyle(input.closest('.search')).backgroundColor]);
+  check('Menu : le texte tapé se lit', typed !== ground, `${typed} sur ${ground}`);
+  await field.fill('');
+  const current = menu.locator('a.entry[aria-current="page"]');
+  check('Menu : la page en cours ressort', (await current.count()) === 1 && (await current.evaluate((row) => getComputedStyle(row).backgroundColor)) !== 'rgba(0, 0, 0, 0)');
   const heights = await menu.locator('.entry').evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
   check('Menu : des lignes assez hautes pour le pouce', heights.length > 0 && heights.every((height) => height >= 44), heights.map(Math.round).join(', '));
   check('Menu : une page a sa flèche, une section son plus', (await menu.locator('a.entry .entry__mark').count()) === (await menu.locator('a.entry').count()) && (await menu.locator('summary .entry__mark').count()) === (await menu.locator('summary').count()));
@@ -260,6 +267,10 @@ await part('Menu (téléphone)', async () => {
   await page.waitForURL('**/recettes');
   await menu.waitFor({ state: 'hidden' });
   check('Menu : se ferme en arrivant sur la page', true);
+  await page.goto(BASE + '/glossaire', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
+  await menu.waitFor();
+  check('Menu : la section de la page en cours est dépliée', (await menu.locator('details[open] a[aria-current="page"]').count()) === 1);
   await page.context().close();
 });
 
