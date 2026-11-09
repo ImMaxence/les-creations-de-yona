@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Api } from '../../core/api/generated/api';
+import { listObservations } from '../../core/api/generated/fn/mon-cap/list-observations';
 import { PageResponseObservationResponse } from '../../core/api/generated/models/page-response-observation-response';
 import { MarkdownPipe } from '../../shared/format/markdown.pipe';
 import { ParisDatePipe } from '../../shared/format/paris-date.pipe';
@@ -7,12 +9,14 @@ import { Reveal } from '../../shared/motion/reveal';
 import { CAP_PATH, recipeLinkOf } from '../../shared/routing/links';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { Icon } from '../../shared/ui/icon/icon';
-import { Pagination } from '../../shared/ui/pagination/pagination';
+import { InfiniteList } from '../../shared/ui/infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../../shared/ui/infinite-scroll/infinite-scroll';
+import { OBSERVATIONS_PER_PAGE } from './cap.resolver';
 
 /** "Mes observations": what was noticed while cooking, about a recipe or about none. */
 @Component({
   selector: 'yona-observations',
-  imports: [CoverImage, Icon, MarkdownPipe, Pagination, ParisDatePipe, Reveal, RouterLink],
+  imports: [CoverImage, Icon, InfiniteScroll, MarkdownPipe, ParisDatePipe, Reveal, RouterLink],
   template: `
     <section class="container observations">
       <header class="observations__head">
@@ -23,9 +27,15 @@ import { Pagination } from '../../shared/ui/pagination/pagination';
         </p>
       </header>
 
-      @if (items().length) {
+      @if (list.firstPage() > 0) {
+        <a class="observations__back" routerLink="." queryParamsHandling="merge" [queryParams]="{ page: list.firstPage() > 1 ? list.firstPage() : null }">
+          <svg yonaIcon="arrow-up" [size]="16"></svg>Observations précédentes
+        </a>
+      }
+
+      @if (list.items().length) {
         <ul role="list" class="observations__list">
-          @for (observation of items(); track observation.id) {
+          @for (observation of list.items(); track observation.id) {
             <li class="observation" yonaReveal>
               @if (observation.imageId) {
                 <yona-cover-image class="observation__image" [imageId]="observation.imageId" [alt]="observation.title" sizes="(min-width: 768px) 24rem, 100vw" />
@@ -43,11 +53,7 @@ import { Pagination } from '../../shared/ui/pagination/pagination';
             </li>
           }
         </ul>
-        @if (observations(); as result) {
-          @if (result.totalPages > 1) {
-            <yona-pagination [page]="result.page + 1" [totalPages]="result.totalPages" />
-          }
-        }
+        <yona-infinite-scroll linked [list]="list" />
       } @else {
         <p class="observations__empty">Pas encore d'observation par ici</p>
       }
@@ -90,6 +96,9 @@ import { Pagination } from '../../shared/ui/pagination/pagination';
     }
 
     .observation {
+      // Off screen, the browser skips it until it comes near
+      content-visibility: auto;
+      contain-intrinsic-size: auto 14rem;
       display: grid;
       gap: var(--space-4);
       padding: var(--space-5);
@@ -148,10 +157,16 @@ import { Pagination } from '../../shared/ui/pagination/pagination';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class Observations {
-  /** From observationsResolver. */
+  /** From observationsResolver: the first page, rendered by the server. */
   readonly observations = input<PageResponseObservationResponse>();
+
+  private readonly api = inject(Api);
 
   protected readonly capPath = CAP_PATH;
   protected readonly recipeLinkOf = recipeLinkOf;
-  protected readonly items = computed(() => this.observations()?.content ?? []);
+  protected readonly list = new InfiniteList({
+    first: () => this.observations(),
+    load: (page) => this.api.invoke(listObservations, { page, size: OBSERVATIONS_PER_PAGE }),
+    key: (observation) => observation.id,
+  });
 }

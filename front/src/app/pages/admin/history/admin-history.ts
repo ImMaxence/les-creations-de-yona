@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, inject, linkedSignal, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { listHistory } from '../../../core/api/generated/fn/admin-history/list-history';
 import { AuditEventResponse } from '../../../core/api/generated/models/audit-event-response';
 import { parisDateTime } from '../../../shared/format/paris-time';
 import { Icon } from '../../../shared/ui/icon/icon';
-import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 
 type Kind = AuditEventResponse['kind'];
@@ -55,13 +56,13 @@ const ACTIONS: Record<Action, string> = {
 
 /**
  * "Historique": what was done in the back-office, by whom and when, the latest first, over the
- * last 6 months (older lines are erased every night). Filtered by kind, 20 a page, with the
- * pagination above and under the list. An update says what it changed: each field, its value
+ * last 6 months (older lines are erased every night). Filtered by kind, loaded as the admin goes
+ * down. An update says what it changed: each field, its value
  * before (struck through) and after; for a list, the lines removed and added.
  */
 @Component({
   selector: 'yona-admin-history',
-  imports: [Icon, Pagination, RouterLink, Select],
+  imports: [Icon, InfiniteScroll, RouterLink, Select],
   template: `
     <section class="admin-section" aria-labelledby="history-title">
       <div class="admin-section__head">
@@ -75,19 +76,12 @@ const ACTIONS: Record<Action, string> = {
         <yona-select label="Type" [options]="kindOptions" [value]="kind()" (valueChange)="changeKind($event)" />
       </div>
 
-      @if (events.value(); as result) {
-        @if (result.content.length) {
+      @if (events.items().length) {
           <p class="admin-row__meta" aria-live="polite">
-            {{ result.totalElements }} action{{ result.totalElements > 1 ? 's' : '' }}, les plus récentes d'abord
-            @if (result.totalPages > 1) {
-              · page {{ page() }} sur {{ result.totalPages }}
-            }
+            {{ events.totalElements() }} action{{ events.totalElements() > 1 ? 's' : '' }}, les plus récentes d'abord
           </p>
-          @if (result.totalPages > 1) {
-            <yona-pagination buttons [page]="page()" [totalPages]="result.totalPages" (pageChange)="goTo($event)" />
-          }
-          <ul role="list" class="admin-list" [class.is-busy]="events.isLoading()">
-            @for (event of result.content; track event.id) {
+          <ul role="list" class="admin-list admin-list--infinite" [class.is-busy]="events.isLoading()">
+            @for (event of events.items(); track event.id) {
               <li class="admin-row">
                 <div class="admin-row__main">
                   <span class="admin-row__title">
@@ -132,15 +126,12 @@ const ACTIONS: Record<Action, string> = {
               </li>
             }
           </ul>
-          @if (result.totalPages > 1) {
-            <yona-pagination buttons [page]="page()" [totalPages]="result.totalPages" (pageChange)="goTo($event, true)" />
-          }
-        } @else {
-          <p class="admin-empty">Rien pour le moment</p>
-        }
+      } @else if (events.isEmpty()) {
+        <p class="admin-empty">Rien pour le moment</p>
       } @else if (events.isLoading()) {
         <p class="admin-empty">Chargement…</p>
       }
+      <yona-infinite-scroll [list]="events" />
     </section>
   `,
   styles: `
@@ -213,7 +204,6 @@ const ACTIONS: Record<Action, string> = {
 })
 export default class AdminHistory {
   private readonly api = inject(Api);
-  private readonly document = inject(DOCUMENT);
 
   /** A few changes show at once; more, folded under their count. */
   protected readonly openedUpTo = 4;
@@ -225,28 +215,11 @@ export default class AdminHistory {
     ...(Object.keys(KINDS) as Kind[]).map((kind) => ({ value: kind, label: KINDS[kind].label })),
   ];
   protected readonly kind = signal<Kind | 'ALL'>('ALL');
-  /** From 1; back to the first page with another kind. */
-  protected readonly page = linkedSignal(() => {
-    this.kind();
-    return 1;
+  protected readonly events = new InfiniteList({
+    params: () => ({ kind: this.kind() }),
+    load: (page, { kind }) => this.api.invoke(listHistory, { kind: kind === 'ALL' ? undefined : kind, page, size: PAGE_SIZE }),
+    key: (event) => event.id,
   });
-  protected readonly events = resource({
-    params: () => ({ kind: this.kind(), page: this.page() - 1 }),
-    loader: ({ params }) =>
-      this.api.invoke(listHistory, {
-        kind: params.kind === 'ALL' ? undefined : params.kind,
-        page: params.page,
-        size: PAGE_SIZE,
-      }),
-  });
-
-  /** From the pagination under the list, back to the top of it. */
-  protected goTo(page: number, scroll = false): void {
-    this.page.set(page);
-    if (scroll) {
-      this.document.getElementById('history-title')?.scrollIntoView({ block: 'start' });
-    }
-  }
 
   protected changeKind(kind: Kind | 'ALL' | undefined): void {
     this.kind.set(kind ?? 'ALL');

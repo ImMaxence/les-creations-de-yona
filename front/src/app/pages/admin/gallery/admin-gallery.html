@@ -25,10 +25,9 @@
     <yona-select label="Type d'image" [options]="kindOptions" [(value)]="kind" />
   </div>
 
-  @if (images.value(); as result) {
-    @if (result.content.length) {
+  @if (images.items().length) {
       <yona-bulk-bar
-        shownLabel="cette page"
+        shownLabel="photos affichées"
         [count]="selection.size()"
         [allShown]="selection.hasAll(shownIds())"
         [busy]="deleting()"
@@ -38,8 +37,9 @@
         (deleted)="removeSelected()"
       />
       <ul role="list" class="gallery">
-        @for (image of result.content; track image.id) {
-          <li class="tile" [class.is-unused]="!usedBy(image).length" [class.is-selected]="selection.has(image.id)">
+        @for (image of images.items(); track image.id) {
+          <li class="tile" yonaVirtualItem #item="virtualItem" [class.is-unused]="!usedBy(image).length" [class.is-selected]="selection.has(image.id)">
+            @if (item.near()) {
             <label class="select-box tile__select">
               <input
                 type="checkbox"
@@ -90,21 +90,16 @@
             <button type="button" class="icon-button icon-button--danger tile__delete" aria-label="Mettre l'image à la corbeille" (click)="remove(image)">
               <svg yonaIcon="trash" [size]="18"></svg>
             </button>
+            }
           </li>
         }
       </ul>
-
-      @if (totalPages() > 1) {
-        <div class="admin-more">
-          <yona-pagination buttons [page]="page() + 1" [totalPages]="totalPages()" (pageChange)="page.set($event - 1)" />
-        </div>
-      }
-    } @else {
-      <p class="admin-empty">Aucune image</p>
-    }
+  } @else if (images.isEmpty()) {
+    <p class="admin-empty">Aucune image</p>
   } @else if (images.isLoading()) {
     <p class="admin-empty">Chargement…</p>
   }
+  <yona-infinite-scroll [list]="images" />
 </section>
 
 <yona-photo-editor

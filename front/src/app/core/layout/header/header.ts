@@ -2,16 +2,15 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
-import { THEMES } from '../../../shared/format/themes';
-import { CAP_PATH, MENUS_PATH, RECIPES_PATH, SHOP_PATH } from '../../../shared/routing/links';
+import { CAP_PATH, SHOP_PATH } from '../../../shared/routing/links';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { SiteSearch } from '../../../shared/ui/site-search/site-search';
-import { CategoryMenu } from '../category-menu/category-menu';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
 import { KitchenLinks } from '../kitchen-links/kitchen-links';
 import { MobileMenu } from '../mobile-menu/mobile-menu';
+import { RecipesMenu } from '../recipes-menu/recipes-menu';
 
 /** Below this scroll position, the header always stays visible. */
 const ALWAYS_VISIBLE_UNTIL_PX = 160;
@@ -20,7 +19,7 @@ const SCROLL_DIRECTION_THRESHOLD_PX = 6;
 
 @Component({
   selector: 'yona-header',
-  imports: [RouterLink, RouterLinkActive, BrandLogo, CategoryMenu, ColorSchemeSwitch, Dialog, Icon, KitchenLinks, MobileMenu, SiteSearch],
+  imports: [RouterLink, RouterLinkActive, BrandLogo, ColorSchemeSwitch, Dialog, Icon, KitchenLinks, MobileMenu, RecipesMenu, SiteSearch],
   templateUrl: './header.html',
   styleUrl: './header.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,11 +34,8 @@ const SCROLL_DIRECTION_THRESHOLD_PX = 6;
 export class Header {
   protected readonly siteData = inject(SiteData);
   protected readonly adminSession = inject(AdminSession);
-  protected readonly recipesPath = RECIPES_PATH;
-  protected readonly menusPath = MENUS_PATH;
   protected readonly capPath = CAP_PATH;
   protected readonly shopPath = SHOP_PATH;
-  protected readonly themes = THEMES.map(({ value }) => value);
 
   protected readonly searchOpen = signal(false);
   protected readonly scrolled = signal(false);

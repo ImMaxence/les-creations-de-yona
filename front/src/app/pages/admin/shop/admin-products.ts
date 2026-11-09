@@ -1,8 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
-import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
 import { createShopProduct } from '../../../core/api/generated/fn/admin-shop/create-shop-product';
 import { deleteShopProduct } from '../../../core/api/generated/fn/admin-shop/delete-shop-product';
 import { getShopSettings } from '../../../core/api/generated/fn/admin-shop/get-shop-settings';
@@ -10,7 +9,6 @@ import { listShopProducts } from '../../../core/api/generated/fn/admin-shop/list
 import { updateShopProduct } from '../../../core/api/generated/fn/admin-shop/update-shop-product';
 import { updateShopSettings } from '../../../core/api/generated/fn/admin-shop/update-shop-settings';
 import { AdminShopProduct } from '../../../core/api/generated/models/admin-shop-product';
-import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
@@ -18,12 +16,12 @@ import { formatEuros } from '../../../shared/format/units';
 import { SHOP_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
-import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { ChosenRecipe, RecipeSearch } from '../recipe-search/recipe-search';
 
 /** What the shop says and sells: open or closed, its texts, and the recipes offered with their price. */
 @Component({
   selector: 'yona-admin-products',
-  imports: [Button, Icon, RouterLink, Select],
+  imports: [Button, Icon, RecipeSearch, RouterLink],
   template: `
     <section class="admin-section" aria-labelledby="products-title">
       <div class="admin-section__head">
@@ -53,7 +51,7 @@ import { Select, SelectOption } from '../../../shared/ui/select/select';
         @if (!editing()) {
           <div class="field">
             <span class="field__label">Recette</span>
-            <yona-select label="Recette" placeholder="Choisir une recette…" [options]="recipeOptions()" [value]="recipeId()" (valueChange)="recipeId.set($event ?? null)" />
+            <yona-recipe-search [exclude]="recipesInShop()" [(chosen)]="chosenRecipe" />
           </div>
         }
         <div class="field">
@@ -132,18 +130,13 @@ export default class AdminProducts {
   protected readonly savingSettings = signal(false);
 
   protected readonly products = resource({ loader: () => this.api.invoke(listShopProducts) });
-  private readonly recipes = resource({ loader: () => this.loadRecipes() });
-  /** Those not in the shop yet; drafts marked as such. */
-  protected readonly recipeOptions = computed<SelectOption<number>[]>(() => {
-    const inShop = new Set(this.products.value()?.map((product) => product.recipeId));
-    return (this.recipes.value() ?? [])
-      .filter((recipe) => !inShop.has(recipe.id))
-      .map((recipe) => ({ value: recipe.id, label: recipe.status === 'PUBLISHED' ? recipe.title : `${recipe.title} (non publiée)` }));
-  });
+  /** Not offered again: a recipe is in the shop once at most. */
+  protected readonly recipesInShop = computed<ReadonlySet<number>>(() => new Set(this.products.value()?.map((product) => product.recipeId)));
+  private readonly recipeSearch = viewChild(RecipeSearch);
 
   /** The product being changed; null while adding a new one. */
   protected readonly editing = signal<AdminShopProduct | null>(null);
-  protected readonly recipeId = signal<number | null>(null);
+  protected readonly chosenRecipe = signal<ChosenRecipe | null>(null);
   /** As typed in the field. */
   protected readonly price = signal('');
   protected readonly portionLabel = signal('');
@@ -189,7 +182,8 @@ export default class AdminProducts {
 
   protected cancel(): void {
     this.editing.set(null);
-    this.recipeId.set(null);
+    this.chosenRecipe.set(null);
+    this.recipeSearch()?.reset();
     this.price.set('');
     this.portionLabel.set('');
     this.available.set(true);
@@ -199,8 +193,8 @@ export default class AdminProducts {
     event.preventDefault();
     const price = Number(this.price());
     const editing = this.editing();
-    const recipeId = editing?.recipeId ?? this.recipeId();
-    if (recipeId === null || this.price().trim() === '' || !Number.isFinite(price) || price < 0) {
+    const recipeId = editing?.recipeId ?? this.chosenRecipe()?.id;
+    if (recipeId === undefined || this.price().trim() === '' || !Number.isFinite(price) || price < 0) {
       this.toaster.error('Choisissez une recette et indiquez son prix');
       return;
     }
@@ -230,15 +224,5 @@ export default class AdminProducts {
       }
       this.products.reload();
     }
-  }
-
-  private async loadRecipes(): Promise<RecipeAdminSummary[]> {
-    const recipes: RecipeAdminSummary[] = [];
-    for (let page = 0, totalPages = 1; page < totalPages; page++) {
-      const result = await this.api.invoke(searchRecipes, { page, size: 50, sort: ['title,asc'] });
-      recipes.push(...result.content);
-      totalPages = result.totalPages;
-    }
-    return recipes;
   }
 }

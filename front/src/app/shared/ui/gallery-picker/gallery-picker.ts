@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, resource, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { Api } from '../../../core/api/generated/api';
 import { listImages } from '../../../core/api/generated/fn/admin-images/list-images';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
 import { ParisDatePipe } from '../../format/paris-date.pipe';
 import { CoverImage } from '../cover-image/cover-image';
 import { Dialog } from '../dialog/dialog';
-import { Pagination } from '../pagination/pagination';
+import { InfiniteList } from '../infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../infinite-scroll/infinite-scroll';
 
 const PAGE_SIZE = 12;
 
@@ -16,7 +17,7 @@ const PAGE_SIZE = 12;
  */
 @Component({
   selector: 'yona-gallery-picker',
-  imports: [CoverImage, Dialog, Pagination, ParisDatePipe],
+  imports: [CoverImage, Dialog, InfiniteScroll, ParisDatePipe],
   templateUrl: './gallery-picker.html',
   styleUrl: './gallery-picker.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,36 +27,20 @@ export class GalleryPicker {
   readonly portrait = input(false);
 
   private readonly api = inject(Api);
-  private readonly dialog = viewChild.required(Dialog);
 
   protected readonly isOpen = signal(false);
   protected readonly onlyUnused = signal(true);
-  /** Starts at 1, as shown. */
-  protected readonly page = linkedSignal({ source: this.onlyUnused, computation: () => 1 });
-  protected readonly images = resource({
+  protected readonly images = new InfiniteList({
     params: () =>
       this.isOpen()
-        ? {
-            used: this.onlyUnused() ? false : undefined,
-            portrait: this.portrait(),
-            page: this.page() - 1,
-            size: PAGE_SIZE,
-            sort: ['createdAt,desc'],
-          }
+        ? { used: this.onlyUnused() ? false : undefined, portrait: this.portrait(), size: PAGE_SIZE, sort: ['createdAt,desc'] }
         : undefined,
-    loader: ({ params }) => this.api.invoke(listImages, params),
+    load: (page, params) => this.api.invoke(listImages, { ...params, page }),
+    key: (image) => image.id,
   });
-  protected readonly totalPages = computed(() => this.images.value()?.totalPages ?? 0);
-  protected readonly totalElements = computed(() => this.images.value()?.totalElements ?? 0);
 
   open(): void {
-    this.page.set(1);
     this.isOpen.set(true);
-  }
-
-  protected changePage(page: number): void {
-    this.page.set(page);
-    this.dialog().scrollToTop();
   }
 
   protected choose(image: GalleryImage): void {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { attempt } from '../../../core/api/attempt';
 import { ImageUploads } from '../../../core/api/image-uploads';
@@ -16,7 +16,9 @@ import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { Button } from '../../../shared/ui/button/button';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { EDITABLE_PHOTO_ACCEPT, editablePhotoError } from '../../../shared/ui/image-upload/photo-file';
-import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
+import { VirtualItem } from '../../../shared/ui/infinite-scroll/virtual-item';
 import { PhotoEditor } from '../../../shared/ui/photo-editor/photo-editor';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
@@ -44,10 +46,11 @@ const PAGE_SIZE = 24;
     BulkBar,
     Button,
     CoverImage,
-    Pagination,
+    InfiniteScroll,
     PhotoEditor,
     Select,
     ParisDatePipe,
+    VirtualItem,
   ],
   templateUrl: './admin-gallery.html',
   styleUrl: './admin-gallery.scss',
@@ -84,21 +87,19 @@ export default class AdminGallery {
   );
   protected readonly kind = signal<KindFilter>('ALL');
   protected readonly usage = signal<UsageFilter>('ALL');
-  protected readonly page = linkedSignal({ source: () => [this.kind(), this.usage()], computation: () => 0 });
-  protected readonly images = resource({
+  protected readonly images = new InfiniteList({
     params: () => ({
       kind: this.kind() === 'ALL' ? undefined : (this.kind() as GalleryImage['kind']),
       used: this.usage() === 'ALL' ? undefined : this.usage() === 'USED',
-      page: this.page(),
       size: PAGE_SIZE,
     }),
-    loader: ({ params }) => this.api.invoke(listImages, params),
+    load: (page, params) => this.api.invoke(listImages, { ...params, page }),
+    key: (image) => image.id,
   });
-  protected readonly totalPages = computed(() => this.images.value()?.totalPages ?? 0);
 
-  /** Kept from one page to another. */
+  /** Kept when the filters change. */
   protected readonly selection = new Selection<string>();
-  protected readonly shownIds = computed(() => this.images.value()?.content.map((image) => image.id) ?? []);
+  protected readonly shownIds = computed(() => this.images.items().map((image) => image.id));
   protected readonly deleting = signal(false);
   protected readonly editorOpen = signal(false);
   protected readonly editorSource = signal<File | string | null>(null);
@@ -159,7 +160,6 @@ export default class AdminGallery {
       if (this.usage() === 'USED') {
         this.usage.set('ALL');
       }
-      this.page.set(0);
       this.images.reload();
     }
   }

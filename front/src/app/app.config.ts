@@ -40,7 +40,7 @@ import { SiteData } from './core/site/site-data';
 import { SiteTheme } from './core/theme/site-theme';
 
 /**
- * No page transition when only the query changes (search, filter, pagination): same page.
+ * No page transition when only the query changes (search, filter): same page.
  * Nor while the phone menu is open: its own fade-out reveals the new page.
  */
 function skipTransitionWhenNeeded({ transition }: ViewTransitionInfo): void {

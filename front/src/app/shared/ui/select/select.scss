@@ -3,6 +3,9 @@
 :host {
   position: relative;
   display: inline-block;
+  // In a grid or a narrow column: a long value is cut off instead of overflowing
+  min-width: 0;
+  max-width: 100%;
 }
 
 .trigger {

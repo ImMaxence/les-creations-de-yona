@@ -1,0 +1,49 @@
+<!-- Kept in the page while closed: the entry knows it holds the page shown -->
+<div routerLinkActive="is-active">
+  <button
+    type="button"
+    class="trigger"
+    aria-controls="recipes-menu"
+    [attr.aria-expanded]="open()"
+    [class.is-open]="open()"
+    (click)="toggle()"
+  >
+    Recettes
+    <svg yonaIcon="chevron-down" class="trigger__chevron" [size]="16"></svg>
+  </button>
+
+  <div id="recipes-menu" class="panel" [hidden]="!open()">
+    <ul role="list" class="panel__main">
+      <li>
+        <a class="panel__lead" [routerLink]="recipesPath" (click)="close()">
+          Toutes les recettes
+          <svg yonaIcon="arrow-right" [size]="16"></svg>
+        </a>
+      </li>
+      @if (siteData.menus().length) {
+        <li>
+          <a class="panel__link" [routerLink]="menusPath" (click)="close()">Menus</a>
+        </li>
+      }
+      <li>
+        <a class="panel__link" [routerLink]="glossaryPath" (click)="close()">Glossaire</a>
+      </li>
+    </ul>
+
+    @for (group of themeGroups(); track group.theme) {
+      <div class="panel__theme">
+        <p class="panel__title">{{ group.label }}</p>
+        <ul role="list">
+          <li>
+            <a class="panel__link panel__link--all" [routerLink]="recipesPath" [queryParams]="group.allQueryParams" (click)="close()">{{ group.allLabel }}</a>
+          </li>
+          @for (category of group.categories; track category.id) {
+            <li>
+              <a class="panel__link" [routerLink]="recipesPath" [queryParams]="group.queryParams(category)" (click)="close()">{{ category.name }}</a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
+</div>

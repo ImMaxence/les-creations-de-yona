@@ -137,23 +137,25 @@ await part('Accueil (ordinateur)', async () => {
   );
   const expected = `hero > latest${menus.length ? ' > menus' : ''} > about > notify > categories`;
   check('Ordre des sections', order.join(' > ') === expected, order.join(' > '));
-  check(
-    menus.length ? '« Menus » dans la barre du haut' : 'Pas de « Menus » sans menu publié',
-    (await page.locator('yona-header nav.nav').getByRole('link', { name: 'Menus' }).count()) === (menus.length ? 1 : 0),
-  );
-  // Salé et Sucré : chaque thème avec ses catégories, à la place de « Catégories »
+  // « Recettes » : un seul menu pour toutes les recettes, les menus, le glossaire et les catégories de chaque thème
   const categories = await api('/api/categories');
   const nav = page.locator('yona-header nav.nav');
-  check('Menus « Salé » puis « Sucré » dans la barre du haut', (await nav.locator('yona-category-menu .trigger').allTextContents()).map((text) => text.trim()).join(' | ') === 'Salé | Sucré');
+  check('Menu « Recettes » dans la barre du haut', (await nav.locator('yona-recipes-menu .trigger').allTextContents()).map((text) => text.trim()).join(' | ') === 'Recettes');
+  check('Barre du haut sans « Salé » ni « Sucré »', (await nav.getByRole('button', { name: 'Salé' }).count()) === 0);
+  await nav.getByRole('button', { name: 'Recettes' }).click();
+  const panel = page.locator('#recipes-menu');
+  await panel.waitFor();
+  check(
+    menus.length ? '« Menus » dans le menu Recettes' : 'Pas de « Menus » sans menu publié',
+    (await panel.getByRole('link', { name: 'Menus', exact: true }).count()) === (menus.length ? 1 : 0),
+  );
   const savory = categories.find((category) => category.theme === 'SAVORY');
   if (savory) {
-    await nav.getByRole('button', { name: 'Salé' }).click();
-    const panel = page.locator('#category-menu-sale');
-    await panel.waitFor();
-    check('« Salé » : ses catégories, et toutes les recettes salées', (await panel.getByRole('link', { name: savory.name }).count()) === 1 && (await panel.getByRole('link', { name: 'Toutes les recettes salées' }).count()) === 1);
-    check('« Salé » sans catégorie sucrée', (await panel.getByRole('link').allTextContents()).every((name) => !categories.some((category) => category.theme === 'SWEET' && category.name === name.trim())));
-    await page.keyboard.press('Escape');
+    const column = panel.locator('.panel__theme').filter({ hasText: 'Salé' });
+    check('« Salé » : ses catégories, et toutes les recettes salées', (await column.getByRole('link', { name: savory.name }).count()) === 1 && (await column.getByRole('link', { name: 'Toutes les recettes salées' }).count()) === 1);
+    check('« Salé » sans catégorie sucrée', (await column.getByRole('link').allTextContents()).every((name) => !categories.some((category) => category.theme === 'SWEET' && category.name === name.trim())));
   }
+  await page.keyboard.press('Escape');
   check('Barre du haut sans « Installer l’application »', (await page.locator('yona-header nav.nav').getByText("Installer l'application").count()) === 0);
   check('Pied de page avec « Installer l’application »', (await page.locator('footer').getByRole('link', { name: "Installer l'application" }).count()) === 1);
   check('Encart des notifications', await page.locator('section.notify button').isVisible());
@@ -185,6 +187,9 @@ await part('Recherche (téléphone)', async () => {
     await new Promise((resolve) => setTimeout(resolve, 1200));
     await route.continue();
   });
+  // Sur téléphone, les filtres sont repliés derrière un bouton
+  check('Filtres repliés sur téléphone', !(await page.locator('#recipe-filters').isVisible()));
+  await page.locator('.filters-toggle').click();
   const [first, second] = ingredients.map((line) => line.name);
   const trigger = page.getByRole('combobox', { name: /ingrédient/i });
   await trigger.click();

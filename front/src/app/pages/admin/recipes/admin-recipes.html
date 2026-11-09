@@ -40,10 +40,9 @@
     <yona-filter-chip label="Recettes avec cette photo" [imageId]="image" (cleared)="clearImage()" />
   }
 
-  @if (result(); as result) {
-    @if (result.content.length) {
+  @if (recipes.items().length) {
       <yona-bulk-bar
-        shownLabel="cette page"
+        shownLabel="recettes affichées"
         [count]="selection.size()"
         [allShown]="selection.hasAll(shownIds())"
         [busy]="deleting()"
@@ -53,13 +52,10 @@
         (deleted)="removeSelected()"
       />
       <p class="admin-row__meta" aria-live="polite">
-        {{ totalElements() }} recette{{ totalElements() > 1 ? 's' : '' }}
-        @if (totalPages() > 1) {
-          · page {{ currentPage() }} sur {{ totalPages() }}
-        }
+        {{ recipes.totalElements() }} recette{{ recipes.totalElements() > 1 ? 's' : '' }}
       </p>
-      <ul role="list" class="admin-list" [class.is-busy]="recipes.isLoading()" [attr.aria-busy]="recipes.isLoading()">
-        @for (recipe of result.content; track recipe.id) {
+      <ul role="list" class="admin-list admin-list--infinite" [class.is-busy]="recipes.isLoading()" [attr.aria-busy]="recipes.isLoading()">
+        @for (recipe of recipes.items(); track recipe.id) {
           <li class="admin-row" [class.is-selected]="selection.has(recipe.id)">
             <label class="select-box">
               <input
@@ -142,19 +138,15 @@
           </li>
         }
       </ul>
-
-      @if (totalPages() > 1) {
-        <yona-pagination [page]="currentPage()" [totalPages]="totalPages()" />
-      }
-    } @else {
+  } @else if (recipes.isEmpty()) {
       <div class="admin-empty">
         <p>Aucune recette ne correspond</p>
         @if (hasFilters()) {
           <button type="button" class="link-button" (click)="clearFilters()">Retirer tous les filtres</button>
         }
       </div>
-    }
   } @else if (recipes.isLoading()) {
     <p class="admin-empty">Chargement…</p>
   }
+  <yona-infinite-scroll [list]="recipes" />
 </section>

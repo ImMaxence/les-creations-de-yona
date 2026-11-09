@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Api } from '../../core/api/generated/api';
+import { listPublishedRecipes } from '../../core/api/generated/fn/recipes/list-published-recipes';
 import { SiteData } from '../../core/site/site-data';
 import { Reveal } from '../../shared/motion/reveal';
 import { keepScrollThroughNextNavigation } from '../../shared/routing/kept-scroll';
@@ -7,18 +9,19 @@ import { RECIPES_PATH } from '../../shared/routing/links';
 import { THEMES, Theme, themeLabel, themeSlug } from '../../shared/format/themes';
 import { MAX_SERVINGS, SearchChoice, searchTarget, servingsIn } from '../../shared/search/search-target';
 import { Button } from '../../shared/ui/button/button';
-import { Pagination } from '../../shared/ui/pagination/pagination';
+import { InfiniteList } from '../../shared/ui/infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../../shared/ui/infinite-scroll/infinite-scroll';
+import { VirtualItem } from '../../shared/ui/infinite-scroll/virtual-item';
 import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
 import { SearchBox } from '../../shared/ui/search-box/search-box';
 import { Select, SelectOption } from '../../shared/ui/select/select';
 import {
-  DEFAULT_PAGE_SIZE,
   DifficultyFilter,
   MAX_INGREDIENTS,
-  PAGE_SIZES,
   RECIPES_QUERY,
   RecipesPageData,
   TIME_FILTERS,
+  recipesApiQuery,
   sameName,
 } from './recipes.resolver';
 import { Icon } from '../../shared/ui/icon/icon';
@@ -35,11 +38,12 @@ const SERVINGS_DELAY_MS = 500;
     Icon,
     RouterLink,
     Button,
-    Pagination,
+    InfiniteScroll,
     RecipeCard,
     Reveal,
     SearchBox,
     Select,
+    VirtualItem,
   ],
   templateUrl: './recipes.html',
   styleUrl: './recipes.scss',
@@ -51,17 +55,21 @@ export default class Recipes {
   /** ?portions=8, chosen on the page or from the search: carried to the recipes opened. */
   readonly portions = input<string>();
 
+  private readonly api = inject(Api);
   private readonly router = inject(Router);
-  /** A change of page size keeps the visitor where they are; a change of page goes to the top. */
+  /** A change of the number of people keeps the visitor where they are. */
   private readonly keepScroll = keepScrollThroughNextNavigation();
   protected readonly categories = inject(SiteData).categories;
   protected readonly recipesPath = RECIPES_PATH;
-  protected readonly pageSizeOptions: SelectOption<number>[] = PAGE_SIZES.map((size) => ({
-    value: size,
-    label: String(size),
-  }));
 
   protected readonly filters = computed(() => this.data().filters);
+  /** The first page comes with the resolver (rendered by the server), the next ones as the visitor goes down. */
+  protected readonly list = new InfiniteList({
+    first: () => this.data().result,
+    params: () => this.filters(),
+    load: (page, filters) => this.api.invoke(listPublishedRecipes, { ...recipesApiQuery(filters), page }),
+    key: (recipe) => recipe.slug,
+  });
   /**
    * "Pour 8 personnes", or "tarte 8 personnes" searched: each recipe opens with its quantities for
    * 8. Not a filter: every recipe adapts to any number of people.
@@ -91,6 +99,16 @@ export default class Recipes {
       Number(this.filters().maxMinutes !== null) +
       Number(this.filters().difficulty !== null),
   );
+  /** Phones: every filter is folded behind one button, which says how many are in use. */
+  protected readonly filtersOpen = signal(false);
+  protected readonly activeFiltersCount = computed(
+    () =>
+      Number(this.filters().theme !== null) +
+      Number(this.chosenServings() !== null) +
+      Number(this.filters().category !== null) +
+      this.filters().ingredients.length +
+      this.moreFiltersCount(),
+  );
   protected readonly showMoreFilters = signal(false);
   /** Tag, time and difficulty: shown once asked for, or when one is in use. */
   protected readonly moreShown = computed(() => this.showMoreFilters() || this.moreFiltersCount() > 0);
@@ -103,10 +121,6 @@ export default class Recipes {
       this.filters().ingredients.length > 0 ||
       this.moreFiltersCount() > 0,
   );
-  /** "Effacer tous les filtres": every recipe again, keeping only the number per page chosen. */
-  protected readonly clearedQuery = computed(() => ({
-    [RECIPES_QUERY.pageSize]: this.filters().pageSize === DEFAULT_PAGE_SIZE ? null : this.filters().pageSize,
-  }));
   protected readonly tagOptions = computed<SelectOption<string>[]>(() => [
     { value: '', label: 'Tous les tags' },
     ...this.data().tags.map((tag) => ({ value: tag.slug, label: tag.name })),
@@ -220,14 +234,6 @@ export default class Recipes {
   protected open(choice: SearchChoice): void {
     const { commands, queryParams } = searchTarget(choice.pick, choice.servings);
     this.router.navigate(commands, { queryParams });
-  }
-
-  protected changePageSize(pageSize: number | undefined): void {
-    this.keepScroll();
-    this.updateQuery({
-      [RECIPES_QUERY.pageSize]: pageSize === DEFAULT_PAGE_SIZE ? null : (pageSize ?? null),
-      [RECIPES_QUERY.page]: null,
-    });
   }
 
   private updateQuery(queryParams: Record<string, string | string[] | number | null>): void {

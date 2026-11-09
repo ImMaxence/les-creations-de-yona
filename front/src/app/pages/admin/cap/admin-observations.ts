@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
@@ -7,10 +7,8 @@ import { createObservation } from '../../../core/api/generated/fn/admin-mon-cap/
 import { deleteObservation } from '../../../core/api/generated/fn/admin-mon-cap/delete-observation';
 import { listAdminObservations } from '../../../core/api/generated/fn/admin-mon-cap/list-admin-observations';
 import { updateObservation } from '../../../core/api/generated/fn/admin-mon-cap/update-observation';
-import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
 import { ObservationResponse } from '../../../core/api/generated/models/observation-response';
-import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
 import { ImageUploads } from '../../../core/api/image-uploads';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
@@ -19,12 +17,12 @@ import { OBSERVATIONS_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
-import { Pagination } from '../../../shared/ui/pagination/pagination';
-import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
+import { ChosenRecipe, RecipeSearch } from '../recipe-search/recipe-search';
 
 const PAGE_SIZE = 20;
 const MAX_BODY_LENGTH = 5000;
-const NO_RECIPE = 0;
 
 /** Today in Paris, as the date field wants it. */
 function today(): string {
@@ -34,7 +32,7 @@ function today(): string {
 /** "Mes observations": what was noticed while cooking, about a recipe or about none ("Pas de recette"). */
 @Component({
   selector: 'yona-admin-observations',
-  imports: [Button, Icon, ImageUpload, Pagination, ParisDatePipe, RouterLink, Select],
+  imports: [Button, Icon, ImageUpload, InfiniteScroll, ParisDatePipe, RecipeSearch, RouterLink],
   template: `
     <section class="admin-section" aria-labelledby="observations-title">
       <div class="admin-section__head">
@@ -54,8 +52,8 @@ function today(): string {
           <input id="observation-date" class="input" type="date" [value]="date()" (input)="date.set($any($event.target).value)" />
         </div>
         <div class="field">
-          <span class="field__label">Recette</span>
-          <yona-select label="Recette" [options]="recipeOptions()" [value]="recipeId()" (valueChange)="recipeId.set($event ?? noRecipe)" />
+          <span class="field__label">Recette (facultatif)</span>
+          <yona-recipe-search hint="Laissez vide pour « Pas de recette »" [(chosen)]="chosenRecipe" />
         </div>
         <div class="field">
           <label class="field__label" for="observation-body">Texte</label>
@@ -86,10 +84,9 @@ function today(): string {
         </div>
       </form>
 
-      @if (observations.value(); as result) {
-        @if (result.content.length) {
-          <ul role="list" class="admin-list">
-            @for (observation of result.content; track observation.id) {
+      @if (observations.items().length) {
+          <ul role="list" class="admin-list admin-list--infinite">
+            @for (observation of observations.items(); track observation.id) {
               <li class="admin-row">
                 <span class="admin-row__main">
                   <span class="admin-row__title">{{ observation.title }}</span>
@@ -107,15 +104,12 @@ function today(): string {
               </li>
             }
           </ul>
-          @if (result.totalPages > 1) {
-            <yona-pagination buttons [page]="page() + 1" [totalPages]="result.totalPages" (pageChange)="page.set($event - 1)" />
-          }
-        } @else {
-          <p class="admin-empty">Aucune observation pour le moment</p>
-        }
+      } @else if (observations.isEmpty()) {
+        <p class="admin-empty">Aucune observation pour le moment</p>
       } @else if (observations.isLoading()) {
         <p class="admin-empty">Chargement…</p>
       }
+      <yona-infinite-scroll [list]="observations" />
     </section>
   `,
   styles: `
@@ -133,26 +127,18 @@ export default class AdminObservations {
 
   protected readonly observationsPath = OBSERVATIONS_PATH;
   protected readonly maxBodyLength = MAX_BODY_LENGTH;
-  protected readonly noRecipe = NO_RECIPE;
-  protected readonly page = signal(0);
-  protected readonly observations = resource({
-    params: () => this.page(),
-    loader: ({ params }) => this.api.invoke(listAdminObservations, { page: params, size: PAGE_SIZE }),
+  protected readonly observations = new InfiniteList({
+    load: (page) => this.api.invoke(listAdminObservations, { page, size: PAGE_SIZE }),
+    key: (observation) => observation.id,
   });
-  private readonly recipes = resource({ loader: () => this.loadRecipes() });
-  protected readonly recipeOptions = computed<SelectOption<number>[]>(() => [
-    { value: NO_RECIPE, label: 'Pas de recette' },
-    ...(this.recipes.value() ?? []).map((recipe) => ({
-      value: recipe.id,
-      label: recipe.status === 'PUBLISHED' ? recipe.title : `${recipe.title} (non publiée)`,
-    })),
-  ]);
+  private readonly recipeSearch = viewChild.required(RecipeSearch);
 
   /** The observation being changed; null while adding a new one. */
   protected readonly editing = signal<ObservationResponse | null>(null);
   protected readonly title = signal('');
   protected readonly date = signal(today());
-  protected readonly recipeId = signal<number>(NO_RECIPE);
+  /** Null for "Pas de recette". */
+  protected readonly chosenRecipe = signal<ChosenRecipe | null>(null);
   protected readonly body = signal('');
   protected readonly imageId = signal<string | null>(null);
   protected readonly published = signal(true);
@@ -174,7 +160,8 @@ export default class AdminObservations {
     this.editing.set(observation);
     this.title.set(observation.title);
     this.date.set(observation.observedOn);
-    this.recipeId.set(observation.recipe?.id ?? NO_RECIPE);
+    this.recipeSearch().reset();
+    this.chosenRecipe.set(observation.recipe ? { id: observation.recipe.id, title: observation.recipe.title } : null);
     this.body.set(observation.body);
     this.imageId.set(observation.imageId ?? null);
     this.published.set(observation.published);
@@ -184,7 +171,7 @@ export default class AdminObservations {
     this.editing.set(null);
     this.title.set('');
     this.date.set(today());
-    this.recipeId.set(NO_RECIPE);
+    this.recipeSearch().reset();
     this.body.set('');
     this.imageId.set(null);
     this.published.set(true);
@@ -196,12 +183,16 @@ export default class AdminObservations {
       this.toaster.error('Donnez un titre, une date et un texte à cette observation');
       return;
     }
+    if (this.recipeSearch().unfinished()) {
+      this.toaster.error('Choisissez une recette dans la liste, ou videz le champ de recherche');
+      return;
+    }
     const body = {
       title: this.title().trim(),
       body: this.body().trim(),
       observedOn: this.date(),
       imageId: this.imageId() ?? undefined,
-      recipeId: this.recipeId() === NO_RECIPE ? undefined : this.recipeId(),
+      recipeId: this.chosenRecipe()?.id,
       published: this.published(),
     };
     const editing = this.editing();
@@ -230,15 +221,5 @@ export default class AdminObservations {
       }
       this.observations.reload();
     }
-  }
-
-  private async loadRecipes(): Promise<RecipeAdminSummary[]> {
-    const recipes: RecipeAdminSummary[] = [];
-    for (let page = 0, totalPages = 1; page < totalPages; page++) {
-      const result = await this.api.invoke(searchRecipes, { page, size: 50, sort: ['title,asc'] });
-      recipes.push(...result.content);
-      totalPages = result.totalPages;
-    }
-    return recipes;
   }
 }

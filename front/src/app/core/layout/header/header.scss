@@ -27,6 +27,7 @@
 }
 
 .bar {
+  position: relative; // the panel of "Recettes" opens under the whole bar
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -82,14 +83,12 @@
   }
 }
 
-// Phones: in the menu instead, with their counts
+// Phones: in the menu instead
 .search-toggle {
-  display: grid;
+  display: none;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
-  // Phone: beside the menu button, on the right
-  margin-left: auto;
   border-radius: 50%;
   color: var(--color-text);
   transition: background-color var(--duration-fast) var(--ease-out);
@@ -103,7 +102,7 @@
   }
 
   @include m.from(md) {
-    margin-left: 0;
+    display: grid;
   }
 }
 

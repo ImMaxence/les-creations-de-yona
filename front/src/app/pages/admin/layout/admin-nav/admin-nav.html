@@ -1,0 +1,37 @@
+@for (group of groups; track group.id) {
+  <!-- Kept in the page while closed: the entry knows it holds the section shown -->
+  <div class="admin__group" routerLinkActive="is-current">
+    <button
+      type="button"
+      class="admin__trigger"
+      [class.is-open]="openGroup() === group.id"
+      [attr.aria-expanded]="openGroup() === group.id"
+      [attr.aria-controls]="'admin-menu-' + group.id"
+      (click)="toggleGroup(group.id)"
+    >
+      {{ group.label }}
+      @if (groupCount(group); as count) {
+        <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
+      }
+      <svg yonaIcon="chevron-down" class="admin__chevron" [size]="16"></svg>
+    </button>
+    <div class="admin__panel" [id]="'admin-menu-' + group.id" [hidden]="openGroup() !== group.id">
+      <ul role="list" class="admin__links">
+        @for (link of group.links; track link.path) {
+          <li>
+            <a class="admin__link" [routerLink]="link.path" routerLinkActive="is-active" (click)="close()">
+              <svg [yonaIcon]="link.icon" [size]="20"></svg>
+              <span class="admin__link-text">
+                <span class="admin__link-label">{{ link.label }}</span>
+                <span class="admin__link-hint">{{ link.hint }}</span>
+              </span>
+              @if (link.count?.(); as count) {
+                <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+}

@@ -1,5 +1,5 @@
 import { convertToParamMap } from '@angular/router';
-import { DEFAULT_PAGE_SIZE, readFilters } from './recipes.resolver';
+import { readFilters } from './recipes.resolver';
 
 describe('readFilters', () => {
   it('reads every filter from the URL', () => {
@@ -13,7 +13,6 @@ describe('readFilters', () => {
         difficulte: 'facile',
         theme: 'sale',
         page: '2',
-        parPage: '24',
       }),
     );
     expect(filters).toEqual({
@@ -25,7 +24,6 @@ describe('readFilters', () => {
       difficulty: 'facile',
       theme: 'SAVORY',
       page: 2,
-      pageSize: 24,
     });
   });
 
@@ -41,7 +39,6 @@ describe('readFilters', () => {
     expect(filters.maxMinutes).toBeNull();
     expect(filters.difficulty).toBeNull();
     expect(filters.page).toBe(1);
-    expect(filters.pageSize).toBe(DEFAULT_PAGE_SIZE);
     expect(filters.ingredients).toEqual([]);
   });
 });

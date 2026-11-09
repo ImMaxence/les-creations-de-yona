@@ -12,8 +12,8 @@ import { SiteData } from '../../core/site/site-data';
 import { Theme, themeOfSlug } from '../../shared/format/themes';
 import { RECIPES_PATH, recipeLink } from '../../shared/routing/links';
 
-export const PAGE_SIZES = [12, 24, 48] as const;
-export const DEFAULT_PAGE_SIZE = PAGE_SIZES[0];
+/** All divide into 1, 2, 3 or 4 columns: a page always ends on a full row. */
+export const RECIPES_PER_PAGE = 12;
 
 /** Query parameters of the recipes page, in French as the rest of the URLs. */
 export const RECIPES_QUERY = {
@@ -27,7 +27,6 @@ export const RECIPES_QUERY = {
   /** Not a filter: the number of people the recipes opened from the list show their quantities for. */
   servings: 'portions',
   page: 'page',
-  pageSize: 'parPage',
 } as const;
 
 /** "Qu'est-ce que je peux faire avec…": ingredients combined, at most (as the API). */
@@ -56,9 +55,8 @@ export interface RecipeFilters {
   difficulty: DifficultyFilter | null;
   /** Sucré or salé (?theme=sucre). */
   theme: Theme | null;
-  /** Starts at 1, as displayed. */
+  /** Where the list starts, from 1: ?page=2 is for search engines, the visitor scrolls. */
   page: number;
-  pageSize: number;
 }
 
 export interface RecipesPageData {
@@ -73,7 +71,6 @@ export interface RecipesPageData {
 /** Reads the filters from the URL; anything invalid falls back to its default. */
 export function readFilters(params: ParamMap): RecipeFilters {
   const page = Number(params.get(RECIPES_QUERY.page));
-  const pageSize = Number(params.get(RECIPES_QUERY.pageSize));
   const time = Number(params.get(RECIPES_QUERY.time));
   const difficulty = params.get(RECIPES_QUERY.difficulty);
   return {
@@ -85,7 +82,6 @@ export function readFilters(params: ParamMap): RecipeFilters {
     difficulty: difficulty && difficulty in DIFFICULTY_FILTERS ? (difficulty as DifficultyFilter) : null,
     theme: themeOfSlug(params.get(RECIPES_QUERY.theme)),
     page: Number.isInteger(page) && page >= 1 ? page : 1,
-    pageSize: (PAGE_SIZES as readonly number[]).includes(pageSize) ? pageSize : DEFAULT_PAGE_SIZE,
   };
 }
 
@@ -105,21 +101,26 @@ export function sameName(a: string, b: string): boolean {
   return a.toLocaleLowerCase('fr') === b.toLocaleLowerCase('fr');
 }
 
-export const recipesResolver: ResolveFn<RecipesPageData> = async (route) => {
+/** What the API is asked for these filters, whichever the page. */
+export function recipesApiQuery(filters: RecipeFilters) {
+  return {
+    q: filters.search || undefined,
+    category: filters.category ?? undefined,
+    ingredient: filters.ingredients.length ? filters.ingredients : undefined,
+    tag: filters.tag ?? undefined,
+    maxMinutes: filters.maxMinutes ?? undefined,
+    difficulty: filters.difficulty ? DIFFICULTY_FILTERS[filters.difficulty] : undefined,
+    theme: filters.theme ?? undefined,
+    size: RECIPES_PER_PAGE,
+  };
+}
+
+export const recipesResolver
+: ResolveFn<RecipesPageData> = async (route) => {
   const api = inject(Api);
   const filters = readFilters(route.queryParamMap);
   const [result, ingredients, tags] = await Promise.all([
-    api.invoke(listPublishedRecipes, {
-      q: filters.search || undefined,
-      category: filters.category ?? undefined,
-      ingredient: filters.ingredients.length ? filters.ingredients : undefined,
-      tag: filters.tag ?? undefined,
-      maxMinutes: filters.maxMinutes ?? undefined,
-      difficulty: filters.difficulty ? DIFFICULTY_FILTERS[filters.difficulty] : undefined,
-      theme: filters.theme ?? undefined,
-      page: filters.page - 1,
-      size: filters.pageSize,
-    }),
+    api.invoke(listPublishedRecipes, { ...recipesApiQuery(filters), page: filters.page - 1 }),
     api.invoke(listPublishedIngredients, {}),
     api.invoke(listTags),
   ]);

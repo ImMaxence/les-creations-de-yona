@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, linkedSignal, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, linkedSignal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { listShopOrders } from '../../../core/api/generated/fn/admin-shop/list-shop-orders';
@@ -8,7 +8,8 @@ import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { formatEuros } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
-import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 
 const PAGE_SIZE = 20;
@@ -18,7 +19,7 @@ type StatusFilter = OrderStatus | 'ALL';
 /** The orders sent from the shop, the latest first. */
 @Component({
   selector: 'yona-admin-orders',
-  imports: [Button, Icon, Pagination, ParisDatePipe, RouterLink, Select],
+  imports: [Button, Icon, InfiniteScroll, ParisDatePipe, RouterLink, Select],
   template: `
     <section class="admin-section" aria-labelledby="orders-title">
       <div class="admin-section__head">
@@ -29,11 +30,11 @@ type StatusFilter = OrderStatus | 'ALL';
         <div class="admin-toolbar">
           <svg yonaIcon="bell" [size]="20"></svg>
           <div class="admin-row__main">
-            <span class="admin-row__title">Être prévenu·e sur cet appareil</span>
+            <span class="admin-row__title">Alerte des nouvelles commandes</span>
             <span class="field__hint">
               @switch (alerts.state()) {
                 @case ('on') {
-                  Cet appareil reçoit une notification à chaque nouvelle commande
+                  Activée : ce téléphone ou cet ordinateur reçoit une notification dès qu'une commande arrive
                 }
                 @case ('blocked') {
                   Les notifications sont bloquées pour ce site : autorisez-les dans les réglages du navigateur
@@ -45,15 +46,15 @@ type StatusFilter = OrderStatus | 'ALL';
                   Cet appareil ou ce navigateur ne peut pas recevoir de notifications
                 }
                 @default {
-                  Une notification à chaque nouvelle commande, même site fermé
+                  Recevez une notification sur ce téléphone ou cet ordinateur dès qu'une commande arrive, même si vous n'êtes pas sur le site à ce moment-là
                 }
               }
             </span>
           </div>
           @if (alerts.state() === 'on') {
-            <button yonaButton variant="secondary" type="button" [disabled]="alerts.busy()" (click)="alerts.disable()">Ne plus me prévenir</button>
+            <button yonaButton variant="secondary" type="button" [disabled]="alerts.busy()" (click)="alerts.disable()">Désactiver l'alerte</button>
           } @else if (alerts.state() === 'off') {
-            <button yonaButton type="button" [disabled]="alerts.busy()" (click)="alerts.enable()"><svg yonaIcon="bell"></svg>Me prévenir</button>
+            <button yonaButton type="button" [disabled]="alerts.busy()" (click)="alerts.enable()"><svg yonaIcon="bell"></svg>Activer l'alerte</button>
           }
         </div>
       </div>
@@ -62,10 +63,9 @@ type StatusFilter = OrderStatus | 'ALL';
         <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="chooseStatus($event)" />
       </div>
 
-      @if (orders.value(); as result) {
-        @if (result.content.length) {
-          <ul role="list" class="admin-list">
-            @for (order of result.content; track order.id) {
+      @if (orders.items().length) {
+          <ul role="list" class="admin-list admin-list--infinite" [class.is-busy]="orders.isLoading()">
+            @for (order of orders.items(); track order.id) {
               <li class="admin-row">
                 <span class="admin-row__main">
                   <a class="admin-row__title" [routerLink]="['/admin/boutique/commandes', order.id]">N° {{ order.id }} · {{ order.customerName }}</a>
@@ -84,15 +84,12 @@ type StatusFilter = OrderStatus | 'ALL';
               </li>
             }
           </ul>
-          @if (result.totalPages > 1) {
-            <yona-pagination buttons [page]="page() + 1" [totalPages]="result.totalPages" (pageChange)="page.set($event - 1)" />
-          }
-        } @else {
-          <p class="admin-empty">Aucune commande pour le moment</p>
-        }
+      } @else if (orders.isEmpty()) {
+        <p class="admin-empty">Aucune commande pour le moment</p>
       } @else if (orders.isLoading()) {
         <p class="admin-empty">Chargement…</p>
       }
+      <yona-infinite-scroll [list]="orders" />
     </section>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -112,19 +109,13 @@ export default class AdminOrders {
     ...(Object.entries(ORDER_STATUS_LABELS) as [OrderStatus, string][]).map(([value, label]) => ({ value, label })),
   ];
   protected readonly status = linkedSignal<StatusFilter>(() => this.statut() ?? 'ALL');
-  protected readonly page = signal(0);
-  protected readonly orders = resource({
-    params: () => ({ status: this.status(), page: this.page() }),
-    loader: ({ params }) =>
-      this.api.invoke(listShopOrders, {
-        status: params.status === 'ALL' ? undefined : params.status,
-        page: params.page,
-        size: PAGE_SIZE,
-      }),
+  protected readonly orders = new InfiniteList({
+    params: () => ({ status: this.status() }),
+    load: (page, { status }) => this.api.invoke(listShopOrders, { status: status === 'ALL' ? undefined : status, page, size: PAGE_SIZE }),
+    key: (order) => order.id,
   });
 
   protected chooseStatus(status: StatusFilter | undefined): void {
     this.status.set(status ?? 'ALL');
-    this.page.set(0);
   }
 }

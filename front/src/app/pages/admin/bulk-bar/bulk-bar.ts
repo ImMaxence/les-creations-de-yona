@@ -40,11 +40,11 @@ import { Icon } from '../../../shared/ui/icon/icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BulkBar {
-  /** Ticked items, on this page or not. */
+  /** Ticked items, shown or not. */
   readonly count = input.required<number>();
   /** Every item shown is ticked. */
   readonly allShown = input.required<boolean>();
-  /** What "Tout sélectionner" covers, e.g. "cette page". */
+  /** What "Tout sélectionner" covers, e.g. "recettes affichées". */
   readonly shownLabel = input('');
   readonly busy = input(false);
   readonly deleteLabel = input('Supprimer la sélection');

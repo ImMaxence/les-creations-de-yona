@@ -19,6 +19,7 @@
 }
 
 .brand__mark {
+  flex: none;
   display: grid;
   place-items: center;
   width: 2.25rem;
@@ -34,6 +35,7 @@
   font-size: var(--text-lg);
   font-weight: 600;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 
   em {
     font-weight: 500;

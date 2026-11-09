@@ -36,6 +36,8 @@ export class SuggestInput implements FormValueControl<string> {
   readonly invalid = input(false);
   readonly touched = input(false);
   readonly touch = output<void>();
+  /** A suggestion taken from the list, as opposed to a text typed. */
+  readonly picked = output<string>();
 
   protected readonly listId = `suggest-${nextId++}`;
   protected readonly open = signal(false);
@@ -90,6 +92,7 @@ export class SuggestInput implements FormValueControl<string> {
     this.value.set(suggestion.value);
     this.open.set(false);
     this.activeIndex.set(-1);
+    this.picked.emit(suggestion.value);
   }
 }
 

@@ -12,7 +12,7 @@ import { Toaster } from '../notifications/toaster';
 import { NotificationsState, isAppleMobile, isStandalone, subscriptionForm } from './new-recipe-notifications';
 
 /**
- * "Me prévenir des nouvelles commandes" on this device of an admin. Same Web Push subscription as
+ * "Alerte des nouvelles commandes" on this device of an admin. Same Web Push subscription as
  * the visitors' notifications, a device having only one: the backend says what it receives, so that
  * turning this off leaves the notifications of new recipes alone.
  */

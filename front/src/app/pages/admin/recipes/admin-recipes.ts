@@ -5,7 +5,6 @@ import {
   effect,
   inject,
   input,
-  linkedSignal,
   resource,
   signal,
 } from '@angular/core';
@@ -21,7 +20,6 @@ import { publishRecipe } from '../../../core/api/generated/fn/admin-recipes/publ
 import { THEMES, Theme, themeLabel, themeOfSlug, themeSlug } from '../../../shared/format/themes';
 import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
-import { PageResponseRecipeAdminSummary } from '../../../core/api/generated/models/page-response-recipe-admin-summary';
 import { listAdminTags } from '../../../core/api/generated/fn/admin-tags/list-admin-tags';
 import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
 import { Confirm } from '../../../core/dialog/confirm';
@@ -34,7 +32,8 @@ import { keepScrollThroughNextNavigation } from '../../../shared/routing/kept-sc
 import { recipeLink } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
-import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { FilterChip } from '../filter-chip/filter-chip';
@@ -96,7 +95,7 @@ const ALL_TAGS = '';
 
 /**
  * Every recipe, drafts included, the last modified first unless another order is chosen (creation,
- * title, views). Filters, order and page live in the URL: back from editing a recipe, the admin finds the same list, and the
+ * title, views). Filters and order live in the URL: back from editing a recipe, the admin finds the same list, and the
  * categories, tags and ingredients pages link to the recipes using one of them.
  */
 @Component({
@@ -109,7 +108,7 @@ const ALL_TAGS = '';
     Button,
     CoverImage,
     Select,
-    Pagination,
+    InfiniteScroll,
     ParisDatePipe,
   ],
   templateUrl: './admin-recipes.html',
@@ -125,7 +124,6 @@ export default class AdminRecipes {
   readonly idIngredient = input<string>();
   readonly photo = input<string>();
   readonly tri = input<string>();
-  readonly page = input<string>();
 
   private readonly api = inject(Api);
   private readonly router = inject(Router);
@@ -188,12 +186,11 @@ export default class AdminRecipes {
   });
   /** From the gallery: the recipes showing this photo. */
   protected readonly imageId = computed(() => this.photo() || undefined);
-  /** 1-based, as shown and as in the URL. */
-  protected readonly currentPage = computed(() => Math.max(1, Math.floor(Number(this.page())) || 1));
   /** What is typed, sent to the URL once the admin pauses. */
   protected readonly search = signal('');
 
-  protected readonly recipes = resource({
+  /** While the next list loads, the previous one stays on screen: the admin keeps their place in the page. */
+  protected readonly recipes = new InfiniteList({
     params: () => ({
       q: this.q()?.trim() || undefined,
       ...statusQuery(this.status()),
@@ -202,22 +199,12 @@ export default class AdminRecipes {
       tag: this.tagSlug() || undefined,
       ingredientId: this.ingredientId(),
       imageId: this.imageId(),
-      page: this.currentPage() - 1,
       size: PAGE_SIZE,
       sort: SORTS[this.sort()],
     }),
-    loader: ({ params }) => this.api.invoke(searchRecipes, params),
+    load: (page, params) => this.api.invoke(searchRecipes, { ...params, page }),
+    key: (recipe) => recipe.id,
   });
-  /**
-   * The list shown: the previous one stays on screen while the next one loads (a filter or an
-   * order changed), so that the page keeps its height and the admin their place in it.
-   */
-  protected readonly result = linkedSignal<PageResponseRecipeAdminSummary | undefined, PageResponseRecipeAdminSummary | undefined>({
-    source: this.recipes.value,
-    computation: (value, previous) => value ?? previous?.value,
-  });
-  protected readonly totalPages = computed(() => this.result()?.totalPages ?? 0);
-  protected readonly totalElements = computed(() => this.result()?.totalElements ?? 0);
 
   /** Ingredients used by a recipe at least; choosing one filters the list at once. */
   private readonly knownIngredients = resource({
@@ -240,28 +227,16 @@ export default class AdminRecipes {
       this.imageId() !== undefined,
   );
 
-  /** Kept from one page of the list to another. */
+  /** Kept when the filters change. */
   protected readonly selection = new Selection<number>();
-  protected readonly shownIds = computed(() => this.result()?.content.map((recipe) => recipe.id) ?? []);
+  protected readonly shownIds = computed(() => this.recipes.items().map((recipe) => recipe.id));
   protected readonly deleting = signal(false);
-  /** A filter, an order or a search changes the list in place; a page of the pagination starts at the top. */
+  /** A filter, an order or a search changes the list in place. */
   private readonly keepScroll = keepScrollThroughNextNavigation();
 
   constructor() {
     // The fields show the search of the URL (on arrival, back and forward)
     effect(() => this.search.set(this.q() ?? ''));
-    // A page past the end (after deleting its last recipes, or an old link): to the last one
-    effect(() => {
-      const result = this.recipes.value();
-      if (result && !result.content.length && result.totalPages > 0 && this.currentPage() > result.totalPages) {
-        void this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { [ADMIN_RECIPES_QUERY.page]: result.totalPages === 1 ? null : result.totalPages },
-          queryParamsHandling: 'merge',
-          replaceUrl: true,
-        });
-      }
-    });
     toObservable(this.search)
       .pipe(debounceTime(SEARCH_DELAY_MS), takeUntilDestroyed())
       .subscribe((search) => {
@@ -383,12 +358,12 @@ export default class AdminRecipes {
     }
   }
 
-  /** Any filter change goes back to the first page, the admin staying where they are on it. */
+  /** Any filter change starts the list over, the admin staying where they are on the page. */
   private updateQuery(queryParams: Record<string, string | null>): void {
     this.keepScroll();
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { ...queryParams, [ADMIN_RECIPES_QUERY.page]: null },
+      queryParams,
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });

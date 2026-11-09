@@ -133,14 +133,17 @@ function today(): string {
               <label class="field__label" for="entry-amount">Montant (€)</label>
               <input id="entry-amount" class="input" type="number" inputmode="decimal" min="0.01" step="0.01" [disabled]="fromOrder()" [value]="amount()" (input)="amount.set($any($event.target).value)" />
             </div>
+          </div>
+          <!-- On a line of their own: an email needs the room -->
+          <div class="form-row">
+            <div class="field">
+              <label class="field__label" for="entry-label">Libellé</label>
+              <input id="entry-label" class="input" maxlength="200" placeholder="Farine et beurre, marché du 12" [value]="label()" (input)="label.set($any($event.target).value)" />
+            </div>
             <div class="field">
               <span class="field__label">Pour</span>
               <yona-select label="Admin" [options]="adminOptions()" [value]="admin()" (valueChange)="admin.set($event ?? admin())" />
             </div>
-          </div>
-          <div class="field">
-            <label class="field__label" for="entry-label">Libellé</label>
-            <input id="entry-label" class="input" maxlength="200" placeholder="Farine et beurre, marché du 12" [value]="label()" (input)="label.set($any($event.target).value)" />
           </div>
           <div class="admin-toolbar">
             <button yonaButton type="submit" [disabled]="saving()"><svg yonaIcon="save"></svg>{{ editing() ? 'Enregistrer' : 'Ajouter' }}</button>
@@ -151,7 +154,7 @@ function today(): string {
         </form>
 
         <div class="admin-toolbar">
-          <yona-select label="Filtrer par admin" [options]="adminFilterOptions()" [value]="adminFilter()" (valueChange)="adminFilter.set($event ?? '')" />
+          <yona-select class="filter-admin" label="Filtrer par admin" [options]="adminFilterOptions()" [value]="adminFilter()" (valueChange)="adminFilter.set($event ?? '')" />
           <yona-select label="Filtrer par type" [options]="kindFilterOptions" [value]="kindFilter()" (valueChange)="kindFilter.set($event ?? 'ALL')" />
           <span class="admin-row__meta">{{ shown().length }} ligne{{ shown().length > 1 ? 's' : '' }}</span>
         </div>
@@ -250,6 +253,17 @@ function today(): string {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
       gap: var(--space-3);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+      gap: var(--space-3);
+    }
+
+    // As wide as an email, in the button and in its list
+    .filter-admin {
+      flex: 0 1 22rem;
     }
 
     .amount {

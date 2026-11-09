@@ -2,7 +2,7 @@
   title="Choisir dans la galerie"
   size="lg"
   fixedHeight
-  [subtitle]="totalElements() ? totalElements() + ' photo' + (totalElements() > 1 ? 's' : '') + ', les plus récentes en premier' : undefined"
+  [subtitle]="images.totalElements() ? images.totalElements() + ' photo' + (images.totalElements() > 1 ? 's' : '') + ', les plus récentes en premier' : undefined"
   [(open)]="isOpen"
 >
   <div class="filter" role="group" aria-label="Images affichées">
@@ -10,10 +10,9 @@
     <button type="button" class="filter__tab" [attr.aria-pressed]="!onlyUnused()" (click)="onlyUnused.set(false)">Toutes</button>
   </div>
 
-  @if (images.value(); as result) {
-    @if (result.content.length) {
+  @if (images.items().length) {
       <ul role="list" class="grid" [class.is-loading]="images.isLoading()" [class.grid--portrait]="portrait()">
-        @for (image of result.content; track image.id) {
+        @for (image of images.items(); track image.id) {
           <li>
             <button type="button" class="tile" (click)="choose(image)">
               <yona-cover-image class="tile__image" [imageId]="image.id" sizes="12rem" />
@@ -23,16 +22,10 @@
           </li>
         }
       </ul>
-    } @else {
-      <p class="empty">{{ onlyUnused() ? 'Aucune image inutilisée.' : 'La galerie est vide.' }}</p>
-    }
+  } @else if (images.isEmpty()) {
+    <p class="empty">{{ onlyUnused() ? 'Aucune image inutilisée.' : 'La galerie est vide.' }}</p>
   } @else if (images.isLoading()) {
     <p class="empty">Chargement…</p>
   }
-
-  <ng-container dialogActions>
-    @if (totalPages() > 1) {
-      <yona-pagination class="pages" buttons [page]="page()" [totalPages]="totalPages()" (pageChange)="changePage($event)" />
-    }
-  </ng-container>
+  <yona-infinite-scroll [list]="images" />
 </yona-dialog>

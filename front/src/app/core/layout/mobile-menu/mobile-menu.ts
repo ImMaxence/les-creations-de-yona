@@ -22,9 +22,9 @@ import { AdminSession } from '../../auth/admin-session';
 import { Favorites } from '../../kitchen/favorites';
 import { ShoppingList } from '../../kitchen/shopping-list';
 import { SiteData } from '../../site/site-data';
-import { CategoryResponse } from '../../api/generated/models/category-response';
-import { THEMES, categoriesOf, categoryOfThemeQueryParams } from '../../../shared/format/themes';
+import { themeGroupsOf } from '../../../shared/format/themes';
 import {
+  ABOUT_PATH,
   FAVORITES_PATH,
   FEEDBACK_PATH,
   GLOSSARY_PATH,
@@ -37,6 +37,7 @@ import {
 } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
+import { SiteSearch } from '../../../shared/ui/site-search/site-search';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
 import { NavigationProgress } from '../navigation-progress/navigation-progress';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -58,6 +59,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
     BrandLogo,
     ColorSchemeSwitch,
     NavigationProgress,
+    SiteSearch,
   ],
   templateUrl: './mobile-menu.html',
   styleUrl: './mobile-menu.scss',
@@ -73,21 +75,13 @@ export class MobileMenu {
   protected readonly menusPath = MENUS_PATH;
   protected readonly capPath = CAP_PATH;
   protected readonly shopPath = SHOP_PATH;
+  protected readonly aboutPath = ABOUT_PATH;
   protected readonly installPath = INSTALL_PATH;
   protected readonly glossaryPath = GLOSSARY_PATH;
   protected readonly feedbackPath = FEEDBACK_PATH;
   protected readonly favoritesPath = FAVORITES_PATH;
   protected readonly shoppingListPath = SHOPPING_LIST_PATH;
-  /** "Salé", then "Sucré": all the recipes of the theme, then its categories. */
-  protected readonly themeGroups = computed(() =>
-    THEMES.map(({ value, label, slug }) => ({
-      theme: value,
-      label,
-      allQueryParams: { theme: slug },
-      categories: categoriesOf(this.siteData.categories(), value),
-      queryParams: (category: CategoryResponse) => categoryOfThemeQueryParams(category, value),
-    })),
-  );
+  protected readonly themeGroups = computed(() => themeGroupsOf(this.siteData.categories()));
   protected readonly socialPlatformLabel = socialPlatformLabel;
 
   protected readonly isOpen = signal(false);

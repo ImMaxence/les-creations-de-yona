@@ -37,86 +37,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-// The sections, in three groups: the blog, the shop, the site
-.admin__nav {
-  display: grid;
-  gap: var(--space-3);
-  view-transition-name: admin-nav;
-}
-
-.admin__group {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.admin__group-title {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-// Section tabs: one scrolling row on phones
-.admin__links {
-  display: flex;
-  gap: var(--space-1);
-  margin-inline: calc(-1 * var(--container-padding));
-  padding: var(--space-1) var(--container-padding);
-  overflow-x: auto;
-  scrollbar-width: none;
-
-  @include m.from(md) {
-    flex-wrap: wrap;
-    margin-inline: 0;
-    padding: var(--space-1);
-    border-radius: var(--radius-pill);
-    background-color: var(--color-surface);
-  }
-
-  a {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: 2.5rem;
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-pill);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-decoration: none;
-    white-space: nowrap;
-    transition:
-      background-color var(--duration-base) var(--ease-out),
-      color var(--duration-base) var(--ease-out);
-
-    @include m.hover {
-      color: var(--color-text);
-    }
-
-    &.is-active {
-      background-color: var(--color-bg);
-      color: var(--color-accent);
-      box-shadow: var(--shadow-sm);
-    }
-  }
-}
-
-// Unread messages, beside "Retours"
-.nav-count {
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.35rem;
-  border-radius: 999px;
-  background-color: var(--color-accent);
-  color: var(--color-on-accent);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  line-height: 1.25rem;
-  text-align: center;
-}
-
 .admin-section {
   display: grid;
   gap: var(--space-5);
@@ -241,6 +161,12 @@ textarea.input {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+// Long lists: rows off screen are skipped by the browser until they come near
+.admin-list--infinite > .admin-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 4.5rem;
 }
 
 // The previous list, kept on screen while the next one loads
@@ -381,11 +307,6 @@ textarea.input {
   @include m.hover {
     color: var(--color-danger);
   }
-}
-
-.admin-more {
-  display: flex;
-  justify-content: center;
 }
 
 // Text button, e.g. "Désélectionner", "Nouvelle catégorie"

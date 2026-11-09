@@ -8,7 +8,7 @@ import { PageResponseObservationResponse } from '../../core/api/generated/models
 import { PageSeo, markdownPathOf } from '../../core/seo/page-seo';
 import { CAP_PATH, OBSERVATIONS_PATH } from '../../shared/routing/links';
 
-const OBSERVATIONS_PER_PAGE = 12;
+export const OBSERVATIONS_PER_PAGE = 12;
 
 export const capEntriesResolver: ResolveFn<CapEntryResponse[]> = () =>
   inject(Api)

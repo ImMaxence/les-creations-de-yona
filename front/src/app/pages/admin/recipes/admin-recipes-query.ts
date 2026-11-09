@@ -11,5 +11,4 @@ export const ADMIN_RECIPES_QUERY = {
   ingredientId: 'idIngredient',
   image: 'photo',
   sort: 'tri',
-  page: 'page',
 } as const;

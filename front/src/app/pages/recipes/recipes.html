@@ -31,8 +31,24 @@
       (picked)="open($event)"
     />
 
+    <!-- Phones: folded behind this button, the recipes come first. In CSS: the server does not know the screen -->
+    <button
+      type="button"
+      class="filters-toggle"
+      aria-controls="recipe-filters"
+      [attr.aria-expanded]="filtersOpen()"
+      (click)="filtersOpen.set(!filtersOpen())"
+    >
+      <svg yonaIcon="sliders-horizontal" [size]="18"></svg>
+      Filtres
+      @if (activeFiltersCount(); as count) {
+        <span class="more-toggle__count" [attr.aria-label]="count + ' actifs'">{{ count }}</span>
+      }
+      <svg yonaIcon="chevron-down" class="filters-toggle__chevron" [size]="18"></svg>
+    </button>
+
     <!-- Every filter named above it: what it does is said, not guessed -->
-    <div class="filters">
+    <div id="recipe-filters" class="filters" [class.is-open]="filtersOpen()">
       <div class="filter">
         <span class="filter__label" id="theme-label">Type</span>
         <div class="segmented" role="group" aria-labelledby="theme-label">
@@ -162,7 +178,7 @@
           }
         </button>
         @if (hasFilters()) {
-          <a class="clear-filters" [routerLink]="recipesPath" [queryParams]="clearedQuery()">
+          <a class="clear-filters" [routerLink]="recipesPath">
             <svg yonaIcon="x" [size]="16"></svg>
             Effacer tous les filtres
           </a>
@@ -212,16 +228,24 @@
   <div class="results">
     <!-- The cards' titles are h3: their section heading, for screen readers -->
     <h2 class="visually-hidden">Résultats</h2>
-    @if (result().content.length) {
+    @if (list.firstPage() > 0) {
+      <a yonaButton variant="ghost" class="results__previous" routerLink="." queryParamsHandling="merge" [queryParams]="{ page: list.firstPage() > 1 ? list.firstPage() : null }">
+        <svg yonaIcon="arrow-up"></svg>Recettes précédentes
+      </a>
+    }
+    @if (list.items().length) {
       <ul role="list" class="recipe-grid">
-        <!-- Cards appearing after a filter change fade in; cards already shown stay put -->
-        @for (recipe of result().content; track recipe.slug; let i = $index) {
-          <li yonaReveal [revealDelay]="(i % 3) * 90" animate.enter="card-enter" [style.--i]="i">
-            <yona-recipe-card [recipe]="recipe" [priority]="i === 0" [servings]="chosenServings()" />
+        <!-- Cards appearing after a filter change or further down fade in; cards already shown stay put -->
+        @for (recipe of list.items(); track recipe.slug; let i = $index) {
+          <li yonaReveal yonaVirtualItem #item="virtualItem" [revealDelay]="(i % 3) * 90" animate.enter="card-enter" [style.--i]="i">
+            @if (item.near()) {
+              <yona-recipe-card [recipe]="recipe" [priority]="i === 0" [servings]="chosenServings()" />
+            }
           </li>
         }
       </ul>
     } @else {
+
       <div class="empty" animate.enter="card-enter">
         <div class="empty__icon" aria-hidden="true">
           <svg yonaIcon="search-x" [size]="40" [strokeWidth]="1.5"></svg>
@@ -241,23 +265,6 @@
         }
       </div>
     }
+    <yona-infinite-scroll linked [list]="list" />
   </div>
-
-  @if (result().totalElements > 0) {
-    <footer class="recipes__footer">
-      @if (result().totalPages > 1) {
-        <yona-pagination [page]="filters().page" [totalPages]="result().totalPages" />
-      }
-      <div class="page-size">
-        <span aria-hidden="true">Recettes par page</span>
-        <yona-select
-          label="Recettes par page"
-          direction="up"
-          [options]="pageSizeOptions"
-          [value]="filters().pageSize"
-          (valueChange)="changePageSize($event)"
-        />
-      </div>
-    </footer>
-  }
 </section>

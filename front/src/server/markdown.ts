@@ -57,7 +57,7 @@ const RENDERED_PAGES = new Set([
 ]);
 
 /** Query parameters of /recettes kept in Markdown: a category; pages make no sense (everything is listed). */
-const RECIPES_MARKDOWN_QUERY: readonly string[] = [RECIPES_QUERY.category, RECIPES_QUERY.page, RECIPES_QUERY.pageSize];
+const RECIPES_MARKDOWN_QUERY: readonly string[] = [RECIPES_QUERY.category, RECIPES_QUERY.page];
 
 type MarkdownPage =
   /** path: the page's canonical address, query included. */

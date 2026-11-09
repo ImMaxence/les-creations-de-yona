@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { deleteFeedback } from '../../../core/api/generated/fn/admin-feedback/delete-feedback';
@@ -10,7 +10,8 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { parisDateTime } from '../../../shared/format/paris-time';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
-import { Pagination } from '../../../shared/ui/pagination/pagination';
+import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
+import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
 import { UnreadFeedback } from './unread-feedback';
 
 const PAGE_SIZE = 20;
@@ -22,7 +23,7 @@ const PAGE_SIZE = 20;
  */
 @Component({
   selector: 'yona-admin-feedback',
-  imports: [Button, Icon, Pagination],
+  imports: [Button, Icon, InfiniteScroll],
   template: `
     <section class="admin-section" aria-labelledby="feedback-title">
       <div class="admin-section__head">
@@ -37,10 +38,9 @@ const PAGE_SIZE = 20;
         Les messages envoyés depuis « Donner mon avis », en bas de chaque page. Ils sont effacés au bout de 12 mois
       </p>
 
-      @if (messages.value(); as result) {
-        @if (result.content.length) {
-          <ul role="list" class="admin-list">
-            @for (message of result.content; track message.id) {
+      @if (messages.items().length) {
+          <ul role="list" class="admin-list admin-list--infinite">
+            @for (message of messages.items(); track message.id) {
               <li class="admin-row feedback" [class.is-unread]="!message.readAt">
                 <div class="admin-row__main">
                   <span class="admin-row__meta">
@@ -73,15 +73,12 @@ const PAGE_SIZE = 20;
               </li>
             }
           </ul>
-          @if (result.totalPages > 1) {
-            <yona-pagination buttons [page]="page()" [totalPages]="result.totalPages" (pageChange)="page.set($event)" />
-          }
-        } @else {
-          <p class="admin-empty">Aucun message pour le moment</p>
-        }
+      } @else if (messages.isEmpty()) {
+        <p class="admin-empty">Aucun message pour le moment</p>
       } @else if (messages.isLoading()) {
         <p class="admin-empty">Chargement…</p>
       }
+      <yona-infinite-scroll [list]="messages" />
     </section>
   `,
   styles: `
@@ -116,11 +113,9 @@ export default class AdminFeedback {
   protected readonly unread = inject(UnreadFeedback);
 
   protected readonly dateTime = parisDateTime;
-  /** From 1. */
-  protected readonly page = signal(1);
-  protected readonly messages = resource({
-    params: () => ({ page: this.page() - 1 }),
-    loader: ({ params }) => this.api.invoke(listFeedback, { page: params.page, size: PAGE_SIZE }),
+  protected readonly messages = new InfiniteList({
+    load: (page) => this.api.invoke(listFeedback, { page, size: PAGE_SIZE }),
+    key: (message) => message.id,
   });
 
   protected async markRead(message: FeedbackResponse, read: boolean): Promise<void> {
@@ -130,7 +125,7 @@ export default class AdminFeedback {
   }
 
   protected async markAllRead(): Promise<void> {
-    const unread = this.messages.value()?.content.filter((message) => !message.readAt).map((message) => message.id) ?? [];
+    const unread = this.messages.items().filter((message) => !message.readAt).map((message) => message.id);
     if (unread.length && (await attempt(this.api.invoke(markFeedbackRead, { ids: unread, read: true }))).ok) {
       this.toaster.success('Messages marqués comme lus');
       this.reload();

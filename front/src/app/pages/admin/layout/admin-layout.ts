@@ -1,6 +1,13 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, resource } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  computed,
+  inject,
+  resource,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { Api } from '../../../core/api/generated/api';
 import { getVersion } from '../../../core/api/generated/fn/admin-version/get-version';
@@ -13,9 +20,10 @@ import { TooltipLayer } from '../../../shared/ui/tooltip/tooltip-layer';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { UnreadFeedback } from '../feedback/unread-feedback';
 import { NewOrders } from '../shop/new-orders';
+import { AdminNav } from './admin-nav/admin-nav';
 
 /**
- * Frame of the back-office: greeting, sign-out and section tabs. Its stylesheet holds the
+ * Frame of the back-office: greeting, sign-out and the sections' menu. Its stylesheet holds the
  * back-office building blocks (fields, panels, rows, badges), shared by every admin page and
  * loaded only with the back-office.
  */
@@ -27,7 +35,7 @@ import { NewOrders } from '../shop/new-orders';
     TooltipLayer,
     RouterOutlet,
     RouterLink,
-    RouterLinkActive,
+    AdminNav,
     Button,
   ],
   templateUrl: './admin-layout.html',
@@ -40,8 +48,8 @@ export default class AdminLayout {
   private readonly toaster = inject(Toaster);
   private readonly router = inject(Router);
   private readonly api = inject(Api);
-  protected readonly unreadFeedback = inject(UnreadFeedback);
-  protected readonly newOrders = inject(NewOrders);
+  private readonly unreadFeedback = inject(UnreadFeedback);
+  private readonly newOrders = inject(NewOrders);
 
   protected readonly firstName = computed(() => this.session.admin()?.name.split(' ')[0] ?? '');
   protected readonly email = computed(() => this.session.admin()?.email ?? '');
