@@ -192,7 +192,7 @@ Avant une mise en ligne, le site lancé en local (`docker compose --profile app 
 
 ```bash
 npm ci
-npm test               # 116 vérifications dans Chrome (environ 4 min), captures d'écran dans e2e/resultats/
+npm test               # 117 vérifications dans Chrome (environ 4 min), captures d'écran dans e2e/resultats/
 npm run captures       # refait les images du ReadMe (docs/captures/) avec les données de la base locale
 ```
 

@@ -36,43 +36,58 @@ import {
   SHOPPING_LIST_PATH,
 } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
-import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { SiteSearch } from '../../../shared/ui/site-search/site-search';
 import { ColorSchemeSwitch } from '../color-scheme-switch/color-scheme-switch';
 import { NavigationProgress } from '../navigation-progress/navigation-progress';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { IconName } from '../../../shared/ui/icon/icons';
 
+/** One page: an arrow leads there. */
+interface MenuPage {
+  kind: 'page';
+  id: string;
+  label: string;
+  path: string;
+  /** Marked as current on this very page only, not on the pages under it. */
+  exact?: boolean;
+}
+
+/** A page inside a section. */
 interface MenuLink {
   path: string;
   label: string;
   icon: IconName;
-  /** Marked as current on this very page only, not on the pages under it. */
-  exact?: boolean;
   /** How many it holds, and of what. */
   count?: number;
   unit?: string;
 }
 
-/** Several pages under one entry, unfolded on the spot. */
+/** Several pages under one entry: a plus unfolds them on the spot. */
 interface MenuSection {
+  kind: 'section';
   id: string;
   label: string;
-  /** What is inside, while it is folded. */
-  hint: string;
-  icon: IconName;
   links: MenuLink[];
   /** Categories only: Salé, then Sucré. */
   themes: ReturnType<typeof themeGroupsOf>;
   count: number;
 }
 
+type MenuEntry = MenuPage | MenuSection;
+
+/** Once a section has finished unfolding (--duration-slow), it can be brought into view. */
+const UNFOLDED_AFTER_MS = 350;
+
+function page(path: string, label: string, exact = false): MenuPage {
+  return { kind: 'page', id: path, path, label, exact };
+}
+
 /**
  * Phone menu: a full screen native <dialog>. showModal() brings focus trapping, Escape to close
  * and an inert page behind, without any extra code.
  *
- * After a tap on a link, the menu stays open while the next page loads, then fades out on top
- * of it: the visitor never sees the previous page flash in between.
+ * After a tap on a link, the menu stays open while the next page loads, then closes on top of
+ * it: the visitor never sees the previous page flash in between.
  */
 @Component({
   selector: 'yona-mobile-menu',
@@ -81,7 +96,6 @@ interface MenuSection {
     RouterLink,
     RouterLinkActive,
     BrandIcon,
-    BrandLogo,
     ColorSchemeSwitch,
     NavigationProgress,
     SiteSearch,
@@ -97,40 +111,30 @@ export class MobileMenu {
   private readonly favorites = inject(Favorites);
   private readonly shoppingList = inject(ShoppingList);
   protected readonly recipesPath = RECIPES_PATH;
-  /** One tap, one page. */
-  protected readonly pages = computed(() => {
-    const pages: MenuLink[] = [
-      { path: '/', label: 'Accueil', icon: 'house', exact: true },
-      { path: RECIPES_PATH, label: 'Toutes les recettes', icon: 'book-open', exact: true },
-    ];
-    if (this.siteData.menus().length) {
-      pages.push({ path: MENUS_PATH, label: 'Menus', icon: 'utensils-crossed' });
-    }
-    if (this.siteData.capPublished()) {
-      pages.push({ path: CAP_PATH, label: 'Mon CAP', icon: 'graduation-cap' });
-    }
-    if (this.siteData.shopOpen()) {
-      pages.push({ path: SHOP_PATH, label: 'Boutique', icon: 'store' });
-    }
-    if (this.adminSession.isAdmin()) {
-      pages.push({ path: '/admin', label: 'Administration', icon: 'lock' });
-    }
-    return pages;
-  });
-  protected readonly sections = computed(() => {
-    const sections: MenuSection[] = [];
+  /** In the order of a visit: the recipes and what surrounds them, then the rest of the site. */
+  protected readonly entries = computed(() => {
     const themes = themeGroupsOf(this.siteData.categories());
-    if (themes.some((theme) => theme.categories.length)) {
-      sections.push({ id: 'categories', label: 'Catégories', hint: 'Salé et sucré', icon: 'layout-grid', links: [], themes, count: 0 });
-    }
     const favorites = this.favorites.count();
     const shoppingList = this.shoppingList.count();
-    sections.push(
+
+    const entries: MenuEntry[] = [page('/', 'Accueil', true), page(RECIPES_PATH, 'Recettes', true)];
+    if (themes.some((theme) => theme.categories.length)) {
+      entries.push({ kind: 'section', id: 'categories', label: 'Catégories', links: [], themes, count: 0 });
+    }
+    if (this.siteData.menus().length) {
+      entries.push(page(MENUS_PATH, 'Menus'));
+    }
+    if (this.siteData.capPublished()) {
+      entries.push(page(CAP_PATH, 'Mon CAP'));
+    }
+    if (this.siteData.shopOpen()) {
+      entries.push(page(SHOP_PATH, 'Boutique'));
+    }
+    entries.push(
       {
+        kind: 'section',
         id: 'kitchen',
         label: 'Ma cuisine',
-        hint: 'Favoris, courses, glossaire',
-        icon: 'cooking-pot',
         links: [
           { path: FAVORITES_PATH, label: 'Mes favoris', icon: 'heart', count: favorites, unit: 'recette' },
           { path: SHOPPING_LIST_PATH, label: 'Ma liste de courses', icon: 'shopping-basket', count: shoppingList, unit: 'élément' },
@@ -140,10 +144,9 @@ export class MobileMenu {
         count: favorites + shoppingList,
       },
       {
+        kind: 'section',
         id: 'site',
         label: 'Le site',
-        hint: 'À propos, avis, application',
-        icon: 'info',
         links: [
           { path: ABOUT_PATH, label: 'À propos de Yona', icon: 'chef-hat' },
           { path: FEEDBACK_PATH, label: 'Donner mon avis', icon: 'message-square' },
@@ -153,7 +156,10 @@ export class MobileMenu {
         count: 0,
       },
     );
-    return sections;
+    if (this.adminSession.isAdmin()) {
+      entries.push(page('/admin', 'Administration'));
+    }
+    return entries;
   });
   protected readonly socialPlatformLabel = socialPlatformLabel;
 
@@ -194,7 +200,7 @@ export class MobileMenu {
   protected reveal(event: Event): void {
     const section = event.target as HTMLDetailsElement;
     if (section.open) {
-      section.scrollIntoView({ block: 'nearest' });
+      setTimeout(() => section.scrollIntoView({ block: 'nearest' }), UNFOLDED_AFTER_MS);
     }
   }
 

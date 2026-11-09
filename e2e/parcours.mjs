@@ -248,13 +248,13 @@ await part('Menu (téléphone)', async () => {
   const menu = page.getByRole('dialog', { name: 'Menu' });
   await menu.waitFor();
   check('Menu : la recherche du site', await menu.getByRole('combobox').first().isVisible());
-  const heights = await menu.locator('a.page, summary').evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
+  const heights = await menu.locator('.entry').evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
   check('Menu : des lignes assez hautes pour le pouce', heights.length > 0 && heights.every((height) => height >= 44), heights.map(Math.round).join(', '));
-  check('Menu : une page a sa flèche, une section son bouton', (await menu.locator('a.page .page__go').count()) === (await menu.locator('a.page').count()) && (await menu.locator('summary .section__toggle').count()) === (await menu.locator('summary').count()));
+  check('Menu : une page a sa flèche, une section son plus', (await menu.locator('a.entry .entry__mark').count()) === (await menu.locator('a.entry').count()) && (await menu.locator('summary .entry__mark').count()) === (await menu.locator('summary').count()));
   await menu.locator('summary').first().click();
   await menu.locator('summary').nth(1).click();
   check('Menu : une section ouverte à la fois', (await menu.locator('details[open]').count()) === 1);
-  await menu.getByRole('link', { name: 'Toutes les recettes', exact: true }).click();
+  await menu.getByRole('link', { name: 'Recettes', exact: true }).click();
   await page.waitForURL('**/recettes');
   await menu.waitFor({ state: 'hidden' });
   check('Menu : se ferme en arrivant sur la page', true);
@@ -512,9 +512,13 @@ await part('Connexion et cadre du back-office', async () => {
   await desktop.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
   const side = desktop.locator('.admin__side');
   await side.waitFor();
+  await answerCookies(desktop);
   check('Ordinateur : ni barre ni pied du site', (await desktop.locator('yona-header, yona-footer').count()) === 0);
   check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 21 && (await side.boundingBox()).x === 0);
   check('Ordinateur : section courante marquée', (await side.locator('a.link.is-active').innerText()).includes('Nouveautés'));
+  await side.locator('.account__email').hover();
+  await desktop.locator('.tooltip.is-open').waitFor();
+  check('Ordinateur : l’e-mail complet au survol', (await desktop.locator('.tooltip.is-open').innerText()) === 'yona@example.fr');
   await desktop.context().close();
 });
 

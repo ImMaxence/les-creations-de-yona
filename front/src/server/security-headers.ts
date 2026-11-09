@@ -35,11 +35,11 @@ function contentSecurityPolicy(nonce: string, scriptHashes: string[]): string {
     // blob: preview of a photo before upload in the back-office.
     "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://*.googleusercontent.com",
     // Google Analytics sends its measures there; reCAPTCHA calls its own API from the page.
-    // The service worker fetches a page's scripts under this directive, not script-src: a host of
-    // script-src also goes here. An installed worker keeps the policy it was installed with: after
+    // The service worker fetches a page's scripts and images under this directive, not script-src or
+    // img-src: a host of those also goes here (Google's: the photo of the admins' accounts). An installed worker keeps the policy it was installed with: after
     // a change here, change its address too (provideServiceWorker, app.config.ts).
     // Hugging Face: the models the back-office downloads once, past the service worker (model-store.ts).
-    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://huggingface.co https://*.hf.co",
+    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://huggingface.co https://*.hf.co https://*.googleusercontent.com",
     // Recipe videos: YouTube's privacy-enhanced player, loaded only after a click (YoutubeVideo).
     'frame-src https://www.youtube-nocookie.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/',
     "object-src 'none'",

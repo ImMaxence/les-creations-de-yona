@@ -10,7 +10,7 @@
     autocomplete="off"
     enterkeyhint="search"
     maxlength="100"
-    placeholder="Une recette, un ingrédient, une occasion…"
+    [placeholder]="placeholder()"
     [attr.aria-expanded]="expanded()"
     [attr.aria-controls]="listboxId"
     [attr.aria-activedescendant]="activeOptionId()"

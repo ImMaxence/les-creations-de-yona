@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, signal, viewChild } from '@angular/core';
 
-/** Buttons and links named only by their aria-label: icons without text. */
-const TARGETS = 'button[aria-label], a[aria-label]';
+/** Buttons and links named only by their aria-label (icons without text), or a text cut short: data-tooltip. */
+const TARGETS = 'button[aria-label], a[aria-label], [data-tooltip]';
 const HOVER_DELAY_MS = 250;
 const GAP_PX = 8;
 const EDGE_PX = 8;
@@ -82,7 +82,7 @@ export class TooltipLayer {
       return null;
     }
     // innerText ignores hidden text: a label shown on large screens only still counts as none
-    return target.innerText.trim() ? null : target;
+    return target.hasAttribute('data-tooltip') || !target.innerText.trim() ? target : null;
   }
 
   private show(target: HTMLElement): void {
@@ -90,7 +90,7 @@ export class TooltipLayer {
       return;
     }
     const bubble = this.bubble().nativeElement;
-    this.text.set(target.getAttribute('aria-label'));
+    this.text.set(target.getAttribute('data-tooltip') ?? target.getAttribute('aria-label'));
     // Written and shown at once (not at the next change detection): a hidden bubble measures 0 × 0
     bubble.textContent = this.text();
     bubble.classList.add('is-open');

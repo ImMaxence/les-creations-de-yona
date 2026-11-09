@@ -59,6 +59,8 @@ let nextId = 0;
  * Nothing found is said, with an icon.
  * {@code inline}: the suggestions push the content down instead of floating over it (in a dialog).
  */
+export const SEARCH_PLACEHOLDER = 'Une recette, un ingrédient, une occasion…';
+
 @Component({
   selector: 'yona-search-box',
   imports: [Icon],
@@ -69,6 +71,7 @@ let nextId = 0;
 export class SearchBox {
   /** Search currently applied to the page. */
   readonly value = input('');
+  readonly placeholder = input(SEARCH_PLACEHOLDER);
   readonly inline = input(false, { transform: booleanAttribute });
   readonly large = input(false, { transform: booleanAttribute });
   /** Focused as soon as shown (the search dialog). */

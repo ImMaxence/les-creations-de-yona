@@ -2,6 +2,20 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 2.1.1 - 2026-11-09
+
+Front and backend 2.1.1. No database migration.
+
+### Changed
+
+- **Phone menu**: redone in the site's colour, one list in large type; an arrow leads to a page, a plus unfolds several.
+- **Back-office panel**: stronger group titles, no scroll bar.
+
+### Fixed
+
+- **Admin photo**: the service worker blocked the picture of the Google account.
+- **Back-office panel**: icons of the light/dark choice are back; the full email shows on hover.
+
 ## 2.1.0 - 2026-11-09
 
 Front and backend 2.1.0. No database migration.

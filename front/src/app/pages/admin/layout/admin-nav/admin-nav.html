@@ -29,7 +29,10 @@
           <span class="group__chevron"><svg yonaIcon="chevron-down" [size]="20" aria-hidden="true"></svg></span>
         </button>
       } @else {
-        <p class="group__title">{{ group.label }}</p>
+        <p class="group__title">
+          <span class="group__badge"><svg [yonaIcon]="group.icon" [size]="16"></svg></span>
+          {{ group.label }}
+        </p>
       }
       <ul role="list" class="links" [id]="'admin-menu-' + group.id" [hidden]="drawer() && openGroup() !== group.id">
         @for (link of group.links; track link.path) {
@@ -54,7 +57,7 @@
       <yona-admin-avatar [name]="admin.name || admin.email" [picture]="admin.picture" />
       <span class="account__text">
         <span class="account__name">{{ admin.name }}</span>
-        <span class="account__email">{{ admin.email }}</span>
+        <span class="account__email" [attr.data-tooltip]="admin.email">{{ admin.email }}</span>
       </span>
       @if (!drawer()) {
         <button type="button" class="round" aria-label="Se déconnecter" (click)="signOut()"><svg yonaIcon="log-out" [size]="18"></svg></button>

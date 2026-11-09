@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, ou
 import { Router } from '@angular/router';
 import { RECIPES_PATH } from '../../routing/links';
 import { SearchChoice, searchTarget } from '../../search/search-target';
-import { SearchBox } from '../search-box/search-box';
+import { SEARCH_PLACEHOLDER, SearchBox } from '../search-box/search-box';
 
 /**
  * The search of the site, outside the recipes page (header, home page): the typed text opens the
@@ -16,6 +16,7 @@ import { SearchBox } from '../search-box/search-box';
       [inline]="inline()"
       [large]="large()"
       [autofocus]="autofocus()"
+      [placeholder]="placeholder()"
       (searchSubmitted)="search($event)"
       (picked)="open($event)"
     />
@@ -28,6 +29,7 @@ export class SiteSearch {
   readonly inline = input(false, { transform: booleanAttribute });
   readonly large = input(false, { transform: booleanAttribute });
   readonly autofocus = input(false, { transform: booleanAttribute });
+  readonly placeholder = input(SEARCH_PLACEHOLDER);
   /** Left for another page: the dialog holding it closes. */
   readonly navigated = output<void>();
 

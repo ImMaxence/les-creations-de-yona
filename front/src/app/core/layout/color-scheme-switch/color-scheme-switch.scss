@@ -121,12 +121,10 @@
     flex: none;
   }
 
-  // The side panel of the back-office: the three names only just fit
+  // The side panel of the back-office: tighter, for icons and names to fit
   @container (width < 18rem) {
-    padding-inline: var(--space-2);
-
-    svg {
-      display: none;
-    }
+    gap: var(--space-1);
+    padding-inline: var(--space-1);
+    font-size: var(--text-xs);
   }
 }
