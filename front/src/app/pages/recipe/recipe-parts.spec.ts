@@ -1,6 +1,6 @@
 import { IngredientLine } from '../../core/api/generated/models/ingredient-line';
 import { Part } from '../../core/api/generated/models/part';
-import { describeMold, hasParts, moldArea, shownIngredients, totalIngredients } from './recipe-parts';
+import { describeMold, equivalent, hasParts, moldArea, shownIngredients, totalIngredients } from './recipe-parts';
 
 function line(name: string, quantity?: number, unit?: string, note?: string): IngredientLine {
   return { name, quantity, unit, note };
@@ -69,6 +69,49 @@ describe('moldArea', () => {
   it('gives a 24 cm round mold 1.44 times the quantities of a 20 cm one', () => {
     const ratio = moldArea({ shape: 'ROUND', lengthCm: 24 }) / moldArea({ shape: 'ROUND', lengthCm: 20 });
     expect(ratio).toBeCloseTo(1.44, 5);
+  });
+});
+
+describe('equivalent in pieces', () => {
+  const EGG = { grams: 50, singular: 'œuf', plural: 'œufs' };
+  const eggs = (quantity: number, unit?: string): IngredientLine => ({ name: 'Œufs', quantity, unit, piece: EGG });
+
+  it('counts a weight in pieces, to the nearest half', () => {
+    expect(equivalent(400, EGG)).toBe('≈ 8 œufs');
+    expect(equivalent(120, EGG)).toBe('≈ 2,5 œufs');
+    expect(equivalent(75, EGG)).toBe('≈ 1,5 œuf');
+  });
+
+  it('never says zero', () => {
+    expect(equivalent(4, EGG)).toBe('≈ 0,5 œuf');
+  });
+
+  it('follows the servings', () => {
+    expect(shownIngredients([eggs(400, 'g')], 0.5)[0]?.equivalent).toBe('≈ 4 œufs');
+  });
+
+  it('understands kilos', () => {
+    expect(shownIngredients([eggs(1, 'kg')], 1)[0]?.equivalent).toBe('≈ 20 œufs');
+  });
+
+  it('says nothing for a quantity that is not a weight', () => {
+    expect(shownIngredients([eggs(3)], 1)[0]?.equivalent).toBeUndefined();
+    expect(shownIngredients([eggs(2, 'c. à soupe')], 1)[0]?.equivalent).toBeUndefined();
+  });
+
+  it('says nothing for an ingredient bought by weight', () => {
+    expect(shownIngredients([line('Farine', 400, 'g')], 1)[0]?.equivalent).toBeUndefined();
+  });
+
+  it('counts the total of the parts', () => {
+    const total = totalIngredients([part('La pâte', [eggs(100, 'g')]), part('La crème', [eggs(300, 'g')])], 1);
+    expect(total[0]?.equivalent).toBe('≈ 8 œufs');
+  });
+
+  it('says nothing when the total mixes a weight and something else', () => {
+    const total = totalIngredients([part('La pâte', [eggs(100, 'g')]), part('La crème', [eggs(1, 'c. à soupe')])], 1);
+    expect(total[0]?.amount).toBe('100 g + 1 c. à soupe');
+    expect(total[0]?.equivalent).toBeUndefined();
   });
 });
 

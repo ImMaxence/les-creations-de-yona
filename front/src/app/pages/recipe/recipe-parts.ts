@@ -1,4 +1,5 @@
 import { IngredientLine } from '../../core/api/generated/models/ingredient-line';
+import { IngredientPiece } from '../../core/api/generated/models/ingredient-piece';
 import { Mold } from '../../core/api/generated/models/mold';
 import { Part } from '../../core/api/generated/models/part';
 import { formatQuantity, roundForKitchen } from '../../shared/format/units';
@@ -11,6 +12,8 @@ export interface ShownIngredient {
   note: string | null;
   /** In the total of a recipe in parts: titles of the parts using it. */
   parts: string[];
+  /** "≈ 8 œufs", for an ingredient weighed but bought by the piece. */
+  equivalent?: string;
 }
 
 /** A recipe without parts has a single, untitled one: shown as before, without a part heading. */
@@ -36,6 +39,7 @@ export function shownIngredients(lines: IngredientLine[], ratio: number): ShownI
     amount: line.quantity == null ? null : amount(scale(line.quantity, ratio), line.unit),
     note: line.note || null,
     parts: [],
+    equivalent: line.quantity == null ? undefined : equivalent(inGrams(line.quantity * ratio, line.unit), line.piece),
   }));
 }
 
@@ -55,6 +59,7 @@ export function totalIngredients(parts: Part[], ratio: number): ShownIngredient[
         notes: [],
         parts: [],
         lines: 0,
+        piece: line.piece,
       };
       totals.set(key, total);
       total.lines++;
@@ -83,6 +88,7 @@ export function totalIngredients(parts: Part[], ratio: number): ShownIngredient[
       : null,
     note: total.lines === 1 ? (total.notes[0] ?? null) : null,
     parts: total.parts,
+    equivalent: equivalent(totalGrams(total, ratio), total.piece),
   }));
 }
 
@@ -93,6 +99,46 @@ interface IngredientTotal {
   notes: string[];
   parts: string[];
   lines: number;
+  piece?: IngredientPiece;
+}
+
+/** Null as soon as one quantity is not a weight: "150 g + 2 c. à soupe" cannot be counted in pieces. */
+function totalGrams(total: IngredientTotal, ratio: number): number | null {
+  let sum = 0;
+  for (const { unit, quantity } of total.quantities.values()) {
+    const grams = inGrams(quantity * ratio, unit);
+    if (grams === null) {
+      return null;
+    }
+    sum += grams;
+  }
+  return total.quantities.size ? sum : null;
+}
+
+/** Only a weight can be counted in pieces: "3" eggs or "1 c. à soupe" have no equivalent. */
+function inGrams(quantity: number, unit: string | null | undefined): number | null {
+  switch (unit?.trim().toLocaleLowerCase('fr')) {
+    case 'g':
+    case 'gr':
+    case 'gramme':
+    case 'grammes':
+      return quantity;
+    case 'kg':
+    case 'kilo':
+    case 'kilos':
+      return quantity * 1000;
+    default:
+      return null;
+  }
+}
+
+/** To the nearest half piece: "≈ 8 œufs", "≈ 1,5 citron" (the French plural starts at 2). */
+export function equivalent(grams: number | null, piece: IngredientPiece | null | undefined): string | undefined {
+  if (grams === null || !piece || grams <= 0) {
+    return undefined;
+  }
+  const count = Math.max(0.5, Math.round((grams / piece.grams) * 2) / 2);
+  return `≈ ${formatQuantity(count)} ${count >= 2 ? piece.plural : piece.singular}`;
 }
 
 /** Quantities written in the recipe are shown as is; scaled ones are rounded to measurable values. */

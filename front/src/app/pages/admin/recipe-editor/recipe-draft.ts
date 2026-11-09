@@ -54,6 +54,12 @@ export interface PartDraft {
   title: string;
   ingredients: IngredientDraft[];
   steps: StepDraft[];
+  /** Another recipe taken as this part ("Pâte sablée"): then no ingredient nor step of its own. */
+  linkedRecipeId: number | null;
+  /** Shown in the editor; the API knows it by its id. */
+  linkedRecipeTitle: string;
+  /** How many times that recipe: 1, or 0.5 for half of it. */
+  linkedRatio: number | null;
 }
 
 export interface QuestionDraft {
@@ -78,7 +84,12 @@ export interface StepDraft {
 }
 
 export function emptyPart(): PartDraft {
-  return { title: '', ingredients: [emptyIngredient()], steps: [emptyStep()] };
+  return { title: '', ingredients: [emptyIngredient()], steps: [emptyStep()], linkedRecipeId: null, linkedRecipeTitle: '', linkedRatio: null };
+}
+
+/** Another recipe as a part: whole at first, the admin changes how many times. */
+export function linkedPart(recipe: { id: number; title: string }): PartDraft {
+  return { title: recipe.title, ingredients: [], steps: [], linkedRecipeId: recipe.id, linkedRecipeTitle: recipe.title, linkedRatio: 1 };
 }
 
 export function emptyQuestion(): QuestionDraft {
@@ -164,6 +175,9 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
         durationMinutes: step.durationMinutes ?? null,
         ingredientKeys: step.ingredientPositions.map((position) => `${p}-${position}`),
       })),
+      linkedRecipeId: part.linkedRecipe?.id ?? null,
+      linkedRecipeTitle: part.linkedRecipe?.title ?? '',
+      linkedRatio: part.linkedRecipe?.ratio ?? null,
     })),
   };
 }
@@ -218,6 +232,9 @@ export function fromAiDraft(current: RecipeDraft, ai: RecipeAiDraft): RecipeDraf
           durationMinutes: step.durationMinutes ?? null,
           ingredientKeys: step.ingredientPositions.flatMap((position) => keys[position] ?? []),
         })),
+        linkedRecipeId: null,
+        linkedRecipeTitle: '',
+        linkedRatio: null,
       };
     }),
   };
@@ -273,6 +290,8 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
           .filter((position) => position >= 0)
           .sort((a, b) => a - b),
       })),
+      linkedRecipeId: part.linkedRecipeId ?? undefined,
+      linkedRatio: part.linkedRecipeId ? (part.linkedRatio ?? undefined) : undefined,
     })),
   };
 }
@@ -379,6 +398,10 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
 
   // At least one ingredient and one step in the whole recipe, whatever the part
   validate(recipe.parts, ({ value }) => {
+    // A linked recipe has at least one of each
+    if (value().some((part) => part.linkedRecipeId)) {
+      return undefined;
+    }
     if (value().every((part) => part.ingredients.length === 0)) {
       return { kind: 'noIngredient', message: 'Ajoutez au moins un ingrédient' };
     }
@@ -389,16 +412,22 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
   });
   applyEach(recipe.parts, (part) => {
     validate(part.title, ({ value, valueOf }) =>
-      valueOf(recipe.parts).length > 1 && !value().trim()
+      valueOf(recipe.parts).length > 1 && !value().trim() && !valueOf(part.linkedRecipeId)
         ? { kind: 'partTitle', message: 'Donnez un titre à cette partie (la pâte, la garniture…)' }
         : undefined,
     );
     maxLength(part.title, 100, { message: '100 caractères au maximum' });
     validate(part, ({ value }) =>
-      value().ingredients.length === 0 && value().steps.length === 0
+      value().ingredients.length === 0 && value().steps.length === 0 && !value().linkedRecipeId
         ? { kind: 'emptyPart', message: 'Ajoutez un ingrédient ou une étape à cette partie' }
         : undefined,
     );
+    validate(part.linkedRatio, ({ value, valueOf }) => {
+      const ratio = value();
+      return valueOf(part.linkedRecipeId) && (ratio == null || ratio < 0.05 || ratio > 99)
+        ? { kind: 'linkedRatio', message: 'Entre 0,05 et 99 (1 pour la recette entière, 0,5 pour la moitié)' }
+        : undefined;
+    });
 
     // An ingredient once per part; another part may list it again
     validate(part.ingredients, ({ value }) => {

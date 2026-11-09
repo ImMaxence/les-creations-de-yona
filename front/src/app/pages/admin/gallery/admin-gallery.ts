@@ -170,6 +170,7 @@ export default class AdminGallery {
       ...image.recipes.map((recipe) => recipe.title),
       ...image.categories.map((category) => category.name),
       ...image.menus.map((menu) => menu.title),
+      ...image.capItems,
       ...(image.aboutPage ? ['À propos'] : []),
     ];
   }

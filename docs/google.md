@@ -140,7 +140,7 @@ Un échec est affiché dans le back-office, et un nouvel essai a lieu automatiqu
 
 ## 5. reCAPTCHA
 
-La case « Je ne suis pas un robot » de « Donner mon avis » (reCAPTCHA v2). En local, les clés de test publiques de Google sont utilisées d'office : la case passe toujours, avec un bandeau d'avertissement sur le widget. En production, les deux variables sont obligatoires : sans elles, le déploiement échoue.
+La case « Je ne suis pas un robot » de « Donner mon avis » et de la boutique (reCAPTCHA v2). En local, les clés de test publiques de Google sont utilisées d'office : la case passe toujours, avec un bandeau d'avertissement sur le widget. En production, les deux variables sont obligatoires : sans elles, le déploiement échoue.
 
 1. https://www.google.com/recaptcha/admin/create (ou Google Cloud, page **Fraud Defense**, onglet **Keys**, **Create key**).
 2. Type **Challenge (v2)**, case « Je ne suis pas un robot » (dans Google Cloud : **Application type** Web, puis **Will you use challenges?** activé).

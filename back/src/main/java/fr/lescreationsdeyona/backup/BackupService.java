@@ -52,7 +52,7 @@ public class BackupService {
 	/**
 	 * Notification subscriptions, the site's notification keys, the Google Drive link, the history of
 	 * the back-office and the visitors' messages (their emails do not leave the server): what belongs
-	 * to this server rather than to the site's content.
+	 * to this server rather than to the site's content. Orders are saved: losing them would lose work.
 	 */
 	public static final List<String> SITE_ONLY_TABLES = List.of("push_subscription", "web_push_key",
 			"google_drive_link", "audit_event", "feedback");

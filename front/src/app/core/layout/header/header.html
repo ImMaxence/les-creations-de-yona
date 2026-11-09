@@ -26,6 +26,16 @@
           <yona-category-menu [theme]="theme" [categories]="siteData.categories()" />
         </li>
       }
+      @if (siteData.capPublished()) {
+        <li>
+          <a class="nav__link" [routerLink]="capPath" routerLinkActive="is-active">Mon CAP</a>
+        </li>
+      }
+      @if (siteData.shopOpen()) {
+        <li>
+          <a class="nav__link" [routerLink]="shopPath" routerLinkActive="is-active">Boutique</a>
+        </li>
+      }
       @if (adminSession.isAdmin()) {
         <li>
           <a class="nav__link" routerLink="/admin" routerLinkActive="is-active">Administration</a>

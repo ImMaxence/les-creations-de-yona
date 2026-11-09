@@ -6,6 +6,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,5 +25,12 @@ public class Ingredient {
 	/** Null until the admin sets it: "Autres" in the shopping list. */
 	@Enumerated(EnumType.STRING)
 	private Aisle aisle;
+
+	/** Weight of one piece, for "400 g (≈ 8 œufs)"; null, like the two names, when bought by weight. */
+	private BigDecimal pieceGrams;
+
+	private String pieceSingular;
+
+	private String piecePlural;
 
 }

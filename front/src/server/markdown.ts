@@ -5,10 +5,12 @@ import { LATEST_RECIPES_COUNT } from '../app/pages/home/home.resolver';
 import { THEMES } from '../app/shared/format/themes';
 import {
   ABOUT_PATH,
+  CAP_PATH,
   GLOSSARY_PATH,
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
   MENUS_PATH,
+  OBSERVATIONS_PATH,
   PRIVACY_POLICY_PATH,
   RECIPES_PATH,
   TERMS_OF_USE_PATH,
@@ -44,8 +46,15 @@ import { renderedToMarkdown } from './rendered-markdown';
 /** A page of the site rendered as a visitor gets it (HTML), or null when it does not answer 200. */
 export type PageRenderer = (req: Request, path: string) => Promise<string | null>;
 
-/** Pages whose text is written in their template: rendered, then converted. */
-const RENDERED_PAGES = new Set([INSTALL_PATH, LEGAL_NOTICE_PATH, TERMS_OF_USE_PATH, PRIVACY_POLICY_PATH]);
+/** Pages whose whole text comes with their first render: rendered, then converted. */
+const RENDERED_PAGES = new Set([
+  INSTALL_PATH,
+  LEGAL_NOTICE_PATH,
+  TERMS_OF_USE_PATH,
+  PRIVACY_POLICY_PATH,
+  CAP_PATH,
+  OBSERVATIONS_PATH,
+]);
 
 /** Query parameters of /recettes kept in Markdown: a category; pages make no sense (everything is listed). */
 const RECIPES_MARKDOWN_QUERY: readonly string[] = [RECIPES_QUERY.category, RECIPES_QUERY.page, RECIPES_QUERY.pageSize];

@@ -480,3 +480,24 @@ yona-select {
   gap: var(--space-2);
   min-height: 2.75rem;
 }
+
+.parts-bar__link {
+  flex: 1 1 16rem;
+  max-width: 26rem;
+}
+
+// A part that is another recipe
+.linked {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.linked__recipe {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.linked__ratio {
+  max-width: 24rem;
+}

@@ -42,6 +42,14 @@ public enum ErrorCode {
 	SCHEDULED_AT_PAST(HttpStatus.BAD_REQUEST, "La date de publication programmée est déjà passée"),
 	TRASHED_RECIPE_CATEGORIES_GONE(HttpStatus.CONFLICT, "Les catégories de cette recette ont toutes été supprimées : recréez-en une avant de la restaurer"),
 	VIDEO_URL_INVALID(HttpStatus.BAD_REQUEST, "Ce lien n'est pas une vidéo YouTube (youtube.com/watch?v=…, youtu.be/… ou youtube.com/shorts/…)"),
+	RECIPE_LINK_NOT_FOUND(HttpStatus.BAD_REQUEST, "Une des recettes liées n'existe plus"),
+	RECIPE_LINK_WITH_CONTENT(HttpStatus.BAD_REQUEST, "Une partie liée à une autre recette ne peut pas avoir ses propres ingrédients ni ses propres étapes"),
+	RECIPE_LINK_CYCLE(HttpStatus.BAD_REQUEST, "Une recette ne peut pas s'utiliser elle-même, même à travers une autre"),
+	RECIPE_LINK_TOO_DEEP(HttpStatus.BAD_REQUEST, "Trop de recettes imbriquées : 3 niveaux au plus (une tarte, sa crème, et la base de cette crème)"),
+	RECIPE_LINK_NOT_PUBLISHED(HttpStatus.BAD_REQUEST, "Une recette publiée ne peut utiliser que des recettes publiées"),
+	RECIPE_LINKED_IN_USE(HttpStatus.CONFLICT, "Cette recette est utilisée dans une autre recette"),
+	RECIPE_IN_SHOP(HttpStatus.CONFLICT, "Cette recette est proposée dans la boutique : retirez-la d'abord de la boutique"),
+	TRASHED_RECIPE_LINK_GONE(HttpStatus.CONFLICT, "Une recette utilisée par celle-ci n'existe plus : restaurez-la d'abord"),
 
 	// Trash
 	TRASH_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce n'est plus dans la corbeille"),
@@ -76,6 +84,31 @@ public enum ErrorCode {
 	FEEDBACK_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les messages ne peuvent pas être reçus pour le moment : réessayez dans quelques jours"),
 	FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
 	FEEDBACK_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre message"),
+
+	// "Mon CAP"
+	CAP_ENTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette étape du CAP n'existe plus"),
+	OBSERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette observation n'existe plus"),
+
+	// Shop
+	SHOP_CLOSED(HttpStatus.CONFLICT, "La boutique est fermée pour le moment"),
+	SHOP_PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce produit n'est plus dans la boutique"),
+	SHOP_PRODUCT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Cette recette est déjà dans la boutique"),
+	SHOP_PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "Une des recettes choisies n'est plus disponible : rechargez la page"),
+	SHOP_PRODUCT_DUPLICATE(HttpStatus.BAD_REQUEST, "Une même recette est choisie plusieurs fois"),
+	SHOP_CONTACT_REQUIRED(HttpStatus.BAD_REQUEST, "Laissez un e-mail ou un téléphone pour que Yona puisse vous répondre"),
+	SHOP_WANTED_DATE_PAST(HttpStatus.BAD_REQUEST, "La date souhaitée est déjà passée"),
+	SHOP_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre commande"),
+	SHOP_TOO_FAST(HttpStatus.TOO_MANY_REQUESTS, "Votre commande vient de partir : patientez une minute avant d'en envoyer une autre"),
+	SHOP_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Vous avez envoyé plusieurs commandes en peu de temps : réessayez dans une heure"),
+	SHOP_BUSY(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup de commandes arrivent en ce moment : réessayez dans une heure"),
+	SHOP_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les commandes ne peuvent pas être reçues pour le moment : réessayez dans quelques jours"),
+	SHOP_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette commande n'existe pas ou plus"),
+	SHOP_ADMIN_UNKNOWN(HttpStatus.BAD_REQUEST, "Cette personne n'est pas administratrice du site"),
+
+	// Accounting
+	ACCOUNT_ENTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette ligne n'existe plus"),
+	ACCOUNT_ENTRY_FROM_ORDER(HttpStatus.CONFLICT, "Cette ligne vient d'une commande : son montant se change depuis la commande, et elle disparaît si la commande n'est plus récupérée"),
+	ACCOUNT_CATEGORY_INVALID(HttpStatus.BAD_REQUEST, "La catégorie « Vente » ne va qu'avec une entrée d'argent"),
 
 	// Ingredients
 	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable"),

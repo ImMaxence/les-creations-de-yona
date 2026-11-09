@@ -61,6 +61,12 @@ class AdminIngredientController {
 		return ingredientService.rename(id, form);
 	}
 
+	@Operation(summary = "What one piece of an ingredient weighs, for \"400 g (≈ 8 œufs)\"; absent for an ingredient bought by weight")
+	@PutMapping("/{id}/piece")
+	IngredientResponse setIngredientPiece(@PathVariable long id, @Valid @RequestBody IngredientPieceForm form) {
+		return ingredientService.setPiece(id, form.piece());
+	}
+
 	@Operation(summary = "Put ingredients in a shop aisle (sorting the shopping list), or in none")
 	@PutMapping("/aisle")
 	@ResponseStatus(HttpStatus.NO_CONTENT)

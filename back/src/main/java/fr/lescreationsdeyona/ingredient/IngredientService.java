@@ -137,6 +137,15 @@ public class IngredientService {
 				.findFirst()
 				.ifPresent(target::setAisle);
 		}
+		// The same for the weight of a piece
+		if (target.getPieceGrams() == null) {
+			ingredientRepository.findAllById(sourceIds)
+				.stream()
+				.map(IngredientService::piece)
+				.filter(Objects::nonNull)
+				.findFirst()
+				.ifPresent(piece -> setPiece(target, piece));
+		}
 		List<String> merged = ingredientRepository.findAllById(sourceIds).stream().map(Ingredient::getName).toList();
 		ingredientRepository.moveLines(target.getId(), sourceIds);
 		ingredientRepository.deleteAllByIdInBatch(sourceIds);
@@ -183,13 +192,14 @@ public class IngredientService {
 		}
 		Ingredient ingredient = newIngredient(kept.name());
 		ingredient.setAisle(kept.aisle());
+		setPiece(ingredient, kept.piece());
 		return toResponse(ingredientRepository.save(ingredient), 0);
 	}
 
 	private void trash(List<Ingredient> ingredients) {
 		for (Ingredient ingredient : ingredients) {
 			trashBin.put(TrashBin.Entry.of(TrashKind.INGREDIENT, ingredient.getName(), null, null,
-					new TrashedIngredient(ingredient.getName(), ingredient.getAisle())));
+					new TrashedIngredient(ingredient.getName(), ingredient.getAisle(), piece(ingredient))));
 		}
 		ingredientRepository.deleteAll(ingredients);
 	}
@@ -209,6 +219,18 @@ public class IngredientService {
 		ingredients.forEach(ingredient -> ingredient.setAisle(aisle));
 		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, ingredients.size() == 1 ? ingredients.getFirst().getName()
 				: ingredients.size() + " ingrédients", ingredients.size() == 1 ? ingredients.getFirst().getId() : null, changes);
+	}
+
+	/** What one piece weighs, or nothing for an ingredient bought by weight. */
+	@Transactional
+	public IngredientResponse setPiece(long id, @Nullable IngredientPiece piece) {
+		Ingredient ingredient = find(id);
+		IngredientPiece cleaned = piece == null ? null
+				: new IngredientPiece(piece.grams(), piece.singular().strip(), piece.plural().strip());
+		AuditChanges changes = new AuditChanges().add("Équivalent", pieceLabel(piece(ingredient)), pieceLabel(cleaned));
+		setPiece(ingredient, cleaned);
+		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, ingredient.getName(), id, changes);
+		return toResponse(ingredient, ingredientRepository.countRecipesUsing(id));
 	}
 
 	/** Used by the recipe form: the admin types a name, an existing ingredient is reused if any. */
@@ -267,7 +289,25 @@ public class IngredientService {
 	}
 
 	private static IngredientResponse toResponse(Ingredient ingredient, long recipeCount) {
-		return new IngredientResponse(ingredient.getId(), ingredient.getName(), ingredient.getAisle(), recipeCount);
+		return new IngredientResponse(ingredient.getId(), ingredient.getName(), ingredient.getAisle(), recipeCount,
+				piece(ingredient));
+	}
+
+	private static @Nullable IngredientPiece piece(Ingredient ingredient) {
+		return ingredient.getPieceGrams() == null ? null
+				: new IngredientPiece(ingredient.getPieceGrams(), ingredient.getPieceSingular(), ingredient.getPiecePlural());
+	}
+
+	private static void setPiece(Ingredient ingredient, @Nullable IngredientPiece piece) {
+		ingredient.setPieceGrams(piece == null ? null : piece.grams());
+		ingredient.setPieceSingular(piece == null ? null : piece.singular());
+		ingredient.setPiecePlural(piece == null ? null : piece.plural());
+	}
+
+	/** "1 œuf = 50 g", for the history. */
+	private static @Nullable String pieceLabel(@Nullable IngredientPiece piece) {
+		return piece == null ? null
+				: "1 " + piece.singular() + " = " + piece.grams().stripTrailingZeros().toPlainString().replace('.', ',') + " g";
 	}
 
 	/** Like recipe titles and category names: "beurre" is saved as "Beurre", "🧈 beurre" as "🧈 Beurre". */

@@ -38,6 +38,8 @@ import { replaceRecipeImage } from '../../../core/api/generated/fn/admin-recipes
 import { replaceRecipePinterestImage } from '../../../core/api/generated/fn/admin-recipes/replace-recipe-pinterest-image';
 import { createTag } from '../../../core/api/generated/fn/admin-tags/create-tag';
 import { listAdminTags } from '../../../core/api/generated/fn/admin-tags/list-admin-tags';
+import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/search-recipes';
+import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
 import { updateRecipe } from '../../../core/api/generated/fn/admin-recipes/update-recipe';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
 import { RecipeAiDraft } from '../../../core/api/generated/models/recipe-ai-draft';
@@ -63,6 +65,7 @@ import {
   RecipeDraft,
   emptyIngredient,
   emptyPart,
+  linkedPart,
   emptyQuestion,
   emptyStep,
   fromAiDraft,
@@ -232,6 +235,13 @@ export default class AdminRecipeEditor implements UnsavedChanges {
           : undefined,
       })),
   );
+  /** Every recipe but this one, to use as a part; drafts marked as such. */
+  private readonly allRecipes = resource({ loader: () => this.loadRecipes() });
+  protected readonly linkableRecipes = computed<SelectOption<number>[]>(() =>
+    (this.allRecipes.value() ?? [])
+      .filter((recipe) => recipe.id !== this.recipe()?.id)
+      .map((recipe) => ({ value: recipe.id, label: recipe.status === 'PUBLISHED' ? recipe.title : `${recipe.title} (non publiée)` })),
+  );
   /** Already in a part: not suggested again there (a part lists an ingredient once). */
   protected readonly ingredientNames = computed(() =>
     this.draft().parts.map(
@@ -339,6 +349,17 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected discardRecovered(): void {
     removeStoredDraft(this.storageKey());
     this.recovered.set(null);
+  }
+
+  /** Largest page of the API: read page after page. */
+  private async loadRecipes(): Promise<RecipeAdminSummary[]> {
+    const recipes: RecipeAdminSummary[] = [];
+    for (let page = 0, totalPages = 1; page < totalPages; page++) {
+      const result = await this.api.invoke(searchRecipes, { page, size: 50, sort: ['title,asc'] });
+      recipes.push(...result.content);
+      totalPages = result.totalPages;
+    }
+    return recipes;
   }
 
   private storeDraft(draft: RecipeDraft, unsaved: boolean): void {
@@ -544,10 +565,19 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     this.draft.update((draft) => ({ ...draft, parts: [...draft.parts, emptyPart()] }));
   }
 
+  /** Another recipe, written once, as a part of this one. */
+  protected addLinkedPart(recipeId: number): void {
+    const recipe = this.allRecipes.value()?.find((candidate) => candidate.id === recipeId);
+    if (recipe) {
+      this.draft.update((draft) => ({ ...draft, parts: [...draft.parts, linkedPart(recipe)] }));
+    }
+  }
+
   protected async removePart(index: number): Promise<void> {
     const part = this.draft().parts[index];
     const hasContent =
       part &&
+      !part.linkedRecipeId &&
       (part.title.trim() ||
         part.ingredients.some((line) => line.name.trim()) ||
         part.steps.some((step) => step.description.trim()));

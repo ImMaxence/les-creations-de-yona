@@ -16,7 +16,7 @@ class TrashedImageTest {
 	void readsBackWhatTheTrashKeeps() {
 		TrashedImage image = new TrashedImage(UUID.randomUUID(), ImageKind.GALLERY, "gallery/abc/",
 				Instant.parse("2026-10-01T10:00:00Z"));
-		TrashedImage.Links links = new TrashedImage.Links(List.of(1L, 2L), List.of(), List.of(3L), true, List.of(4L));
+		TrashedImage.Links links = new TrashedImage.Links(List.of(1L, 2L), List.of(), List.of(3L), true, List.of(4L), List.of(5L), List.of(6L));
 
 		assertThat(json.readValue(json.writeValueAsString(image), TrashedImage.class)).isEqualTo(image);
 		assertThat(json.readValue(json.writeValueAsString(links), TrashedImage.Links.class)).isEqualTo(links);
@@ -29,6 +29,8 @@ class TrashedImageTest {
 
 		assertThat(links.recipeIds()).containsExactly(1L);
 		assertThat(links.menuIds()).isEmpty();
+		assertThat(links.capEntryIds()).isEmpty();
+		assertThat(links.observationIds()).isEmpty();
 	}
 
 }

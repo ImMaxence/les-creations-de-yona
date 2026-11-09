@@ -79,6 +79,13 @@
   }
 }
 
+// "≈ 8 œufs": how many to buy
+.ingredient__equivalent {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
 .ingredient__note {
   display: block;
   font-size: var(--text-sm);

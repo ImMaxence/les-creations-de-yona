@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.cap.CapService;
 import fr.lescreationsdeyona.category.CategoryService;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
@@ -43,7 +44,7 @@ class TrashServiceTest {
 
 	private final TrashService service = new TrashService(trashRepository, trashBin, recipeService,
 			mock(CategoryService.class), menuService, imageService, tagService, mock(IngredientService.class),
-			mock(GlossaryService.class), mock(AuditLog.class));
+			mock(GlossaryService.class), mock(AuditLog.class), mock(CapService.class));
 
 	private static TrashItem item(long id, TrashKind kind) {
 		TrashItem item = new TrashItem();

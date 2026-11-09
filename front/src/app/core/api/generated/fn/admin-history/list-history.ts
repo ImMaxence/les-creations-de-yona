@@ -10,7 +10,7 @@ import { RequestBuilder } from '../../request-builder';
 import { PageResponseAuditEventResponse } from '../../models/page-response-audit-event-response';
 
 export interface ListHistory$Params {
-  kind?: 'RECIPE' | 'CATEGORY' | 'TAG' | 'MENU' | 'INGREDIENT' | 'GLOSSARY_TERM' | 'IMAGE' | 'TRASH' | 'APPEARANCE' | 'SITE_CONTENT' | 'SOCIAL_LINKS' | 'BACKUP' | 'GOOGLE_DRIVE' | 'FEEDBACK';
+  kind?: 'RECIPE' | 'CATEGORY' | 'TAG' | 'MENU' | 'INGREDIENT' | 'GLOSSARY_TERM' | 'IMAGE' | 'TRASH' | 'APPEARANCE' | 'SITE_CONTENT' | 'SOCIAL_LINKS' | 'BACKUP' | 'GOOGLE_DRIVE' | 'FEEDBACK' | 'CAP_ENTRY' | 'OBSERVATION' | 'SHOP_SETTINGS' | 'SHOP_PRODUCT' | 'SHOP_ORDER' | 'ACCOUNT_ENTRY';
 
 /**
  * Zero-based page index (0..N)

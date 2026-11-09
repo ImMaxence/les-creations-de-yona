@@ -151,6 +151,9 @@
                   } @else {
                     Utilisé dans aucune recette
                   }
+                  @if (pieceLabel(ingredient); as label) {
+                    <span class="badge">{{ label }}</span>
+                  }
                 </span>
               </span>
               <div class="admin-row__actions">
@@ -162,6 +165,9 @@
                   [disabled]="shelving()"
                   (valueChange)="setAisle([ingredient.id], $event)"
                 />
+                <button type="button" class="icon-button" [attr.aria-label]="'Équivalent en pièces de ' + ingredient.name" (click)="startPiece(ingredient)">
+                  <svg yonaIcon="calculator" [size]="18"></svg>
+                </button>
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + ingredient.name" (click)="startRename(ingredient)">
                   <svg yonaIcon="pencil" [size]="18"></svg>
                 </button>
@@ -169,6 +175,32 @@
                   <svg yonaIcon="trash" [size]="18"></svg>
                 </button>
               </div>
+            }
+            @if (pieceId() === ingredient.id) {
+              <form class="piece" (submit)="$event.preventDefault(); savePiece(ingredient)">
+                <p class="field__hint">Pour afficher « 400 g (≈ 8 œufs) » : le poids d'une pièce, et son nom</p>
+                <div class="piece__fields">
+                  <label class="field">
+                    <span class="field__label">Poids d'une pièce (g)</span>
+                    <input class="input" type="number" inputmode="decimal" min="0.01" step="0.01" [value]="pieceGrams()" (input)="pieceGrams.set($any($event.target).value)" />
+                  </label>
+                  <label class="field">
+                    <span class="field__label">Singulier</span>
+                    <input class="input" maxlength="50" placeholder="œuf" [value]="pieceSingular()" (input)="pieceSingular.set($any($event.target).value)" />
+                  </label>
+                  <label class="field">
+                    <span class="field__label">Pluriel</span>
+                    <input class="input" maxlength="50" placeholder="œufs" [value]="piecePlural()" (input)="piecePlural.set($any($event.target).value)" />
+                  </label>
+                </div>
+                <div class="admin-toolbar">
+                  <button yonaButton type="submit" [disabled]="savingPiece()"><svg yonaIcon="save"></svg>Enregistrer</button>
+                  @if (ingredient.piece) {
+                    <button yonaButton variant="ghost" type="button" [disabled]="savingPiece()" (click)="removePiece(ingredient)">Retirer l'équivalent</button>
+                  }
+                  <button yonaButton variant="ghost" type="button" (click)="pieceId.set(null)">Annuler</button>
+                </div>
+              </form>
             }
           </li>
         }

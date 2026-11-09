@@ -24,7 +24,8 @@ public record RestoreStatus(String id, State state,
 
 	/** Recipes, categories… of a database, by count. */
 	public record Counts(long recipes, long categories, long tags, long ingredients, long images, long socialLinks,
-			long appearancePresets, long glossaryTerms, long menus) {
+			long appearancePresets, long glossaryTerms, long menus, long capEntries, long observations, long shopProducts,
+			long accountEntries, long shopOrders) {
 	}
 
 	/**
@@ -49,7 +50,8 @@ public record RestoreStatus(String id, State state,
 			long tags, List<String> tagNames, long ingredients, long images, long socialLinks,
 			List<String> socialPlatforms, long appearancePresets, List<String> appearancePresetNames,
 			long glossaryTerms, List<String> glossaryTermNames, long menus, List<String> menuTitles,
-			boolean siteContent, boolean siteTheme) {
+			boolean siteContent, boolean siteTheme, long capEntries, long observations, long shopProducts, long accountEntries,
+			long shopOrders) {
 	}
 
 	/**

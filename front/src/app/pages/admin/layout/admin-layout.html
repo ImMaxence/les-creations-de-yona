@@ -16,27 +16,52 @@
   </header>
 
   <nav class="admin__nav" aria-label="Sections du back-office">
-    <a routerLink="statistiques" routerLinkActive="is-active"><svg yonaIcon="chart-column" [size]="18"></svg>Statistiques</a>
-    <a routerLink="recettes" routerLinkActive="is-active"><svg yonaIcon="book-open" [size]="18"></svg>Recettes</a>
-    <a routerLink="categories" routerLinkActive="is-active"><svg yonaIcon="tags" [size]="18"></svg>Catégories</a>
-    <a routerLink="tags" routerLinkActive="is-active"><svg yonaIcon="tag" [size]="18"></svg>Tags</a>
-    <a routerLink="menus" routerLinkActive="is-active"><svg yonaIcon="list" [size]="18"></svg>Menus</a>
-    <a routerLink="glossaire" routerLinkActive="is-active"><svg yonaIcon="book-a" [size]="18"></svg>Glossaire</a>
-    <a routerLink="ingredients" routerLinkActive="is-active"><svg yonaIcon="carrot" [size]="18"></svg>Ingrédients</a>
-    <a routerLink="reseaux-sociaux" routerLinkActive="is-active"><svg yonaIcon="share-2" [size]="18"></svg>Réseaux sociaux</a>
-    <a routerLink="galerie" routerLinkActive="is-active"><svg yonaIcon="images" [size]="18"></svg>Galerie</a>
-    <a routerLink="apparence" routerLinkActive="is-active"><svg yonaIcon="palette" [size]="18"></svg>Apparence</a>
-    <a routerLink="preferences" routerLinkActive="is-active"><svg yonaIcon="sliders-horizontal" [size]="18"></svg>Préférences</a>
-    <a routerLink="sauvegarde" routerLinkActive="is-active"><svg yonaIcon="database-backup" [size]="18"></svg>Sauvegarde</a>
-    <a routerLink="corbeille" routerLinkActive="is-active"><svg yonaIcon="trash" [size]="18"></svg>Corbeille</a>
-    <a routerLink="retours" routerLinkActive="is-active">
-      <svg yonaIcon="message-square" [size]="18"></svg>Retours
-      @if (unreadFeedback.count(); as count) {
-        <span class="nav-count" [attr.aria-label]="count + ' non lu' + (count > 1 ? 's' : '')">{{ count }}</span>
-      }
-    </a>
-    <a routerLink="historique" routerLinkActive="is-active"><svg yonaIcon="history" [size]="18"></svg>Historique</a>
-    <a routerLink="nouveautes" routerLinkActive="is-active"><svg yonaIcon="sparkles" [size]="18"></svg>Nouveautés</a>
+    <div class="admin__group">
+      <p class="admin__group-title">Blog</p>
+      <div class="admin__links">
+        <a routerLink="recettes" routerLinkActive="is-active"><svg yonaIcon="book-open" [size]="18"></svg>Recettes</a>
+        <a routerLink="categories" routerLinkActive="is-active"><svg yonaIcon="tags" [size]="18"></svg>Catégories</a>
+        <a routerLink="tags" routerLinkActive="is-active"><svg yonaIcon="tag" [size]="18"></svg>Tags</a>
+        <a routerLink="menus" routerLinkActive="is-active"><svg yonaIcon="list" [size]="18"></svg>Menus</a>
+        <a routerLink="ingredients" routerLinkActive="is-active"><svg yonaIcon="carrot" [size]="18"></svg>Ingrédients</a>
+        <a routerLink="glossaire" routerLinkActive="is-active"><svg yonaIcon="book-a" [size]="18"></svg>Glossaire</a>
+        <a routerLink="mon-cap" routerLinkActive="is-active"><svg yonaIcon="graduation-cap" [size]="18"></svg>Mon CAP</a>
+        <a routerLink="observations" routerLinkActive="is-active"><svg yonaIcon="notebook-pen" [size]="18"></svg>Observations</a>
+      </div>
+    </div>
+    <div class="admin__group">
+      <p class="admin__group-title">Boutique</p>
+      <div class="admin__links">
+        <a routerLink="boutique/commandes" routerLinkActive="is-active">
+          <svg yonaIcon="package" [size]="18"></svg>Commandes
+          @if (newOrders.count(); as count) {
+            <span class="nav-count" [attr.aria-label]="count + ' nouvelle' + (count > 1 ? 's' : '')">{{ count }}</span>
+          }
+        </a>
+        <a routerLink="boutique/produits" routerLinkActive="is-active"><svg yonaIcon="store" [size]="18"></svg>Produits</a>
+        <a routerLink="boutique/comptabilite" routerLinkActive="is-active"><svg yonaIcon="receipt" [size]="18"></svg>Comptabilité</a>
+      </div>
+    </div>
+    <div class="admin__group">
+      <p class="admin__group-title">Site</p>
+      <div class="admin__links">
+        <a routerLink="statistiques" routerLinkActive="is-active"><svg yonaIcon="chart-column" [size]="18"></svg>Statistiques</a>
+        <a routerLink="galerie" routerLinkActive="is-active"><svg yonaIcon="images" [size]="18"></svg>Galerie</a>
+        <a routerLink="retours" routerLinkActive="is-active">
+          <svg yonaIcon="message-square" [size]="18"></svg>Retours
+          @if (unreadFeedback.count(); as count) {
+            <span class="nav-count" [attr.aria-label]="count + ' non lu' + (count > 1 ? 's' : '')">{{ count }}</span>
+          }
+        </a>
+        <a routerLink="reseaux-sociaux" routerLinkActive="is-active"><svg yonaIcon="share-2" [size]="18"></svg>Réseaux sociaux</a>
+        <a routerLink="apparence" routerLinkActive="is-active"><svg yonaIcon="palette" [size]="18"></svg>Apparence</a>
+        <a routerLink="preferences" routerLinkActive="is-active"><svg yonaIcon="sliders-horizontal" [size]="18"></svg>Préférences</a>
+        <a routerLink="sauvegarde" routerLinkActive="is-active"><svg yonaIcon="database-backup" [size]="18"></svg>Sauvegarde</a>
+        <a routerLink="corbeille" routerLinkActive="is-active"><svg yonaIcon="trash" [size]="18"></svg>Corbeille</a>
+        <a routerLink="historique" routerLinkActive="is-active"><svg yonaIcon="history" [size]="18"></svg>Historique</a>
+        <a routerLink="nouveautes" routerLinkActive="is-active"><svg yonaIcon="sparkles" [size]="18"></svg>Nouveautés</a>
+      </div>
+    </div>
   </nav>
 
   <router-outlet />

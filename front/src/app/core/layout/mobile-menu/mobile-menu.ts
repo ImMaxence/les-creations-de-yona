@@ -30,7 +30,9 @@ import {
   GLOSSARY_PATH,
   INSTALL_PATH,
   MENUS_PATH,
+  CAP_PATH,
   RECIPES_PATH,
+  SHOP_PATH,
   SHOPPING_LIST_PATH,
 } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
@@ -69,6 +71,8 @@ export class MobileMenu {
   protected readonly shoppingList = inject(ShoppingList);
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly menusPath = MENUS_PATH;
+  protected readonly capPath = CAP_PATH;
+  protected readonly shopPath = SHOP_PATH;
   protected readonly installPath = INSTALL_PATH;
   protected readonly glossaryPath = GLOSSARY_PATH;
   protected readonly feedbackPath = FEEDBACK_PATH;

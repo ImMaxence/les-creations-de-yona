@@ -47,7 +47,8 @@ final class RecipeChanges {
 			if (partCount > 1) {
 				changes.add("Partie " + (index + 1), partBefore.title(), partAfter.title());
 			}
-			changes.addLines("Ingrédients" + of, ingredients(partBefore), ingredients(partAfter))
+			changes.add("Recette liée" + of, linked(partBefore), linked(partAfter))
+				.addLines("Ingrédients" + of, ingredients(partBefore), ingredients(partAfter))
 				.addLines("Étapes" + of, steps(partBefore), steps(partAfter));
 		}
 		return changes;
@@ -94,6 +95,11 @@ final class RecipeChanges {
 
 	private static @Nullable String video(@Nullable String youtubeVideoId) {
 		return youtubeVideoId == null ? null : "https://www.youtube.com/watch?v=" + youtubeVideoId;
+	}
+
+	/** "Pâte sablée × 0,5". */
+	private static @Nullable String linked(RecipeDetail.Part part) {
+		return part.linkedRecipe() == null ? null : part.linkedRecipe().title() + " × " + number(part.linkedRecipe().ratio());
 	}
 
 	/** "200 g Farine (tamisée)". */

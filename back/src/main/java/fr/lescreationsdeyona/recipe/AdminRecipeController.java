@@ -67,6 +67,12 @@ class AdminRecipeController {
 				pageable));
 	}
 
+	@Operation(summary = "A recipe as visitors would read it, the recipes it uses unfolded, for \"Aperçu\"; drafts too")
+	@GetMapping("/{id}/unfolded")
+	RecipeDetail getUnfoldedRecipe(@PathVariable long id) {
+		return recipeService.getUnfolded(id);
+	}
+
 	@Operation(summary = "\"Publier maintenant\": a draft or a failed recipe published at once, its schedule dropped",
 			description = "Featured ahead, it becomes the featured recipe. Subscribers are notified of a first "
 					+ "publication. Nothing changes for a recipe already published.")

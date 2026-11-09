@@ -170,6 +170,17 @@
               <header class="part__head" yonaReveal>
                 <p class="eyebrow">Partie {{ i + 1 }} sur {{ parts().length }}</p>
                 <h3 class="part__title" [id]="part.anchor + '-title'">{{ part.title }}</h3>
+                @if (part.linked; as linked) {
+                  <p class="part__linked">
+                    <svg yonaIcon="book-open" [size]="16" aria-hidden="true"></svg>
+                    <span>
+                      La recette <a [routerLink]="recipeLinkOf(linked)">{{ linked.title }}</a>
+                      @if (linked.ratio !== 1) {
+                        × {{ formatQuantity(linked.ratio) }}
+                      }
+                    </span>
+                  </p>
+                }
               </header>
               @if (part.ingredients.length) {
                 <div class="part__ingredients" yonaReveal>
@@ -208,6 +219,22 @@
             </div>
           }
         </dl>
+      </section>
+    }
+
+    @if (observations().length) {
+      <section class="questions" yonaReveal aria-labelledby="observations-title">
+        <h2 id="observations-title">Mes observations</h2>
+        <ul role="list" class="questions__list">
+          @for (observation of observations(); track observation.id) {
+            <li class="questions__item">
+              <time class="questions__date" [attr.datetime]="observation.observedOn">{{ observation.observedOn | parisDate }}</time>
+              <h3>{{ observation.title }}</h3>
+              <div class="prose" [innerHTML]="observation.body | markdown"></div>
+            </li>
+          }
+        </ul>
+        <a class="questions__more" [routerLink]="observationsPath">Toutes mes observations</a>
       </section>
     }
 

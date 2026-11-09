@@ -9,6 +9,9 @@ import { deleteIngredients } from '../../../core/api/generated/fn/admin-ingredie
 import { findSimilarIngredients } from '../../../core/api/generated/fn/admin-ingredients/find-similar-ingredients';
 import { mergeIngredients } from '../../../core/api/generated/fn/admin-ingredients/merge-ingredients';
 import { renameIngredient } from '../../../core/api/generated/fn/admin-ingredients/rename-ingredient';
+import { setIngredientPiece } from '../../../core/api/generated/fn/admin-ingredients/set-ingredient-piece';
+import { IngredientPieceForm } from '../../../core/api/generated/models/ingredient-piece-form';
+import { formatQuantity } from '../../../shared/format/units';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
 import { setIngredientAisle } from '../../../core/api/generated/fn/admin-ingredients/set-ingredient-aisle';
 import { IngredientResponse } from '../../../core/api/generated/models/ingredient-response';
@@ -143,6 +146,54 @@ export default class AdminIngredients {
     if ((await attempt(this.api.invoke(renameIngredient, { id: ingredient.id, body: { name } }))).ok) {
       this.editingId.set(null);
       this.toaster.success('Ingrédient renommé dans toutes les recettes');
+      this.ingredients.reload();
+    }
+  }
+
+  /** The ingredient whose weight of one piece is being typed. */
+  protected readonly pieceId = signal<number | null>(null);
+  protected readonly pieceGrams = signal('');
+  protected readonly pieceSingular = signal('');
+  protected readonly piecePlural = signal('');
+  protected readonly savingPiece = signal(false);
+
+  /** "1 œuf = 50 g". */
+  protected pieceLabel(ingredient: IngredientResponse): string | null {
+    const piece = ingredient.piece;
+    return piece ? `1 ${piece.singular} = ${formatQuantity(piece.grams)} g` : null;
+  }
+
+  protected startPiece(ingredient: IngredientResponse): void {
+    this.pieceId.set(ingredient.id);
+    this.pieceGrams.set(ingredient.piece ? String(ingredient.piece.grams) : '');
+    // The name as a first idea: "Œuf" is close to "œuf"
+    const name = ingredient.name.toLocaleLowerCase('fr');
+    this.pieceSingular.set(ingredient.piece?.singular ?? name);
+    this.piecePlural.set(ingredient.piece?.plural ?? `${name}s`);
+  }
+
+  protected async savePiece(ingredient: IngredientResponse): Promise<void> {
+    const grams = Number(this.pieceGrams());
+    const singular = this.pieceSingular().trim();
+    const plural = this.piecePlural().trim();
+    if (!Number.isFinite(grams) || grams <= 0 || !singular || !plural) {
+      this.toaster.error('Indiquez le poids en grammes, et le nom au singulier et au pluriel');
+      return;
+    }
+    await this.storePiece(ingredient, { piece: { grams, singular, plural } }, 'Équivalent enregistré');
+  }
+
+  protected removePiece(ingredient: IngredientResponse): Promise<void> {
+    return this.storePiece(ingredient, {}, 'Équivalent retiré');
+  }
+
+  private async storePiece(ingredient: IngredientResponse, body: IngredientPieceForm, message: string): Promise<void> {
+    this.savingPiece.set(true);
+    const saved = await attempt(this.api.invoke(setIngredientPiece, { id: ingredient.id, body }));
+    this.savingPiece.set(false);
+    if (saved.ok) {
+      this.pieceId.set(null);
+      this.toaster.success(message);
       this.ingredients.reload();
     }
   }

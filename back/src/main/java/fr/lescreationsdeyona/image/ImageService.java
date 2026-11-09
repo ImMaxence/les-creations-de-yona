@@ -87,10 +87,15 @@ public class ImageService {
 					.stream()
 					.collect(Collectors.groupingBy(GalleryImage.MenuUsage::imageId, Collectors.mapping(
 							usage -> new GalleryImage.UsingMenu(usage.id(), usage.title()), Collectors.toList())));
+		Map<UUID, List<String>> capItems = ids.isEmpty() ? Map.of()
+				: Stream.concat(imageRepository.findCapEntryUsages(ids).stream(), imageRepository.findObservationUsages(ids).stream())
+					.collect(Collectors.groupingBy(GalleryImage.CapUsage::imageId,
+							Collectors.mapping(GalleryImage.CapUsage::title, Collectors.toList())));
 		UUID aboutImageId = siteContentRepository.findAboutImageId().orElse(null);
 		return images.map(image -> new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(),
 				recipes.getOrDefault(image.getId(), List.of()), categories.getOrDefault(image.getId(), List.of()),
-				menus.getOrDefault(image.getId(), List.of()), image.getId().equals(aboutImageId)));
+				menus.getOrDefault(image.getId(), List.of()), image.getId().equals(aboutImageId),
+				capItems.getOrDefault(image.getId(), List.of())));
 	}
 
 	/** Opens a variant for the public site. Ids are random UUIDs, so they cannot be guessed. */
@@ -143,7 +148,7 @@ public class ImageService {
 		Image image = create(ImageKind.GALLERY, processed);
 		auditLog.record(AuditAction.CREATED, AuditKind.IMAGE, "Photo ajoutée à la galerie", null);
 		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of(), List.of(),
-				false);
+				false, List.of());
 	}
 
 	/**
@@ -158,6 +163,8 @@ public class ImageService {
 		imageRepository.replaceOnRecipes(id, replacement.getId());
 		imageRepository.replaceOnCategories(id, replacement.getId());
 		imageRepository.replaceOnMenus(id, replacement.getId());
+		imageRepository.replaceOnCapEntries(id, replacement.getId());
+		imageRepository.replaceOnObservations(id, replacement.getId());
 		imageRepository.replaceOnAboutPage(id, replacement.getId());
 		trash(id, title);
 		GalleryImage replaced = galleryImage(replacement);
@@ -182,7 +189,10 @@ public class ImageService {
 					.map(usage -> new GalleryImage.UsingCategory(usage.id(), usage.name(), usage.slug()))
 					.toList(),
 				imageRepository.findMenuUsages(ids).stream().map(usage -> new GalleryImage.UsingMenu(usage.id(), usage.title())).toList(),
-				image.getId().equals(siteContentRepository.findAboutImageId().orElse(null)));
+				image.getId().equals(siteContentRepository.findAboutImageId().orElse(null)),
+				Stream.concat(imageRepository.findCapEntryUsages(ids).stream(), imageRepository.findObservationUsages(ids).stream())
+					.map(GalleryImage.CapUsage::title)
+					.toList());
 	}
 
 	private static List<String> shownOn(GalleryImage image) {
@@ -190,6 +200,7 @@ public class ImageService {
 		image.recipes().forEach(recipe -> names.add(recipe.title()));
 		image.categories().forEach(category -> names.add(category.name()));
 		image.menus().forEach(menu -> names.add(menu.title()));
+		names.addAll(image.capItems());
 		if (image.aboutPage()) {
 			names.add("À propos");
 		}
@@ -212,18 +223,23 @@ public class ImageService {
 		List<GalleryImage.RecipeUsage> pinterest = imageRepository.findPinterestUsages(List.of(id));
 		List<GalleryImage.CategoryUsage> categories = imageRepository.findCategoryUsages(List.of(id));
 		List<GalleryImage.MenuUsage> menus = imageRepository.findMenuUsages(List.of(id));
+		List<GalleryImage.CapUsage> capEntries = imageRepository.findCapEntryUsages(List.of(id));
+		List<GalleryImage.CapUsage> observations = imageRepository.findObservationUsages(List.of(id));
 		boolean aboutPage = id.equals(siteContentRepository.findAboutImageId().orElse(null));
 		List<String> shownOn = new ArrayList<>();
 		Stream.concat(recipes.stream(), pinterest.stream()).map(GalleryImage.RecipeUsage::title).distinct().forEach(shownOn::add);
 		categories.forEach(category -> shownOn.add(category.name()));
 		menus.forEach(menu -> shownOn.add(menu.title()));
+		Stream.concat(capEntries.stream(), observations.stream()).map(GalleryImage.CapUsage::title).forEach(shownOn::add);
 		if (aboutPage) {
 			shownOn.add("À propos");
 		}
 		TrashedImage.Links links = new TrashedImage.Links(recipes.stream().map(GalleryImage.RecipeUsage::id).toList(),
 				pinterest.stream().map(GalleryImage.RecipeUsage::id).toList(),
 				categories.stream().map(GalleryImage.CategoryUsage::id).toList(), aboutPage,
-				menus.stream().map(GalleryImage.MenuUsage::id).toList());
+				menus.stream().map(GalleryImage.MenuUsage::id).toList(),
+				capEntries.stream().map(GalleryImage.CapUsage::id).toList(),
+				observations.stream().map(GalleryImage.CapUsage::id).toList());
 		trashBin.put(new TrashBin.Entry(TrashKind.IMAGE, title != null ? title : trashedTitle(shownOn), null, null, null, null,
 				new TrashedImage(image.getId(), image.getKind(), image.getS3Prefix(), image.getCreatedAt()), links, null));
 		imageRepository.delete(image);
@@ -260,6 +276,12 @@ public class ImageService {
 		}
 		if (!links.menuIds().isEmpty()) {
 			shown += imageRepository.showOnMenus(kept.id(), links.menuIds());
+		}
+		if (!links.capEntryIds().isEmpty()) {
+			shown += imageRepository.showOnCapEntries(kept.id(), links.capEntryIds());
+		}
+		if (!links.observationIds().isEmpty()) {
+			shown += imageRepository.showOnObservations(kept.id(), links.observationIds());
 		}
 		if (links.aboutPage()) {
 			shown += imageRepository.showOnAboutPage(kept.id());

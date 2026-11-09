@@ -3,7 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminSession } from '../../auth/admin-session';
 import { SiteData } from '../../site/site-data';
 import { THEMES } from '../../../shared/format/themes';
-import { MENUS_PATH, RECIPES_PATH } from '../../../shared/routing/links';
+import { CAP_PATH, MENUS_PATH, RECIPES_PATH, SHOP_PATH } from '../../../shared/routing/links';
 import { BrandLogo } from '../../../shared/ui/brand-logo/brand-logo';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -37,6 +37,8 @@ export class Header {
   protected readonly adminSession = inject(AdminSession);
   protected readonly recipesPath = RECIPES_PATH;
   protected readonly menusPath = MENUS_PATH;
+  protected readonly capPath = CAP_PATH;
+  protected readonly shopPath = SHOP_PATH;
   protected readonly themes = THEMES.map(({ value }) => value);
 
   protected readonly searchOpen = signal(false);

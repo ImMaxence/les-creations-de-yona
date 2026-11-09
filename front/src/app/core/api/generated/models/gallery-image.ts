@@ -12,6 +12,11 @@ export interface GalleryImage {
   aboutPage: boolean;
 
   /**
+   * Steps of "Mon CAP" and observations showing it, by title
+   */
+  capItems: Array<string>;
+
+  /**
    * Categories showing it, by name
    */
   categories: Array<UsingCategory>;

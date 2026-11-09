@@ -150,3 +150,16 @@
   min-width: 11rem;
   font-size: var(--text-sm);
 }
+
+// The weight of one piece of an ingredient, under its row
+.piece {
+  display: grid;
+  flex: 1 1 100%;
+  gap: var(--space-3);
+}
+
+.piece__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-3);
+}

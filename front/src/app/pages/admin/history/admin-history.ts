@@ -29,6 +29,12 @@ const KINDS: Record<Kind, { label: string; link?: string }> = {
   BACKUP: { label: 'Sauvegarde', link: '/admin/sauvegarde' },
   GOOGLE_DRIVE: { label: 'Google Drive', link: '/admin/sauvegarde' },
   FEEDBACK: { label: 'Retours', link: '/admin/retours' },
+  CAP_ENTRY: { label: 'Mon CAP', link: '/admin/mon-cap' },
+  OBSERVATION: { label: 'Observation', link: '/admin/observations' },
+  SHOP_SETTINGS: { label: 'Réglages de la boutique', link: '/admin/boutique/produits' },
+  SHOP_PRODUCT: { label: 'Produit', link: '/admin/boutique/produits' },
+  SHOP_ORDER: { label: 'Commande', link: '/admin/boutique/commandes' },
+  ACCOUNT_ENTRY: { label: 'Comptabilité', link: '/admin/boutique/comptabilite' },
 };
 
 const ACTIONS: Record<Action, string> = {

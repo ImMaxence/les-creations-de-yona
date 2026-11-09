@@ -11,7 +11,7 @@ const NETWORK_TIMEOUT_MS = 3000;
 
 /** The public data, read again offline (the back-office and the writes are never kept). */
 const PUBLIC_API =
-  /^\/api\/(recipes|featured-recipe|glossary|categories|ingredients|menus|site-content|social-links|tags|theme)(\/|\?|$)/;
+  /^\/api\/(recipes|featured-recipe|glossary|categories|ingredients|menus|site-content|site-sections|social-links|tags|theme|cap)(\/|\?|$)/;
 
 /**
  * Offline reading of the public data, without the service worker in the way (1.14.1): busy

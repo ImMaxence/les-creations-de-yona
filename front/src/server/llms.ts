@@ -10,6 +10,7 @@ import { SITE_NAME, absoluteUrl, excerpt } from '../app/core/seo/page-seo';
 import { THEMES } from '../app/shared/format/themes';
 import {
   ABOUT_PATH,
+  CAP_PATH,
   GLOSSARY_PATH,
   INSTALL_PATH,
   MENUS_PATH,
@@ -19,6 +20,7 @@ import {
 } from '../app/shared/routing/links';
 import {
   apiOrigin,
+  fetchCapEntries,
   fetchGlossary,
   fetchMenu,
   fetchMenus,
@@ -42,13 +44,15 @@ export interface LlmsContent {
   recipes: RecipeCard[];
   menus: MenuSummary[];
   glossary: GlossaryTermResponse[];
+  /** Published steps of "Mon CAP". */
+  capSteps?: number;
 }
 
 /**
  * The site described for AI assistants (https://llmstxt.org): what it is, who writes it, and every
  * published recipe, menu and page worth reading, in Markdown.
  */
-export function llmsTxt({ content, recipes, menus, glossary }: LlmsContent): string {
+export function llmsTxt({ content, recipes, menus, glossary, capSteps }: LlmsContent): string {
   const lines = [
     `# ${SITE_NAME}`,
     '',
@@ -82,6 +86,9 @@ export function llmsTxt({ content, recipes, menus, glossary }: LlmsContent): str
     ...(menus.length ? [link('Menus', MENUS_PATH, 'des menus composés par Yona pour chaque occasion')] : []),
     ...(glossary.length
       ? [link('Glossaire de pâtisserie', GLOSSARY_PATH, `${glossary.length} mots de la pâtisserie expliqués simplement`)]
+      : []),
+    ...(capSteps
+      ? [link('Mon CAP', CAP_PATH, 'le carnet de route de Yona vers son CAP Pâtisserie, date par date')]
       : []),
     link('À propos de Yona', ABOUT_PATH, "l'autrice des recettes"),
     '',
@@ -141,13 +148,14 @@ export function llmsFullTxt({ content, socialLinks, recipes, menus, glossary }: 
 export const llms: RequestHandler = async (req, res) => {
   const origin = apiOrigin(req);
   try {
-    const [content, recipes, menus, glossary] = await Promise.all([
+    const [content, recipes, menus, glossary, capEntries] = await Promise.all([
       fetchSiteContent(origin),
       fetchPublishedRecipes(origin),
       fetchMenus(origin),
       fetchGlossary(origin),
+      fetchCapEntries(origin),
     ]);
-    sendText(res, llmsTxt({ content, recipes, menus, glossary }));
+    sendText(res, llmsTxt({ content, recipes, menus, glossary, capSteps: capEntries.length }));
   } catch (error) {
     console.error('llms.txt unavailable', error);
     sendUnavailable(res);

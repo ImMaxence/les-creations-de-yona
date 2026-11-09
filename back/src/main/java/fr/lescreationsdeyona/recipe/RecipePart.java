@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -39,6 +40,13 @@ public class RecipePart {
 
 	/** Null for the single part of a recipe without parts. */
 	private String title;
+
+	/** Another recipe taken as this part ("Pâte sablée" in a tart): then no ingredient nor step of its own. */
+	@ManyToOne(fetch = FetchType.LAZY)
+	private Recipe linkedRecipe;
+
+	/** How many times the linked recipe: 1, or 0.5 for half of it. Null without a linked recipe. */
+	private BigDecimal linkedRatio;
 
 	@Setter(AccessLevel.NONE)
 	@OneToMany(mappedBy = "part", cascade = CascadeType.ALL, orphanRemoval = true)

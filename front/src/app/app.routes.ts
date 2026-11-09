@@ -3,8 +3,16 @@ import { RouteSeo, SEO_DATA_KEY, markdownPathOf } from './core/seo/page-seo';
 import { aboutSeo } from './pages/about/about.seo';
 import { homeResolver } from './pages/home/home.resolver';
 import { homeSeo } from './pages/home/home.seo';
-import { glossaryResolver, recipeResolver, recipeSeo, relatedRecipesResolver } from './pages/recipe/recipe.resolver';
+import { capEntriesResolver, capSeo, observationsResolver, observationsSeo } from './pages/cap/cap.resolver';
+import {
+  glossaryResolver,
+  recipeObservationsResolver,
+  recipeResolver,
+  recipeSeo,
+  relatedRecipesResolver,
+} from './pages/recipe/recipe.resolver';
 import { recipesResolver, recipesSeo } from './pages/recipes/recipes.resolver';
+import { orderTrackingResolver, shopResolver } from './pages/shop/shop.resolver';
 import { glossarySeo } from './pages/glossary/glossary.seo';
 import { menuResolver, menuSeo, menusSeo } from './pages/menus/menus.resolver';
 import { INSTALL_PATH, LEGAL_NOTICE_PATH, PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from './shared/routing/links';
@@ -29,8 +37,42 @@ export const routes: Routes = [
   {
     path: 'recettes/:categorySlug/:recipeSlug',
     loadComponent: () => import('./pages/recipe/recipe'),
-    resolve: { recipe: recipeResolver, related: relatedRecipesResolver, glossary: glossaryResolver },
+    resolve: {
+      recipe: recipeResolver,
+      related: relatedRecipesResolver,
+      glossary: glossaryResolver,
+      observations: recipeObservationsResolver,
+    },
     data: { [SEO_DATA_KEY]: recipeSeo satisfies RouteSeo },
+  },
+  {
+    path: 'mon-cap',
+    pathMatch: 'full',
+    loadComponent: () => import('./pages/cap/cap'),
+    resolve: { entries: capEntriesResolver },
+    data: { [SEO_DATA_KEY]: capSeo satisfies RouteSeo },
+  },
+  {
+    path: 'mon-cap/observations',
+    loadComponent: () => import('./pages/cap/observations'),
+    resolve: { observations: observationsResolver },
+    data: { [SEO_DATA_KEY]: observationsSeo satisfies RouteSeo },
+    // The page lives in the query parameters
+    runGuardsAndResolvers: 'pathParamsOrQueryParamsChange',
+  },
+  // For the people close to Yona: nothing for search engines
+  {
+    path: 'boutique',
+    pathMatch: 'full',
+    loadComponent: () => import('./pages/shop/shop'),
+    resolve: { shop: shopResolver },
+    data: { [SEO_DATA_KEY]: { title: 'Boutique', noIndex: true } satisfies RouteSeo },
+  },
+  {
+    path: 'boutique/commande/:token',
+    loadComponent: () => import('./pages/shop/order-tracking'),
+    resolve: { order: orderTrackingResolver },
+    data: { [SEO_DATA_KEY]: { title: 'Suivi de commande', noIndex: true } satisfies RouteSeo },
   },
   {
     path: 'menus',

@@ -99,17 +99,6 @@ textarea.feedback__input {
   overflow: hidden;
 }
 
-.feedback__captcha {
-  display: grid;
-  gap: var(--space-2);
-  justify-items: start;
-}
-
-// The height of Google's widget: the page does not jump when it appears
-.feedback__captcha-box {
-  min-height: 78px;
-}
-
 .feedback__error {
   display: flex;
   align-items: center;

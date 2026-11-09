@@ -12,6 +12,19 @@ export const TERMS_OF_USE_PATH = '/conditions-d-utilisation';
 export const ADMIN_PATH = '/admin';
 export const FEEDBACK_PATH = '/donner-mon-avis';
 export const ABOUT_PATH = '/a-propos';
+export const CAP_PATH = '/mon-cap';
+export const OBSERVATIONS_PATH = '/mon-cap/observations';
+export const SHOP_PATH = '/boutique';
+
+/** The customer's page of an order, by its secret link: /boutique/commande/{token}. */
+export function orderTrackingLink(token: string): string[] {
+  return [SHOP_PATH, 'commande', token];
+}
+
+/** A recipe from its slug and main category, when the whole recipe is not at hand. */
+export function recipeLinkOf(recipe: { slug: string; categorySlug: string }): string[] {
+  return [RECIPES_PATH, recipe.categorySlug, recipe.slug];
+}
 
 /** The first category of a recipe: the one in its URL, and its "Retour" link. */
 export function mainCategory<T>(recipe: { categories: T[] }): T {

@@ -12,6 +12,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { TooltipLayer } from '../../../shared/ui/tooltip/tooltip-layer';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { UnreadFeedback } from '../feedback/unread-feedback';
+import { NewOrders } from '../shop/new-orders';
 
 /**
  * Frame of the back-office: greeting, sign-out and section tabs. Its stylesheet holds the
@@ -40,6 +41,7 @@ export default class AdminLayout {
   private readonly router = inject(Router);
   private readonly api = inject(Api);
   protected readonly unreadFeedback = inject(UnreadFeedback);
+  protected readonly newOrders = inject(NewOrders);
 
   protected readonly firstName = computed(() => this.session.admin()?.name.split(' ')[0] ?? '');
   protected readonly email = computed(() => this.session.admin()?.email ?? '');
@@ -48,14 +50,18 @@ export default class AdminLayout {
   protected readonly backVersion = resource({ loader: () => this.api.invoke(getVersion) });
 
   constructor() {
-    // The badge of "Retours": counted when the back-office opens, and again at each change of section
+    // The badges of "Retours" and "Commandes": counted when the back-office opens, and at each change of section
     void this.unreadFeedback.refresh();
+    void this.newOrders.refresh();
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => void this.unreadFeedback.refresh());
+      .subscribe(() => {
+        void this.unreadFeedback.refresh();
+        void this.newOrders.refresh();
+      });
   }
 
   protected async signOut(): Promise<void> {

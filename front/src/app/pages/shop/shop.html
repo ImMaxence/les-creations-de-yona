@@ -1,0 +1,120 @@
+<section class="container shop">
+  <header class="shop__head">
+    <p class="eyebrow enter">Pour les proches</p>
+    <h1 class="enter" style="--delay: 60ms">Boutique</h1>
+    <p class="shop__lead enter" style="--delay: 120ms">{{ shop().intro }}</p>
+    @if (shop().pickupInfo; as pickup) {
+      <p class="shop__pickup enter" style="--delay: 160ms"><svg yonaIcon="package" [size]="18"></svg>{{ pickup }}</p>
+    }
+  </header>
+
+  @if (!shop().open) {
+    <div class="shop__closed">
+      <p>La boutique est fermée pour le moment</p>
+      <a yonaButton variant="secondary" [routerLink]="recipesPath">Voir les recettes</a>
+    </div>
+  } @else if (!shop().products.length) {
+    <p class="shop__closed">Aucune recette n'est proposée pour le moment</p>
+  } @else {
+    <ul role="list" class="products">
+      @for (product of shop().products; track product.id) {
+        <li class="product" [class.is-chosen]="quantityOf(product) > 0">
+          <yona-cover-image class="product__image" [imageId]="product.imageId" [alt]="product.title" sizes="(min-width: 768px) 20rem, 100vw" />
+          <div class="product__text">
+            <h2 class="product__title"><a [routerLink]="recipeLinkOf(product)">{{ product.title }}</a></h2>
+            @if (product.portionLabel; as portions) {
+              <p class="product__portions">{{ portions }}</p>
+            }
+            @if (product.intro; as intro) {
+              <p class="product__intro">{{ intro }}</p>
+            }
+            <div class="product__buy">
+              <strong class="product__price">{{ formatEuros(product.price) }}</strong>
+              <div class="stepper" role="group" [attr.aria-label]="'Quantité de ' + product.title">
+                <button type="button" class="stepper__button" aria-label="Un de moins" [disabled]="quantityOf(product) === 0" (click)="change(product, -1)">
+                  <svg yonaIcon="minus" [size]="16"></svg>
+                </button>
+                <span class="stepper__count" aria-live="polite">{{ quantityOf(product) }}</span>
+                <button type="button" class="stepper__button" aria-label="Un de plus" [disabled]="quantityOf(product) === maxQuantity" (click)="change(product, 1)">
+                  <svg yonaIcon="plus" [size]="16"></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+
+    <form class="order" (submit)="send($event)">
+      <h2 class="order__title">Ma demande</h2>
+      @if (chosen().length) {
+        <ul role="list" class="order__lines">
+          @for (line of chosen(); track line.product.id) {
+            <li>
+              <span>{{ line.quantity }} × {{ line.product.title }}</span>
+              <span>{{ formatEuros(line.product.price * line.quantity) }}</span>
+            </li>
+          }
+          <li class="order__total">
+            <span>Estimation</span>
+            <span>{{ formatEuros(total()) }}</span>
+          </li>
+        </ul>
+      } @else {
+        <p class="order__hint">Choisissez au moins une recette ci-dessus</p>
+      }
+
+      <div class="order__field">
+        <label class="order__label" for="order-name">Votre nom</label>
+        <input id="order-name" class="order__input" autocomplete="name" required maxlength="100" [value]="name()" (input)="name.set($any($event.target).value)" />
+      </div>
+      <div class="order__row">
+        <div class="order__field">
+          <label class="order__label" for="order-email">E-mail</label>
+          <input id="order-email" class="order__input" type="email" autocomplete="email" maxlength="200" [value]="email()" (input)="email.set($any($event.target).value)" />
+        </div>
+        <div class="order__field">
+          <label class="order__label" for="order-phone">Téléphone</label>
+          <input id="order-phone" class="order__input" type="tel" autocomplete="tel" maxlength="30" [value]="phone()" (input)="phone.set($any($event.target).value)" />
+        </div>
+      </div>
+      <span class="order__hint">Un e-mail ou un téléphone suffit, pour que Yona puisse vous répondre</span>
+      <div class="order__field">
+        <label class="order__label" for="order-date">Pour quand ? (facultatif)</label>
+        <input id="order-date" class="order__input" type="date" [min]="today" [value]="wantedOn()" (input)="wantedOn.set($any($event.target).value)" />
+      </div>
+      <div class="order__field">
+        <label class="order__label" for="order-message">Votre message (facultatif)</label>
+        <textarea
+          id="order-message"
+          class="order__input"
+          rows="5"
+          placeholder="Une allergie, une précision, autre chose que ce qui est proposé…"
+          [maxLength]="maxMessageLength"
+          [value]="message()"
+          (input)="message.set($any($event.target).value)"
+        ></textarea>
+        <span class="order__hint">{{ message().length }} / {{ maxMessageLength }} caractères</span>
+      </div>
+
+      <!-- Hidden from people, filled by robots: their order is set aside -->
+      <div class="order__trap" aria-hidden="true">
+        <label for="order-website">Site web</label>
+        <input id="order-website" tabindex="-1" autocomplete="off" [value]="website()" (input)="website.set($any($event.target).value)" />
+      </div>
+
+      <yona-recaptcha-box [(token)]="captchaToken" />
+
+      @if (error(); as text) {
+        <p class="order__error" role="alert"><svg yonaIcon="circle-alert" [size]="18"></svg>{{ text }}</p>
+      }
+      <button yonaButton type="submit" [disabled]="!canSend()">
+        <svg yonaIcon="send"></svg>{{ sending() ? 'Envoi…' : 'Envoyer ma demande' }}
+      </button>
+      <p class="order__hint">
+        Rien n'est payé sur le site : Yona vous répond pour convenir du prix et du retrait. Vos coordonnées ne servent qu'à cela,
+        et sont effacées 12 mois après la commande. Voir la <a [routerLink]="privacyPolicyPath">politique de confidentialité</a>
+      </p>
+    </form>
+  }
+</section>

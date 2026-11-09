@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 1.22.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.0.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -53,14 +53,19 @@ Chaque modèle se télécharge une seule fois, directement depuis Hugging Face, 
 - Application installable d'un bouton (« Télécharger l'application » ; sur iPhone, les deux gestes expliqués), lisible hors connexion, notifications des nouvelles recettes.
 - Glossaire de pâtisserie, mots expliqués d'un appui dans les étapes.
 - « Donner mon avis » : un message à Yona, lu dans le back-office.
+- Mon CAP : le carnet de route de Yona vers son CAP Pâtisserie, date par date, et ses observations, liées ou non à une recette.
+- Recettes qui en utilisent d'autres (une pâte sablée écrite une fois, reprise dans chaque tarte) ; équivalents en pièces (« 400 g ≈ 8 œufs »).
+- Boutique pour les proches : choisir des recettes et envoyer une demande, avec un lien de suivi, sans compte ni paiement sur le site.
 
 **Pour Yona (back-office, connexion Google)**
 
 - Éditeur de recettes (parties, étapes minutées, matériel, conseil, thème, publication programmée avec statut « Échec » et « Publier maintenant » si elle n'a pas pu se faire, mise à la une d'avance, brouillon gardé), « Remplir avec l'IA » (Gemini lit un texte collé ou la photo d'une recette ; un modèle qui tourne dans le navigateur lit le texte collé), « Générer avec l'IA » (images dessinées dans le navigateur), aperçu, liste triable (modification, création, titre, vues).
-- Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients et mots du glossaire, qui reviennent à leur place une fois restaurés.
+- Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients, mots du glossaire, étapes de Mon CAP et observations, qui reviennent à leur place une fois restaurés.
 - Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur), retours des visiteurs, titres de l'accueil modifiables.
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
 - Apparence (thèmes, polices), statistiques (dont le nombre de vues, les recettes les plus vues, la mémoire et le processeur), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
+- Boutique : commandes et statuts, notification sur le téléphone à chaque nouvelle commande, produits et prix, comptabilité par admin (entrées, dépenses, totaux, export CSV).
+- Mon CAP et observations, rangés avec les recettes : le back-office est en trois groupes, Blog, Boutique et Site.
 
 Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).
 

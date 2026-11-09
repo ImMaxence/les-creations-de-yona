@@ -41,7 +41,7 @@
                     <span>
                       {{ item.name }}
                       @if (item.amount) {
-                        <span class="item__amount">({{ item.amount }})</span>
+                        <span class="item__amount">({{ item.amount }}{{ item.equivalent ? ' ' + item.equivalent : '' }})</span>
                       }
                     </span>
                     @if (item.parts.length) {

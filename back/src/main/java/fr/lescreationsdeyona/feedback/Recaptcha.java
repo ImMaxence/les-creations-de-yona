@@ -20,7 +20,7 @@ import tools.jackson.databind.json.JsonMapper;
  * when Google cannot answer: without a check, the form would be open to robots.
  */
 @Component
-class Recaptcha {
+public class Recaptcha {
 
 	private static final Logger log = LoggerFactory.getLogger(Recaptcha.class);
 
@@ -43,11 +43,11 @@ class Recaptcha {
 		this.jsonMapper = jsonMapper;
 	}
 
-	String siteKey() {
+	public String siteKey() {
 		return siteKey;
 	}
 
-	boolean accepts(String token) {
+	public boolean accepts(String token) {
 		HttpRequest request = HttpRequest.newBuilder(VERIFY)
 			.timeout(TIMEOUT)
 			.header("Content-Type", "application/x-www-form-urlencoded")

@@ -51,14 +51,28 @@ public record RecipeForm(
 		@Schema(description = "A single untitled part for a recipe without parts. At least one ingredient and one step in all")
 		@NotEmpty @Size(max = 10) List<@Valid @NotNull Part> parts) {
 
-	/** Not empty: at least one ingredient or one step. */
+	/**
+	 * Not empty: at least one ingredient or one step, or another recipe taken as this part. Named apart from
+	 * {@link RecipeDetail.Part}: the OpenAPI description names both after the record, and they differ.
+	 */
+	@Schema(name = "PartForm")
 	public record Part(
-			@Schema(description = "Required when the recipe has several parts") @Size(max = 100) @Nullable String title,
+			@Schema(description = "Required when the recipe has several parts; the title of the linked recipe when blank")
+			@Size(max = 100) @Nullable String title,
 			@NotNull @Size(max = 100) List<@Valid @NotNull IngredientLine> ingredients,
-			@NotNull @Size(max = 100) List<@Valid @NotNull Step> steps) {
+			@NotNull @Size(max = 100) List<@Valid @NotNull Step> steps,
+			@Schema(description = "Another recipe taken as this part: no ingredient nor step of its own then") @Nullable Long linkedRecipeId,
+			@Schema(description = "How many times the linked recipe: 1 when absent, 0.5 for half of it")
+			@DecimalMin("0.05") @DecimalMax("99") @Digits(integer = 2, fraction = 2) @Nullable BigDecimal linkedRatio) {
+
+		public Part(@Nullable String title, List<IngredientLine> ingredients, List<Step> steps) {
+			this(title, ingredients, steps, null, null);
+		}
+
 	}
 
-	/** An ingredient appears once per part, but may appear in several parts. */
+	/** An ingredient appears once per part, but may appear in several parts. Apart from its detail, as {@link Part}. */
+	@Schema(name = "IngredientLineForm")
 	public record IngredientLine(
 			@NotBlank @Size(max = 100) String name,
 			@Positive @Digits(integer = 6, fraction = 2) @Nullable BigDecimal quantity,

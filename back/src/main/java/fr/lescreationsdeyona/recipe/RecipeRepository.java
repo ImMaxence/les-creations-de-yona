@@ -27,6 +27,10 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 
 	boolean existsByCategoriesId(long categoryId);
 
+	/** The recipes using this one as a part. */
+	@Query("select distinct part.recipe from RecipePart part where part.linkedRecipe.id = :id")
+	List<Recipe> findRecipesLinking(long id);
+
 	/**
 	 * Unfeatures the published recipes but {@code keptId} (all of them when null); the scheduled ones
 	 * featured ahead are left alone.

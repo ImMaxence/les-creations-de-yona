@@ -2,9 +2,11 @@ package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.common.SearchWords;
 import fr.lescreationsdeyona.common.Texts;
+import jakarta.persistence.criteria.AbstractQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -77,7 +79,7 @@ final class RecipeSpecifications {
 		for (String ingredientName : filter.ingredientNames()) {
 			if (StringUtils.hasText(ingredientName)) {
 				String name = ingredientName.strip();
-				criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("name"), name)));
+				criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("name"), name), true));
 			}
 		}
 		UUID imageId = filter.imageId();
@@ -87,7 +89,7 @@ final class RecipeSpecifications {
 		}
 		Long ingredientId = filter.ingredientId();
 		if (ingredientId != null) {
-			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("id"), ingredientId)));
+			criteria.add(hasIngredient((line, cb) -> cb.equal(line.get("ingredient").get("id"), ingredientId), false));
 		}
 		if (maxMinutes != null) {
 			criteria.add(takesAtMost(maxMinutes));
@@ -157,7 +159,7 @@ final class RecipeSpecifications {
 			Root<RecipePart> part = steps.from(RecipePart.class);
 			Join<RecipePart, RecipeStep> step = part.join("steps");
 			steps.select(cb.literal(1))
-				.where(cb.equal(part.get("recipe"), recipe), cb.like(folded(cb, step.get("description")), pattern));
+				.where(ownOrLinked(part.get("recipe"), recipe, steps, cb), cb.like(folded(cb, step.get("description")), pattern));
 			Subquery<Integer> categories = query.subquery(Integer.class);
 			Root<Recipe> inCategory = categories.correlate(recipe);
 			categories.select(cb.literal(1))
@@ -168,7 +170,7 @@ final class RecipeSpecifications {
 			Subquery<Integer> lines = query.subquery(Integer.class);
 			Root<RecipeIngredient> line = lines.from(RecipeIngredient.class);
 			lines.select(cb.literal(1))
-				.where(cb.equal(line.get("part").get("recipe"), recipe),
+				.where(ownOrLinked(line.get("part").get("recipe"), recipe, lines, cb),
 						cb.like(folded(cb, line.get("ingredient").get("name")), pattern));
 			Predicate named = cb.or(cb.like(folded(cb, recipe.get("title")), pattern), cb.exists(categories), cb.exists(tags));
 			return inContent
@@ -182,14 +184,37 @@ final class RecipeSpecifications {
 	 * out once.
 	 */
 	private static Specification<Recipe> hasIngredient(
-			BiFunction<Root<RecipeIngredient>, CriteriaBuilder, Predicate> condition) {
+			BiFunction<Root<RecipeIngredient>, CriteriaBuilder, Predicate> condition, boolean throughLinkedRecipes) {
 		return (recipe, query, cb) -> {
 			Subquery<Integer> lines = query.subquery(Integer.class);
 			Root<RecipeIngredient> line = lines.from(RecipeIngredient.class);
+			Path<Recipe> owner = line.get("part").get("recipe");
 			lines.select(cb.literal(1))
-				.where(cb.equal(line.get("part").get("recipe"), recipe), condition.apply(line, cb));
+				.where(throughLinkedRecipes ? ownOrLinked(owner, recipe, lines, cb) : cb.equal(owner, recipe), condition.apply(line, cb));
 			return cb.exists(lines);
 		};
+	}
+
+	/**
+	 * {@code owner} is the recipe, or a recipe it uses as a part (directly, or through another one:
+	 * {@link LinkedRecipes#MAX_LEVELS} levels at most), so that a tart using "Pâte sablée" is found by its butter.
+	 */
+	private static Predicate ownOrLinked(Path<Recipe> owner, Root<Recipe> recipe, AbstractQuery<?> parent, CriteriaBuilder cb) {
+		Subquery<Long> linked = linkedIds(parent, recipe, cb);
+		Subquery<Long> linkedOfLinked = parent.subquery(Long.class);
+		Root<RecipePart> part = linkedOfLinked.from(RecipePart.class);
+		linkedOfLinked.select(part.get("linkedRecipe").get("id"))
+			.where(cb.isNotNull(part.get("linkedRecipe")), part.get("recipe").get("id").in(linkedIds(linkedOfLinked, recipe, cb)));
+		return cb.or(cb.equal(owner, recipe), owner.get("id").in(linked), owner.get("id").in(linkedOfLinked));
+	}
+
+	/** The recipes {@code recipe} uses as parts. */
+	private static Subquery<Long> linkedIds(AbstractQuery<?> parent, Root<Recipe> recipe, CriteriaBuilder cb) {
+		Subquery<Long> linked = parent.subquery(Long.class);
+		Root<RecipePart> part = linked.from(RecipePart.class);
+		linked.select(part.get("linkedRecipe").get("id"))
+			.where(cb.equal(part.get("recipe"), recipe), cb.isNotNull(part.get("linkedRecipe")));
+		return linked;
 	}
 
 	private static Expression<String> folded(CriteriaBuilder cb, Expression<String> text) {

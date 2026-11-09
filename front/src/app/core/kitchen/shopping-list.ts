@@ -1,4 +1,5 @@
 import { Injectable, computed } from '@angular/core';
+import { IngredientPiece } from '../api/generated/models/ingredient-piece';
 import { RecipeDetail } from '../api/generated/models/recipe-detail';
 import { roundForKitchen } from '../../shared/format/units';
 import { mainCategory } from '../../shared/routing/links';
@@ -13,6 +14,8 @@ export interface ShoppingLine {
   name: string;
   quantity: number | null;
   unit: string | null;
+  /** Weight of one piece, for "≈ 8 œufs"; absent from the lists made before 2.0. */
+  piece?: IngredientPiece;
 }
 
 export interface ShoppingRecipe {
@@ -80,6 +83,7 @@ export function shoppingRecipeOf(recipe: RecipeDetail, ratio = 1, servings = rec
         name: line.name,
         quantity: line.quantity == null ? null : ratio === 1 ? line.quantity : roundForKitchen(line.quantity * ratio),
         unit: line.unit ?? null,
+        piece: line.piece,
       })),
     ),
   };

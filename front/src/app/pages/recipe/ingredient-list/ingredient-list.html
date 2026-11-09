@@ -11,6 +11,9 @@
             <strong>{{ line.amount }}</strong>
           }
           {{ line.name }}
+          @if (line.equivalent) {
+            <span class="ingredient__equivalent">{{ line.equivalent }}</span>
+          }
           @if (line.note) {
             <span class="ingredient__note">{{ line.note }}</span>
           }

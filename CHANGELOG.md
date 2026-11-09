@@ -2,6 +2,33 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 2.0.0 - 2026-11-09
+
+Front and backend 2.0.0. Database migration: V20.
+
+### Added
+
+- **Shop** (`/boutique`, closed until opened in the back-office): recipes chosen by the admin, with a price, a free text and Google's captcha. No payment on the site.
+- **Orders**: statuses from "Nouvelle" to "Récupérée" or "Annulée", a secret tracking link for the customer, no account needed.
+- **Order alerts**: a badge in the back-office, and a push notification on the admins' devices that ask for it.
+- **Accounts**: orders picked up come in by themselves, expenses are typed by hand, each line counted for an admin; totals by month and by admin, CSV export.
+- **Mon CAP** (`/mon-cap`): a dated timeline of the diploma, with text and photos.
+- **Mes observations** (`/mon-cap/observations`): notes about a recipe or about none, also shown on the recipe's page.
+- **Recipes used as parts**: a recipe can be a part of another one, whole or multiplied ("Pâte sablée × 0.5"), up to 3 levels. Total, cooking mode, shopping list, search and structured data all follow.
+- **Ingredient equivalents**: the weight of one piece, to show "400 g (≈ 8 œufs)", following the servings.
+
+### Changed
+
+- **Back-office**: sections in three groups, Blog, Boutique and Site.
+- **Deleting a recipe**: refused while another recipe uses it, or while it is in the shop.
+- **Legal pages**: the shop and its data; orders are in the backups, and are erased 12 months after being finished.
+
+### Technical
+
+- Backup and restore: new tables included and merged, orders too (found by their tracking link, each keeping its number when free); order numbers continue after the accounts on a new server.
+- `RecaptchaBox` shared by the feedback and shop forms.
+- Backend: `POST /api/shop/orders` limited to one order a minute and 5 an hour per address, 30 an hour for the whole site.
+
 ## 1.22.0 - 2026-11-08
 
 Front and backend 1.22.0. No database migration.

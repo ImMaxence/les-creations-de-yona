@@ -46,6 +46,16 @@ public class PublicCache {
 
 	public static final String THEME = "public-theme";
 
+	public static final String CAP_ENTRIES = "public-cap-entries";
+
+	public static final String OBSERVATIONS = "public-observations";
+
+	public static final String RECIPE_OBSERVATIONS = "public-recipe-observations";
+
+	public static final String SHOP = "public-shop";
+
+	public static final String SITE_SECTIONS = "public-site-sections";
+
 	private final CacheManager cacheManager;
 
 	/** Every answer forgotten: the next visit reads the database again. */

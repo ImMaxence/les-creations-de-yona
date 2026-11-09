@@ -3,9 +3,11 @@ import { RESPONSE_INIT, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, RedirectCommand, ResolveFn, Router } from '@angular/router';
 import { Api } from '../../core/api/generated/api';
 import { listGlossary } from '../../core/api/generated/fn/glossary/list-glossary';
+import { listRecipeObservations } from '../../core/api/generated/fn/mon-cap/list-recipe-observations';
 import { getPublishedRecipe } from '../../core/api/generated/fn/recipes/get-published-recipe';
 import { listRelatedRecipes } from '../../core/api/generated/fn/recipes/list-related-recipes';
 import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
+import { ObservationResponse } from '../../core/api/generated/models/observation-response';
 import { RecipeCard } from '../../core/api/generated/models/recipe-card';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Step } from '../../core/api/generated/models/step';
@@ -50,6 +52,12 @@ export const recipeResolver: ResolveFn<RecipeDetail> = async (route) => {
 export const relatedRecipesResolver: ResolveFn<RecipeCard[]> = (route) =>
   inject(Api)
     .invoke(listRelatedRecipes, { slug: route.paramMap.get('recipeSlug')! })
+    .catch(() => []);
+
+/** "Mes observations" about the recipe: an extra, so the recipe still shows if they cannot be loaded. */
+export const recipeObservationsResolver: ResolveFn<ObservationResponse[]> = (route) =>
+  inject(Api)
+    .invoke(listRecipeObservations, { slug: route.paramMap.get('recipeSlug')! })
     .catch(() => []);
 
 /** The words explained in the steps; the steps show as plain text without them. */

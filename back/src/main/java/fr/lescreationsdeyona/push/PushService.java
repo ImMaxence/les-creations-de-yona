@@ -3,8 +3,10 @@ package fr.lescreationsdeyona.push;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.recipe.RecipePublished;
+import fr.lescreationsdeyona.shop.OrderReceived;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -112,22 +114,13 @@ public class PushService {
 	 * counted against the sender's limit.
 	 */
 	public void subscribe(PushSubscriptionForm form, String sender) {
-		requirePushService(form.endpoint());
-		try {
-			WebPushCrypto.decodePublicKey(WebPushCrypto.fromBase64Url(form.keys().p256dh()));
-			if (WebPushCrypto.fromBase64Url(form.keys().auth()).length != 16) {
-				throw new ApiException(ErrorCode.PUSH_SUBSCRIPTION_INVALID);
-			}
-		}
-		catch (GeneralSecurityException | IllegalArgumentException ex) {
-			throw new ApiException(ErrorCode.PUSH_SUBSCRIPTION_INVALID, ex);
-		}
+		checkSubscription(form);
 		boolean known = jdbc.sql("select count(*) from push_subscription where endpoint = :endpoint")
 			.param("endpoint", form.endpoint())
 			.query(Long.class)
 			.single() > 0;
 		if (!known) {
-			if (count() >= MAX_SUBSCRIPTIONS) {
+			if (jdbc.sql("select count(*) from push_subscription").query(Long.class).single() >= MAX_SUBSCRIPTIONS) {
 				throw new ApiException(ErrorCode.PUSH_SUBSCRIPTIONS_FULL);
 			}
 			ErrorCode refused = refusal(sender, Instant.now());
@@ -137,7 +130,8 @@ public class PushService {
 		}
 		jdbc.sql("""
 				insert into push_subscription (endpoint, p256dh, auth, created_at) values (:endpoint, :p256dh, :auth, :now)
-				on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth, failures = 0""")
+				on conflict (endpoint) do update
+				set p256dh = excluded.p256dh, auth = excluded.auth, failures = 0, new_recipes = true""")
 			.param("endpoint", form.endpoint())
 			.param("p256dh", form.keys().p256dh())
 			.param("auth", form.keys().auth())
@@ -145,19 +139,57 @@ public class PushService {
 			.update();
 	}
 
-	/** Unknown addresses are ignored: the visitor may unsubscribe twice. */
+	/**
+	 * Unknown addresses are ignored: the visitor may unsubscribe twice. A device an admin also gets
+	 * the orders on stays subscribed to those.
+	 */
 	public void unsubscribe(String endpoint) {
-		jdbc.sql("delete from push_subscription where endpoint = :endpoint").param("endpoint", endpoint).update();
+		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not admin_orders").param("endpoint", endpoint).update();
+		jdbc.sql("update push_subscription set new_recipes = false where endpoint = :endpoint").param("endpoint", endpoint).update();
 	}
 
+	/** This device of an admin is told of each new order; new recipes only if it asked for them too. */
+	public void subscribeToOrders(PushSubscriptionForm form) {
+		checkSubscription(form);
+		jdbc.sql("""
+				insert into push_subscription (endpoint, p256dh, auth, created_at, new_recipes, admin_orders)
+				values (:endpoint, :p256dh, :auth, :now, false, true)
+				on conflict (endpoint) do update
+				set p256dh = excluded.p256dh, auth = excluded.auth, failures = 0, admin_orders = true""")
+			.param("endpoint", form.endpoint())
+			.param("p256dh", form.keys().p256dh())
+			.param("auth", form.keys().auth())
+			.param("now", Timestamp.from(Instant.now()))
+			.update();
+	}
+
+	public void unsubscribeFromOrders(String endpoint) {
+		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not new_recipes").param("endpoint", endpoint).update();
+		jdbc.sql("update push_subscription set admin_orders = false where endpoint = :endpoint").param("endpoint", endpoint).update();
+	}
+
+	public boolean receivesOrders(String endpoint) {
+		return jdbc.sql("select count(*) from push_subscription where endpoint = :endpoint and admin_orders")
+			.param("endpoint", endpoint)
+			.query(Long.class)
+			.single() > 0;
+	}
+
+	/** Visitors subscribed to new recipes. */
 	public long count() {
-		return jdbc.sql("select count(*) from push_subscription").query(Long.class).single();
+		return jdbc.sql("select count(*) from push_subscription where new_recipes").query(Long.class).single();
 	}
 
 	/** Once the publication is committed: a rolled back save notifies nobody. */
 	@TransactionalEventListener
 	void onRecipePublished(RecipePublished recipe) {
-		sender.execute(() -> notifyAll(recipe));
+		sender.execute(() -> notifyRecipe(recipe));
+	}
+
+	/** Once the order is committed. */
+	@TransactionalEventListener
+	void onOrderReceived(OrderReceived order) {
+		sender.execute(() -> notifyOrder(order));
 	}
 
 	@PreDestroy
@@ -165,9 +197,19 @@ public class PushService {
 		sender.shutdownNow();
 	}
 
-	private void notifyAll(RecipePublished recipe) {
-		byte[] payload = jsonMapper.writeValueAsBytes(Map.of("notification", notification(recipe)));
-		List<Subscription> subscriptions = jdbc.sql("select id, endpoint, p256dh, auth, failures from push_subscription")
+	private void notifyRecipe(RecipePublished recipe) {
+		deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification(recipe))), "new_recipes",
+				"New recipe \"" + recipe.title() + "\"");
+	}
+
+	private void notifyOrder(OrderReceived order) {
+		deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification(order))), "admin_orders",
+				"Order " + order.number());
+	}
+
+	/** {@code audience}: the boolean column saying who receives it. */
+	private void deliver(byte[] payload, String audience, String what) {
+		List<Subscription> subscriptions = jdbc.sql("select id, endpoint, p256dh, auth, failures from push_subscription where " + audience)
 			.query(Subscription.class)
 			.list();
 		int delivered = 0;
@@ -218,8 +260,35 @@ public class PushService {
 				}
 			}
 		}
-		log.info("New recipe \"{}\" notified: {} delivered, {} expired subscriptions removed, {} refused ({} removed), {} in all",
-				recipe.title(), delivered, expired, refused.size(), removed, subscriptions.size());
+		log.info("{} notified: {} delivered, {} expired subscriptions removed, {} refused ({} removed), {} in all",
+				what, delivered, expired, refused.size(), removed, subscriptions.size());
+	}
+
+	/** Only one per order, without the customer's name: it goes through the browsers' push services. */
+	private static Map<String, Object> notification(OrderReceived order) {
+		Map<String, Object> notification = new LinkedHashMap<>();
+		notification.put("title", "Nouvelle commande n° " + order.number());
+		notification.put("body", order.items() + (order.items() > 1 ? " articles · " : " article · ")
+				+ order.amount().setScale(2, RoundingMode.HALF_UP).toPlainString().replace('.', ',') + " €");
+		notification.put("icon", "/icons/icon-192.png");
+		notification.put("lang", "fr");
+		notification.put("data", Map.of("onActionClick", Map.of("default",
+				Map.of("operation", "navigateLastFocusedOrOpen", "url", "/admin/boutique/commandes/" + order.number()))));
+		return notification;
+	}
+
+	/** Same checks for a visitor's device and an admin's. */
+	private static void checkSubscription(PushSubscriptionForm form) {
+		requirePushService(form.endpoint());
+		try {
+			WebPushCrypto.decodePublicKey(WebPushCrypto.fromBase64Url(form.keys().p256dh()));
+			if (WebPushCrypto.fromBase64Url(form.keys().auth()).length != 16) {
+				throw new ApiException(ErrorCode.PUSH_SUBSCRIPTION_INVALID);
+			}
+		}
+		catch (GeneralSecurityException | IllegalArgumentException ex) {
+			throw new ApiException(ErrorCode.PUSH_SUBSCRIPTION_INVALID, ex);
+		}
 	}
 
 	private void delete(Subscription subscription) {

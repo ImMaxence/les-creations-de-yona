@@ -10,7 +10,8 @@ public record GalleryImage(UUID id, ImageKind kind, Instant createdAt,
 		@Schema(description = "Recipes showing it, by title") List<UsingRecipe> recipes,
 		@Schema(description = "Categories showing it, by name") List<UsingCategory> categories,
 		@Schema(description = "Menus showing it as their own photo, by title") List<UsingMenu> menus,
-		@Schema(description = "Shown in the \"À propos\" section of the home page") boolean aboutPage) {
+		@Schema(description = "Shown in the \"À propos\" section of the home page") boolean aboutPage,
+		@Schema(description = "Steps of \"Mon CAP\" and observations showing it, by title") List<String> capItems) {
 
 	public record UsingRecipe(Long id, String title) {
 	}
@@ -31,6 +32,10 @@ public record GalleryImage(UUID id, ImageKind kind, Instant createdAt,
 
 	/** A menu showing an image, as read by {@link ImageRepository}. */
 	record MenuUsage(UUID imageId, Long id, String title) {
+	}
+
+	/** A step of "Mon CAP" or an observation showing an image, as read by {@link ImageRepository}. */
+	record CapUsage(UUID imageId, Long id, String title) {
 	}
 
 }

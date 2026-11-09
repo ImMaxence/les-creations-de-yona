@@ -346,16 +346,36 @@
           <input class="input" placeholder="La pâte, la garniture, le glaçage…" [id]="'part-name-' + p" [formField]="recipeForm.parts[p].title" [attr.aria-invalid]="isInvalid(recipeForm.parts[p].title)" />
           <yona-field-error [field]="recipeForm.parts[p].title" />
         </div>
-        <h4 class="part__subtitle">Ingrédients</h4>
-        <ng-container *ngTemplateOutlet="ingredientsEditor; context: { $implicit: p }" />
-        <h4 class="part__subtitle">Étapes</h4>
-        <ng-container *ngTemplateOutlet="stepsEditor; context: { $implicit: p }" />
+        @if (part.linkedRecipeId) {
+          <div class="linked">
+            <p class="linked__recipe"><svg yonaIcon="book-open" [size]="18"></svg>Recette liée : <strong>{{ part.linkedRecipeTitle }}</strong></p>
+            <div class="field linked__ratio">
+              <label class="field__label" [for]="'part-ratio-' + p">Combien de fois cette recette ?</label>
+              <input type="number" inputmode="decimal" step="0.05" class="input" [id]="'part-ratio-' + p" [formField]="recipeForm.parts[p].linkedRatio" />
+              <span class="field__hint">1 pour la recette entière, 0,5 pour la moitié. Ses ingrédients et ses étapes s'affichent sur le site, et comptent dans le total</span>
+              <yona-field-error [field]="recipeForm.parts[p].linkedRatio" />
+            </div>
+          </div>
+        } @else {
+          <h4 class="part__subtitle">Ingrédients</h4>
+          <ng-container *ngTemplateOutlet="ingredientsEditor; context: { $implicit: p }" />
+          <h4 class="part__subtitle">Étapes</h4>
+          <ng-container *ngTemplateOutlet="stepsEditor; context: { $implicit: p }" />
+        }
         <yona-field-error [field]="recipeForm.parts[p]" />
       </section>
     }
     <div class="parts-bar">
       <button yonaButton variant="secondary" type="button" (click)="addPart()"><svg yonaIcon="plus"></svg>Ajouter une partie</button>
-      @if (draft().parts.length === 1) {
+      <yona-select
+        class="parts-bar__link"
+        label="Ajouter une recette existante comme partie"
+        placeholder="Utiliser une recette existante…"
+        pickOnly
+        [options]="linkableRecipes()"
+        (picked)="addLinkedPart($event)"
+      />
+      @if (draft().parts.length === 1 && !draft().parts[0].linkedRecipeId) {
         <button type="button" class="link-button" (click)="stopUsingParts()">Revenir à une recette sans parties</button>
       }
     </div>
@@ -375,7 +395,7 @@
       <svg yonaIcon="layers" [size]="22" [strokeWidth]="1.75"></svg>
       <div>
         <h3 id="parts-offer-title" class="parts-offer__title">Recette en plusieurs parties ?</h3>
-        <p class="field__hint">La pâte, puis la garniture : chaque partie a ses propres ingrédients et ses étapes. Les ingrédients et étapes déjà saisis deviennent la première partie</p>
+        <p class="field__hint">La pâte, puis la garniture : chaque partie a ses propres ingrédients et ses étapes, ou reprend une recette existante (une pâte sablée déjà écrite). Les ingrédients et étapes déjà saisis deviennent la première partie</p>
       </div>
       <button yonaButton variant="secondary" type="button" (click)="splitIntoParts()">Découper en parties</button>
     </section>

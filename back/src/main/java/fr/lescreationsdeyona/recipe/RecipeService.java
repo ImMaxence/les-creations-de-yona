@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
+import fr.lescreationsdeyona.cap.ObservationRepository;
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.category.CategoryRepository;
 import fr.lescreationsdeyona.category.CategoryResponse;
@@ -20,6 +21,7 @@ import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientService;
 import fr.lescreationsdeyona.menu.MenuService;
+import fr.lescreationsdeyona.shop.ShopProductRepository;
 import fr.lescreationsdeyona.tag.Tag;
 import fr.lescreationsdeyona.tag.TagResponse;
 import fr.lescreationsdeyona.tag.TagService;
@@ -103,6 +105,10 @@ public class RecipeService {
 
 	private final AuditLog auditLog;
 
+	private final ObservationRepository observationRepository;
+
+	private final ShopProductRepository shopProductRepository;
+
 	// Public site: published recipes only.
 
 	/** Published recipes only, whatever {@code filter.status()}; no back-office criteria. */
@@ -143,7 +149,12 @@ public class RecipeService {
 	/** A draft is reported as not found, like a recipe that does not exist. */
 	@Cacheable(PublicCache.RECIPE)
 	public RecipeDetail getPublished(String slug) {
-		return recipeMapper.toDetail(findPublished(slug));
+		return unfolded(findPublished(slug));
+	}
+
+	/** As visitors read it: the recipes it uses as parts unfolded, quantities multiplied. */
+	private RecipeDetail unfolded(Recipe recipe) {
+		return LinkedRecipes.unfold(recipe, recipeMapper.toDetail(recipe), recipeMapper);
 	}
 
 	/** "Vous aimerez aussi": 3 published recipes sharing its tags or categories, else the latest. */
@@ -181,6 +192,11 @@ public class RecipeService {
 
 	public RecipeDetail get(long id) {
 		return recipeMapper.toDetail(find(id));
+	}
+
+	/** A recipe as visitors would read it, for "Aperçu": drafts too. */
+	public RecipeDetail getUnfolded(long id) {
+		return unfolded(find(id));
 	}
 
 	@Transactional
@@ -226,7 +242,7 @@ public class RecipeService {
 		}
 		apply(form, recipe);
 		recipe.setUpdatedAt(Instant.now());
-		return recipeMapper.toDetail(recipe);
+		return unfolded(recipe);
 	}
 
 	/**
@@ -243,7 +259,7 @@ public class RecipeService {
 		Recipe copy = new Recipe();
 		copy.setSlug(Slugs.uniqueSlug(title, "recette", recipeRepository::existsBySlug));
 		apply(formOf(detail, title, RecipeStatus.DRAFT, detail.theme(), ids(detail.categories(), CategoryResponse::id),
-				ids(detail.tags(), TagResponse::id)), copy);
+				ids(detail.tags(), TagResponse::id), RecipeDetail.LinkedRecipe::id), copy);
 		copy.setImage(source.getImage());
 		copy.setPinterestImage(source.getPinterestImage());
 		Recipe saved = recipeRepository.saveAndFlush(copy);
@@ -293,7 +309,7 @@ public class RecipeService {
 				: trashed.getSlug());
 		RecipeStatus status = kept.status() == RecipeStatus.FAILED ? RecipeStatus.DRAFT : kept.status();
 		apply(formOf(kept, kept.title(), status, kept.theme() == null ? RecipeTheme.SWEET : kept.theme(), categoryIds,
-				tagIds), recipe);
+				tagIds, this::stillLinkable), recipe);
 		recipe.setImage(trashed.getImage());
 		recipe.setPinterestImage(trashed.getPinterestImage());
 		long id = recipeRepository.saveAndFlush(recipe).getId();
@@ -302,6 +318,17 @@ public class RecipeService {
 				? kept.publishedAt()
 				: Instant.now(), trashed.getViewCount() == null ? 0 : trashed.getViewCount());
 		return get(id);
+	}
+
+	/** The recipe a trashed one used: itself, or by its URL once restored meanwhile with a new id. */
+	private Long stillLinkable(RecipeDetail.LinkedRecipe linked) {
+		if (recipeRepository.existsById(linked.id())) {
+			return linked.id();
+		}
+		return recipeRepository.findBySlug(linked.slug())
+			.map(Recipe::getId)
+			.orElseThrow(() -> new ApiException(ErrorCode.TRASHED_RECIPE_LINK_GONE,
+					"Cette recette utilise « " + linked.title() + " », qui n'existe plus : restaurez-la d'abord"));
 	}
 
 	/** Drafts whose scheduled time has come, the earliest first. */
@@ -322,6 +349,11 @@ public class RecipeService {
 		}
 		if (recipe.getScheduledAt().isBefore(now.minus(LATE_LIMIT))) {
 			fail(recipe, LATE_FAILURE);
+			return;
+		}
+		String unpublished = unpublishedLink(recipe.getParts());
+		if (unpublished != null) {
+			fail(recipe, unpublishedLinkMessage(unpublished));
 			return;
 		}
 		publish(recipe, now);
@@ -346,6 +378,10 @@ public class RecipeService {
 		Recipe recipe = find(id);
 		if (recipe.getStatus() == RecipeStatus.PUBLISHED) {
 			return recipeMapper.toDetail(recipe);
+		}
+		String unpublished = unpublishedLink(recipe.getParts());
+		if (unpublished != null) {
+			throw new ApiException(ErrorCode.RECIPE_LINK_NOT_PUBLISHED, unpublishedLinkMessage(unpublished));
 		}
 		RecipeDetail published = publish(recipe, Instant.now());
 		auditLog.record(AuditAction.PUBLISHED, AuditKind.RECIPE, recipe.getTitle(), id);
@@ -448,13 +484,42 @@ public class RecipeService {
 	 * its views and the menus it leaves.
 	 */
 	private void trash(List<Recipe> recipes) {
+		checkFreeToDelete(recipes);
 		for (Recipe recipe : recipes) {
 			trashBin.put(new TrashBin.Entry(TrashKind.RECIPE, recipe.getTitle(), recipe.getSlug(), recipe.getStatus(),
 					recipe.getImage(), recipe.getPinterestImage(), recipeMapper.toDetail(recipe),
-					new RecipeLinks(menuService.placesOf(recipe.getId())), recipe.getViewCount()));
+					new RecipeLinks(menuService.placesOf(recipe.getId()), observationRepository.findIdsByRecipeId(recipe.getId())),
+					recipe.getViewCount()));
 		}
 		pagesChanged(recipes.stream().map(RecipeService::publicPath));
 		recipeRepository.deleteAll(recipes);
+	}
+
+	/**
+	 * Refused while another recipe uses one of them (unless going with it), or while one of them is offered
+	 * in the shop: the admin takes it out of there first.
+	 */
+	private void checkFreeToDelete(List<Recipe> recipes) {
+		Set<Long> deleted = recipes.stream().map(Recipe::getId).collect(Collectors.toSet());
+		for (Recipe recipe : recipes) {
+			List<String> users = recipeRepository.findRecipesLinking(recipe.getId())
+				.stream()
+				.filter(user -> !deleted.contains(user.getId()))
+				.map(Recipe::getTitle)
+				.toList();
+			if (!users.isEmpty()) {
+				throw new ApiException(ErrorCode.RECIPE_LINKED_IN_USE,
+						"« " + recipe.getTitle() + " » est utilisée dans " + quoted(users) + " : retirez-la d'abord de cette recette");
+			}
+		}
+		List<String> inShop = shopProductRepository.findTitlesOfRecipes(deleted);
+		if (!inShop.isEmpty()) {
+			throw new ApiException(ErrorCode.RECIPE_IN_SHOP, "Dans la boutique : " + quoted(inShop) + ". Retirez-la d'abord de la boutique");
+		}
+	}
+
+	private static String quoted(List<String> names) {
+		return names.stream().map(name -> "« " + name + " »").collect(Collectors.joining(", "));
 	}
 
 	/** Its address on the site once published; null for a draft or a failed one, not on the site. */
@@ -486,6 +551,7 @@ public class RecipeService {
 		if (form.status() == RecipeStatus.FAILED) {
 			throw new ApiException(ErrorCode.RECIPE_STATUS_FAILED_NOT_SETTABLE);
 		}
+		checkPublicationOfLinks(recipe, parts, form.status());
 		RecipeTheme theme = themeOf(categories.getFirst(), form.theme());
 		Instant scheduledAt = form.scheduledAt();
 		if (scheduledAt != null) {
@@ -545,6 +611,45 @@ public class RecipeService {
 	}
 
 	/**
+	 * What visitors read must stay whole: a published recipe uses published recipes only, and a recipe a
+	 * published one uses cannot leave the site.
+	 */
+	private void checkPublicationOfLinks(Recipe recipe, List<RecipePart> parts, RecipeStatus status) {
+		if (status == RecipeStatus.PUBLISHED) {
+			String unpublished = unpublishedLink(parts);
+			if (unpublished != null) {
+				throw new ApiException(ErrorCode.RECIPE_LINK_NOT_PUBLISHED, unpublishedLinkMessage(unpublished));
+			}
+			return;
+		}
+		if (recipe.getId() != null && recipe.getStatus() == RecipeStatus.PUBLISHED) {
+			List<String> publishedUsers = recipeRepository.findRecipesLinking(recipe.getId())
+				.stream()
+				.filter(user -> user.getStatus() == RecipeStatus.PUBLISHED)
+				.map(Recipe::getTitle)
+				.toList();
+			if (!publishedUsers.isEmpty()) {
+				throw new ApiException(ErrorCode.RECIPE_LINKED_IN_USE,
+						"Cette recette est utilisée dans " + quoted(publishedUsers) + ", publiée : elle doit rester publiée");
+			}
+		}
+	}
+
+	private static @Nullable String unpublishedLink(List<RecipePart> parts) {
+		return parts.stream()
+			.map(RecipePart::getLinkedRecipe)
+			.filter(Objects::nonNull)
+			.filter(linked -> linked.getStatus() != RecipeStatus.PUBLISHED)
+			.map(Recipe::getTitle)
+			.findFirst()
+			.orElse(null);
+	}
+
+	private static String unpublishedLinkMessage(String title) {
+		return "Cette recette utilise « " + title + " », qui n'est pas publiée : publiez-la d'abord";
+	}
+
+	/**
 	 * The theme of the main category; the one chosen for the recipe only when that category holds
 	 * both ("Apéritifs"), required then.
 	 */
@@ -583,6 +688,10 @@ public class RecipeService {
 			String title = StringUtils.hasText(formPart.title())
 					? Texts.capitalizeFirstLetter(formPart.title().strip())
 					: null;
+			if (formPart.linkedRecipeId() != null) {
+				parts.add(linkedPart(recipe, formPart, title, position));
+				continue;
+			}
 			if (title == null && formParts.size() > 1) {
 				throw new ApiException(ErrorCode.RECIPE_PART_TITLE_REQUIRED);
 			}
@@ -599,13 +708,50 @@ public class RecipeService {
 					ingredientPositions(step.ingredientPositions(), ingredientCount))));
 			parts.add(part);
 		}
-		if (parts.stream().allMatch(part -> part.getIngredients().isEmpty())) {
+		// A linked recipe has at least one of each
+		if (parts.stream().allMatch(part -> part.getIngredients().isEmpty() && part.getLinkedRecipe() == null)) {
 			throw new ApiException(ErrorCode.RECIPE_INGREDIENT_REQUIRED);
 		}
-		if (parts.stream().allMatch(part -> part.getSteps().isEmpty())) {
+		if (parts.stream().allMatch(part -> part.getSteps().isEmpty() && part.getLinkedRecipe() == null)) {
 			throw new ApiException(ErrorCode.RECIPE_STEP_REQUIRED);
 		}
 		return parts;
+	}
+
+	/** Another recipe taken as a part: never itself, even through another, and {@link LinkedRecipes#MAX_LEVELS} levels at most. */
+	private RecipePart linkedPart(Recipe recipe, RecipeForm.Part formPart, @Nullable String title, int position) {
+		if (!formPart.ingredients().isEmpty() || !formPart.steps().isEmpty()) {
+			throw new ApiException(ErrorCode.RECIPE_LINK_WITH_CONTENT);
+		}
+		Recipe linked = recipeRepository.findById(formPart.linkedRecipeId())
+			.orElseThrow(() -> new ApiException(ErrorCode.RECIPE_LINK_NOT_FOUND));
+		if (recipe.getId() != null && LinkedRecipes.reaches(linked, recipe.getId())) {
+			throw new ApiException(ErrorCode.RECIPE_LINK_CYCLE);
+		}
+		if (levelsAbove(recipe, new HashSet<>()) + LinkedRecipes.levelsBelow(linked) > LinkedRecipes.MAX_LEVELS) {
+			throw new ApiException(ErrorCode.RECIPE_LINK_TOO_DEEP);
+		}
+		RecipePart part = new RecipePart();
+		part.setRecipe(recipe);
+		part.setPosition(position);
+		part.setTitle(title != null ? title : linked.getTitle());
+		part.setLinkedRecipe(linked);
+		part.setLinkedRatio(formPart.linkedRatio() == null ? BigDecimal.ONE : formPart.linkedRatio());
+		return part;
+	}
+
+	/** Levels above a recipe, itself included: 1 for a recipe no other uses. */
+	private int levelsAbove(Recipe recipe, Set<Long> seen) {
+		if (recipe.getId() == null || !seen.add(recipe.getId())) {
+			return 1;
+		}
+		int highest = recipeRepository.findRecipesLinking(recipe.getId())
+			.stream()
+			.mapToInt(user -> levelsAbove(user, seen))
+			.max()
+			.orElse(0);
+		seen.remove(recipe.getId());
+		return 1 + highest;
 	}
 
 	/** Each once, in the order of the ingredient list; all of them within the part's list. */
@@ -687,7 +833,7 @@ public class RecipeService {
 
 	/** The form that would save {@code recipe} again: duplicate, restore from the trash. */
 	private static RecipeForm formOf(RecipeDetail recipe, String title, RecipeStatus status, RecipeTheme theme,
-			List<Long> categoryIds, List<Long> tagIds) {
+			List<Long> categoryIds, List<Long> tagIds, Function<RecipeDetail.LinkedRecipe, Long> linkedId) {
 		RecipeDetail.Mold mold = recipe.mold();
 		return new RecipeForm(title, recipe.intro(), status, theme, false, categoryIds, tagIds, recipe.servings(),
 				recipe.prepMinutes(), recipe.cookMinutes(), recipe.restMinutes(), recipe.difficulty(),
@@ -701,7 +847,9 @@ public class RecipeService {
 						part.steps().stream()
 							.map(step -> new RecipeForm.Step(step.description(), step.durationMinutes(),
 									step.ingredientPositions() == null ? List.of() : step.ingredientPositions()))
-							.toList()))
+							.toList(),
+						part.linkedRecipe() == null ? null : linkedId.apply(part.linkedRecipe()),
+						part.linkedRecipe() == null ? null : part.linkedRecipe().ratio()))
 					.toList());
 	}
 

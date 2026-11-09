@@ -531,3 +531,31 @@
     margin-top: var(--space-5);
   }
 }
+
+// A part that is another recipe
+.part__linked {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+
+  a {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+}
+
+// "Mes observations": same cards as the questions
+.questions__date {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.questions__more {
+  justify-self: start;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

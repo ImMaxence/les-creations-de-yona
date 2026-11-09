@@ -1,14 +1,19 @@
 import { isPlatformServer } from '@angular/common';
-import { Injectable, PLATFORM_ID, REQUEST, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, REQUEST, computed, inject, signal } from '@angular/core';
 import { Api } from '../api/generated/api';
 import { listCategories } from '../api/generated/fn/categories/list-categories';
 import { listMenus } from '../api/generated/fn/menus/list-menus';
 import { getSiteContent } from '../api/generated/fn/site-content/get-site-content';
+import { getSiteSections } from '../api/generated/fn/site-content/get-site-sections';
 import { listSocialLinks } from '../api/generated/fn/social-links/list-social-links';
 import { CategoryResponse } from '../api/generated/models/category-response';
 import { MenuSummary } from '../api/generated/models/menu-summary';
 import { SiteContentResponse } from '../api/generated/models/site-content-response';
+import { SiteSections } from '../api/generated/models/site-sections';
 import { SocialLinkResponse } from '../api/generated/models/social-link-response';
+
+/** Without an answer of the API, no link to them. */
+const NO_SECTIONS: SiteSections = { capPublished: false, shopOpen: false };
 
 /** Texts of the site until the API answers, or if it cannot: the ones the migration starts with. */
 const DEFAULT_CONTENT: SiteContentResponse = {
@@ -40,6 +45,7 @@ export class SiteData {
   private readonly socialLinksState = signal<SocialLinkResponse[]>([]);
   private readonly contentState = signal<SiteContentResponse>(DEFAULT_CONTENT);
   private readonly menusState = signal<MenuSummary[]>([]);
+  private readonly sectionsState = signal<SiteSections>(NO_SECTIONS);
 
   readonly categories = this.categoriesState.asReadonly();
   readonly socialLinks = this.socialLinksState.asReadonly();
@@ -47,20 +53,26 @@ export class SiteData {
   readonly content = this.contentState.asReadonly();
   /** Published menus: the "Menus" link and the home section only show when there are some. */
   readonly menus = this.menusState.asReadonly();
+  /** "Mon CAP" has a published step: its link only shows then. */
+  readonly capPublished = computed(() => this.sectionsState().capPublished);
+  /** Open in the back-office: the "Boutique" link only shows then. */
+  readonly shopOpen = computed(() => this.sectionsState().shopOpen);
 
   async load(): Promise<void> {
     if (this.isBuildTime) {
       return;
     }
     // The shell still renders without them: an unavailable API must not take the site down
-    const [categories, socialLinks, content, menus] = await Promise.all([
+    const [categories, socialLinks, content, menus, sections] = await Promise.all([
       this.api.invoke(listCategories).catch(() => []),
       this.api.invoke(listSocialLinks).catch(() => []),
       this.api.invoke(getSiteContent).catch(() => DEFAULT_CONTENT),
       this.api.invoke(listMenus).catch(() => []),
+      this.api.invoke(getSiteSections).catch(() => NO_SECTIONS),
     ]);
     this.categoriesState.set(categories);
     this.menusState.set(menus);
+    this.sectionsState.set(sections);
     this.socialLinksState.set(socialLinks);
     this.contentState.set(content);
   }

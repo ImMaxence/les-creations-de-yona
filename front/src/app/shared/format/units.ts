@@ -37,6 +37,13 @@ export function roundForKitchen(quantity: number): number {
   return Math.max(step, Math.round(quantity / step) * step);
 }
 
+const EUROS = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+
+/** 24.5 → "24,50 €". */
+export function formatEuros(amount: number): string {
+  return EUROS.format(amount);
+}
+
 const BYTE_UNITS = ['octets', 'Ko', 'Mo', 'Go', 'To'];
 const SIZE = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 

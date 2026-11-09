@@ -5,8 +5,9 @@
   <div class="admin-panel">
     <p>
       Télécharge une archive ZIP avec toute la base de données (recettes, catégories, tags, ingrédients, menus,
-      glossaire, réseaux sociaux, apparence, préférences, corbeille) et toutes les photos. Gardez-la en lieu sûr, hors du
-      serveur : sur votre ordinateur, un disque externe ou un stockage en ligne
+      glossaire, Mon CAP, observations, boutique, commandes, comptabilité, réseaux sociaux, apparence, préférences,
+      corbeille) et toutes les photos. Gardez-la en lieu sûr, hors du serveur : sur votre ordinateur, un disque externe
+      ou un stockage en ligne. Elle contient les noms et les coordonnées des clients des commandes : ne la partagez pas
     </p>
     <p class="field__hint">
       Restent sur le serveur : l'historique, les retours des visiteurs (leurs e-mails ne quittent pas le site), les
@@ -230,6 +231,21 @@
                 @if (found.missing.menus) {
                   <li>{{ plural(found.missing.menus, 'menu', 'menus') }} : {{ found.missing.menuTitles.join(', ') }}</li>
                 }
+                @if (found.missing.capEntries) {
+                  <li>{{ plural(found.missing.capEntries, 'étape du CAP', 'étapes du CAP') }}</li>
+                }
+                @if (found.missing.observations) {
+                  <li>{{ plural(found.missing.observations, 'observation', 'observations') }}</li>
+                }
+                @if (found.missing.shopProducts) {
+                  <li>{{ plural(found.missing.shopProducts, 'produit de la boutique', 'produits de la boutique') }}</li>
+                }
+                @if (found.missing.accountEntries) {
+                  <li>{{ plural(found.missing.accountEntries, 'ligne de comptabilité', 'lignes de comptabilité') }}</li>
+                }
+                @if (found.missing.shopOrders) {
+                  <li>{{ plural(found.missing.shopOrders, 'commande', 'commandes') }}</li>
+                }
                 @if (found.missing.siteContent) {
                   <li>Préférences : textes et photo de l'accueil, texte du pied de page</li>
                 }
@@ -259,6 +275,13 @@
                   {{ plural(found.backup.recipes, 'recette', 'recettes') }} de la sauvegarde. Tout ce qui a été créé ou modifié
                   depuis la sauvegarde est perdu
                 </li>
+                @if (found.current.shopOrders) {
+                  <li>
+                    Les {{ plural(found.current.shopOrders, 'commande', 'commandes') }} du site sont remplacées par les
+                    {{ plural(found.backup.shopOrders, 'commande', 'commandes') }} de la sauvegarde : une commande arrivée depuis
+                    est perdue, et son lien de suivi ne marche plus
+                  </li>
+                }
                 <li>
                   {{ plural(found.imageFilesExtra, 'fichier photo absent', 'fichiers photo absents') }} de la sauvegarde
                   {{ found.imageFilesExtra > 1 ? 'sont supprimés' : 'est supprimé' }} du stockage
@@ -303,7 +326,12 @@
               {{ plural(report.added.socialLinks, 'réseau social', 'réseaux sociaux') }},
               {{ plural(report.added.appearancePresets, 'préréglage', 'préréglages') }},
               {{ plural(report.added.glossaryTerms, 'mot du glossaire', 'mots du glossaire') }},
-              {{ plural(report.added.menus, 'menu', 'menus') }}
+              {{ plural(report.added.menus, 'menu', 'menus') }},
+              {{ plural(report.added.capEntries, 'étape du CAP', 'étapes du CAP') }},
+              {{ plural(report.added.observations, 'observation', 'observations') }},
+              {{ plural(report.added.shopProducts, 'produit de la boutique', 'produits de la boutique') }},
+              {{ plural(report.added.accountEntries, 'ligne de comptabilité', 'lignes de comptabilité') }},
+              {{ plural(report.added.shopOrders, 'commande', 'commandes') }}
             </p>
             @if (report.siteContent || report.siteTheme) {
               <p>

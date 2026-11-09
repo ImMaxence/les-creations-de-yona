@@ -2,6 +2,8 @@ package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.category.CategoryMapper;
 import fr.lescreationsdeyona.common.CentralMapperConfig;
+import fr.lescreationsdeyona.ingredient.Ingredient;
+import fr.lescreationsdeyona.ingredient.IngredientPiece;
 import java.util.List;
 import fr.lescreationsdeyona.tag.TagMapper;
 import org.jspecify.annotations.Nullable;
@@ -27,12 +29,27 @@ public interface RecipeMapper {
 	@Mapping(target = "equipment", source = "equipment", qualifiedByName = "lines")
 	RecipeDetail toDetail(Recipe recipe);
 
+	@Mapping(target = "linkedRecipe", source = ".")
 	RecipeDetail.Part toPart(RecipePart part);
 
 	@Mapping(target = "name", source = "ingredient.name")
+	@Mapping(target = "piece", source = "ingredient")
 	RecipeDetail.IngredientLine toIngredientLine(RecipeIngredient line);
 
 	RecipeDetail.Step toStep(RecipeStep step);
+
+	default RecipeDetail.@Nullable LinkedRecipe toLinkedRecipe(RecipePart part) {
+		Recipe linked = part.getLinkedRecipe();
+		return linked == null ? null
+				: new RecipeDetail.LinkedRecipe(linked.getId(), linked.getTitle(), linked.getSlug(),
+						linked.getMainCategory().getSlug(), linked.getStatus(), part.getLinkedRatio());
+	}
+
+	/** Three columns of the ingredient, all set or all empty (checked by the database). */
+	default @Nullable IngredientPiece toPiece(Ingredient ingredient) {
+		return ingredient.getPieceGrams() == null ? null
+				: new IngredientPiece(ingredient.getPieceGrams(), ingredient.getPieceSingular(), ingredient.getPiecePlural());
+	}
 
 	/** The equipment, stored one item per line. */
 	@Named("lines")

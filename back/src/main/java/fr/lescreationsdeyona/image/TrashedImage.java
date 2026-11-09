@@ -13,15 +13,18 @@ record TrashedImage(UUID id, ImageKind kind, String s3Prefix, Instant createdAt)
 
 	/**
 	 * Shown there when deleted: given back on restore where no other photo has been chosen meanwhile.
-	 * {@code menuIds}: absent from the photos put in the trash before 1.7.
+	 * {@code menuIds}: absent from the photos put in the trash before 1.7; {@code capEntryIds} and
+	 * {@code observationIds}: before 2.0.
 	 */
 	record Links(List<Long> recipeIds, List<Long> pinterestRecipeIds, List<Long> categoryIds, boolean aboutPage,
-			@Nullable List<Long> menuIds) {
+			@Nullable List<Long> menuIds, @Nullable List<Long> capEntryIds, @Nullable List<Long> observationIds) {
 
-		static final Links NONE = new Links(List.of(), List.of(), List.of(), false, List.of());
+		static final Links NONE = new Links(List.of(), List.of(), List.of(), false, List.of(), List.of(), List.of());
 
 		Links {
 			menuIds = menuIds == null ? List.of() : menuIds;
+			capEntryIds = capEntryIds == null ? List.of() : capEntryIds;
+			observationIds = observationIds == null ? List.of() : observationIds;
 		}
 
 	}

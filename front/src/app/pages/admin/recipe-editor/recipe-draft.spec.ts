@@ -1,5 +1,6 @@
 import { RecipeAiDraft } from '../../../core/api/generated/models/recipe-ai-draft';
-import { fromAiDraft, hasContent, toDraft } from './recipe-draft';
+import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
+import { fromAiDraft, hasContent, linkedPart, toDraft, toRecipeForm } from './recipe-draft';
 
 const AI: RecipeAiDraft = {
   title: 'Crêpes',
@@ -42,5 +43,54 @@ describe('fromAiDraft', () => {
   it('sees an untouched new recipe as empty, and a typed title as content', () => {
     expect(hasContent(toDraft(null))).toBe(false);
     expect(hasContent({ ...toDraft(null), title: 'Tarte' })).toBe(true);
+  });
+});
+
+describe('a recipe used as a part', () => {
+  const DOUGH = { id: 12, title: 'Pâte sablée' };
+
+  it('starts with the whole recipe, under its title, without content of its own', () => {
+    expect(linkedPart(DOUGH)).toEqual({
+      title: 'Pâte sablée',
+      ingredients: [],
+      steps: [],
+      linkedRecipeId: 12,
+      linkedRecipeTitle: 'Pâte sablée',
+      linkedRatio: 1,
+    });
+  });
+
+  it('is sent with its recipe and how many times', () => {
+    const draft = { ...toDraft(null), parts: [{ ...linkedPart(DOUGH), linkedRatio: 0.5 }] };
+
+    expect(toRecipeForm(draft).parts).toEqual([
+      { title: 'Pâte sablée', ingredients: [], steps: [], linkedRecipeId: 12, linkedRatio: 0.5 },
+    ]);
+  });
+
+  it('sends no ratio for a part of its own', () => {
+    const part = toRecipeForm(toDraft(null)).parts[0]!;
+
+    expect(part.linkedRecipeId).toBeUndefined();
+    expect(part.linkedRatio).toBeUndefined();
+  });
+
+  it('comes back from a saved recipe', () => {
+    const saved = {
+      categories: [],
+      tags: [],
+      equipment: [],
+      questions: [],
+      parts: [{ title: 'Pâte', ingredients: [], steps: [], linkedRecipe: { ...DOUGH, slug: 'pate', categorySlug: 'bases', status: 'PUBLISHED', ratio: 2 } }],
+    } as unknown as RecipeDetail;
+
+    expect(toDraft(saved).parts[0]).toEqual({
+      title: 'Pâte',
+      ingredients: [],
+      steps: [],
+      linkedRecipeId: 12,
+      linkedRecipeTitle: 'Pâte sablée',
+      linkedRatio: 2,
+    });
   });
 });

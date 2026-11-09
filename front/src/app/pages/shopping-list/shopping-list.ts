@@ -60,6 +60,7 @@ export default class ShoppingList {
         name: line.name,
         quantity: line.quantity ?? undefined,
         unit: line.unit ?? undefined,
+        piece: line.piece,
       })),
       steps: [],
     }));
@@ -143,7 +144,7 @@ export default class ShoppingList {
       const toBuy = [
         ...section.items
           .filter((item) => !item.done)
-          .map((item) => `- ${item.name}${item.amount ? ` (${item.amount})` : ''}`),
+          .map((item) => `- ${item.name}${item.amount ? ` (${[item.amount, item.equivalent].filter(Boolean).join(' ')})` : ''}`),
         ...(section.aisle === null
           ? this.extras()
               .filter((extra) => !extra.done)

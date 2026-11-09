@@ -98,16 +98,16 @@ export class NewRecipeNotifications {
 }
 
 /** What the backend keeps: the push service address and the browser's keys. */
-function subscriptionForm(subscription: PushSubscription): PushSubscriptionForm {
+export function subscriptionForm(subscription: PushSubscription): PushSubscriptionForm {
   const { endpoint, keys } = subscription.toJSON();
   return { endpoint: endpoint ?? subscription.endpoint, keys: { p256dh: keys?.['p256dh'] ?? '', auth: keys?.['auth'] ?? '' } };
 }
 
-function isAppleMobile(): boolean {
+export function isAppleMobile(): boolean {
   // iPadOS presents itself as a Mac with a touch screen
   return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes('Mac') && navigator.maxTouchPoints > 1);
 }
 
-function isStandalone(): boolean {
+export function isStandalone(): boolean {
   return matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
 }

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from '../../core/auth/admin.guard';
 import { RouteSeo, SEO_DATA_KEY } from '../../core/seo/page-seo';
-import { adminRecipeResolver } from './recipe-editor/admin-recipe.resolver';
+import { adminRecipePreviewResolver, adminRecipeResolver } from './recipe-editor/admin-recipe.resolver';
 import { unsavedChangesGuard } from './recipe-editor/unsaved-changes.guard';
 
 const NO_INDEX: RouteSeo = { noIndex: true };
@@ -19,7 +19,7 @@ export const adminRoutes: Routes = [
     path: 'apercu/:id',
     loadComponent: () => import('./recipe-preview/recipe-preview'),
     canActivate: [adminGuard],
-    resolve: { recipe: adminRecipeResolver },
+    resolve: { recipe: adminRecipePreviewResolver },
     title: 'Aperçu · Back-office',
     data: { [SEO_DATA_KEY]: NO_INDEX },
   },
@@ -72,6 +72,36 @@ export const adminRoutes: Routes = [
         path: 'glossaire',
         loadComponent: () => import('./glossary/admin-glossary'),
         title: 'Glossaire · Back-office',
+      },
+      {
+        path: 'mon-cap',
+        loadComponent: () => import('./cap/admin-cap'),
+        title: 'Mon CAP · Back-office',
+      },
+      {
+        path: 'observations',
+        loadComponent: () => import('./cap/admin-observations'),
+        title: 'Observations · Back-office',
+      },
+      {
+        path: 'boutique/commandes',
+        loadComponent: () => import('./shop/admin-orders'),
+        title: 'Commandes · Back-office',
+      },
+      {
+        path: 'boutique/commandes/:id',
+        loadComponent: () => import('./shop/admin-order'),
+        title: 'Commande · Back-office',
+      },
+      {
+        path: 'boutique/produits',
+        loadComponent: () => import('./shop/admin-products'),
+        title: 'Boutique · Back-office',
+      },
+      {
+        path: 'boutique/comptabilite',
+        loadComponent: () => import('./shop/admin-accounting'),
+        title: 'Comptabilité · Back-office',
       },
       {
         path: 'corbeille',

@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.category.CategoryResponse;
+import fr.lescreationsdeyona.ingredient.IngredientPiece;
 import fr.lescreationsdeyona.tag.TagResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
@@ -33,13 +34,42 @@ public record RecipeDetail(Long id, String title, String slug, @Nullable String 
 		@Schema(description = "A draft to be published at that time; for a failed recipe, the time it was planned")
 		@Nullable Instant scheduledAt) {
 
-	/** A part of the recipe (the dough, the filling…), with its own ingredients and steps. */
+	/** The same recipe with its parts and equipment as the site shows them, linked recipes unfolded. */
+	public RecipeDetail unfolded(List<Part> unfoldedParts, List<String> allEquipment) {
+		return new RecipeDetail(id, title, slug, intro, status, theme, featured, publicationFailure, categories, tags, servings,
+				prepMinutes, cookMinutes, restMinutes, difficulty, youtubeVideoId, tip, allEquipment, questions, mold, imageId,
+				pinterestImageId, unfoldedParts, createdAt, updatedAt, publishedAt, scheduledAt);
+	}
+
+	/**
+	 * A part of the recipe (the dough, the filling…), with its own ingredients and steps. On the site a linked
+	 * recipe is unfolded here, quantities included, so that the total, the cooking mode and the shopping list
+	 * read it as any part; in the editor it stays one part without content.
+	 */
 	public record Part(@Schema(description = "Absent for the single part of a recipe without parts") @Nullable String title,
-			List<IngredientLine> ingredients, List<Step> steps) {
+			List<IngredientLine> ingredients, List<Step> steps,
+			@Schema(description = "The recipe this part comes from, when it is another recipe") @Nullable LinkedRecipe linkedRecipe) {
+
+		public Part(@Nullable String title, List<IngredientLine> ingredients, List<Step> steps) {
+			this(title, ingredients, steps, null);
+		}
+
+	}
+
+	/** The recipe a part comes from, and how many times it is taken. */
+	public record LinkedRecipe(Long id, String title, String slug,
+			@Schema(description = "Main category, in the URL of its page") String categorySlug, RecipeStatus status,
+			@Schema(description = "1 for the whole recipe, 0.5 for half of it") BigDecimal ratio) {
 	}
 
 	public record IngredientLine(String name, @Nullable BigDecimal quantity, @Nullable String unit,
-			@Nullable String note) {
+			@Nullable String note,
+			@Schema(description = "Weight of one piece, for \"400 g (≈ 8 œufs)\"") @Nullable IngredientPiece piece) {
+
+		public IngredientLine(String name, @Nullable BigDecimal quantity, @Nullable String unit, @Nullable String note) {
+			this(name, quantity, unit, note, null);
+		}
+
 	}
 
 	/** Text or Markdown, rendered by the front. */

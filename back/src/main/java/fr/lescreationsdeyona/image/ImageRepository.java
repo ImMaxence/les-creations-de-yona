@@ -28,10 +28,14 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 				or (:used = true and (exists (select 1 from Recipe r where r.image = i or r.pinterestImage = i)
 					or exists (select 1 from Category c where c.image = i)
 					or exists (select 1 from Menu m where m.image = i)
+					or exists (select 1 from CapEntry e where e.image = i)
+					or exists (select 1 from Observation o where o.image = i)
 					or exists (select 1 from SiteContent s where s.aboutImage = i)))
 				or (:used = false and not exists (select 1 from Recipe r where r.image = i or r.pinterestImage = i)
 					and not exists (select 1 from Category c where c.image = i)
 					and not exists (select 1 from Menu m where m.image = i)
+					and not exists (select 1 from CapEntry e where e.image = i)
+					and not exists (select 1 from Observation o where o.image = i)
 					and not exists (select 1 from SiteContent s where s.aboutImage = i)))""")
 	Page<Image> findGallery(@Nullable ImageKind kind, @Nullable Boolean portrait, @Nullable Boolean used,
 			Pageable pageable);
@@ -55,6 +59,16 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 			select new fr.lescreationsdeyona.image.GalleryImage$MenuUsage(m.image.id, m.id, m.title)
 			from Menu m where m.image.id in :imageIds order by m.title""")
 	List<GalleryImage.MenuUsage> findMenuUsages(Collection<UUID> imageIds);
+
+	@Query("""
+			select new fr.lescreationsdeyona.image.GalleryImage$CapUsage(e.image.id, e.id, e.title)
+			from CapEntry e where e.image.id in :imageIds order by e.title""")
+	List<GalleryImage.CapUsage> findCapEntryUsages(Collection<UUID> imageIds);
+
+	@Query("""
+			select new fr.lescreationsdeyona.image.GalleryImage$CapUsage(o.image.id, o.id, o.title)
+			from Observation o where o.image.id in :imageIds order by o.title""")
+	List<GalleryImage.CapUsage> findObservationUsages(Collection<UUID> imageIds);
 
 	// Restore from the trash: written in SQL, the entity being immutable and its date set by auditing.
 
@@ -85,6 +99,14 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 	int showOnMenus(UUID imageId, Collection<Long> menuIds);
 
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update cap_entry set image_id = :imageId where id in (:entryIds) and image_id is null", nativeQuery = true)
+	int showOnCapEntries(UUID imageId, Collection<Long> entryIds);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update observation set image_id = :imageId where id in (:observationIds) and image_id is null", nativeQuery = true)
+	int showOnObservations(UUID imageId, Collection<Long> observationIds);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query(value = "update site_content set about_image_id = :imageId where about_image_id is null", nativeQuery = true)
 	int showOnAboutPage(UUID imageId);
 
@@ -104,6 +126,14 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query(value = "update menu set image_id = :replacement where image_id = :original", nativeQuery = true)
 	int replaceOnMenus(UUID original, UUID replacement);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update cap_entry set image_id = :replacement where image_id = :original", nativeQuery = true)
+	int replaceOnCapEntries(UUID original, UUID replacement);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update observation set image_id = :replacement where image_id = :original", nativeQuery = true)
+	int replaceOnObservations(UUID original, UUID replacement);
 
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query(value = "update site_content set about_image_id = :replacement where about_image_id = :original", nativeQuery = true)
