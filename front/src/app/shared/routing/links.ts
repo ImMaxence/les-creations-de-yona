@@ -9,6 +9,8 @@ export const SHOPPING_LIST_PATH = '/liste-de-courses';
 export const LEGAL_NOTICE_PATH = '/mentions-legales';
 export const PRIVACY_POLICY_PATH = '/politique-de-confidentialite';
 export const TERMS_OF_USE_PATH = '/conditions-d-utilisation';
+export const ACCESSIBILITY_PATH = '/accessibilite';
+export const ACCESSIBILITY_STATEMENT_PATH = '/declaration-d-accessibilite';
 export const ADMIN_PATH = '/admin';
 export const ADMIN_SIGN_IN_PATH = '/admin/connexion';
 

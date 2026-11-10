@@ -262,9 +262,30 @@ await part('Menu (téléphone)', async () => {
   await field.fill('');
   const current = menu.locator('a.entry[aria-current="page"]');
   check('Menu : la page en cours ressort', (await current.count()) === 1 && (await current.evaluate((row) => getComputedStyle(row).backgroundColor)) !== 'rgba(0, 0, 0, 0)');
+  const [currentGround, searchGround] = await Promise.all([
+    current.evaluate((row) => getComputedStyle(row).backgroundColor),
+    menu.locator('.search').first().evaluate((search) => getComputedStyle(search).backgroundColor),
+  ]);
+  check('Menu : la page en cours sur un voile, pas du blanc du champ de recherche', currentGround !== searchGround, `${currentGround} / ${searchGround}`);
+  const currentBox = await current.boundingBox();
+  const listBox = await menu.locator('nav ul').first().boundingBox();
+  check('Menu : la page en cours dans les marges du menu', currentBox.x >= listBox.x - 0.5 && currentBox.x + currentBox.width <= listBox.x + listBox.width + 0.5, `${Math.round(currentBox.x)} / ${Math.round(listBox.x)}`);
+  // Once the rows have finished rising into place
+  await menu.evaluate((dialog) => Promise.all(dialog.getAnimations({ subtree: true }).map((animation) => animation.finished)));
+  const gap = await menu.evaluate((dialog) => dialog.querySelector('.menu__sections').getBoundingClientRect().top - [...dialog.querySelectorAll('nav > ul:first-child > li')].at(-1).getBoundingClientRect().bottom);
+  check('Menu : un vrai espace entre les pages et les sections', gap >= 40, `${Math.round(gap)} px`);
+  check('Menu : pas de cercle autour de la croix', (await menu.locator('.menu__close').evaluate((close) => getComputedStyle(close).boxShadow)) === 'none');
   const heights = await menu.locator('.entry').evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
   check('Menu : des lignes assez hautes pour le pouce', heights.length > 0 && heights.every((height) => height >= 44), heights.map(Math.round).join(', '));
   check('Menu : une page a sa flèche, une section son plus', (await menu.locator('a.entry .entry__mark').count()) === (await menu.locator('a.entry').count()) && (await menu.locator('summary .entry__mark').count()) === (await menu.locator('summary').count()));
+  const mark = menu.locator('summary .entry__mark').last();
+  const markBefore = await mark.boundingBox();
+  const scrollBefore = await menu.evaluate((dialog) => dialog.scrollTop);
+  await menu.locator('summary').last().click();
+  await page.waitForTimeout(700);
+  const markAfter = await mark.boundingBox();
+  check('Menu : le + devient × sur place', Math.abs(markAfter.x + markAfter.width / 2 - (markBefore.x + markBefore.width / 2)) < 1, `${markBefore.x} → ${markAfter.x}`);
+  check('Menu : une section s’ouvre sans faire défiler le menu', (await menu.evaluate((dialog) => dialog.scrollTop)) === scrollBefore);
   await menu.locator('summary').first().click();
   await menu.locator('summary').nth(1).click();
   check('Menu : une section ouverte à la fois', (await menu.locator('details[open]').count()) === 1);
@@ -633,6 +654,8 @@ await part('Mon CAP (articles simulés)', async () => {
   await page.locator('h1').waitFor();
   check('L’article : son titre', (await page.locator('h1').innerText()).trim() === 'Examen blanc');
   check('Style « Carnet » : le 1er du mois écrit « 1er »', (await page.locator('yona-cap-article-view').innerText()).includes('1er'));
+  const articleAxe = await new AxeBuilder({ page }).withTags(AXE_RULES).analyze();
+  check('Article : aucun problème d’accessibilité', articleAxe.violations.length === 0, articleAxe.violations.map((v) => `${v.id} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 2).join(' | ')})`).join(' ; '));
   check('Le texte mis en forme (gras) et l’astuce encadrée', (await page.locator('yona-cap-article-view strong').count()) >= 1 && (await page.getByText('Toujours peser le beurre').isVisible()));
   await page.locator('yona-cap-article-view a[href="/recettes"]').click();
   await page.waitForURL('**/recettes');
@@ -640,8 +663,82 @@ await part('Mon CAP (articles simulés)', async () => {
   await page.context().close();
 });
 
+await part('Infobulles de la barre du haut (ordinateur)', async () => {
+  const page = await newPage(browser, DESKTOP, errors);
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  const bubble = page.locator('.tooltip.is-open');
+  for (const [selector, name] of [
+    ['yona-header .search-toggle', 'Rechercher'],
+    ['yona-header a[aria-label^="Mes favoris"]', 'Mes favoris'],
+    ['yona-header a[aria-label^="Ma liste de courses"]', 'Ma liste de courses'],
+    ['yona-header .scheme-switch .trigger', 'Affichage'],
+  ]) {
+    const icon = page.locator(selector).first();
+    await icon.hover();
+    await bubble.waitFor({ timeout: 3000 });
+    const [iconBox, bubbleBox] = await Promise.all([icon.boundingBox(), bubble.boundingBox()]);
+    check(`Infobulle : « ${name} » sous l’icône`, (await bubble.innerText()).startsWith(name) && bubbleBox.y >= iconBox.y + iconBox.height, await bubble.innerText());
+    await page.mouse.move(0, 400);
+    await bubble.waitFor({ state: 'hidden' });
+  }
+  // A fresh page: the cookie banner, answered, no longer holds the place of the focus
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.keyboard.press('Tab');
+  check('Clavier : le premier Tab mène à « Aller au contenu »', (await page.evaluate(() => document.activeElement?.textContent?.trim())) === 'Aller au contenu');
+  await page.locator('yona-header .scheme-switch .trigger').click();
+  await page.locator('#color-scheme-menu').waitFor();
+  check('Menu Clair / Sombre : « Plus de réglages » vers Accessibilité', (await page.locator('#color-scheme-menu a').getAttribute('href')) === '/accessibilite');
+  await page.context().close();
+});
+
+await part('Accessibilité : réglages d’affichage et déclaration (téléphone)', async () => {
+  const page = await newPage(browser, PHONE, errors);
+  await page.goto(BASE + '/accessibilite', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  check('Page Accessibilité', (await page.locator('h1').innerText()).trim() === 'Accessibilité');
+  const root = () => page.evaluate(() => Object.fromEntries([...document.documentElement.attributes].filter((a) => a.name.startsWith('data-') && a.name !== 'data-color-scheme').map((a) => [a.name, a.value])));
+  await page.locator('.size', { hasText: 'Très grand' }).click();
+  for (const label of ['Contraste renforcé', 'Réduire les animations', 'Police simple', 'Souligner les liens', 'Espacer le texte']) {
+    await page.getByRole('switch', { name: new RegExp(label) }).check();
+  }
+  const applied = await root();
+  check(
+    'Chaque réglage s’applique tout de suite',
+    applied['data-text-size'] === 'larger' && applied['data-contrast'] === 'more' && applied['data-motion'] === 'reduce' && applied['data-font'] === 'readable' && applied['data-links'] === 'underline' && applied['data-spacing'] === 'wide',
+    JSON.stringify(applied),
+  );
+  check('Texte très grand : 125 %', (await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)) === '20px');
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  check('Gardés sur les autres pages, dès l’affichage', JSON.stringify(await root()) === JSON.stringify(applied));
+  check('Texte très grand et espacé : rien ne déborde sur un téléphone', (await page.evaluate(() => document.documentElement.scrollWidth)) <= PHONE.width);
+  check('Animations réduites : aucune transition', (await page.evaluate(() => getComputedStyle(document.querySelector('a')).transitionDuration)).split(',').every((value) => parseFloat(value) < 0.001));
+  await page.screenshot({ path: SHOTS + 'accessibilite-reglages.png' });
+  await page.goto(BASE + '/accessibilite', { waitUntil: 'networkidle' });
+  check('Les réglages relus sur la page', await page.getByRole('switch', { name: /Contraste renforcé/ }).isChecked());
+  await page.getByRole('button', { name: 'Tout remettre par défaut' }).click();
+  check('« Tout remettre par défaut » : plus aucun réglage, rien de gardé', JSON.stringify(await root()) === '{}' && (await page.evaluate(() => localStorage.getItem('yona-accessibility'))) === null);
+  await page.getByRole('link', { name: 'Déclaration d’accessibilité' }).or(page.getByRole('link', { name: "Déclaration d'accessibilité" })).first().click();
+  await page.waitForURL('**/declaration-d-accessibilite');
+  const statement = await page.locator('main').innerText();
+  check('Déclaration : état de conformité, contact et voies de recours', statement.includes('État de conformité') && statement.includes('Défenseur des droits') && statement.includes('Donner mon avis'));
+  check('Pied de page : Accessibilité et la déclaration', (await page.locator('yona-footer a[href="/accessibilite"]').count()) === 1 && (await page.locator('yona-footer a[href="/declaration-d-accessibilite"]').count()) === 1);
+  await page.context().close();
+});
+
+await part('Affichage sur un écran de 320 px (zoom à 400 %)', async () => {
+  const page = await newPage(browser, { width: 320, height: 640 }, errors);
+  for (const path of ['/', new URL(recipeUrl(recipe)).pathname, '/accessibilite', '/glossaire']) {
+    await page.goto(BASE + path, { waitUntil: 'networkidle' });
+    await answerCookies(page);
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    check(`${path} : rien ne déborde à 320 px`, width <= 320, `${width} px`);
+  }
+  await page.context().close();
+});
+
 await part('Accessibilité (axe, téléphone)', async () => {
-  const paths = ['/', '/recettes', new URL(recipeUrl(recipe)).pathname, '/glossaire', '/installer', '/liste-de-courses', '/favoris', '/donner-mon-avis', '/mon-cap'];
+  const paths = ['/', '/recettes', new URL(recipeUrl(recipe)).pathname, '/glossaire', '/installer', '/liste-de-courses', '/favoris', '/donner-mon-avis', '/mon-cap', '/accessibilite', '/declaration-d-accessibilite'];
   if (menus.length) {
     paths.push('/menus', `/menus/${menus[0].slug}`);
   }
@@ -751,14 +848,17 @@ await part('Back-office (session simulée)', async () => {
     (await page.getByRole('link', { name: 'GitHub' }).getAttribute('href')) === 'https://github.com/ImMaxence/les-creations-de-yona' &&
       (await page.getByRole('link', { name: 'Coolify' }).count()) === 1,
   );
-  const relative = await page.locator('.changelog__body a[href]').evaluateAll((links) =>
+  check('Nouveautés : Version 2, puis Version 1', (await page.locator('.changelog__major').allTextContents()).join(' | ') === 'Version 2 | Version 1');
+  const pills = await folds.nth(0).locator('.changes tbody .pill').allTextContents();
+  check('Nouveautés : un tableau, une pastille par changement', pills.length > 0 && pills.every((pill) => ['Ajouté', 'Modifié', 'Corrigé', 'Retiré', 'Technique', 'Autre'].includes(pill.trim())), pills.slice(0, 5).join(', '));
+  const relative = await page.locator('.changes a[href]').evaluateAll((links) =>
     links.map((link) => link.getAttribute('href')).filter((href) => !/^(https?:|mailto:|#)/.test(href ?? '')),
   );
   check('Nouveautés : aucun lien relatif vers une page du site', relative.length === 0, relative.join(', '));
   if ((await folds.count()) > 1) {
-    check('Les autres fermées, sans texte rendu', (await folds.nth(1).locator('.changelog__body').count()) === 0);
+    check('Les autres fermées, sans texte rendu', (await folds.nth(1).locator('.changes').count()) === 0);
     await folds.nth(1).locator('summary').click();
-    const rendered = await folds.nth(1).locator('.changelog__body').waitFor({ timeout: 2000 }).then(() => true, () => false);
+    const rendered = await folds.nth(1).locator('.changes').waitFor({ timeout: 2000 }).then(() => true, () => false);
     check('Une section ouverte : son texte rendu', rendered);
   }
 

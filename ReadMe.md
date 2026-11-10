@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.4.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.5.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -63,6 +63,7 @@ Chaque modèle se télécharge une seule fois, directement depuis Hugging Face, 
 - Favoris, liste de courses rangée par rayon (portions de chaque recette réglables), notes personnelles : gardés dans le navigateur.
 - Application installable d'un bouton (« Télécharger l'application » ; sur iPhone, les deux gestes expliqués), lisible hors connexion, notifications des nouvelles recettes.
 - Glossaire de pâtisserie, mots expliqués d'un appui dans les étapes.
+- Accessibilité : taille du texte, contraste renforcé, moins d'animations, police simple, liens soulignés, texte espacé, clair ou sombre, gardés dans le navigateur ; déclaration d'accessibilité ; chaque page vérifiée par axe à chaque version.
 - « Donner mon avis » : un message à Yona, lu dans le back-office.
 - Mon CAP : le carnet de route de Yona vers son CAP Pâtisserie, en articles : une frise d'aperçus, et une page par article faite de blocs (texte, grande photo, photo + texte, étapes en photos, astuce), photos en grand d'un appui ; le dernier article, ou le « Coup de cœur », sur l'accueil.
 - Recettes qui en utilisent d'autres (une pâte sablée écrite une fois, reprise dans chaque tarte) ; équivalents en pièces (« 400 g ≈ 8 œufs »).

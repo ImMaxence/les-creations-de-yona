@@ -11,6 +11,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { DevicePlatform, InstallPrompt } from '../../core/pwa/install-prompt';
+import { prefersReducedMotion } from '../../core/theme/display-preferences';
 import { Button } from '../../shared/ui/button/button';
 import { NotifyButton } from '../../shared/ui/notify-button/notify-button';
 import { Icon } from '../../shared/ui/icon/icon';
@@ -80,7 +81,7 @@ export default class Install {
           : 'Votre navigateur ne propose pas encore l’installation directe : suivez les étapes ci-dessous, cela prend dix secondes',
     );
     const guide = this.guide().nativeElement;
-    guide.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    guide.scrollIntoView({ behavior: prefersReducedMotion(document) ? 'auto' : 'smooth' });
     guide.focus({ preventScroll: true });
   }
 

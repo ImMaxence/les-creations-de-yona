@@ -1,9 +1,9 @@
-// The page shown, in the colours of the panel reversed
+// The page shown: a light veil of the panel's text colour, within the margins of the menu. Not
+// the white of the search field just above, which made the two look alike.
 @mixin current {
   border-bottom-color: transparent;
   border-radius: var(--radius-md);
-  background-color: var(--color-on-accent);
-  color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-on-accent) 16%, transparent);
 
   svg {
     opacity: 1;
@@ -131,7 +131,6 @@ yona-navigation-progress {
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-on-accent) 45%, transparent);
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--duration-fast) var(--ease-out);
 
@@ -143,13 +142,13 @@ yona-navigation-progress {
 // A field and suggestions on the page's own colours: not the text colour of the panel
 .menu__search {
   display: block;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-5);
   color: var(--color-text);
 }
 
-// The sections, apart from the pages
+// The sections (+), well apart from the pages (→)
 .menu__sections {
-  margin-top: var(--space-4);
+  margin-top: var(--space-7);
 }
 
 .entry {
@@ -176,7 +175,8 @@ yona-navigation-progress {
     font-style: italic;
   }
 
-  &:active .entry__mark {
+  // A link nudges its arrow on a tap; a section's + does not move
+  &:is(a):active .entry__mark {
     transform: translateX(4px);
   }
 }
@@ -185,8 +185,6 @@ yona-navigation-progress {
 .menu:not(:has(.sub.is-active)) a.entry.is-active {
   @include current;
 
-  // Wider than the row, for its text to stay in line with the others
-  margin-inline: calc(-1 * var(--space-3));
   padding-inline: var(--space-3);
 }
 
@@ -233,6 +231,11 @@ yona-navigation-progress {
 
   &[open]::details-content {
     block-size: auto;
+  }
+
+  // The + turns into ×, at once and in place
+  > .entry .entry__mark {
+    transition: none;
   }
 
   &[open] > .entry {

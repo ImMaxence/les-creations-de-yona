@@ -19,10 +19,11 @@ import { Header } from './core/layout/header/header';
 import { NavigationProgress } from './core/layout/navigation-progress/navigation-progress';
 import { Toasts } from './core/notifications/toasts';
 import { isBackOfficeUrl } from './shared/routing/links';
+import { TooltipLayer } from './shared/ui/tooltip/tooltip-layer';
 
 @Component({
   selector: 'yona-root',
-  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts, CookieBanner, InstallBanner, TimersBar],
+  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts, CookieBanner, InstallBanner, TimersBar, TooltipLayer],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

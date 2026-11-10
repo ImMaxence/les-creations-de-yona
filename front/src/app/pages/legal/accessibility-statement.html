@@ -1,0 +1,112 @@
+<article class="container legal">
+  <p class="eyebrow enter">Informations légales</p>
+  <h1 class="enter" style="--delay: 80ms">Déclaration d'accessibilité</h1>
+  <p class="legal__updated enter" style="--delay: 140ms">Dernière mise à jour : {{ updatedOn }}</p>
+
+  <div class="prose legal__body enter" style="--delay: 200ms">
+    <p>
+      Les créations de Yona s'engage à rendre son site accessible à toutes et à tous, quelle que soit
+      la façon de le consulter : clavier, lecteur d'écran, agrandissement, téléphone. Cette
+      déclaration s'applique au site <strong>les-creations-de-yona.fr</strong>.
+    </p>
+    <p>
+      Site personnel, il n'est pas soumis à l'obligation d'accessibilité de l'article 47 de la loi
+      n° 2005-102 du 11 février 2005, qui vise les services publics et les grandes entreprises. Cette
+      déclaration est volontaire : elle dit où en est le site, honnêtement, et comment signaler un
+      problème.
+    </p>
+
+    <h2>État de conformité</h2>
+    <p>
+      Le site vise le niveau AA du Référentiel général d'amélioration de l'accessibilité (RGAA 4.1),
+      qui reprend les règles internationales WCAG 2.1. Il n'a pas encore fait l'objet d'un audit de
+      conformité complet par un tiers : <strong>en l'absence d'audit, il est déclaré non conforme</strong>,
+      comme le prévoit le RGAA, même si les vérifications décrites ci-dessous ne relèvent aucune erreur.
+    </p>
+
+    <h2>Vérifications faites</h2>
+    <ul>
+      <li>
+        À chaque nouvelle version, un parcours automatique ouvre chaque page publique dans Chrome et la
+        fait vérifier par l'outil axe-core (règles WCAG 2.1 niveaux A et AA et bonnes pratiques) :
+        aucune erreur n'est tolérée. Pages vérifiées : accueil, recettes, une recette, menus et un menu,
+        glossaire, favoris, liste de courses, installer l'application, donner mon avis, Mon CAP et un
+        article, boutique, accessibilité.
+      </li>
+      <li>
+        Le même parcours mesure l'accueil, une recette et un menu avec Lighthouse : 100 sur 100 en
+        accessibilité.
+      </li>
+      <li>
+        Vérifié à la main : navigation au clavier (ordre, contour de l'élément actif, fermeture des
+        fenêtres par Échap), affichage en thème clair et sombre, sur téléphone et sur ordinateur, avec
+        les réglages de la page <a [routerLink]="accessibilityPath">Accessibilité</a>.
+      </li>
+      <li>
+        Pas encore vérifié de bout en bout avec un lecteur d'écran (NVDA, VoiceOver) : c'est la
+        prochaine étape.
+      </li>
+    </ul>
+
+    <h2>Ce qui peut encore poser problème</h2>
+    <ul>
+      <li>
+        <strong>Photos</strong> : leur texte de remplacement est le nom de la recette, du menu ou du
+        produit ; la photo elle-même n'est pas décrite en détail.
+      </li>
+      <li>
+        <strong>Vidéos</strong> : les vidéos YouTube intégrées à certaines recettes dépendent du lecteur
+        de YouTube ; leurs sous-titres sont ceux que propose YouTube. Les étapes de la recette, écrites
+        sur la page, en donnent le contenu.
+      </li>
+      <li>
+        <strong>« Je ne suis pas un robot »</strong> : la case reCAPTCHA de Google, demandée pour
+        donner son avis et pour la boutique, est un service extérieur que le site ne peut pas modifier ;
+        elle propose une épreuve sonore. Si elle bloque, écrivez par e-mail (voir plus bas).
+      </li>
+      <li>
+        <strong>Espace d'administration</strong> : réservé à l'équipe du site, il n'est pas couvert
+        par cette déclaration.
+      </li>
+    </ul>
+
+    <h2>Adapter l'affichage</h2>
+    <p>
+      La page <a [routerLink]="accessibilityPath">Accessibilité</a> permet d'agrandir le texte,
+      renforcer les contrastes, arrêter les animations, choisir une police simple, souligner les liens,
+      espacer le texte et passer en clair ou en sombre. Ces choix restent dans votre navigateur.
+    </p>
+
+    <h2>Établissement de cette déclaration</h2>
+    <ul>
+      <li>Technologies utilisées : HTML, CSS, JavaScript (Angular), WAI-ARIA.</li>
+      <li>Outils de vérification : axe-core (par @axe-core/playwright 4.14) et Lighthouse 13, dans Chrome.</li>
+      <li>Déclaration établie le 10 novembre 2026, mise à jour à chaque changement notable.</li>
+    </ul>
+
+    <h2>Retour d'information et contact</h2>
+    <p>
+      Si vous n'arrivez pas à lire un contenu ou à utiliser une fonction, dites-le : une réponse vous
+      sera apportée, et le contenu envoyé sous une autre forme si besoin. Écrivez par
+      <a [routerLink]="feedbackPath">« Donner mon avis »</a> ou par e-mail à
+      <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>.
+    </p>
+
+    <h2>Voies de recours</h2>
+    <p>
+      Si vous signalez un défaut d'accessibilité sans obtenir de réponse satisfaisante, vous pouvez
+      saisir le Défenseur des droits :
+    </p>
+    <ul>
+      <li>
+        par le formulaire en ligne :
+        <a href="https://formulaire.defenseurdesdroits.fr/" rel="noopener noreferrer" target="_blank">formulaire.defenseurdesdroits.fr</a> ;
+      </li>
+      <li>
+        auprès d'un délégué de votre région :
+        <a href="https://www.defenseurdesdroits.fr/carte-des-delegues" rel="noopener noreferrer" target="_blank">carte des délégués</a> ;
+      </li>
+      <li>par courrier, gratuit, sans timbre : Défenseur des droits, Libre réponse 71120, 75342 Paris CEDEX 07.</li>
+    </ul>
+  </div>
+</article>

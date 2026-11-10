@@ -11,7 +11,8 @@ const EDGE_PX = 8;
  * aria-label shows on mouse hover or keyboard focus, so no button has to declare its own. The
  * bubble is a popover, shown in the top layer: above modal dialogs too. Screen readers already
  * read the aria-label, so the bubble stays hidden from them. Touch screens, without hover, are
- * left alone. A data-no-tooltip ancestor opts a part out.
+ * left alone. A data-no-tooltip ancestor opts a part out; a data-tooltip-place="below" one (a bar
+ * of icons side by side) puts the bubble under each icon. A button whose menu is open has none.
  */
 @Component({
   selector: 'yona-tooltip-layer',
@@ -78,7 +79,7 @@ export class TooltipLayer {
   /** The icon-only button or link under the pointer or focused, if any. */
   private targetOf(node: EventTarget | null): HTMLElement | null {
     const target = node instanceof Element ? node.closest<HTMLElement>(TARGETS) : null;
-    if (!target || target.closest('[data-no-tooltip]') || target.matches(':disabled')) {
+    if (!target || target.closest('[data-no-tooltip]') || target.matches(':disabled, [aria-expanded="true"]')) {
       return null;
     }
     // innerText ignores hidden text: a label shown on large screens only still counts as none
@@ -97,7 +98,9 @@ export class TooltipLayer {
     if ('showPopover' in bubble && !bubble.matches(':popover-open')) {
       bubble.showPopover();
     }
-    const { top, left } = placeBeside(target.getBoundingClientRect(), bubble.getBoundingClientRect());
+    const anchor = target.getBoundingClientRect();
+    const size = bubble.getBoundingClientRect();
+    const { top, left } = target.closest('[data-tooltip-place="below"]') ? placeBelow(anchor, size) : placeBeside(anchor, size);
     bubble.style.top = `${top}px`;
     bubble.style.left = `${left}px`;
   }
@@ -119,6 +122,16 @@ function placeBeside(anchor: DOMRect, bubble: { width: number; height: number })
   const above = anchor.top - height - GAP_PX;
   return {
     top: above >= EDGE_PX ? above : anchor.bottom + GAP_PX,
+    left: clamp(anchor.left + anchor.width / 2 - width / 2, EDGE_PX, window.innerWidth - width - EDGE_PX),
+  };
+}
+
+/** Under the icon, centered on it (above it near the bottom of the screen), never past the edges. */
+export function placeBelow(anchor: DOMRect, bubble: { width: number; height: number }): { top: number; left: number } {
+  const { width, height } = bubble;
+  const below = anchor.bottom + GAP_PX;
+  return {
+    top: below + height <= window.innerHeight - EDGE_PX ? below : Math.max(EDGE_PX, anchor.top - height - GAP_PX),
     left: clamp(anchor.left + anchor.width / 2 - width / 2, EDGE_PX, window.innerWidth - width - EDGE_PX),
   };
 }

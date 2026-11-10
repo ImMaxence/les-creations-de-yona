@@ -15,7 +15,14 @@ import { orderTrackingResolver, shopResolver } from './pages/shop/shop.resolver'
 import { shopSeo } from './pages/shop/shop.seo';
 import { glossarySeo } from './pages/glossary/glossary.seo';
 import { menuResolver, menuSeo, menusSeo } from './pages/menus/menus.resolver';
-import { INSTALL_PATH, LEGAL_NOTICE_PATH, PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from './shared/routing/links';
+import {
+  ACCESSIBILITY_PATH,
+  ACCESSIBILITY_STATEMENT_PATH,
+  INSTALL_PATH,
+  LEGAL_NOTICE_PATH,
+  PRIVACY_POLICY_PATH,
+  TERMS_OF_USE_PATH,
+} from './shared/routing/links';
 
 const NO_INDEX: RouteSeo = { noIndex: true };
 
@@ -128,6 +135,28 @@ export const routes: Routes = [
     path: 'liste-de-courses',
     loadComponent: () => import('./pages/shopping-list/shopping-list'),
     data: { [SEO_DATA_KEY]: { title: 'Ma liste de courses', noIndex: true } satisfies RouteSeo },
+  },
+  {
+    path: 'accessibilite',
+    loadComponent: () => import('./pages/accessibility/accessibility'),
+    data: {
+      [SEO_DATA_KEY]: {
+        title: 'Accessibilité',
+        description: 'Adapter l’affichage du site : taille du texte, contraste, animations, police, liens, espacement, clair ou sombre',
+        markdownPath: markdownPathOf(ACCESSIBILITY_PATH),
+      } satisfies RouteSeo,
+    },
+  },
+  {
+    path: 'declaration-d-accessibilite',
+    loadComponent: () => import('./pages/legal/accessibility-statement'),
+    data: {
+      [SEO_DATA_KEY]: {
+        title: "Déclaration d'accessibilité",
+        description: 'État de conformité au RGAA, vérifications faites, limites connues, contact et voies de recours.',
+        markdownPath: markdownPathOf(ACCESSIBILITY_STATEMENT_PATH),
+      } satisfies RouteSeo,
+    },
   },
   {
     path: 'mentions-legales',

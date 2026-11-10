@@ -11,6 +11,8 @@ import {
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
   PRIVACY_POLICY_PATH,
+  ACCESSIBILITY_PATH,
+  ACCESSIBILITY_STATEMENT_PATH,
   TERMS_OF_USE_PATH,
 } from '../../../shared/routing/links';
 import { BrandIcon, socialPlatformLabel } from '../../../shared/ui/brand-icon/brand-icon';
@@ -31,6 +33,8 @@ export class Footer {
   protected readonly legalNoticePath = LEGAL_NOTICE_PATH;
   protected readonly termsOfUsePath = TERMS_OF_USE_PATH;
   protected readonly privacyPolicyPath = PRIVACY_POLICY_PATH;
+  protected readonly accessibilityPath = ACCESSIBILITY_PATH;
+  protected readonly accessibilityStatementPath = ACCESSIBILITY_STATEMENT_PATH;
   protected readonly adminPath = ADMIN_PATH;
   protected readonly glossaryPath = GLOSSARY_PATH;
   protected readonly aboutPath = ABOUT_PATH;

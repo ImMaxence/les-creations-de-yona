@@ -58,6 +58,13 @@
           </button>
         </li>
       }
+      <!-- Text size, contrast, motion…: the other display choices -->
+      <li class="panel__more">
+        <a class="panel__option" [routerLink]="accessibilityPath" (click)="open.set(false)">
+          <svg yonaIcon="accessibility" [size]="18"></svg>
+          Plus de réglages
+        </a>
+      </li>
     </ul>
   }
 }

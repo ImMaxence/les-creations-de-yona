@@ -1,0 +1,81 @@
+// Display choices of the page Accessibilité, written on <html> by DisplayPreferencesStore (and before
+// the first paint by the inline script of index.html). The theme's colours and fonts are set inline
+// on <html> by SiteTheme: !important is what lets a visitor's choice win over them.
+
+// Text size: every size and space of the site is in rem, so the whole page grows, as with the
+// browser's zoom, without anything overlapping
+:root[data-text-size='large'] {
+  font-size: 112.5%;
+}
+
+:root[data-text-size='larger'] {
+  font-size: 125%;
+}
+
+// Stronger contrast: the muted texts as dark as the text, the lines and borders clearly visible,
+// a thicker focus ring
+:root[data-contrast='more'] {
+  --color-text-muted: var(--color-text) !important;
+  --color-line: color-mix(in srgb, var(--color-text) 55%, transparent) !important;
+
+  :focus-visible {
+    outline-width: 3px !important;
+  }
+}
+
+// No movement: entries, reveals, page transitions and every transition at once
+:root[data-motion='reduce'] {
+  scroll-behavior: auto !important;
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  &::view-transition-group(*),
+  &::view-transition-old(*),
+  &::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+// A plain font, the system's own, for the texts and the titles
+:root[data-font='readable'] {
+  --font-body: Verdana, Tahoma, 'Segoe UI', Arial, sans-serif !important;
+  --font-display: Verdana, Tahoma, 'Segoe UI', Arial, sans-serif !important;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  em,
+  i {
+    font-style: normal;
+    letter-spacing: normal;
+  }
+}
+
+// Every link of the texts underlined, not only told by its colour
+:root[data-links='underline'] :is(main, footer) a:not(.button) {
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+// Text spacing of WCAG 1.4.12: lines 1.5 times the size at least (here 1.8), letters 0.12 em, words
+// 0.16 em, paragraphs 2 times the size apart. On the texts to read, not on buttons and labels.
+:root[data-spacing='wide'] :is(p, li, dd, dt, blockquote, td, th, figcaption, .prose) {
+  line-height: 1.8 !important;
+  letter-spacing: 0.12em !important;
+  word-spacing: 0.16em !important;
+}
+
+:root[data-spacing='wide'] :is(.prose p, main p) + p {
+  margin-top: 2em !important;
+}

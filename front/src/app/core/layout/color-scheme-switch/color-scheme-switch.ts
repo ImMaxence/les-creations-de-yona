@@ -1,6 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal } from '@angular/core';
 import { ColorScheme, ColorSchemePreference } from '../../theme/color-scheme';
+import { RouterLink } from '@angular/router';
+import { ACCESSIBILITY_PATH } from '../../../shared/routing/links';
 import { Icon } from '../../../shared/ui/icon/icon';
 
 interface SchemeOption {
@@ -20,7 +22,7 @@ const OPTIONS: SchemeOption[] = [
  */
 @Component({
   selector: 'yona-color-scheme-switch',
-  imports: [Icon, NgTemplateOutlet],
+  imports: [Icon, NgTemplateOutlet, RouterLink],
   templateUrl: './color-scheme-switch.html',
   styleUrl: './color-scheme-switch.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +36,7 @@ export class ColorSchemeSwitch {
 
   protected readonly colorScheme = inject(ColorScheme);
   protected readonly options = OPTIONS;
+  protected readonly accessibilityPath = ACCESSIBILITY_PATH;
   protected readonly current = computed(
     () => OPTIONS.find((option) => option.value === this.colorScheme.preference()) ?? OPTIONS[1],
   );

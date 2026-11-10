@@ -82,6 +82,16 @@
   margin-left: auto;
 }
 
+.panel__more {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-line);
+
+  a {
+    text-decoration: none;
+  }
+}
+
 // Full: three choices side by side ---------------------------------------------
 
 .segments {

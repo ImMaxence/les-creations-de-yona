@@ -9,6 +9,7 @@
         <a class="footer__link" [routerLink]="glossaryPath"><svg yonaIcon="book-a" [size]="18"></svg>Glossaire de pâtisserie</a>
         <a class="footer__link" [routerLink]="installPath"><svg yonaIcon="smartphone" [size]="18"></svg>Installer l'application</a>
         <a class="footer__link" [routerLink]="feedbackPath"><svg yonaIcon="message-square" [size]="18"></svg>Donner mon avis</a>
+        <a class="footer__link" [routerLink]="accessibilityPath"><svg yonaIcon="accessibility" [size]="18"></svg>Accessibilité</a>
       </div>
     </div>
 
@@ -33,6 +34,7 @@
       <a [routerLink]="legalNoticePath">Mentions légales</a>
       <a [routerLink]="termsOfUsePath">Conditions d'utilisation</a>
       <a [routerLink]="privacyPolicyPath">Politique de confidentialité</a>
+      <a [routerLink]="accessibilityStatementPath">Déclaration d'accessibilité</a>
       <button type="button" class="footer__cookies" (click)="consent.reopen()">Gestion des cookies</button>
     </nav>
 

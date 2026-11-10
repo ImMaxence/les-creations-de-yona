@@ -2,6 +2,29 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 2.5.0 - 2026-11-10
+
+Front and backend 2.5.0. No database migration.
+
+### Added
+
+- **Accessibility page**: text size, stronger contrast, fewer animations, plain font, underlined links, text spacing and light or dark, applied at once on every page and kept in the browser.
+- **Accessibility statement**: a legal page on the RGAA model (state of conformity, checks made, known limits, contact, recourse), linked from the footer.
+- **Tooltips**: the icons of the header (search, favourites, shopping list, display) and every icon without text show their name on hover or keyboard focus.
+- **Nouveautés**: versions grouped under Version 2 and Version 1; each version a table of its changes, with a coloured pill for each kind (Ajouté, Modifié, Corrigé, Retiré, Technique).
+
+### Changed
+
+- **Phone menu**: the current page on a light veil within the margins, more space under the search field and between the pages and the sections.
+- **Phone menu sections**: the + turns into × in place, without sliding; a section unfolds where it is, without scrolling the menu by itself.
+- **Phone menu close button**: no more ring around the cross.
+- **Light and dark menu**: "Plus de réglages" leads to the accessibility page.
+
+### Technical
+
+- Display choices written on `<html>` before the first paint (inline script of `index.html`), as the light or dark choice.
+- Tests: 287 front, 326 backend, 212 checks in Chrome, among them the tooltips, the phone menu, the accessibility page and its statement, and reflow at 320 px.
+
 ## 2.4.0 - 2026-11-10
 
 Front and backend 2.4.0. Database migrations: V21, V22.

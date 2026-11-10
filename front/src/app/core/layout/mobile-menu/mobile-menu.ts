@@ -29,6 +29,7 @@ import {
   FEEDBACK_PATH,
   GLOSSARY_PATH,
   INSTALL_PATH,
+  ACCESSIBILITY_PATH,
   MENUS_PATH,
   CAP_PATH,
   RECIPES_PATH,
@@ -67,9 +68,6 @@ interface MenuSection {
   themes: ReturnType<typeof themeGroupsOf>;
   count: number;
 }
-
-/** Once a section has finished unfolding (--duration-slow), it can be brought into view. */
-const UNFOLDED_AFTER_MS = 350;
 
 function page(path: string, label: string, exact = false): MenuPage {
   return { path, label, exact };
@@ -145,6 +143,7 @@ export class MobileMenu {
           { path: ABOUT_PATH, label: 'À propos de Yona' },
           { path: FEEDBACK_PATH, label: 'Donner mon avis' },
           { path: INSTALL_PATH, label: "Installer l'application" },
+          { path: ACCESSIBILITY_PATH, label: 'Accessibilité' },
         ],
         themes: [],
         count: 0,
@@ -189,14 +188,6 @@ export class MobileMenu {
   protected close(): void {
     if (this.isOpen()) {
       this.dialog().nativeElement.close();
-    }
-  }
-
-  /** A section unfolded near the bottom of the screen would run past it. */
-  protected reveal(event: Event): void {
-    const section = event.target as HTMLDetailsElement;
-    if (section.open) {
-      setTimeout(() => section.scrollIntoView({ block: 'nearest' }), UNFOLDED_AFTER_MS);
     }
   }
 

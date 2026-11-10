@@ -7,6 +7,7 @@ import {
   input,
   signal,
 } from '@angular/core';
+import { prefersReducedMotion } from '../../core/theme/display-preferences';
 
 type RevealState = 'visible' | 'pending' | 'revealed';
 
@@ -38,7 +39,7 @@ export class Reveal {
     const destroyRef = inject(DestroyRef);
 
     afterNextRender(() => {
-      const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reducedMotion = prefersReducedMotion(document);
       const alreadyOnScreen = element.getBoundingClientRect().top < window.innerHeight;
       if (reducedMotion || alreadyOnScreen) {
         return;

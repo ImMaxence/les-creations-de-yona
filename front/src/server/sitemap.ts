@@ -12,6 +12,8 @@ import {
   LEGAL_NOTICE_PATH,
   MENUS_PATH,
   PRIVACY_POLICY_PATH,
+  ACCESSIBILITY_PATH,
+  ACCESSIBILITY_STATEMENT_PATH,
   RECIPES_PATH,
   TERMS_OF_USE_PATH,
   capArticleLink,
@@ -21,7 +23,17 @@ import {
 } from '../app/shared/routing/links';
 import { apiOrigin, fetchCapEntries, fetchGlossary, fetchMenus, fetchPublishedRecipes } from './api';
 
-const STATIC_PATHS = ['/', RECIPES_PATH, ABOUT_PATH, INSTALL_PATH, LEGAL_NOTICE_PATH, TERMS_OF_USE_PATH, PRIVACY_POLICY_PATH];
+const STATIC_PATHS = [
+  '/',
+  RECIPES_PATH,
+  ABOUT_PATH,
+  INSTALL_PATH,
+  ACCESSIBILITY_PATH,
+  LEGAL_NOTICE_PATH,
+  TERMS_OF_USE_PATH,
+  PRIVACY_POLICY_PATH,
+  ACCESSIBILITY_STATEMENT_PATH,
+];
 
 /** Indexable pages only: no search results, no empty category nor glossary (all noindex). */
 function sitemapPaths(

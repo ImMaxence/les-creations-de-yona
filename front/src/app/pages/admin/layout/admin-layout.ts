@@ -15,7 +15,6 @@ import { NavigationCancel, NavigationEnd, NavigationError, NavigationSkipped, Ro
 import { filter } from 'rxjs';
 import { AdminSession } from '../../../core/auth/admin-session';
 import { ConfirmDialog } from '../../../core/dialog/confirm-dialog';
-import { TooltipLayer } from '../../../shared/ui/tooltip/tooltip-layer';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { UnreadFeedback } from '../feedback/unread-feedback';
 import { NewOrders } from '../shop/new-orders';
@@ -33,7 +32,7 @@ const WIDE_SCREEN = '(width >= 64rem)';
  */
 @Component({
   selector: 'yona-admin-layout',
-  imports: [AdminAvatar, AdminNav, ConfirmDialog, Icon, RouterOutlet, TooltipLayer],
+  imports: [AdminAvatar, AdminNav, ConfirmDialog, Icon, RouterOutlet],
   templateUrl: './admin-layout.html',
   styleUrls: ['./admin-frame.scss', './admin-layout.scss'],
   encapsulation: ViewEncapsulation.None,

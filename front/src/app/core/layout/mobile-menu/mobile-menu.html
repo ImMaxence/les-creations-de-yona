@@ -41,7 +41,8 @@
     <ul role="list" class="menu__sections">
       @for (section of sections(); track section.id; let i = $index) {
         <li class="stagger" [style.--i]="pages().length + i + 1">
-          <details class="section" name="menu-section" (toggle)="reveal($event)">
+          <!-- Unfolds where it is: the page does not scroll by itself, the visitor scrolls to the end of a long section -->
+          <details class="section" name="menu-section">
             <summary class="entry">
               <span class="entry__label">{{ section.label }}</span>
               @if (section.count; as count) {

@@ -1,0 +1,209 @@
+@use 'mixins' as m;
+
+.access {
+  display: grid;
+  gap: var(--space-7);
+  max-width: 46rem;
+  padding-top: var(--space-7);
+  padding-bottom: var(--space-8);
+}
+
+.access__head {
+  display: grid;
+  gap: var(--space-3);
+
+  h1 {
+    font-size: var(--text-3xl);
+  }
+}
+
+.access__lead {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+
+  @include m.from(md) {
+    padding: var(--space-6);
+  }
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.panel__title {
+  font-size: var(--text-xl);
+}
+
+.setting {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.setting__label {
+  padding: 0;
+  font-weight: 600;
+}
+
+// Three choices side by side, the letter growing with the size
+.sizes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.size {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:has(input:focus-visible) {
+    @include m.focus-ring;
+  }
+
+  &.is-chosen {
+    box-shadow: inset 0 0 0 2px var(--color-accent);
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+}
+
+.size__sample {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.switches {
+  display: grid;
+}
+
+// A row per choice: its name and what it does, the switch on the right
+.switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-line);
+  cursor: pointer;
+}
+
+.switch__text {
+  display: grid;
+  flex: 1;
+  gap: 0.125rem;
+}
+
+.switch__label {
+  font-weight: 600;
+}
+
+.switch__hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+// A native checkbox drawn as a switch: keyboard, form and screen readers as usual (role="switch")
+.switch__input {
+  position: relative;
+  flex: none;
+  width: 3rem;
+  height: 1.75rem;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  // 3:1 at least against the panel (WCAG 1.4.11), off as on
+  background-color: color-mix(in srgb, var(--color-text) 50%, transparent);
+  cursor: pointer;
+  appearance: none;
+  transition: background-color var(--duration-base) var(--ease-out);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0.1875rem;
+    left: 0.1875rem;
+    width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  &:checked {
+    background-color: var(--color-accent);
+
+    &::after {
+      transform: translateX(1.25rem);
+    }
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.access__part {
+  display: grid;
+  gap: var(--space-4);
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+}
+
+.checks {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  svg {
+    flex: none;
+    margin-top: 0.2em;
+    color: var(--color-accent);
+  }
+}
+
+.access__help {
+  justify-items: start;
+
+  a:not(.button) {
+    color: var(--color-accent);
+  }
+}

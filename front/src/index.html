@@ -11,8 +11,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <!-- Light or dark display chosen by the visitor (ColorScheme), applied before the first paint -->
-  <script>try{var s=localStorage.getItem('yona-color-scheme');if(s==='light'||s==='dark')document.documentElement.setAttribute('data-color-scheme',s)}catch(e){}</script>
+  <!-- Light or dark display (ColorScheme) and the choices of the page Accessibilité (DisplayPreferencesStore), applied before the first paint -->
+  <script>try{var r=document.documentElement,s=localStorage.getItem('yona-color-scheme');if(s==='light'||s==='dark')r.setAttribute('data-color-scheme',s);var a=JSON.parse(localStorage.getItem('yona-accessibility')||'{}')||{};if(a.textSize==='large'||a.textSize==='larger')r.setAttribute('data-text-size',a.textSize);if(a.contrast===true)r.setAttribute('data-contrast','more');if(a.reduceMotion===true)r.setAttribute('data-motion','reduce');if(a.readableFont===true)r.setAttribute('data-font','readable');if(a.underlineLinks===true)r.setAttribute('data-links','underline');if(a.textSpacing===true)r.setAttribute('data-spacing','wide')}catch(e){}</script>
 </head>
 <body>
   <yona-root></yona-root>

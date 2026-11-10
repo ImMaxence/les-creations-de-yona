@@ -1,0 +1,73 @@
+<section class="container access">
+  <header class="access__head">
+    <p class="eyebrow enter">Pour lire comme vous le voulez</p>
+    <h1 class="enter" style="--delay: 60ms">Accessibilité</h1>
+    <p class="access__lead enter" style="--delay: 120ms">
+      Adaptez l'affichage du site à vos besoins : chaque réglage s'applique tout de suite, sur toutes les pages, et reste dans ce
+      navigateur
+    </p>
+  </header>
+
+  <section class="panel enter" style="--delay: 180ms" aria-labelledby="display-title">
+    <div class="panel__head">
+      <h2 id="display-title" class="panel__title">Affichage</h2>
+      <button yonaButton variant="ghost" type="button" [disabled]="!changed()" (click)="store.reset()">
+        <svg yonaIcon="rotate-ccw"></svg>Tout remettre par défaut
+      </button>
+    </div>
+
+    <fieldset class="setting">
+      <legend class="setting__label">Taille du texte</legend>
+      <div class="sizes">
+        @for (size of textSizes; track size.value; let i = $index) {
+          <label class="size" [class.is-chosen]="store.preferences().textSize === size.value">
+            <input type="radio" name="text-size" [value]="size.value" [checked]="store.preferences().textSize === size.value" (change)="setTextSize(size.value)" />
+            <span class="size__sample" [style.font-size.em]="1 + i * 0.2" aria-hidden="true">A</span>
+            {{ size.label }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <div class="setting">
+      <p class="setting__label">Clair ou sombre</p>
+      <yona-color-scheme-switch layout="full" />
+    </div>
+
+    <ul role="list" class="switches">
+      @for (item of switches; track item.key) {
+        <li>
+          <label class="switch">
+            <span class="switch__text">
+              <span class="switch__label">{{ item.label }}</span>
+              <span class="switch__hint">{{ item.hint }}</span>
+            </span>
+            <input type="checkbox" role="switch" class="switch__input" [checked]="store.preferences()[item.key]" (change)="toggle(item.key, $event)" />
+          </label>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="access__part enter" style="--delay: 240ms" aria-labelledby="built-in-title">
+    <h2 id="built-in-title">Ce que fait le site pour tout le monde</h2>
+    <ul class="checks">
+      <li><svg yonaIcon="check" [size]="18"></svg>Tout se fait au clavier, avec un lien « Aller au contenu » en tête de page et un contour visible sur l'élément actif</li>
+      <li><svg yonaIcon="check" [size]="18"></svg>Des contrastes suffisants en clair comme en sombre, et un thème sombre qui suit votre système</li>
+      <li><svg yonaIcon="check" [size]="18"></svg>Les animations s'arrêtent d'elles-mêmes si votre système demande moins de mouvement</li>
+      <li><svg yonaIcon="check" [size]="18"></svg>Une page qui reste lisible zoomée à 200 %, sur téléphone comme sur ordinateur</li>
+      <li><svg yonaIcon="check" [size]="18"></svg>Des titres, des listes et des boutons nommés que les lecteurs d'écran annoncent, chaque icône seule avec son nom</li>
+      <li><svg yonaIcon="check" [size]="18"></svg>Le mode cuisine : une étape par écran, en grand, et des minuteurs qui sonnent et vibrent</li>
+      <li><svg yonaIcon="check" [size]="18"></svg>Chaque page publique vérifiée à chaque version par un outil automatique (règles WCAG 2.1 niveaux A et AA)</li>
+    </ul>
+  </section>
+
+  <section class="access__part access__help enter" style="--delay: 300ms" aria-labelledby="help-title">
+    <h2 id="help-title">Un problème pour lire ou utiliser le site ?</h2>
+    <p>
+      Dites-le : Yona cherchera une solution, et vous enverra le contenu sous une autre forme si besoin. Par
+      <a [routerLink]="feedbackPath">« Donner mon avis »</a>, ou par e-mail à <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>
+    </p>
+    <a yonaButton variant="secondary" [routerLink]="statementPath"><svg yonaIcon="accessibility"></svg>Déclaration d'accessibilité</a>
+  </section>
+</section>
