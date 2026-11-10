@@ -16,7 +16,6 @@ import static org.mockito.Mockito.when;
 import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
-import fr.lescreationsdeyona.cap.ObservationRepository;
 import fr.lescreationsdeyona.shop.ShopProductRepository;
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.category.CategoryRepository;
@@ -55,7 +54,7 @@ class RecipePublicationTest {
 
 	private final RecipeService service = new RecipeService(recipeRepository, categoryRepository, ingredientService,
 			mock(ImageService.class), mock(TagService.class), mock(MenuService.class), mock(TrashBin.class), recipeMapper,
-			events, auditLog, mock(ObservationRepository.class), mock(ShopProductRepository.class));
+			events, auditLog, mock(ShopProductRepository.class));
 
 	private final Category desserts = new Category();
 

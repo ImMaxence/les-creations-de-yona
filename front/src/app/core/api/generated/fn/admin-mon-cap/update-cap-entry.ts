@@ -7,15 +7,15 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { AdminCapEntry } from '../../models/admin-cap-entry';
 import { CapEntryForm } from '../../models/cap-entry-form';
-import { CapEntryResponse } from '../../models/cap-entry-response';
 
 export interface UpdateCapEntry$Params {
   id: number;
       body: CapEntryForm
 }
 
-export function updateCapEntry(http: HttpClient, rootUrl: string, params: UpdateCapEntry$Params, context?: HttpContext): Observable<StrictHttpResponse<CapEntryResponse>> {
+export function updateCapEntry(http: HttpClient, rootUrl: string, params: UpdateCapEntry$Params, context?: HttpContext): Observable<StrictHttpResponse<AdminCapEntry>> {
   const rb = new RequestBuilder(rootUrl, updateCapEntry.PATH, 'put');
   if (params) {
     rb.path('id', params.id, {});
@@ -27,7 +27,7 @@ export function updateCapEntry(http: HttpClient, rootUrl: string, params: Update
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<CapEntryResponse>;
+      return r as StrictHttpResponse<AdminCapEntry>;
     })
   );
 }

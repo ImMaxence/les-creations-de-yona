@@ -12,6 +12,14 @@
         <svg yonaIcon="sparkles"></svg>Remplir avec l'IA
       </button>
       <button yonaButton variant="secondary" type="button" [disabled]="previewing()" (click)="openPreview()"><svg yonaIcon="eye"></svg>Aperçu</button>
+      <button yonaButton variant="ghost" type="button" title="Ajouter un mot au glossaire sans quitter la recette" (click)="openGlossary('')">
+        <svg yonaIcon="book-a"></svg>Glossaire
+      </button>
+      @if (wordsToDefine(); as count) {
+        <a class="badge badge--scheduled words-to-define" routerLink="/admin/glossaire" [queryParams]="{ 'a-completer': '' }">
+          {{ count }} mot{{ count > 1 ? 's' : '' }} à définir
+        </a>
+      }
       @if (!isNew()) {
         <button yonaButton variant="ghost" type="button" [disabled]="duplicating()" (click)="duplicate()"><svg yonaIcon="copy-plus"></svg>Dupliquer</button>
       }
@@ -46,23 +54,14 @@
     </div>
   }
 
-  @if (recovered()) {
-    <div class="admin-panel recovered" role="status">
-      <svg yonaIcon="rotate-ccw" [size]="22" [strokeWidth]="1.75"></svg>
-      <div>
-        <p class="recovered__title">Des modifications non enregistrées ont été retrouvées</p>
-        <p class="field__hint">
-          Saisies le {{ recoveredAt() }}, avant que la page soit fermée.
-          @if (recoveredIsOutdated()) {
-            La recette a été enregistrée depuis : les reprendre remplacera cette version
-          }
-        </p>
-      </div>
-      <div class="recovered__actions">
-        <button yonaButton type="button" (click)="resumeRecovered()">Reprendre</button>
-        <button yonaButton variant="ghost" type="button" (click)="discardRecovered()">Ignorer</button>
-      </div>
-    </div>
+  @if (recovered(); as kept) {
+    <yona-recovered-draft
+      [savedAt]="kept.savedAt"
+      [outdated]="recoveredIsOutdated()"
+      outdatedText="La recette a été enregistrée depuis : les reprendre remplacera cette version"
+      (resume)="resumeRecovered()"
+      (discard)="discardRecovered()"
+    />
   }
 
   <section class="admin-panel" aria-labelledby="info-title">
@@ -484,6 +483,8 @@
 
 <yona-recipe-ai-dialog [(open)]="aiOpen" [geminiUnavailable]="geminiUnavailable()" (filled)="fillWithAi($event)" (unavailable)="aiStatus.reload()" />
 
+<yona-glossary-term-dialog [terms]="glossaryTerms.value() ?? []" (saved)="glossaryTerms.reload()" />
+
 <yona-dialog size="full" title="Aperçu" [subtitle]="previewStatus()" [(open)]="previewOpen">
   @if (preview(); as recipe) {
     <yona-recipe-preview embedded [recipe]="recipe" />
@@ -543,7 +544,30 @@
         </button>
         <div class="line__fields">
           <span class="line__number">Étape {{ i + 1 }}</span>
-          <textarea class="input" rows="3" [attr.aria-label]="'Étape ' + (i + 1)" [formField]="recipeForm.parts[p].steps[i].description" [attr.aria-invalid]="isInvalid(recipeForm.parts[p].steps[i].description)"></textarea>
+          <!-- The words already in the glossary, underlined in a copy of the text drawn under the field -->
+          <div class="glossed">
+            <div class="glossed__marks" aria-hidden="true" [innerHTML]="markedStep(step.description)"></div>
+            <textarea
+              class="input glossed__area"
+              rows="3"
+              [attr.aria-label]="'Étape ' + (i + 1)"
+              [formField]="recipeForm.parts[p].steps[i].description"
+              [attr.aria-invalid]="isInvalid(recipeForm.parts[p].steps[i].description)"
+              (select)="checkSelection($event, p, i)"
+              (mouseup)="checkSelection($event, p, i)"
+              (keyup)="checkSelection($event, p, i)"
+              (blur)="clearSelection()"
+              (scroll)="syncMarks($event)"
+            ></textarea>
+          </div>
+          @if (glossarySelection(); as selected) {
+            @if (selected.p === p && selected.i === i) {
+              <!-- mousedown kept from the field: the words stay selected until the tap -->
+              <button type="button" class="glossary-add" (mousedown)="$event.preventDefault()" (click)="openGlossary(selected.text)">
+                <svg yonaIcon="plus" [size]="14"></svg>Glossaire « {{ selected.text }} »
+              </button>
+            }
+          }
           <label class="line__duration">
             Durée
             <input type="number" inputmode="numeric" class="input" placeholder="—" [formField]="recipeForm.parts[p].steps[i].durationMinutes" />

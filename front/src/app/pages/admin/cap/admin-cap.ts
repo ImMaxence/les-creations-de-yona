@@ -1,210 +1,169 @@
 import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { attempt } from '../../../core/api/attempt';
+import { Router, RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
-import { uploadImage } from '../../../core/api/generated/fn/admin-images/upload-image';
-import { createCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/create-cap-entry';
-import { deleteCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/delete-cap-entry';
 import { listAdminCapEntries } from '../../../core/api/generated/fn/admin-mon-cap/list-admin-cap-entries';
-import { updateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/update-cap-entry';
-import { CapEntryResponse } from '../../../core/api/generated/models/cap-entry-response';
-import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
-import { ImageUploads } from '../../../core/api/image-uploads';
-import { Confirm } from '../../../core/dialog/confirm';
-import { Toaster } from '../../../core/notifications/toaster';
-import { SiteData } from '../../../core/site/site-data';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { CAP_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
+import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
+import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
-import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
+import { BLOCK_TYPES, CAP_TEMPLATES, CapTemplate } from './cap-templates';
 
-const MAX_BODY_LENGTH = 10000;
-
-/** Today in Paris, as the date field wants it. */
-function today(): string {
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
-}
-
-/** "Mon CAP": the dated steps of the diploma, shown on the site as a timeline. */
+/** "Mon CAP": the articles, the latest first; "Nouvel article" starts from a model. */
 @Component({
   selector: 'yona-admin-cap',
-  imports: [Button, Icon, ImageUpload, ParisDatePipe, RouterLink],
+  imports: [Button, CoverImage, Dialog, Icon, ParisDatePipe, RouterLink],
   template: `
     <section class="admin-section" aria-labelledby="cap-title">
       <div class="admin-section__head">
         <h2 id="cap-title">Mon CAP</h2>
-        <a yonaButton variant="ghost" target="_blank" [routerLink]="capPath"><svg yonaIcon="external-link"></svg>Voir sur le site</a>
+        <div class="admin-section__actions">
+          <a yonaButton variant="ghost" target="_blank" [routerLink]="capPath"><svg yonaIcon="external-link"></svg>Voir sur le site</a>
+          <button yonaButton type="button" (click)="choosing.set(true)"><svg yonaIcon="plus"></svg>Nouvel article</button>
+        </div>
       </div>
-      <p class="field__hint">Les étapes du CAP, affichées sur le site du plus récent au plus ancien</p>
-
-      <form class="admin-panel" (submit)="save($event)">
-        <h3>{{ editing() ? 'Modifier « ' + editing()!.title + ' »' : 'Ajouter une étape' }}</h3>
-        <div class="field">
-          <label class="field__label" for="cap-title-input">Titre</label>
-          <input id="cap-title-input" class="input" maxlength="150" placeholder="Inscription au CAP Pâtisserie" [value]="title()" (input)="title.set($any($event.target).value)" />
-        </div>
-        <div class="field">
-          <label class="field__label" for="cap-date">Date</label>
-          <input id="cap-date" class="input" type="date" [value]="date()" (input)="date.set($any($event.target).value)" />
-        </div>
-        <div class="field">
-          <label class="field__label" for="cap-body">Texte (facultatif)</label>
-          <textarea id="cap-body" class="input" rows="6" [maxLength]="maxBodyLength" [value]="body()" (input)="body.set($any($event.target).value)"></textarea>
-          <span class="field__hint">Markdown accepté. {{ body().length }} / {{ maxBodyLength }} caractères</span>
-        </div>
-        <div class="field">
-          <span class="field__label">Photo (facultative)</span>
-          <yona-image-upload
-            [imageId]="imageId()"
-            [aiSuggestion]="title()"
-            [progress]="uploadProgress()"
-            (fileChosen)="upload($event)"
-            (galleryImageChosen)="imageId.set($event)"
-            (removed)="imageId.set(null)"
-            (retouched)="imageId.set($event)"
-          />
-        </div>
-        <label class="checkbox-field">
-          <input type="checkbox" [checked]="published()" (change)="published.set($any($event.target).checked)" />
-          Publiée sur le site
-        </label>
-        <div class="admin-toolbar">
-          <button yonaButton type="submit" [disabled]="saving()"><svg yonaIcon="save"></svg>{{ editing() ? 'Enregistrer' : 'Ajouter' }}</button>
-          @if (editing()) {
-            <button yonaButton variant="ghost" type="button" (click)="cancel()">Annuler</button>
-          }
-        </div>
-      </form>
+      <p class="field__hint">Les articles du CAP, sur le site du plus récent au plus ancien, chacun avec sa page</p>
 
       @if (entries.value(); as list) {
         @if (list.length) {
           <ul role="list" class="admin-list">
             @for (entry of list; track entry.id) {
               <li class="admin-row">
-                <span class="admin-row__main">
+                <yona-cover-image class="admin-thumb" [imageId]="entry.imageId" sizes="4rem" />
+                <a class="admin-row__main article-link" [routerLink]="[entry.id]">
                   <span class="admin-row__title">{{ entry.title }}</span>
                   <span class="admin-row__meta">
-                    {{ entry.happenedOn | parisDate }}
-                    @if (!entry.published) {
+                    {{ entry.happenedOn | parisDate }} · {{ entry.blockCount }} bloc{{ entry.blockCount > 1 ? 's' : '' }} ·
+                    {{ entry.style === 'NOTEBOOK' ? 'Carnet' : 'Classique' }}
+                    @if (entry.published) {
+                      <span class="badge badge--published">Publié</span>
+                    } @else {
                       <span class="badge badge--draft">Brouillon</span>
                     }
+                    @if (entry.featured) {
+                      <span class="badge badge--featured">Coup de cœur</span>
+                    }
                   </span>
-                </span>
+                </a>
                 <div class="admin-row__actions">
-                  <button type="button" class="icon-button" [attr.aria-label]="'Modifier ' + entry.title" (click)="edit(entry)"><svg yonaIcon="pencil" [size]="18"></svg></button>
-                  <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + entry.title" (click)="remove(entry)"><svg yonaIcon="trash" [size]="18"></svg></button>
+                  @if (entry.published) {
+                    <a class="icon-button" target="_blank" [routerLink]="[capPath, entry.slug]" [attr.aria-label]="'Voir ' + entry.title + ' sur le site'">
+                      <svg yonaIcon="external-link" [size]="18"></svg>
+                    </a>
+                  }
+                  <a class="icon-button" [routerLink]="[entry.id]" [attr.aria-label]="'Modifier ' + entry.title"><svg yonaIcon="pencil" [size]="18"></svg></a>
                 </div>
               </li>
             }
           </ul>
         } @else {
-          <p class="admin-empty">Aucune étape pour le moment</p>
+          <p class="admin-empty">Aucun article pour le moment : « Nouvel article » pour écrire le premier</p>
         }
       } @else if (entries.isLoading()) {
         <p class="admin-empty">Chargement…</p>
       }
     </section>
+
+    <yona-dialog title="Nouvel article" subtitle="Choisissez un modèle : les blocs se changent ensuite" size="lg" [(open)]="choosing">
+      <ul role="list" class="templates">
+        @for (template of templates; track template.id) {
+          <li>
+            <button type="button" class="template" (click)="start(template)">
+              <span class="template__name">{{ template.name }}</span>
+              <span class="template__purpose">{{ template.purpose }}</span>
+              <span class="template__blocks" aria-hidden="true">
+                @for (type of blockTypes(template); track $index) {
+                  <span class="template__block"><svg [yonaIcon]="type.icon" [size]="14"></svg>{{ type.label }}</span>
+                } @empty {
+                  <span class="template__block template__block--empty">Aucun bloc</span>
+                }
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    </yona-dialog>
   `,
   styles: `
-    h3 {
-      font-size: var(--text-lg);
+    .article-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .templates {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+      gap: var(--space-3);
+    }
+
+    .template {
+      display: grid;
+      gap: var(--space-2);
+      align-content: start;
+      width: 100%;
+      height: 100%;
+      padding: var(--space-4);
+      border: 2px solid var(--color-line);
+      border-radius: var(--radius-lg);
+      background-color: var(--color-bg);
+      text-align: start;
+      transition: border-color var(--duration-base) var(--ease-out);
+
+      &:hover,
+      &:focus-visible {
+        border-color: var(--color-accent);
+      }
+    }
+
+    .template__name {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+    }
+
+    .template__purpose {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .template__blocks {
+      display: grid;
+      gap: var(--space-1);
+      margin-top: var(--space-2);
+    }
+
+    .template__block {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      background-color: var(--color-surface);
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+
+    .template__block--empty {
+      color: var(--color-text-muted);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class AdminCap {
   private readonly api = inject(Api);
-  private readonly imageUploads = inject(ImageUploads);
-  private readonly confirm = inject(Confirm);
-  private readonly toaster = inject(Toaster);
-  private readonly siteData = inject(SiteData);
+  private readonly router = inject(Router);
 
   protected readonly capPath = CAP_PATH;
-  protected readonly maxBodyLength = MAX_BODY_LENGTH;
+  protected readonly templates = CAP_TEMPLATES;
   protected readonly entries = resource({ loader: () => this.api.invoke(listAdminCapEntries) });
+  protected readonly choosing = signal(false);
 
-  /** The step being changed; null while adding a new one. */
-  protected readonly editing = signal<CapEntryResponse | null>(null);
-  protected readonly title = signal('');
-  protected readonly date = signal(today());
-  protected readonly body = signal('');
-  protected readonly imageId = signal<string | null>(null);
-  protected readonly published = signal(true);
-  protected readonly saving = signal(false);
-  /** Share of a new photo sent (0 to 1) while it uploads. */
-  protected readonly uploadProgress = signal<number | null>(null);
-
-  /** A new photo goes to the gallery, and the step shows it. */
-  protected async upload(file: File): Promise<void> {
-    this.uploadProgress.set(0);
-    const sent = await attempt(this.imageUploads.send<GalleryImage>(uploadImage.PATH, file, (share) => this.uploadProgress.set(share), 'POST'));
-    this.uploadProgress.set(null);
-    if (sent.ok) {
-      this.imageId.set(sent.value.id);
-    }
+  protected blockTypes(template: CapTemplate) {
+    return template.blocks().map((block) => BLOCK_TYPES.find((type) => type.type === block.type)!);
   }
 
-  protected edit(entry: CapEntryResponse): void {
-    this.editing.set(entry);
-    this.title.set(entry.title);
-    this.date.set(entry.happenedOn);
-    this.body.set(entry.body ?? '');
-    this.imageId.set(entry.imageId ?? null);
-    this.published.set(entry.published);
-  }
-
-  protected cancel(): void {
-    this.editing.set(null);
-    this.title.set('');
-    this.date.set(today());
-    this.body.set('');
-    this.imageId.set(null);
-    this.published.set(true);
-  }
-
-  protected async save(event: Event): Promise<void> {
-    event.preventDefault();
-    if (!this.title().trim() || !this.date()) {
-      this.toaster.error('Donnez un titre et une date à cette étape');
-      return;
-    }
-    const body = {
-      title: this.title().trim(),
-      body: this.body().trim() || undefined,
-      happenedOn: this.date(),
-      imageId: this.imageId() ?? undefined,
-      published: this.published(),
-    };
-    const editing = this.editing();
-    this.saving.set(true);
-    const saved = await attempt(editing ? this.api.invoke(updateCapEntry, { id: editing.id, body }) : this.api.invoke(createCapEntry, { body }));
-    this.saving.set(false);
-    if (saved.ok) {
-      this.toaster.success(editing ? 'Étape enregistrée' : 'Étape ajoutée');
-      this.cancel();
-      this.reload();
-    }
-  }
-
-  protected async remove(entry: CapEntryResponse): Promise<void> {
-    const confirmed = await this.confirm.ask({
-      title: 'Mettre cette étape à la corbeille ?',
-      message: `« ${entry.title} » disparaît du site et reste 30 jours dans la corbeille, d'où elle peut être restaurée`,
-      confirmLabel: 'Mettre à la corbeille',
-    });
-    if (confirmed && (await attempt(this.api.invoke(deleteCapEntry, { id: entry.id }))).ok) {
-      this.toaster.success('Étape mise à la corbeille');
-      if (this.editing()?.id === entry.id) {
-        this.cancel();
-      }
-      this.reload();
-    }
-  }
-
-  /** The list, and the site's navigation ("Mon CAP" shows once a step is published). */
-  private reload(): void {
-    this.entries.reload();
-    void this.siteData.load();
+  protected start(template: CapTemplate): void {
+    this.choosing.set(false);
+    void this.router.navigate(['/admin/mon-cap/nouveau'], { queryParams: { modele: template.id } });
   }
 }

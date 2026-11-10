@@ -1,6 +1,6 @@
 # Production
 
-Mise en ligne sur Coolify et services Google. Retour au [ReadMe](../ReadMe.md).
+Mise en ligne sur Coolify, services Google, restauration à la main d'une sauvegarde et changement de nom de domaine (ces deux procédures avaient chacune leur fichier avant la 2.4). Retour au [ReadMe](../ReadMe.md).
 
 ## Production (Coolify)
 
@@ -95,3 +95,208 @@ Réglages pas à pas (projet Google Cloud, client OAuth, Google Drive, Analytics
 
 - Google Drive : un seul compte reçoit les sauvegardes pour tout le site, choisi par l'admin qui clique sur « Connecter Google Drive ». Mise en place (API Drive, URI de retour, portée `drive.file`, application « En production ») : [docs/google.md](./google.md#2-sauvegarde-de-nuit-sur-google-drive).
 - Le jeton d'accès durable (refresh token) est gardé en base (`google_drive_link`), jamais dans les sauvegardes : il ne sert à rien sans le secret du client OAuth, qui n'est que dans l'environnement. Retiré chez Google à la déconnexion.
+
+## Restaurer une sauvegarde à la main
+
+Depuis la version 2.1.0, le back-office restaure lui-même une archive (page Sauvegarde, « Restaurer une sauvegarde ») : fusion de ce qui manque, ou remplacement complet. C'est la voie normale ; voir [architecture.md](architecture.md) (« Sauvegarde »).
+
+La procédure manuelle ci-dessous reste le secours quand le back-office n'est pas utilisable : backend qui ne démarre plus, connexion Google impossible, nouveau serveur encore vide d'admin. Elle remet le site dans l'état d'une archive téléchargée depuis le back-office (bouton « Sauvegarder mes données »), après une perte de données, une fausse manipulation ou pour remonter le site sur un nouveau serveur. Une archive de la 2.1.0 contient aussi un `manifest.json` (date et version), sans effet ici.
+
+Testée le 2026-10-21 sur la stack locale : base remise à l'état de la sauvegarde, image supprimée restaurée, backend redémarré sans erreur (Flyway valide le schéma).
+
+### Contenu de l'archive
+
+| Fichier | Contenu |
+| --- | --- |
+| `database.dump` | Toute la base PostgreSQL (`pg_dump`, format custom), historique Flyway compris |
+| `images/{clé S3}` | Tout le bucket S3, par exemple `images/recipes/{uuid}/800.webp` |
+
+### Avant de commencer
+
+- Un accès SSH au serveur (ou la machine locale), avec Docker.
+- La stack déployée et démarrée : PostgreSQL et SeaweedFS tournent, le bucket existe (créé au démarrage de SeaweedFS). Sur un nouveau serveur, déployer d'abord le site, base vide comprise.
+- Les admins devront se reconnecter : les sessions sont en mémoire.
+
+Les commandes sont écrites pour un shell Linux (serveur, WSL ou Git Bash).
+
+### 1. Déposer et décompresser l'archive
+
+```bash
+scp sauvegarde.zip serveur:~/                 # depuis la machine qui a l'archive
+unzip sauvegarde.zip -d ~/restauration
+```
+
+### 2. Repérer les conteneurs
+
+```bash
+docker ps --format '{{.Names}}'
+```
+
+Reporter les noms affichés (en local : `les-creations-de-yona-postgres-1`, etc. ; sur Coolify ils se terminent par un identifiant) :
+
+```bash
+POSTGRES=les-creations-de-yona-postgres-1
+SEAWEEDFS=les-creations-de-yona-seaweedfs-1
+BACK=les-creations-de-yona-back-1
+```
+
+### 3. Arrêter le backend
+
+Plus aucune écriture pendant la restauration :
+
+```bash
+docker stop "$BACK"
+```
+
+### 4. Restaurer la base
+
+```bash
+docker cp ~/restauration/database.dump "$POSTGRES":/tmp/database.dump
+docker exec "$POSTGRES" sh -c 'pg_restore --clean --if-exists --no-owner --single-transaction --exit-on-error \
+  -U "$POSTGRES_USER" -d "$POSTGRES_DB" /tmp/database.dump'
+docker exec "$POSTGRES" rm /tmp/database.dump
+```
+
+- `--clean --if-exists` : supprime puis recrée chaque table, que la base soit vide ou non.
+- `--single-transaction --exit-on-error` : tout ou rien. Si une erreur survient, la base reste telle qu'avant la commande.
+- `--no-owner` : les objets appartiennent à l'utilisateur de la base cible, même s'il a changé de nom.
+- Le client `pg_restore` est celui du conteneur PostgreSQL : même version (18) que le `pg_dump` du backend.
+
+### 5. Restaurer les images
+
+Les identifiants S3 sont relus dans la configuration du backend arrêté, sans les taper ni les afficher :
+
+```bash
+while IFS='=' read -r key value; do export "$key=$value"; done < <(
+  docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$BACK" \
+    | grep -E '^S3_(ACCESS_KEY|SECRET_KEY|BUCKET)=')
+
+docker run --rm --network "container:$SEAWEEDFS" \
+  -v ~/restauration/images:/images:ro \
+  -e AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" -e AWS_DEFAULT_REGION=us-east-1 \
+  amazon/aws-cli:2.38.3 --endpoint-url http://127.0.0.1:8333 \
+  s3 sync /images "s3://$S3_BUCKET/"
+```
+
+- `--network "container:$SEAWEEDFS"` : le client S3 partage le réseau de SeaweedFS et l'atteint sur `127.0.0.1:8333`, sans publier de port ni chercher le nom du réseau Docker.
+- `s3 sync` n'envoie que les fichiers absents ou différents, et ne supprime rien : des images en trop resteraient en orphelines, sans effet sur le site.
+
+### 6. Redémarrer et vérifier
+
+```bash
+docker start "$BACK"
+docker ps --filter name="$BACK" --format '{{.Status}}'   # attendre « (healthy) »
+```
+
+- Le site affiche les recettes de la sauvegarde, avec leurs photos.
+- Le back-office s'ouvre après reconnexion Google.
+
+### 7. Nettoyer
+
+L'archive contient toutes les données du site :
+
+```bash
+rm -rf ~/restauration ~/sauvegarde.zip
+unset S3_ACCESS_KEY S3_SECRET_KEY S3_BUCKET
+```
+
+## Changer de nom de domaine
+
+Liste complète pour passer de `les-creations-de-yona.fr` à un nouveau domaine, appelé ici `nouveau-domaine.fr`. Rien ne change dans la base ni dans les photos : seuls le code, la configuration et les services extérieurs sont concernés.
+
+L'ordre compte : le nouveau domaine doit fonctionner avant que l'ancien redirige vers lui.
+
+### Ce que les visiteurs perdent, et que rien ne peut transférer
+
+Le navigateur range tout par domaine. Sur le nouveau domaine, c'est un autre site pour lui :
+
+- **Favoris et liste de courses** (stockage local du navigateur) : repartent de zéro.
+- **Application installée** : celle de l'ancien domaine affiche la redirection, il faut réinstaller depuis le nouveau.
+- **Notifications des nouvelles recettes** : les abonnements sont liés à l'ancien domaine. Il faut se réabonner sur le nouveau. Les anciens abonnés restent en base et continuent de recevoir les notifications tant que l'ancien service worker existe chez eux ; un appui ouvre la recette via l'ancien domaine, qui redirige.
+- **Choix clair ou sombre, accord cookies** : redemandés.
+
+Prévoir un mot aux visiteurs (réseaux sociaux, encart sur le site) avant la bascule.
+
+### 1. Le code (un commit)
+
+| Fichier | À changer |
+| --- | --- |
+| `front/src/app/core/seo/page-seo.ts` | `SITE_URL` : adresses canoniques, Open Graph, JSON-LD, sitemap |
+| `front/angular.json` | `security.allowedHosts` : hôte accepté par le serveur SSR (sinon erreur 400) |
+| `front/public/robots.txt` | ligne `Sitemap:` |
+| `front/public/manifest.webmanifest` | `related_applications` : sinon le site ne voit plus, depuis le navigateur, que l'application est installée |
+| `front/src/app/core/analytics/analytics.ts` | `MEASURED_HOSTS` : sinon plus aucune mesure d'audience |
+| `front/src/app/pages/legal/legal-notice.html` | nom du site dans les mentions légales |
+| `front/src/app/pages/legal/legal.ts` | `LEGAL_PAGES_UPDATED_ON` (date de mise à jour) |
+| `back/src/main/resources/application.yaml` | valeurs par défaut de `PUSH_SUBJECT` et de `SITE_URL` (adresses envoyées à IndexNow), ou les variables dans Coolify |
+| `devops/.env.example`, `devops/compose.prod.yaml` (commentaire), `docs/production.md`, `docs/google.md` | adresses d'exemple et documentation |
+
+Pour vérifier qu'il n'en reste pas : chercher `les-creations-de-yona.fr` dans tout le dépôt, en dehors de `CHANGELOG.md`, qui raconte le passé.
+
+Le backend n'a rien d'autre en dur : il lit le domaine dans les en-têtes `X-Forwarded-*` transmis par Coolify et la passerelle (adresses de retour Google comprises). Seul IndexNow, appelé sans requête à lire (publication programmée), prend `SITE_URL`. Après la bascule, ajouter aussi le nouveau domaine dans Bing Webmaster Tools ([production](production.md#assistants-ia)).
+
+Ne pas déployer ce commit avant les étapes 2 à 4 : le serveur refuserait encore le nouveau domaine, ou Google ses adresses de retour.
+
+### 2. DNS et Cloudflare
+
+1. Ajouter `nouveau-domaine.fr` dans Cloudflare (offre gratuite) et changer les serveurs DNS chez le registraire, comme Cloudflare l'indique.
+2. Enregistrement `A` du domaine vers l'IP du serveur, **proxifié** (nuage orange). Même chose pour `www` si besoin.
+3. **SSL/TLS** : mode **Full (strict)** (ou **Full**), jamais **Flexible** (la page bouclerait).
+4. **Scrape Shield → Email Address Obfuscation** : **désactivé** (sinon erreur d'hydratation sur les pages légales). **Rocket Loader** : désactivé.
+
+### 3. Coolify
+
+1. Ressource du site → service **gateway** → **Domains** : ajouter `https://nouveau-domaine.fr`, en gardant l'ancien pour l'instant (séparés par une virgule). Coolify obtient le certificat.
+2. Si `PUSH_SUBJECT` est défini dans les variables : le passer sur le nouveau domaine (ou une adresse `mailto:`).
+
+### 4. Google Cloud (client OAuth)
+
+Voir [google.md](google.md). **Google Auth Platform** :
+
+1. **Branding → Domaines autorisés** : ajouter `nouveau-domaine.fr`.
+2. **Clients** → le client web :
+   - **Origines JavaScript autorisées** : ajouter `https://nouveau-domaine.fr` ;
+   - **URI de redirection autorisés** : ajouter `https://nouveau-domaine.fr/api/login/oauth2/code/google` et `https://nouveau-domaine.fr/api/admin/drive/callback`.
+3. Garder les adresses de l'ancien domaine jusqu'à la fin de la bascule.
+
+La sauvegarde Google Drive déjà connectée continue sans rien faire : son jeton ne dépend pas du domaine. L'adresse de retour ne sert que pour connecter un compte.
+
+### 5. Déployer et vérifier
+
+1. Pousser le commit de l'étape 1 : Coolify redéploie.
+2. Sur `https://nouveau-domaine.fr` :
+   - accueil, une recette, `/glossaire` ;
+   - `/sitemap.xml` et `/robots.txt` : adresses sur le nouveau domaine ;
+   - code source d'une recette : `<link rel="canonical">` et JSON-LD sur le nouveau domaine ;
+   - connexion au back-office (Google ne doit pas répondre `redirect_uri_mismatch`) ;
+   - back-office → Sauvegarde : « Sauvegarder maintenant » réussit.
+
+### 6. Rediriger l'ancien domaine
+
+Les recettes déjà indexées par Google, épinglées sur Pinterest ou partagées doivent arriver au même endroit sur le nouveau domaine. Une redirection 301 transmet aussi leur référencement.
+
+1. Coolify : retirer l'ancien domaine du service **gateway**.
+2. Cloudflare, zone de l'**ancien** domaine (à garder, avec son enregistrement `A` proxifié) : **Rules → Redirect Rules → Create rule**.
+   - Si : « All incoming requests ».
+   - Alors : **Dynamic**, expression `concat("https://nouveau-domaine.fr", http.request.uri)`, code **301**, cocher « Preserve query string ».
+3. Vérifier : `https://les-creations-de-yona.fr/recettes/…` mène à la même recette sur le nouveau domaine.
+4. Garder l'ancien domaine et sa redirection **au moins un an** (renouvellement compris).
+
+### 7. Google Search Console, Analytics
+
+1. **Search Console** : ajouter une propriété « Domaine » `nouveau-domaine.fr` (enregistrement TXT chez Cloudflare), y déclarer `https://nouveau-domaine.fr/sitemap.xml`.
+2. Dans l'**ancienne** propriété : **Paramètres → Changement d'adresse**, choisir la nouvelle. Google transfère le référencement plus vite (la redirection 301 de l'étape 6 est exigée).
+3. **Analytics** : **Administration → Flux de données** → le flux web → modifier l'URL du flux. Même propriété, l'historique est gardé.
+
+### 8. Ailleurs
+
+- Liens vers le site dans les profils des réseaux sociaux (Instagram, TikTok, YouTube, Pinterest…).
+- Pinterest : revendiquer le nouveau domaine dans les paramètres du compte, si l'ancien l'était.
+- Adresse e-mail de contact si elle est sur le domaine (aujourd'hui non : `CONTACT_EMAIL` dans `legal.ts`).
+
+### 9. Après la bascule
+
+Quelques semaines plus tard, quand la Search Console montre le nouveau domaine indexé :
+
+- retirer les adresses de l'ancien domaine du client OAuth Google (origine et URI de retour) ;
+- garder la redirection Cloudflare (voir étape 6).

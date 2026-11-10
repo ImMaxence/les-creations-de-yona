@@ -1,4 +1,4 @@
-import { THEMES, categoriesOf, categoryOfThemeQueryParams, themeLabel, themeOfSlug, themeSlug } from './themes';
+import { THEMES, categoriesOf, categoryOfThemeQueryParams, themeGroupsOf, themeLabel, themeOfSlug, themeSlug } from './themes';
 
 describe('themes in the URL', () => {
   it('goes from the URL to the theme and back', () => {
@@ -27,5 +27,12 @@ describe('categoriesOf', () => {
   it('opens only the recipes of the theme in a category holding both', () => {
     expect(categoryOfThemeQueryParams(plats, 'SAVORY')).toEqual({ categorie: 'plats' });
     expect(categoryOfThemeQueryParams(aperitifs, 'SAVORY')).toEqual({ categorie: 'aperitifs', theme: 'sale' });
+  });
+});
+
+describe('themeGroupsOf', () => {
+  it('puts the sweet side first in the menus of the site', () => {
+    expect(themeGroupsOf([]).map((group) => group.label)).toEqual(['Sucré', 'Salé']);
+    expect(themeGroupsOf([]).map((group) => group.allLabel)).toEqual(['Toutes les recettes sucrées', 'Toutes les recettes salées']);
   });
 });

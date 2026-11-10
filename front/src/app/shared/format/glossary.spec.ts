@@ -1,5 +1,5 @@
 import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
-import { fold, glossaryKey, glossaryMatcher, highlightTerms, termAt } from './glossary';
+import { fold, glossaryKey, glossaryMatcher, highlightTerms, markTerms, termAt } from './glossary';
 
 const TERMS: GlossaryTermResponse[] = [
   { id: 1, name: 'Sabler', slug: 'sabler', definition: 'Frotter le beurre et la farine', forms: ['sablez'] },
@@ -87,5 +87,20 @@ describe('termAt', () => {
     word.dispatchEvent(event);
     expect(termAt(event, matcher)?.term.slug).toBe('sabler');
     expect(termAt(new MouseEvent('click'), matcher)).toBeNull();
+  });
+});
+
+describe('markTerms', () => {
+  const matcher = glossaryMatcher(TERMS);
+
+  it('marks every glossary word of a text typed in the editor', () => {
+    expect(markTerms('Sablez, puis sabler encore la pâte à choux', matcher)).toBe(
+      '<mark>Sablez</mark>, puis <mark>sabler</mark> encore la <mark>pâte à choux</mark>\n',
+    );
+  });
+
+  it('escapes the text, and leaves it as it is without glossary', () => {
+    expect(markTerms('<b> & "pâte"', matcher)).toBe('&lt;b&gt; &amp; &quot;<mark>pâte</mark>&quot;\n');
+    expect(markTerms('<b>', glossaryMatcher([]))).toBe('&lt;b&gt;\n');
   });
 });

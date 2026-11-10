@@ -63,7 +63,7 @@ interface MenuSection {
   id: string;
   label: string;
   links: MenuLink[];
-  /** Categories only: Salé, then Sucré. */
+  /** Categories only: Sucré, then Salé. */
   themes: ReturnType<typeof themeGroupsOf>;
   count: number;
 }

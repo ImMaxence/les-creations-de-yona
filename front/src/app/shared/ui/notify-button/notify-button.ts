@@ -16,16 +16,20 @@ import { Icon } from '../icon/icon';
   template: `
     @switch (notifications.state()) {
       @case ('off') {
-        <button
-          type="button"
-          class="notify"
-          [class.is-prominent]="prominent()"
-          [disabled]="notifications.busy()"
-          (click)="notifications.subscribe()"
-        >
-          <svg yonaIcon="bell" [size]="prominent() ? 20 : 18"></svg>
-          {{ prominent() ? 'Me prévenir' : 'Me prévenir des nouvelles recettes' }}
-        </button>
+        @if (asLink()) {
+          <button type="button" class="notify is-link" [disabled]="notifications.busy()" (click)="notifications.subscribe()">Activer</button>
+        } @else {
+          <button
+            type="button"
+            class="notify"
+            [class.is-prominent]="prominent()"
+            [disabled]="notifications.busy()"
+            (click)="notifications.subscribe()"
+          >
+            <svg yonaIcon="bell" [size]="prominent() ? 20 : 18"></svg>
+            {{ prominent() ? 'Me prévenir' : 'Me prévenir des nouvelles recettes' }}
+          </button>
+        }
       }
       @case ('on') {
         <div class="notify-on">
@@ -61,6 +65,8 @@ export class NotifyButton {
   readonly showInstallHint = input(false);
   /** Filled with the accent, larger and on one line (home page); outlined by default. */
   readonly prominent = input(false);
+  /** "Activer", written in the site's colour, where the text beside says what for (home page). */
+  readonly asLink = input(false);
 
   protected readonly notifications = inject(NewRecipeNotifications);
   protected readonly installPath = INSTALL_PATH;

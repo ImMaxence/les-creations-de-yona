@@ -7,14 +7,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { AdminCapEntry } from '../../models/admin-cap-entry';
 import { CapEntryForm } from '../../models/cap-entry-form';
-import { CapEntryResponse } from '../../models/cap-entry-response';
 
 export interface CreateCapEntry$Params {
       body: CapEntryForm
 }
 
-export function createCapEntry(http: HttpClient, rootUrl: string, params: CreateCapEntry$Params, context?: HttpContext): Observable<StrictHttpResponse<CapEntryResponse>> {
+export function createCapEntry(http: HttpClient, rootUrl: string, params: CreateCapEntry$Params, context?: HttpContext): Observable<StrictHttpResponse<AdminCapEntry>> {
   const rb = new RequestBuilder(rootUrl, createCapEntry.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/json');
@@ -25,7 +25,7 @@ export function createCapEntry(http: HttpClient, rootUrl: string, params: Create
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<CapEntryResponse>;
+      return r as StrictHttpResponse<AdminCapEntry>;
     })
   );
 }

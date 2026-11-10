@@ -14,7 +14,6 @@ import { Router, RouterLink } from '@angular/router';
 import { RecipeViews } from '../../core/analytics/recipe-views';
 import { GlossaryTermResponse } from '../../core/api/generated/models/glossary-term-response';
 import { Mold } from '../../core/api/generated/models/mold';
-import { ObservationResponse } from '../../core/api/generated/models/observation-response';
 import { RecipeCard as RecipeCardModel } from '../../core/api/generated/models/recipe-card';
 import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Favorites } from '../../core/kitchen/favorites';
@@ -30,7 +29,6 @@ import { Reveal } from '../../shared/motion/reveal';
 import { RECIPE_IMAGE_TRANSITION } from '../../shared/motion/view-transitions';
 import {
   ABOUT_PATH,
-  OBSERVATIONS_PATH,
   RECIPES_PATH,
   SHOPPING_LIST_PATH,
   categoryQueryParams,
@@ -86,8 +84,6 @@ export default class Recipe {
   readonly related = input<RecipeCardModel[]>([]);
   /** From glossaryResolver: the words underlined in the steps. */
   readonly glossary = input<GlossaryTermResponse[]>([]);
-  /** From recipeObservationsResolver: "Mes observations" about this recipe. */
-  readonly observations = input<ObservationResponse[]>([]);
   /** ?portions=8, from a search ("tarte 8 personnes"): the quantities shown for that many at once. */
   readonly portions = input<string>();
 
@@ -100,7 +96,6 @@ export default class Recipe {
   protected readonly formatMinutes = formatMinutes;
   protected readonly formatQuantity = formatQuantity;
   protected readonly recipeLinkOf = recipeLinkOf;
-  protected readonly observationsPath = OBSERVATIONS_PATH;
   protected readonly imageTransition = RECIPE_IMAGE_TRANSITION;
 
   protected readonly totalMinutes = computed(

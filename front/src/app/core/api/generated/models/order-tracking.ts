@@ -5,6 +5,10 @@ import { TrackedLine } from '../models/tracked-line';
 export interface OrderTracking {
   amount: number;
   createdAt: string;
+
+  /**
+   * Empty for a request made in the message only
+   */
   lines: Array<TrackedLine>;
   number: number;
   status: 'NEW' | 'ACCEPTED' | 'IN_PREPARATION' | 'READY' | 'PICKED_UP' | 'CANCELLED';

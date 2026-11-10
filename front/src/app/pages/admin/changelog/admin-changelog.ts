@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, signal } from '@
 import changelog from '../../../../../../CHANGELOG.md';
 import { FRONT_VERSION } from '../../../core/version';
 import { MarkdownPipe } from '../../../shared/format/markdown.pipe';
+import { firstOfMonth } from '../../../shared/format/paris-time';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 
@@ -107,7 +108,7 @@ export function versionsOf(markdown: string): ChangelogVersion[] {
       const [, version, isoDate] = /^(\S+)(?:\s+-\s+(\d{4}-\d{2}-\d{2}))?/.exec(heading) ?? [, heading];
       return {
         version: version ?? heading,
-        date: isoDate ? DATE.format(new Date(`${isoDate}T00:00:00Z`)) : null,
+        date: isoDate ? firstOfMonth(DATE.format(new Date(`${isoDate}T00:00:00Z`))) : null,
         markdown: newline < 0 ? '' : onGitHub(section.slice(newline + 1).trim()),
       };
     });

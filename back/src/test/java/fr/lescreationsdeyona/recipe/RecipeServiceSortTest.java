@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import fr.lescreationsdeyona.audit.AuditLog;
-import fr.lescreationsdeyona.cap.ObservationRepository;
 import fr.lescreationsdeyona.shop.ShopProductRepository;
 import fr.lescreationsdeyona.category.CategoryRepository;
 import fr.lescreationsdeyona.error.ApiException;
@@ -34,7 +33,7 @@ class RecipeServiceSortTest {
 	private final RecipeService service = new RecipeService(recipeRepository, mock(CategoryRepository.class),
 			mock(IngredientService.class), mock(ImageService.class), mock(TagService.class), mock(MenuService.class),
 			mock(TrashBin.class), mock(RecipeMapper.class), mock(ApplicationEventPublisher.class), mock(AuditLog.class),
-			mock(ObservationRepository.class), mock(ShopProductRepository.class));
+			mock(ShopProductRepository.class));
 
 	private final RecipeFilter noFilter = new RecipeFilter(null, null, null, null, List.of(), null, null, null, null, null, null);
 

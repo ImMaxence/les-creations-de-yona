@@ -119,3 +119,19 @@
     margin-top: 0.1em;
   }
 }
+
+// "Activer", written in the site's colour, in a quiet strip (home page)
+.notify.is-link {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  box-shadow: none;
+  background-color: transparent;
+  color: var(--color-accent-strong);
+  font-size: var(--text-base);
+  font-weight: 700;
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+    color: var(--color-accent-strong);
+  }
+}

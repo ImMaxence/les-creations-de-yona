@@ -148,6 +148,7 @@ public class IngredientService {
 		}
 		List<String> merged = ingredientRepository.findAllById(sourceIds).stream().map(Ingredient::getName).toList();
 		ingredientRepository.moveLines(target.getId(), sourceIds);
+		ingredientRepository.movePurchases(target.getId(), sourceIds);
 		ingredientRepository.deleteAllByIdInBatch(sourceIds);
 		auditLog.record(AuditAction.MERGED, AuditKind.INGREDIENT, target.getName() + " (avec " + String.join(", ", merged) + ")",
 				target.getId());

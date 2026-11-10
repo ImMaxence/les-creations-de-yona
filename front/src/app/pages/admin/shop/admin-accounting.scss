@@ -1,0 +1,294 @@
+@use 'mixins' as m;
+
+h3 {
+  font-size: var(--text-lg);
+}
+
+h4 {
+  font-size: var(--text-base);
+}
+
+.period {
+  align-items: center;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-bg);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+.segmented__option {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+
+  &[aria-checked='true'] {
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+}
+
+// Key figures
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+  gap: var(--space-3);
+  transition: opacity var(--duration-base) var(--ease-out);
+
+  &.is-busy {
+    opacity: 0.6;
+  }
+}
+
+.figure {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+}
+
+.figure__label {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.figure__value {
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.figure--small {
+  padding: var(--space-3);
+  background-color: var(--color-bg);
+
+  .figure__value {
+    font-size: var(--text-lg);
+  }
+}
+
+.figure__note {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+
+  &.is-up {
+    color: color-mix(in srgb, #2e9b55 70%, var(--color-text));
+  }
+
+  &.is-down {
+    color: var(--color-danger);
+  }
+}
+
+.is-negative {
+  color: var(--color-danger);
+}
+
+.is-positive {
+  color: color-mix(in srgb, #2e9b55 70%, var(--color-text));
+}
+
+.pair {
+  display: grid;
+  gap: var(--space-5);
+
+  @include m.from(lg) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+// "Où part l'argent": one bar per category, in the colour of the expenses
+.spending {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.spending__row {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) 5rem;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.spending__track {
+  height: 0.6rem;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.spending__bar {
+  display: block;
+  min-width: 0.6rem;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background-color: light-dark(#eb6834, #d95926);
+}
+
+.spending__value {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-head,
+.lines-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.lines-toolbar {
+  justify-content: flex-start;
+
+  h3 {
+    margin-right: auto;
+  }
+}
+
+// As wide as an email, in the button and in its list
+.filter-admin {
+  flex: 0 1 18rem;
+}
+
+.lines-search {
+  flex: 1 1 14rem;
+  min-height: 2.5rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+
+  th,
+  td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-line);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  th:first-child {
+    font-weight: 600;
+    text-align: left;
+    white-space: normal;
+  }
+
+  thead th {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  tfoot {
+    font-weight: 700;
+  }
+
+  .is-missing {
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+}
+
+.chart-table summary {
+  cursor: pointer;
+}
+
+.cost {
+  display: grid;
+  gap: var(--space-4);
+
+  @include m.from(lg) {
+    grid-template-columns: minmax(0, 1fr) 13rem;
+    align-items: start;
+  }
+}
+
+.cost__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: var(--space-2);
+}
+
+// The lines, by month, with the month's totals
+.month {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.month + .month {
+  margin-top: var(--space-3);
+}
+
+.month__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.month__totals {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lines {
+  display: grid;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+}
+
+.line__main {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 0.15rem;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  text-align: start;
+
+  @include m.hover {
+    background-color: var(--color-bg);
+  }
+}
+
+.line__label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.line__meta {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+
+  svg {
+    display: inline-block;
+    vertical-align: -2px;
+  }
+}
+
+.line__amount {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}

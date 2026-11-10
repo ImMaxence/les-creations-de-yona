@@ -1,0 +1,108 @@
+<yona-dialog [title]="editing() ? 'Modifier la ligne' : 'Ajouter une ligne'" size="lg" [(open)]="open">
+  <form id="account-entry-form" class="entry" (submit)="save($event)">
+    @if (editing()?.orderId; as orderId) {
+      <p class="field__hint">Elle vient de la commande n° {{ orderId }} : son type, sa catégorie et son montant se changent depuis la commande</p>
+    }
+    <div class="entry__grid">
+      <div class="field">
+        <span class="field__label">Type</span>
+        <yona-select label="Type" [options]="kindOptions" [disabled]="fromOrder()" [value]="kind()" (valueChange)="chooseKind($event)" />
+      </div>
+      <div class="field">
+        <span class="field__label">Catégorie</span>
+        <yona-select label="Catégorie" [options]="categoryOptions()" [disabled]="fromOrder()" [value]="category()" (valueChange)="category.set($event ?? category())" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="entry-date">Date</label>
+        <input id="entry-date" class="input" type="date" [value]="date()" (input)="date.set($any($event.target).value)" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="entry-amount">Montant (€)</label>
+        @if (detailed()) {
+          <output id="entry-amount" class="input entry__computed">{{ formatEuros(purchasesTotal()) }}</output>
+          <span class="field__hint">Le total des achats ci-dessous</span>
+        } @else {
+          <input id="entry-amount" class="input" type="number" inputmode="decimal" min="0.01" step="0.01" [disabled]="fromOrder()" [value]="amount()" (input)="amount.set($any($event.target).value)" />
+        }
+      </div>
+    </div>
+    <div class="entry__row">
+      <div class="field">
+        <label class="field__label" for="entry-label">Libellé</label>
+        <input id="entry-label" class="input" maxlength="200" placeholder="Courses du marché" [value]="label()" (input)="label.set($any($event.target).value)" />
+      </div>
+      <div class="field">
+        <span class="field__label">Pour</span>
+        <yona-select label="Admin" [options]="adminOptions()" [value]="admin()" (valueChange)="admin.set($event ?? admin())" />
+      </div>
+    </div>
+
+    @if (canDetail()) {
+      <fieldset class="purchases">
+        <legend class="field__label">Détail des achats (facultatif)</legend>
+        <span class="field__hint">Chaque ingrédient acheté, sa quantité et le prix payé : le site en retient le dernier prix pour le coût de revient des produits</span>
+        @if (purchases().length) {
+          <ul role="list" class="purchases__list">
+            @for (row of purchases(); track row.key; let i = $index) {
+              <li class="purchase">
+                <div class="purchase__item">
+                  <yona-suggest-input
+                    [label]="'Article ' + (i + 1)"
+                    [placeholder]="category() === 'PACKAGING' ? 'Boîte kraft' : 'Beurre doux'"
+                    [suggestions]="itemSuggestions()"
+                    [value]="row.item"
+                    (valueChange)="setItem(row, $event)"
+                  />
+                  @if (lastPrice(row); as last) {
+                    <span class="field__hint">Dernier prix : {{ formatEuros(last.pricePerUnit) }} / {{ priceUnits[last.priceUnit] }}</span>
+                  } @else if (row.item.trim() && !row.ingredientId && category() === 'INGREDIENTS') {
+                    <span class="field__hint">Pas un ingrédient du site : il ne comptera pas dans le coût des recettes</span>
+                  }
+                </div>
+                <input class="input purchase__quantity" type="number" inputmode="decimal" min="0" step="any" placeholder="Qté" [attr.aria-label]="'Quantité de l’article ' + (i + 1)" [value]="row.quantity" (input)="patchPurchase(row.key, { quantity: $any($event.target).value })" />
+                <yona-select class="purchase__unit" [label]="'Unité de l’article ' + (i + 1)" [options]="units" [value]="row.unit" (valueChange)="patchPurchase(row.key, { unit: $event ?? row.unit })" />
+                <div class="purchase__price">
+                  <input class="input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Prix payé €" [attr.aria-label]="'Prix payé pour l’article ' + (i + 1)" [value]="row.price" (input)="patchPurchase(row.key, { price: $any($event.target).value })" />
+                  @if (pricePer(row); as per) {
+                    <span class="field__hint">{{ per }}</span>
+                  }
+                </div>
+                <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Retirer l’article ' + (i + 1)" (click)="removePurchase(row.key)"><svg yonaIcon="trash" [size]="18"></svg></button>
+              </li>
+            }
+          </ul>
+        }
+        @if (purchases().length < maxPurchases) {
+          <button type="button" class="link-button" (click)="addPurchase()"><svg yonaIcon="plus" [size]="16"></svg>Ajouter un achat</button>
+        }
+      </fieldset>
+    }
+
+    @if (kind() === 'EXPENSE') {
+      <div class="field receipt">
+        <span class="field__label">Justificatif (facultatif)</span>
+        <div class="receipt__body">
+          @if (receiptPreview() ?? receiptUrl(); as url) {
+            <a class="receipt__thumb" [href]="url" target="_blank" rel="noopener" aria-label="Voir le ticket en grand"><img [src]="url" alt="Ticket de caisse" /></a>
+          }
+          <div class="receipt__actions">
+            <input #receiptInput type="file" class="visually-hidden" tabindex="-1" aria-hidden="true" accept="image/jpeg,image/png" (change)="chooseReceipt($event)" />
+            <button type="button" class="link-button" (click)="receiptInput.click()">
+              <svg yonaIcon="receipt" [size]="16"></svg>{{ receiptPreview() || hasReceipt() ? 'Changer la photo du ticket' : 'Ajouter la photo du ticket' }}
+            </button>
+            @if (receiptPreview() || hasReceipt()) {
+              <button type="button" class="link-button" (click)="dropReceipt()"><svg yonaIcon="image-off" [size]="16"></svg>Retirer</button>
+            }
+            @if (receiptFile()) {
+              <span class="field__hint">Envoyée à l'enregistrement de la ligne</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </form>
+  <ng-container dialogActions>
+    <button yonaButton variant="ghost" type="button" (click)="open.set(false)">Annuler</button>
+    <button yonaButton type="submit" form="account-entry-form" [disabled]="saving()"><svg yonaIcon="save"></svg>{{ editing() ? 'Enregistrer' : 'Ajouter' }}</button>
+  </ng-container>
+</yona-dialog>

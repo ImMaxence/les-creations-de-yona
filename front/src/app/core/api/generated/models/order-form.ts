@@ -15,10 +15,14 @@ export interface OrderForm {
   customerEmail?: string;
   customerName: string;
   customerPhone?: string;
+
+  /**
+   * Empty when everything is asked in the message
+   */
   lines: Array<OrderLineForm>;
 
   /**
-   * Free text: what the recipes do not say
+   * Free text: what the products do not say, or something else; needed without product
    */
   message?: string;
   wantedOn?: string;

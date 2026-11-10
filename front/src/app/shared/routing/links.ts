@@ -23,6 +23,11 @@ export const CAP_PATH = '/mon-cap';
 export const OBSERVATIONS_PATH = '/mon-cap/observations';
 export const SHOP_PATH = '/boutique';
 
+/** An article of "Mon CAP": /mon-cap/{slug}. */
+export function capArticleLink(article: { slug: string }): string[] {
+  return [CAP_PATH, article.slug];
+}
+
 /** The customer's page of an order, by its secret link: /boutique/commande/{token}. */
 export function orderTrackingLink(token: string): string[] {
   return [SHOP_PATH, 'commande', token];

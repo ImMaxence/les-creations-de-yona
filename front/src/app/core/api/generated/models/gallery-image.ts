@@ -12,7 +12,7 @@ export interface GalleryImage {
   aboutPage: boolean;
 
   /**
-   * Steps of "Mon CAP" and observations showing it, by title
+   * Articles of "Mon CAP" showing it, as their photo or in a block, by title
    */
   capItems: Array<string>;
 
@@ -22,7 +22,7 @@ export interface GalleryImage {
   categories: Array<UsingCategory>;
   createdAt: string;
   id: string;
-  kind: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE' | 'PINTEREST' | 'MENU';
+  kind: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE' | 'PINTEREST' | 'MENU' | 'RECEIPT';
 
   /**
    * Menus showing it as their own photo, by title
@@ -33,4 +33,9 @@ export interface GalleryImage {
    * Recipes showing it, by title
    */
   recipes: Array<UsingRecipe>;
+
+  /**
+   * Products of the shop showing it, by name
+   */
+  shopProducts: Array<string>;
 }

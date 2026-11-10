@@ -1,5 +1,10 @@
 const TIME_ZONE = 'Europe/Paris';
 
+/** "samedi 1 novembre" → "samedi 1er novembre": the first of the month as French writes it. */
+export function firstOfMonth(date: string): string {
+  return date.replace(/(^|\s)1(?=\s\p{L})/u, '$11er');
+}
+
 // "sv-SE" writes dates the ISO way ("2026-10-31 10:00"), whatever the browser's language
 const PARIS_FIELDS = new Intl.DateTimeFormat('sv-SE', {
   timeZone: TIME_ZONE,
@@ -51,7 +56,7 @@ export function parisClock(date: Date): string {
 
 /** "samedi 31 octobre à 10:00". */
 export function parisDateTime(isoDate: string): string {
-  return PARIS_DATE_TIME.format(new Date(isoDate));
+  return firstOfMonth(PARIS_DATE_TIME.format(new Date(isoDate)));
 }
 
 function offsetMs(instant: number): number {

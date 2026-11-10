@@ -1,0 +1,159 @@
+<section class="admin-section" aria-labelledby="products-title">
+  <div class="admin-section__head">
+    <h2 id="products-title">Produits</h2>
+    <a yonaButton variant="ghost" target="_blank" [routerLink]="shopPath"><svg yonaIcon="external-link"></svg>Voir sur le site</a>
+  </div>
+
+  <form class="admin-panel" (submit)="saveSettings($event)">
+    <fieldset class="field">
+      <legend class="field__label">La boutique</legend>
+      <div class="modes">
+        @for (option of modes; track option.value) {
+          <label class="mode">
+            <input type="radio" name="shop-mode" [value]="option.value" [checked]="mode() === option.value" (change)="mode.set(option.value)" />
+            <span class="mode__label">{{ option.label }}{{ option.value === 'FRIENDS' ? ' (maintenant)' : option.value === 'OPEN' ? ' (plus tard)' : '' }}</span>
+            <span class="field__hint">{{ option.hint }}</span>
+          </label>
+        }
+      </div>
+    </fieldset>
+    <div class="field">
+      <label class="field__label" for="shop-pickup">Retrait (facultatif)</label>
+      <textarea id="shop-pickup" class="input" rows="2" maxlength="1000" placeholder="Où et quand venir chercher sa commande" [value]="pickup()" (input)="pickup.set($any($event.target).value)"></textarea>
+    </div>
+    <button yonaButton type="submit" [disabled]="savingSettings()"><svg yonaIcon="save"></svg>Enregistrer</button>
+  </form>
+
+  <form class="admin-panel" (submit)="saveProduct($event)">
+    <h3>{{ editing() ? 'Modifier « ' + editing()!.name + ' »' : 'Ajouter un produit' }}</h3>
+    <div class="field">
+      <span class="field__label">Recette (facultative)</span>
+      <yona-recipe-search hint="Son nom et sa photo remplissent le produit, et ses catégories le rangent dans la boutique" [chosen]="recipe()" (chosenChange)="chooseRecipe($event)" />
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label class="field__label" for="product-name">Nom du produit</label>
+        <input id="product-name" class="input" maxlength="150" placeholder="Boîte de 6 cookies" [value]="name()" (input)="name.set($any($event.target).value)" />
+      </div>
+      @if (!recipe()) {
+        <div class="field">
+          <span class="field__label">Catégorie</span>
+          <yona-select label="Catégorie" searchable [options]="categoryOptions()" [value]="categoryId()" (valueChange)="categoryId.set($event ?? null)" />
+          <span class="field__hint">Pour les filtres de la boutique ; avec une recette, ce sont les siennes</span>
+        </div>
+      }
+    </div>
+    <div class="field">
+      <span class="field__label">Photo</span>
+      <yona-image-upload
+        [imageId]="imageId()"
+        [aiSuggestion]="name()"
+        [progress]="uploadProgress()"
+        (fileChosen)="upload($event)"
+        (galleryImageChosen)="imageId.set($event)"
+        (removed)="imageId.set(null)"
+        (retouched)="imageId.set($event)"
+      />
+    </div>
+    <fieldset class="field">
+      <legend class="field__label">Vente</legend>
+      <div class="format">
+        <label class="checkbox-field">
+          <input type="radio" name="product-format" [checked]="!byBatch()" (change)="byBatch.set(false)" />
+          À l'unité
+        </label>
+        <label class="checkbox-field">
+          <input type="radio" name="product-format" [checked]="byBatch()" (change)="byBatch.set(true)" />
+          Par lot de
+        </label>
+        <input class="input format__batch" type="number" inputmode="numeric" min="2" max="1000" aria-label="Nombre de pièces du lot" [disabled]="!byBatch()" [value]="batchSize()" (input)="batchSize.set($any($event.target).value)" />
+      </div>
+    </fieldset>
+    <div class="form-grid">
+      <div class="field">
+        <label class="field__label" for="product-price">Prix TTC (€){{ byBatch() ? ', le lot entier' : '' }}</label>
+        <input id="product-price" class="input" type="number" inputmode="decimal" min="0" step="0.01" [value]="price()" (input)="price.set($any($event.target).value)" />
+        @if (unitPrice(); as each) {
+          <span class="field__hint">Soit {{ each }} pièce, affiché sous le prix</span>
+        }
+      </div>
+      @if (!byBatch()) {
+        <div class="field">
+          <label class="field__label" for="product-portions">Précision (facultative)</label>
+          <input id="product-portions" class="input" maxlength="100" placeholder="le gâteau, 8 parts" [value]="portionLabel()" (input)="portionLabel.set($any($event.target).value)" />
+        </div>
+      }
+    </div>
+    <details class="field">
+      <summary class="field__label">Coût de revient (comptabilité)</summary>
+      <div class="form-grid">
+        @if (recipe()) {
+          <div class="field">
+            <label class="field__label" for="product-share">Part de la recette par produit</label>
+            <input id="product-share" class="input" type="number" inputmode="decimal" min="0.001" step="0.05" [value]="recipeShare()" (input)="recipeShare.set($any($event.target).value)" />
+            <span class="field__hint">1 : la recette entière ; 0,5 : la moitié (la recette fait deux boîtes)</span>
+          </div>
+        }
+        <div class="field">
+          <label class="field__label" for="product-packaging">Emballage (facultatif)</label>
+          <input id="product-packaging" class="input" maxlength="100" placeholder="Boîte kraft" [value]="packaging()" (input)="packaging.set($any($event.target).value)" />
+          <span class="field__hint">Écrit comme dans les achats de la comptabilité, pour son dernier prix payé</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="product-packaging-count">Emballages par produit</label>
+          <input id="product-packaging-count" class="input" type="number" inputmode="numeric" min="1" max="100" [value]="packagingCount()" (input)="packagingCount.set($any($event.target).value)" />
+        </div>
+      </div>
+    </details>
+    <label class="checkbox-field">
+      <input type="checkbox" [checked]="available()" (change)="available.set($any($event.target).checked)" />
+      Disponible à la demande
+    </label>
+    <div class="admin-toolbar">
+      <button yonaButton type="submit" [disabled]="savingProduct()"><svg yonaIcon="save"></svg>{{ editing() ? 'Enregistrer' : 'Ajouter' }}</button>
+      @if (editing()) {
+        <button yonaButton variant="ghost" type="button" (click)="cancel()">Annuler</button>
+      }
+    </div>
+  </form>
+
+  @if (products.value(); as list) {
+    @if (list.length) {
+      <ul role="list" class="admin-list">
+        @for (product of list; track product.id) {
+          <li class="admin-row">
+            <yona-cover-image class="admin-thumb" [imageId]="product.shownImageId" sizes="4rem" />
+            <span class="admin-row__main">
+              <span class="admin-row__title">{{ product.name }}</span>
+              <span class="admin-row__meta">
+                <span class="product-row__price">{{ formatEuros(product.price) }} TTC</span> · {{ product.format }}
+                @if (product.unitPrice; as each) {
+                  · {{ formatEuros(each) }} pièce
+                } @else if (product.portionLabel; as portions) {
+                  · {{ portions }}
+                }
+                @if (product.recipeTitle; as recipe) {
+                  · Recette : {{ recipe }}
+                }
+                @if (product.categoryNames.length) {
+                  · {{ product.categoryNames.join(', ') }}
+                }
+                @if (!product.available) {
+                  <span class="badge badge--draft">Indisponible</span>
+                } @else if (!product.onSale) {
+                  <span class="badge badge--failed">Recette non publiée</span>
+                }
+              </span>
+            </span>
+            <div class="admin-row__actions">
+              <button type="button" class="icon-button" [attr.aria-label]="'Modifier ' + product.name" (click)="edit(product)"><svg yonaIcon="pencil" [size]="18"></svg></button>
+              <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Retirer ' + product.name" (click)="remove(product)"><svg yonaIcon="trash" [size]="18"></svg></button>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="admin-empty">Aucun produit dans la boutique pour le moment</p>
+    }
+  }
+</section>

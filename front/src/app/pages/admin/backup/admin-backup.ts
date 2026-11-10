@@ -46,11 +46,11 @@ const COUNT_ROWS: { key: keyof Counts; label: string }[] = [
   { key: 'appearancePresets', label: "Préréglages d'apparence" },
   { key: 'glossaryTerms', label: 'Mots du glossaire' },
   { key: 'menus', label: 'Menus' },
-  { key: 'capEntries', label: 'Étapes du CAP' },
-  { key: 'observations', label: 'Observations' },
+  { key: 'capEntries', label: 'Articles de Mon CAP' },
   { key: 'shopProducts', label: 'Produits de la boutique' },
   { key: 'accountEntries', label: 'Lignes de comptabilité' },
   { key: 'shopOrders', label: 'Commandes' },
+  { key: 'invoices', label: 'Factures' },
 ];
 
 /**
@@ -107,8 +107,8 @@ export default class AdminBackup {
     return (
       !!missing &&
       missing.recipes + missing.categories + missing.tags + missing.ingredients + missing.images + missing.socialLinks +
-        missing.appearancePresets + missing.glossaryTerms + missing.menus + missing.capEntries + missing.observations +
-        missing.shopProducts + missing.accountEntries + missing.shopOrders ===
+        missing.appearancePresets + missing.glossaryTerms + missing.menus + missing.capEntries +
+        missing.shopProducts + missing.accountEntries + missing.shopOrders + missing.invoices ===
         0 &&
       !missing.siteContent &&
       !missing.siteTheme &&

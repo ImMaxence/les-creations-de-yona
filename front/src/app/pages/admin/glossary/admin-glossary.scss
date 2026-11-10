@@ -16,3 +16,10 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+
+.to-complete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}

@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.shop;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
@@ -15,6 +16,9 @@ public interface ShopOrderRepository extends JpaRepository<ShopOrder, Long> {
 	Optional<ShopOrder> findByTrackingToken(UUID trackingToken);
 
 	long countByStatus(OrderStatus status);
+
+	/** For the accounts: the orders handed over, offered ones included. */
+	List<ShopOrder> findByStatus(OrderStatus status);
 
 	/** The latest first; {@code status} null for all of them. */
 	@Query("select o from ShopOrder o where (:status is null or o.status = :status) order by o.createdAt desc, o.id desc")

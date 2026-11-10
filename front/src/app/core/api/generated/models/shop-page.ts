@@ -3,7 +3,11 @@
 
 import { ShopProductCard } from '../models/shop-product-card';
 export interface ShopPage {
-  intro: string;
+  mode: 'CLOSED' | 'FRIENDS' | 'OPEN';
+
+  /**
+   * Orders come in: for the close ones, or for all
+   */
   open: boolean;
   pickupInfo?: string;
   products: Array<ShopProductCard>;

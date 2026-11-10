@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.shop;
 
 import fr.lescreationsdeyona.recipe.RecipeStatus;
+import fr.lescreationsdeyona.shop.InvoiceResponses.InvoiceSummary;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -16,11 +17,21 @@ public final class ShopResponses {
 	}
 
 	/** The shop page; no product while it is closed. */
-	public record ShopPage(boolean open, String intro, @Nullable String pickupInfo, List<ShopProductCard> products) {
+	public record ShopPage(ShopMode mode,
+			@Schema(description = "Orders come in: for the close ones, or for all") boolean open,
+			@Nullable String pickupInfo, List<ShopProductCard> products) {
 	}
 
-	public record ShopProductCard(Long id, String title, String slug, String categorySlug, @Nullable String intro,
-			@Nullable UUID imageId, BigDecimal price, @Nullable String portionLabel) {
+	/** Prices include taxes. */
+	public record ShopProductCard(Long id, String name, @Nullable UUID imageId, BigDecimal price,
+			@Schema(description = "\"Boîte de 6\", or \"À l'unité\"") String format,
+			@Schema(description = "\"le gâteau, 8 parts\"") @Nullable String portionLabel,
+			@Schema(description = "Sold by batches of that many; absent by the unit") @Nullable Integer batchSize,
+			@Schema(description = "Price of one piece of a batch, to the cent") @Nullable BigDecimal unitPrice,
+			@Schema(description = "Its recipe's categories, the main one first, or its own") List<ShopCategory> categories) {
+	}
+
+	public record ShopCategory(String slug, String name) {
 	}
 
 	public record OrderPlaced(@Schema(description = "The secret of the customer's link") UUID trackingToken) {
@@ -28,7 +39,8 @@ public final class ShopResponses {
 
 	/** What the customer's link shows: no name and no contact, a link can be passed on. */
 	public record OrderTracking(Long number, OrderStatus status, @Nullable LocalDate wantedOn, BigDecimal amount,
-			List<TrackedLine> lines, Instant createdAt, Instant updatedAt) {
+			@Schema(description = "Empty for a request made in the message only") List<TrackedLine> lines, Instant createdAt,
+			Instant updatedAt) {
 	}
 
 	public record TrackedLine(String title, @Nullable String portionLabel, BigDecimal unitPrice, int quantity) {
@@ -41,19 +53,27 @@ public final class ShopResponses {
 	public record AdminOrder(Long id, UUID trackingToken, OrderStatus status, String customerName,
 			@Nullable String customerEmail, @Nullable String customerPhone, @Nullable LocalDate wantedOn, @Nullable String message,
 			@Nullable String adminNote, BigDecimal amount, @Nullable String handledBy,
-			@Schema(description = "Those who can be in charge") List<String> admins, List<AdminOrderLine> lines, Instant createdAt,
+			@Schema(description = "Those who can be in charge") List<String> admins, List<AdminOrderLine> lines,
+			@Schema(description = "Its invoice, once issued") @Nullable InvoiceSummary invoice, Instant createdAt,
 			Instant updatedAt) {
 	}
 
-	public record AdminOrderLine(@Nullable Long recipeId, String title, @Nullable String portionLabel, BigDecimal unitPrice,
-			int quantity) {
+	public record AdminOrderLine(@Nullable Long productId, @Nullable Long recipeId, String title, @Nullable String portionLabel,
+			BigDecimal unitPrice, int quantity) {
 	}
 
-	public record AdminShopProduct(Long id, Long recipeId, String recipeTitle, RecipeStatus recipeStatus, @Nullable UUID imageId,
-			BigDecimal price, @Nullable String portionLabel, boolean available, Instant updatedAt) {
+	public record AdminShopProduct(Long id, @Nullable Long recipeId, @Nullable String recipeTitle,
+			@Nullable RecipeStatus recipeStatus, String name,
+			@Schema(description = "Its own photo; absent shows its recipe's") @Nullable UUID imageId,
+			@Schema(description = "The photo shown: its own, or its recipe's") @Nullable UUID shownImageId,
+			@Schema(description = "Its own category, without recipe") @Nullable Long categoryId,
+			@Schema(description = "The categories it is found under in the shop") List<String> categoryNames, BigDecimal price,
+			String format, @Nullable String portionLabel, @Nullable Integer batchSize, @Nullable BigDecimal unitPrice,
+			BigDecimal recipeShare, @Nullable String packaging, int packagingCount, boolean available,
+			@Schema(description = "Available, and its recipe published if any") boolean onSale, Instant updatedAt) {
 	}
 
-	public record AdminShopSettings(boolean ordersOpen, String intro, @Nullable String pickupInfo, Instant updatedAt) {
+	public record AdminShopSettings(ShopMode mode, @Nullable String pickupInfo, Instant updatedAt) {
 	}
 
 	public record NewOrdersCount(long count) {

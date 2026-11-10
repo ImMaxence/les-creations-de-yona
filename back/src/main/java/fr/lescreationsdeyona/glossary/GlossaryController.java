@@ -16,7 +16,7 @@ class GlossaryController {
 
 	private final GlossaryService glossaryService;
 
-	@Operation(summary = "Every word of the glossary, sorted by name")
+	@Operation(summary = "Every word of the glossary having a definition, sorted by name")
 	@GetMapping
 	List<GlossaryTermResponse> listGlossary() {
 		return glossaryService.list();

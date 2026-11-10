@@ -2,5 +2,5 @@ package fr.lescreationsdeyona.trash;
 
 /** What a row of the trash holds. */
 public enum TrashKind {
-	RECIPE, CATEGORY, MENU, IMAGE, TAG, INGREDIENT, GLOSSARY_TERM, CAP_ENTRY, OBSERVATION
+	RECIPE, CATEGORY, MENU, IMAGE, TAG, INGREDIENT, GLOSSARY_TERM, CAP_ENTRY
 }

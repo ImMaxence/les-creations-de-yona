@@ -89,3 +89,28 @@ export function recipeUrl(recipe) {
   const main = recipe.categories[0];
   return `${BASE}/recettes/${main.slug}/${recipe.slug}`;
 }
+
+/**
+ * Une page de l'application ouverte sans recharger le site, comme un lien suivi : ses données sont
+ * alors demandées par le navigateur, que page.route() peut simuler (au premier chargement, le
+ * serveur les a déjà lues lui-même, sans passer par le navigateur).
+ */
+export async function goClient(page, path) {
+  await page.evaluate((target) => {
+    history.pushState(null, '', target);
+    dispatchEvent(new PopStateEvent('popstate', { state: null }));
+  }, path);
+  await page.waitForURL((url) => url.pathname === path.split('?')[0]);
+}
+
+/** reCAPTCHA sans Google : la case se coche d'elle-même, avec un jeton de test. */
+export async function fakeRecaptcha(page) {
+  await page.route('**/api/feedback/captcha', (route) => route.fulfill({ json: { siteKey: 'cle-e2e' } }));
+  await page.route('https://www.google.com/recaptcha/**', (route) =>
+    route.fulfill({
+      contentType: 'application/javascript',
+      body: `window.grecaptcha = { render(box, options) { setTimeout(() => options.callback('jeton-e2e')); return 1; }, reset() {} };
+        window.yonaRecaptchaReady();`,
+    }),
+  );
+}

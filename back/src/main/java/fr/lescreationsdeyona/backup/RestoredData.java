@@ -66,15 +66,28 @@ class RestoredData {
 
 	private static final String CAP_ENTRY_KEY = "select title || '|' || happened_on::text from cap_entry";
 
-	private static final String OBSERVATION_KEY = "select title || '|' || observed_on::text from observation";
-
-	private static final String SHOP_PRODUCT_KEY = """
-			select recipe.slug from shop_product join recipe on recipe.id = shop_product.recipe_id""";
+	private static final String SHOP_PRODUCT_KEY = "select name from shop_product";
 
 	private static final String ACCOUNT_ENTRY_KEY = """
 			select kind || '|' || occurred_on::text || '|' || label || '|' || amount::text || '|' || admin_email from account_entry""";
 
 	private static final String SHOP_ORDER_KEY = "select tracking_token::text from shop_order";
+
+	private static final String INVOICE_KEY = "select number from invoice";
+
+	/**
+	 * Every table a merge ("Fusionner") brings in. A test holds it against the migrations: a new table
+	 * is listed here (and merged), in {@link #NOT_MERGED} or in {@link BackupService#SITE_ONLY_TABLES},
+	 * so that nothing a backup holds is forgotten. "Tout remplacer" copies every table anyway.
+	 */
+	static final Set<String> MERGED_TABLES = Set.of("image", "category", "tag", "ingredient", "recipe", "recipe_category",
+			"recipe_tag", "recipe_question", "recipe_part", "recipe_ingredient", "recipe_step", "social_link", "appearance_preset",
+			"glossary_term", "menu", "menu_recipe", "search_miss", "ai_visit", "cap_entry", "shop_product", "shop_order",
+			"shop_order_line", "account_entry", "account_purchase_line", "invoice", "invoice_line", "site_content", "site_theme",
+			"shop_settings");
+
+	/** Saved, and restored by "Tout remplacer", but left out of a merge: a thing deleted on the site stays deleted. */
+	static final Set<String> NOT_MERGED = Set.of("trash_item");
 
 	/** The label of a line of the accounts coming from an order, followed by its number. */
 	private static final String ORDER_LABEL = "Commande n° ";
@@ -112,8 +125,8 @@ class RestoredData {
 	RestoreStatus.Counts counts(JdbcClient db) {
 		return new RestoreStatus.Counts(count(db, "recipe"), count(db, "category"), count(db, "tag"),
 				count(db, "ingredient"), count(db, "image"), count(db, "social_link"), count(db, "appearance_preset"),
-				count(db, "glossary_term"), count(db, "menu"), count(db, "cap_entry"), count(db, "observation"),
-				count(db, "shop_product"), count(db, "account_entry"), count(db, "shop_order"));
+				count(db, "glossary_term"), count(db, "menu"), count(db, "cap_entry"),
+				count(db, "shop_product"), count(db, "account_entry"), count(db, "shop_order"), count(db, "invoice"));
 	}
 
 	RestoreStatus.Missing missing(JdbcClient scratch) {
@@ -159,8 +172,8 @@ class RestoredData {
 				first(tags), ingredients, images, platforms.size(), platforms, presets.size(), first(presets), terms.size(),
 				first(terms), menus.size(), first(menus), settingsMissing(scratch, site, SITE_CONTENT),
 				settingsMissing(scratch, site, SITE_THEME), missingCount(scratch, site, CAP_ENTRY_KEY),
-				missingCount(scratch, site, OBSERVATION_KEY), missingCount(scratch, site, SHOP_PRODUCT_KEY),
-				missingCount(scratch, site, ACCOUNT_ENTRY_KEY), missingCount(scratch, site, SHOP_ORDER_KEY));
+				missingCount(scratch, site, SHOP_PRODUCT_KEY),
+				missingCount(scratch, site, ACCOUNT_ENTRY_KEY), missingCount(scratch, site, SHOP_ORDER_KEY), missingCount(scratch, site, INVOICE_KEY));
 	}
 
 	/** How many keys of the backup the site lacks. */
@@ -194,18 +207,19 @@ class RestoredData {
 			mergeSearchMisses(scratch, site);
 			mergeAiVisits(scratch, site);
 			long capEntries = mergeCapEntries(scratch, site);
-			long observations = mergeObservations(scratch, site);
-			long shopProducts = mergeShopProducts(scratch, site);
+			Map<Long, Long> products = new HashMap<>();
+			long shopProducts = mergeShopProducts(scratch, site, products);
 			Map<Long, Long> orders = new HashMap<>();
-			long shopOrders = mergeOrders(scratch, site, orders);
-			long accountEntries = mergeAccountEntries(scratch, site, orders);
+			long shopOrders = mergeOrders(scratch, site, orders, products);
+			long accountEntries = mergeAccountEntries(scratch, site, orders, ingredients);
+			long invoices = mergeInvoices(scratch, site, orders);
 			continueOrdersAfterAccounts(site);
 			boolean siteContent = mergeSettings(scratch, site, SITE_CONTENT);
 			boolean siteTheme = mergeSettings(scratch, site, SITE_THEME);
 			mergeSettings(scratch, site, SHOP_SETTINGS);
 			return new Merged(new RestoreStatus.Counts(added.recipes, added.categories, added.tags, added.ingredients,
-					added.images, added.socialLinks, added.presets, glossaryTerms, menus, capEntries, observations, shopProducts,
-					accountEntries, shopOrders), siteContent, siteTheme);
+					added.images, added.socialLinks, added.presets, glossaryTerms, menus, capEntries, shopProducts,
+					accountEntries, shopOrders, invoices), siteContent, siteTheme);
 		});
 	}
 
@@ -413,9 +427,16 @@ class RestoredData {
 		return added;
 	}
 
+	/**
+	 * An article the site lacks keeps its address unless the site gave it to another one; it is not put
+	 * forward when the site already puts one forward. The photos of its blocks are found by their id:
+	 * those the site lacks are left out when it is read.
+	 */
 	private long mergeCapEntries(JdbcClient scratch, JdbcClient site) {
 		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
 		Set<String> existing = strings(site, CAP_ENTRY_KEY);
+		Set<String> slugs = strings(site, "select slug from cap_entry");
+		boolean featuredTaken = !strings(site, "select slug from cap_entry where featured").isEmpty();
 		long added = 0;
 		for (Map<String, Object> row : scratch.sql("select *, title || '|' || happened_on::text as merge_key from cap_entry order by id")
 			.query().listOfRows()) {
@@ -425,54 +446,58 @@ class RestoredData {
 			}
 			values.remove("id");
 			values.computeIfPresent("image_id", (key, id) -> images.contains(id) ? id : null);
+			String base = (String) values.get("slug");
+			String slug = base;
+			for (int suffix = 2; slugs.contains(slug); suffix++) {
+				slug = base + "-" + suffix;
+			}
+			slugs.add(slug);
+			values.put("slug", slug);
+			boolean featured = Boolean.TRUE.equals(values.get("featured")) && !featuredTaken;
+			featuredTaken |= featured;
+			values.put("featured", featured);
 			insertReturningId(site, "cap_entry", values);
 			added++;
 		}
 		return added;
 	}
 
-	/** About a recipe of the site, found by its address, or "Pas de recette" if the site does not have it. */
-	private long mergeObservations(JdbcClient scratch, JdbcClient site) {
+	/**
+	 * Products found by their name; one the site already has keeps its price. Their recipe is found by
+	 * its address, their category by its address, their photo by its id; those the site lacks are left
+	 * out. {@code ids} receives the site's id of each product of the backup.
+	 */
+	private long mergeShopProducts(JdbcClient scratch, JdbcClient site, Map<Long, Long> ids) {
+		Map<String, Long> byName = foldedKeys(idsBy(site, "select id, name as key from shop_product"));
+		Map<String, Long> recipes = idsBy(site, "select id, slug as key from recipe");
+		Map<String, Long> categories = idsBy(site, "select id, slug as key from category");
 		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
-		Set<String> existing = strings(site, OBSERVATION_KEY);
-		Map<String, Long> recipes = idsBy(site, "select id, slug as key from recipe");
 		long added = 0;
 		for (Map<String, Object> row : scratch.sql("""
-				select observation.*, recipe.slug as recipe_slug, observation.title || '|' || observation.observed_on::text as merge_key
-				from observation left join recipe on recipe.id = observation.recipe_id
-				order by observation.id""").query().listOfRows()) {
+				select shop_product.*, recipe.slug as recipe_slug, category.slug as category_slug
+				from shop_product
+				left join recipe on recipe.id = shop_product.recipe_id
+				left join category on category.id = shop_product.category_id
+				order by shop_product.id""").query().listOfRows()) {
 			Map<String, Object> values = new LinkedHashMap<>(row);
 			String recipeSlug = (String) values.remove("recipe_slug");
-			if (existing.contains((String) values.remove("merge_key"))) {
-				continue;
+			String categorySlug = (String) values.remove("category_slug");
+			long backupId = ((Number) values.remove("id")).longValue();
+			String nameKey = Texts.foldCaseAndAccents((String) values.get("name"));
+			Long siteId = byName.get(nameKey);
+			if (siteId == null) {
+				// A product of a recipe the site lacks would lose its categories and cost price: left out
+				if (recipeSlug != null && !recipes.containsKey(recipeSlug)) {
+					continue;
+				}
+				values.put("recipe_id", recipeSlug == null ? null : recipes.get(recipeSlug));
+				values.put("category_id", categorySlug == null ? null : categories.get(categorySlug));
+				values.computeIfPresent("image_id", (key, id) -> images.contains(id) ? id : null);
+				siteId = insertReturningId(site, "shop_product", values);
+				byName.put(nameKey, siteId);
+				added++;
 			}
-			values.remove("id");
-			values.computeIfPresent("image_id", (key, id) -> images.contains(id) ? id : null);
-			values.put("recipe_id", recipeSlug == null ? null : recipes.get(recipeSlug));
-			insertReturningId(site, "observation", values);
-			added++;
-		}
-		return added;
-	}
-
-	/** Recipes found by their address; one the site already sells keeps its price. */
-	private long mergeShopProducts(JdbcClient scratch, JdbcClient site) {
-		Set<String> existing = strings(site, SHOP_PRODUCT_KEY);
-		Map<String, Long> recipes = idsBy(site, "select id, slug as key from recipe");
-		long added = 0;
-		for (Map<String, Object> row : scratch.sql("""
-				select shop_product.*, recipe.slug as recipe_slug
-				from shop_product join recipe on recipe.id = shop_product.recipe_id order by shop_product.id""").query().listOfRows()) {
-			Map<String, Object> values = new LinkedHashMap<>(row);
-			String recipeSlug = (String) values.remove("recipe_slug");
-			Long recipeId = recipes.get(recipeSlug);
-			if (existing.contains(recipeSlug) || recipeId == null) {
-				continue;
-			}
-			values.remove("id");
-			values.put("recipe_id", recipeId);
-			insertReturningId(site, "shop_product", values);
-			added++;
+			ids.put(backupId, siteId);
 		}
 		return added;
 	}
@@ -480,9 +505,10 @@ class RestoredData {
 	/**
 	 * The orders the site lacks, recognized by the secret of their link; {@code ids} receives the site's
 	 * id of each order of the backup. An order keeps its number if the site has not given it to another
-	 * one meanwhile. Its lines point to the same recipes, found by their address, or to none.
+	 * one meanwhile. Its lines point to the same recipes, found by their address, and to the same products
+	 * ({@code products}: backup id to site id), or to none.
 	 */
-	private long mergeOrders(JdbcClient scratch, JdbcClient site, Map<Long, Long> ids) {
+	private long mergeOrders(JdbcClient scratch, JdbcClient site, Map<Long, Long> ids, Map<Long, Long> products) {
 		Map<String, Long> byToken = idsBy(site, "select id, tracking_token::text as key from shop_order");
 		Set<Long> taken = new HashSet<>(site.sql("select id from shop_order").query(Long.class).list());
 		Map<String, Long> recipes = idsBy(site, "select id, slug as key from recipe");
@@ -494,7 +520,7 @@ class RestoredData {
 			if (siteId == null) {
 				siteId = insertOrder(site, values, taken.contains(backupId));
 				taken.add(siteId);
-				copyOrderLines(scratch, site, backupId, siteId, recipes);
+				copyOrderLines(scratch, site, backupId, siteId, recipes, products);
 				added++;
 			}
 			ids.put(backupId, siteId);
@@ -515,18 +541,20 @@ class RestoredData {
 			.single();
 	}
 
-	private static void copyOrderLines(JdbcClient scratch, JdbcClient site, long backupId, long siteId, Map<String, Long> recipes) {
+	private static void copyOrderLines(JdbcClient scratch, JdbcClient site, long backupId, long siteId, Map<String, Long> recipes,
+			Map<Long, Long> products) {
 		for (Map<String, Object> line : scratch.sql("""
-				select line.position, recipe.slug as recipe_slug, line.title, line.portion_label, line.unit_price, line.quantity
+				select line.position, line.product_id, recipe.slug as recipe_slug, line.title, line.portion_label, line.unit_price, line.quantity
 				from shop_order_line line left join recipe on recipe.id = line.recipe_id
 				where line.order_id = :id""")
 			.param("id", backupId).query().listOfRows()) {
 			String recipeSlug = (String) line.get("recipe_slug");
 			site.sql("""
-					insert into shop_order_line (order_id, position, recipe_id, title, portion_label, unit_price, quantity)
-					values (:order, :position, :recipe, :title, :portion_label, :unit_price, :quantity)""")
+					insert into shop_order_line (order_id, position, product_id, recipe_id, title, portion_label, unit_price, quantity)
+					values (:order, :position, :product, :recipe, :title, :portion_label, :unit_price, :quantity)""")
 				.param("order", siteId)
 				.param("position", line.get("position"))
+				.param("product", line.get("product_id") == null ? null : products.get(((Number) line.get("product_id")).longValue()))
 				.param("recipe", recipeSlug == null ? null : recipes.get(recipeSlug))
 				.param("title", line.get("title"))
 				.param("portion_label", line.get("portion_label"))
@@ -537,13 +565,54 @@ class RestoredData {
 	}
 
 	/**
+	 * The invoices the site lacks, recognized by their number, with their lines, as they were written: an
+	 * invoice never changes. Each follows its order to its number on the site (the order may be gone:
+	 * erased after 12 months, the invoice keeps it). A number the site already gave stays the site's.
+	 */
+	private long mergeInvoices(JdbcClient scratch, JdbcClient site, Map<Long, Long> orders) {
+		Set<String> existing = strings(site, INVOICE_KEY);
+		long added = 0;
+		for (Map<String, Object> row : scratch.sql("select * from invoice order by id").query().listOfRows()) {
+			Map<String, Object> values = new LinkedHashMap<>(row);
+			if (existing.contains((String) values.get("number"))) {
+				continue;
+			}
+			long backupId = ((Number) values.remove("id")).longValue();
+			long orderId = ((Number) values.get("order_id")).longValue();
+			values.put("order_id", orders.getOrDefault(orderId, orderId));
+			Long siteId = site.sql("insert into invoice (" + columns(values) + ") values (" + parameters(values)
+					+ ") on conflict do nothing returning id")
+				.params(values)
+				.query(Long.class)
+				.optional()
+				.orElse(null);
+			if (siteId == null) {
+				continue;
+			}
+			added++;
+			for (Map<String, Object> line : scratch.sql("select position, label, detail, quantity, unit_price from invoice_line where invoice_id = :id")
+				.param("id", backupId).query().listOfRows()) {
+				site.sql("""
+						insert into invoice_line (invoice_id, position, label, detail, quantity, unit_price)
+						values (:invoice, :position, :label, :detail, :quantity, :unit_price)""")
+					.param("invoice", siteId)
+					.params(line)
+					.update();
+			}
+		}
+		return added;
+	}
+
+	/**
 	 * A line coming from an order follows it to its number on the site. Its order gone from the backup
 	 * (erased after 12 months), it keeps its number, unless the site gave it to another order: it then
-	 * becomes a plain line, never counted for an order that is not its own.
+	 * becomes a plain line, never counted for an order that is not its own. Its receipt comes along if the
+	 * site has it; its purchases point to the same ingredients ({@code ingredients}: backup id to site id).
 	 */
-	private long mergeAccountEntries(JdbcClient scratch, JdbcClient site, Map<Long, Long> orders) {
+	private long mergeAccountEntries(JdbcClient scratch, JdbcClient site, Map<Long, Long> orders, Map<Long, Long> ingredients) {
 		Set<String> existing = strings(site, ACCOUNT_ENTRY_KEY);
 		Set<Long> siteOrders = new HashSet<>(site.sql("select id from shop_order").query(Long.class).list());
+		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
 		long added = 0;
 		for (Map<String, Object> row : scratch.sql("""
 				select *, kind || '|' || occurred_on::text || '|' || label || '|' || amount::text || '|' || admin_email as merge_key
@@ -552,15 +621,38 @@ class RestoredData {
 			if (existing.contains((String) values.remove("merge_key"))) {
 				continue;
 			}
-			values.remove("id");
+			long backupId = ((Number) values.remove("id")).longValue();
 			Number orderId = (Number) values.get("order_id");
 			if (orderId != null) {
 				pointToOrder(values, orderId.longValue(), orders, siteOrders);
 			}
-			added += site.sql("insert into account_entry (" + columns(values) + ") values (" + parameters(values)
-					+ ") on conflict do nothing")
+			values.computeIfPresent("receipt_image_id", (key, id) -> images.contains(id) ? id : null);
+			Long siteId = site.sql("insert into account_entry (" + columns(values) + ") values (" + parameters(values)
+					+ ") on conflict do nothing returning id")
 				.params(values)
-				.update();
+				.query(Long.class)
+				.optional()
+				.orElse(null);
+			if (siteId == null) {
+				continue;
+			}
+			added++;
+			for (Map<String, Object> line : scratch.sql("""
+					select position, item, ingredient_id, quantity, unit, price from account_purchase_line where entry_id = :id""")
+				.param("id", backupId).query().listOfRows()) {
+				Number ingredientId = (Number) line.get("ingredient_id");
+				site.sql("""
+						insert into account_purchase_line (entry_id, position, item, ingredient_id, quantity, unit, price)
+						values (:entry, :position, :item, :ingredient, :quantity, :unit, :price)""")
+					.param("entry", siteId)
+					.param("position", line.get("position"))
+					.param("item", line.get("item"))
+					.param("ingredient", ingredientId == null ? null : ingredients.get(ingredientId.longValue()))
+					.param("quantity", line.get("quantity"))
+					.param("unit", line.get("unit"))
+					.param("price", line.get("price"))
+					.update();
+			}
 		}
 		return added;
 	}

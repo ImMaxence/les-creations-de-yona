@@ -46,32 +46,32 @@ class AdminShopController {
 		return shopService.adminSettings();
 	}
 
-	@Operation(summary = "Open or close the shop, change what it says")
+	@Operation(summary = "Close the shop, open it to the close ones or to all, change what it says")
 	@PutMapping("/settings")
 	AdminShopSettings updateShopSettings(@Valid @RequestBody ShopSettingsForm form) {
 		return shopService.updateSettings(form);
 	}
 
-	@Operation(summary = "The recipes offered in the shop, by title")
+	@Operation(summary = "The products of the shop, by name")
 	@GetMapping("/products")
 	List<AdminShopProduct> listShopProducts() {
 		return shopService.adminProducts();
 	}
 
-	@Operation(summary = "Offer a recipe in the shop")
+	@Operation(summary = "Offer a product in the shop, made from a recipe or not")
 	@PostMapping("/products")
 	@ResponseStatus(HttpStatus.CREATED)
 	AdminShopProduct createShopProduct(@Valid @RequestBody ShopProductForm form) {
 		return shopService.createProduct(form);
 	}
 
-	@Operation(summary = "Change the price or the availability of a product; its recipe stays")
+	@Operation(summary = "Change a product of the shop")
 	@PutMapping("/products/{id}")
 	AdminShopProduct updateShopProduct(@PathVariable long id, @Valid @RequestBody ShopProductForm form) {
 		return shopService.updateProduct(id, form);
 	}
 
-	@Operation(summary = "Take a recipe out of the shop; it stays on the blog")
+	@Operation(summary = "Take a product out of the shop; its recipe stays on the blog")
 	@DeleteMapping("/products/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void deleteShopProduct(@PathVariable long id) {

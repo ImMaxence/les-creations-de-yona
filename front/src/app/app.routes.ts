@@ -3,16 +3,16 @@ import { RouteSeo, SEO_DATA_KEY, markdownPathOf } from './core/seo/page-seo';
 import { aboutSeo } from './pages/about/about.seo';
 import { homeResolver } from './pages/home/home.resolver';
 import { homeSeo } from './pages/home/home.seo';
-import { capEntriesResolver, capSeo, observationsResolver, observationsSeo } from './pages/cap/cap.resolver';
+import { capArticleResolver, capArticleSeo, capEntriesResolver, capSeo } from './pages/cap/cap.resolver';
 import {
   glossaryResolver,
-  recipeObservationsResolver,
   recipeResolver,
   recipeSeo,
   relatedRecipesResolver,
 } from './pages/recipe/recipe.resolver';
 import { recipesResolver, recipesSeo } from './pages/recipes/recipes.resolver';
 import { orderTrackingResolver, shopResolver } from './pages/shop/shop.resolver';
+import { shopSeo } from './pages/shop/shop.seo';
 import { glossarySeo } from './pages/glossary/glossary.seo';
 import { menuResolver, menuSeo, menusSeo } from './pages/menus/menus.resolver';
 import { INSTALL_PATH, LEGAL_NOTICE_PATH, PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from './shared/routing/links';
@@ -41,7 +41,6 @@ export const routes: Routes = [
       recipe: recipeResolver,
       related: relatedRecipesResolver,
       glossary: glossaryResolver,
-      observations: recipeObservationsResolver,
     },
     data: { [SEO_DATA_KEY]: recipeSeo satisfies RouteSeo },
   },
@@ -52,27 +51,27 @@ export const routes: Routes = [
     resolve: { entries: capEntriesResolver },
     data: { [SEO_DATA_KEY]: capSeo satisfies RouteSeo },
   },
+  // "Mes observations" left the site in 2.4: its old address leads to Mon CAP
+  { path: 'mon-cap/observations', redirectTo: 'mon-cap' },
   {
-    path: 'mon-cap/observations',
-    loadComponent: () => import('./pages/cap/observations'),
-    resolve: { observations: observationsResolver },
-    data: { [SEO_DATA_KEY]: observationsSeo satisfies RouteSeo },
-    // The page lives in the query parameters
-    runGuardsAndResolvers: 'pathParamsOrQueryParamsChange',
+    path: 'mon-cap/:slug',
+    loadComponent: () => import('./pages/cap/cap-article'),
+    resolve: { article: capArticleResolver },
+    data: { [SEO_DATA_KEY]: capArticleSeo satisfies RouteSeo },
   },
-  // For the people close to Yona: nothing for search engines
+  // For the people close to Yona: nothing for search engines, until open to all
   {
     path: 'boutique',
     pathMatch: 'full',
     loadComponent: () => import('./pages/shop/shop'),
     resolve: { shop: shopResolver },
-    data: { [SEO_DATA_KEY]: { title: 'Boutique', noIndex: true } satisfies RouteSeo },
+    data: { [SEO_DATA_KEY]: shopSeo satisfies RouteSeo },
   },
   {
     path: 'boutique/commande/:token',
     loadComponent: () => import('./pages/shop/order-tracking'),
     resolve: { order: orderTrackingResolver },
-    data: { [SEO_DATA_KEY]: { title: 'Suivi de commande', noIndex: true } satisfies RouteSeo },
+    data: { [SEO_DATA_KEY]: { title: 'Suivi de ma demande', noIndex: true } satisfies RouteSeo },
   },
   {
     path: 'menus',

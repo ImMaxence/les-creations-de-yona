@@ -4,6 +4,9 @@
 import { AccountEntryResponse } from '../models/account-entry-response';
 import { AccountTotals } from '../models/account-totals';
 import { AdminTotals } from '../models/admin-totals';
+import { BestSeller } from '../models/best-seller';
+import { CategoryTotal } from '../models/category-total';
+import { KeyFigures } from '../models/key-figures';
 import { MonthTotals } from '../models/month-totals';
 export interface AccountingOverview {
 
@@ -11,6 +14,11 @@ export interface AccountingOverview {
    * Those a line can be counted for
    */
   admins: Array<string>;
+
+  /**
+   * The products sold, the best first: paid orders only
+   */
+  bestSellers: Array<BestSeller>;
 
   /**
    * Each admin having lines
@@ -23,9 +31,28 @@ export interface AccountingOverview {
   entries: Array<AccountEntryResponse>;
 
   /**
-   * Each month having lines, in order
+   * The expenses by category, those of ingredients first
+   */
+  expensesByCategory: Array<CategoryTotal>;
+  figures: KeyFigures;
+  from: string;
+
+  /**
+   * The 12 months of the year, for the chart
    */
   months: Array<MonthTotals>;
+
+  /**
+   * The month (1 to 12) or the quarter (1 to 4); 1 for a year
+   */
+  number: number;
+  period: 'MONTH' | 'QUARTER' | 'YEAR';
+
+  /**
+   * The same period a year before
+   */
+  previousTotals: AccountTotals;
+  to: string;
   totals: AccountTotals;
   year: number;
 

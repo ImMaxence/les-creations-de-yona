@@ -19,6 +19,7 @@ import {
   resource,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { FieldTree, FormField, form, submit } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
@@ -42,6 +43,9 @@ import { searchRecipes } from '../../../core/api/generated/fn/admin-recipes/sear
 import { RecipeAdminSummary } from '../../../core/api/generated/models/recipe-admin-summary';
 import { updateRecipe } from '../../../core/api/generated/fn/admin-recipes/update-recipe';
 import { searchIngredients } from '../../../core/api/generated/fn/admin-ingredients/search-ingredients';
+import { listAdminGlossary } from '../../../core/api/generated/fn/admin-glossary/list-admin-glossary';
+import { glossaryMatcher, markTerms } from '../../../shared/format/glossary';
+import { GlossaryTermDialog } from '../glossary/glossary-term-dialog';
 import { RecipeAiDraft } from '../../../core/api/generated/models/recipe-ai-draft';
 import { RecipeDetail } from '../../../core/api/generated/models/recipe-detail';
 import { Confirm } from '../../../core/dialog/confirm';
@@ -75,6 +79,7 @@ import {
   toRecipeForm,
 } from './recipe-draft';
 import { RecipeAiDialog } from './recipe-ai-dialog';
+import { RecoveredDraft } from '../recovered-draft';
 import { UnsavedChanges } from './unsaved-changes.guard';
 import { Icon } from '../../../shared/ui/icon/icon';
 
@@ -126,6 +131,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
   selector: 'yona-admin-recipe-editor',
   imports: [
     Icon,
+    RecoveredDraft,
     NgTemplateOutlet,
     RouterLink,
     FormField,
@@ -135,6 +141,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     Button,
     Dialog,
     FieldError,
+    GlossaryTermDialog,
     ImageUpload,
     RecipeAiDialog,
     RecipePreview,
@@ -190,10 +197,6 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly duplicating = signal(false);
   /** A form typed earlier and never saved, offered back when the editor opens. */
   protected readonly recovered = signal<StoredDraft | null>(null);
-  protected readonly recoveredAt = computed(() => {
-    const stored = this.recovered();
-    return stored ? parisDateTime(stored.savedAt) : '';
-  });
   /** The recipe was saved again since that form was typed (another tab, another admin). */
   protected readonly recoveredIsOutdated = computed(() => {
     const stored = this.recovered();
@@ -219,6 +222,15 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   );
   /** Every tag, to tick those of the recipe. */
   protected readonly tags = resource({ loader: () => this.api.invoke(listAdminTags) });
+
+  // The glossary, without leaving the recipe: its words underlined in the steps, a word selected added in a window
+  protected readonly glossaryTerms = resource({ loader: () => this.api.invoke(listAdminGlossary) });
+  private readonly glossaryWords = computed(() => glossaryMatcher(this.glossaryTerms.value() ?? []));
+  /** Kept for later, without definition yet. */
+  protected readonly wordsToDefine = computed(() => (this.glossaryTerms.value() ?? []).filter((term) => !term.definition).length);
+  /** Words selected in a step: "+ Glossaire" shows under it. */
+  protected readonly glossarySelection = signal<{ p: number; i: number; text: string } | null>(null);
+  private readonly glossaryDialog = viewChild.required(GlossaryTermDialog);
   protected readonly creatingTag = signal(false);
   protected readonly newTagName = signal('');
   /** Ingredients already known, the most used first, so that the same one is not created twice. */
@@ -421,6 +433,40 @@ export default class AdminRecipeEditor implements UnsavedChanges {
     return (this.draft().parts[partIndex]?.ingredients ?? [])
       .filter((line) => line.name.trim())
       .map((line) => ({ key: line.key, name: line.name.trim() }));
+  }
+
+  /** The text of a step, its glossary words in a <mark>: drawn under the field, it underlines them. */
+  protected markedStep(text: string): string {
+    return markTerms(text, this.glossaryWords());
+  }
+
+  /** A word or a few selected in a step, its punctuation left out: offered to the glossary. */
+  protected checkSelection(event: Event, p: number, i: number): void {
+    const area = event.target as HTMLTextAreaElement;
+    const text = area.value
+      .slice(area.selectionStart, area.selectionEnd)
+      .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
+      .trim();
+    this.glossarySelection.set(text && text.length <= 60 && !text.includes('\n') ? { p, i, text } : null);
+  }
+
+  protected clearSelection(): void {
+    this.glossarySelection.set(null);
+  }
+
+  /** The underlined copy follows the field when it scrolls. */
+  protected syncMarks(event: Event): void {
+    const area = event.target as HTMLTextAreaElement;
+    const marks = area.previousElementSibling as HTMLElement | null;
+    if (marks) {
+      marks.scrollTop = area.scrollTop;
+    }
+  }
+
+  /** {@code word}: the words selected; empty from the "Glossaire" button. */
+  protected openGlossary(word: string): void {
+    this.glossarySelection.set(null);
+    this.glossaryDialog().start(word);
   }
 
   protected toggleStepIngredient(partIndex: number, stepIndex: number, key: string): void {

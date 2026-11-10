@@ -1,0 +1,288 @@
+<section class="admin-section" aria-labelledby="accounting-title">
+  <div class="admin-section__head">
+    <h2 id="accounting-title">Comptabilité</h2>
+    <div class="admin-section__actions period">
+      <div class="segmented" role="radiogroup" aria-label="Période">
+        @for (option of periods; track option.value) {
+          <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="period() === option.value" (click)="choosePeriod(option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      @if (period() === 'MONTH') {
+        <yona-select label="Mois" [options]="monthOptions" [value]="month()" (valueChange)="month.set($event ?? month())" />
+      } @else if (period() === 'QUARTER') {
+        <yona-select label="Trimestre" [options]="quarterOptions" [value]="quarter()" (valueChange)="quarter.set($event ?? quarter())" />
+      }
+      <yona-select label="Année" [options]="yearOptions()" [value]="year()" (valueChange)="year.set($event ?? year())" />
+      <a yonaButton variant="secondary" [href]="exportLink()" download><svg yonaIcon="download"></svg>CSV</a>
+      <button yonaButton type="button" (click)="add()"><svg yonaIcon="plus"></svg>Ajouter</button>
+    </div>
+  </div>
+
+  @if (overview.value(); as data) {
+    <div class="figures" [class.is-busy]="overview.isLoading()">
+      <div class="figure">
+        <span class="figure__label">Entrées</span>
+        <strong class="figure__value">{{ formatEuros(data.totals.income) }}</strong>
+        @if (incomeChange() !== null) {
+          <span class="figure__note" [class.is-up]="incomeChange()! > 0" [class.is-down]="incomeChange()! < 0">
+            {{ signedPercent(incomeChange()!) }} par rapport à {{ year() - 1 }}
+          </span>
+        } @else {
+          <span class="figure__note">{{ periodLabel() }}</span>
+        }
+      </div>
+      <div class="figure">
+        <span class="figure__label">Dépenses</span>
+        <strong class="figure__value">{{ formatEuros(data.totals.expense) }}</strong>
+        @if (expenseShare() !== null) {
+          <span class="figure__note">{{ percent(expenseShare()!) }} des entrées</span>
+        }
+      </div>
+      <div class="figure">
+        <span class="figure__label">Solde</span>
+        <strong class="figure__value" [class.is-negative]="data.totals.balance < 0" [class.is-positive]="data.totals.balance > 0">{{ formatEuros(data.totals.balance) }}</strong>
+        @if (data.figures.marginRate !== undefined && data.figures.marginRate !== null) {
+          <span class="figure__note">marge {{ percent(data.figures.marginRate) }}</span>
+        }
+      </div>
+      <div class="figure">
+        <span class="figure__label">Commandes</span>
+        <strong class="figure__value">{{ data.figures.orders }}</strong>
+        <span class="figure__note">dont {{ data.figures.offeredOrders }} offerte{{ data.figures.offeredOrders > 1 ? 's' : '' }}</span>
+      </div>
+      <div class="figure">
+        <span class="figure__label">Panier moyen</span>
+        <strong class="figure__value">{{ data.figures.averageBasket !== undefined && data.figures.averageBasket !== null ? formatEuros(data.figures.averageBasket) : '—' }}</strong>
+        <span class="figure__note">par commande payée</span>
+      </div>
+    </div>
+
+    <div class="admin-panel">
+      <h3>Entrées et dépenses par mois · {{ year() }}</h3>
+      <yona-accounting-chart [months]="data.months" />
+      <details class="chart-table">
+        <summary class="link-button">Voir le tableau</summary>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th scope="col">Mois</th><th scope="col">Entrées</th><th scope="col">Dépenses</th><th scope="col">Solde</th></tr>
+            </thead>
+            <tbody>
+              @for (month of data.months; track month.month) {
+                <tr>
+                  <th scope="row">{{ monthOptions[month.month - 1]!.label }}</th>
+                  <td>{{ formatEuros(month.totals.income) }}</td>
+                  <td>{{ formatEuros(month.totals.expense) }}</td>
+                  <td>{{ formatEuros(month.totals.balance) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+
+    <div class="pair">
+      <div class="admin-panel">
+        <h3>Où part l'argent</h3>
+        <ul role="list" class="spending">
+          @for (total of data.expensesByCategory; track total.category) {
+            <li class="spending__row">
+              <span class="spending__label">{{ categoryLabels[total.category] }}</span>
+              <span class="spending__track" aria-hidden="true">
+                <span class="spending__bar" [style.width.%]="(total.amount / largestExpense()) * 100"></span>
+              </span>
+              <span class="spending__value">{{ formatEuros(total.amount) }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+      <div class="admin-panel">
+        <h3>Meilleures ventes</h3>
+        @if (data.bestSellers.length) {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th scope="col">Produit</th><th scope="col">Vendus</th><th scope="col">Chiffre</th><th scope="col">Marge</th></tr>
+              </thead>
+              <tbody>
+                @for (best of data.bestSellers; track best.name) {
+                  <tr>
+                    <th scope="row">{{ best.name }}</th>
+                    <td>{{ best.quantity }}</td>
+                    <td>{{ formatEuros(best.revenue) }}</td>
+                    <td [class.is-positive]="(best.margin ?? 0) > 0" [class.is-negative]="(best.margin ?? 0) < 0">
+                      {{ best.margin !== undefined && best.margin !== null ? formatEuros(best.margin) : '—' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="field__hint">Commandes payées de la période ; « — » tant que le coût de revient est inconnu</p>
+        } @else {
+          <p class="admin-empty">Aucune commande payée sur la période</p>
+        }
+      </div>
+    </div>
+
+    <div class="admin-panel">
+      <div class="panel-head">
+        <h3>Coût de revient</h3>
+        @if (costOptions().length) {
+          <yona-select label="Produit" searchable [options]="costOptions()" [value]="cost()?.productId" (valueChange)="costProductId.set($event ?? null)" />
+        }
+      </div>
+      @if (cost(); as product) {
+        <div class="cost">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th scope="col">Ingrédient</th><th scope="col">Quantité</th><th scope="col">Prix payé</th><th scope="col">Coût</th></tr>
+              </thead>
+              <tbody>
+                @for (line of product.lines; track $index) {
+                  <ng-container *ngTemplateOutlet="costRow; context: { $implicit: line }" />
+                }
+                @if (product.packaging; as packaging) {
+                  <ng-container *ngTemplateOutlet="costRow; context: { $implicit: packaging }" />
+                }
+              </tbody>
+              <tfoot>
+                <tr><th scope="row" colspan="3">Coût total</th><td>{{ formatEuros(product.cost) }}</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="cost__tiles">
+            <div class="figure figure--small">
+              <span class="figure__label">Coût</span>
+              <strong class="figure__value">{{ formatEuros(product.cost) }}</strong>
+            </div>
+            <div class="figure figure--small">
+              <span class="figure__label">Vendu</span>
+              <strong class="figure__value">{{ formatEuros(product.price) }} TTC</strong>
+            </div>
+            <div class="figure figure--small">
+              <span class="figure__label">Marge</span>
+              <strong class="figure__value" [class.is-positive]="product.margin > 0" [class.is-negative]="product.margin < 0">
+                {{ formatEuros(product.margin) }}{{ product.marginRate !== undefined && product.marginRate !== null ? ' · ' + percent(product.marginRate) : '' }}
+              </strong>
+            </div>
+          </div>
+        </div>
+        @if (!product.complete) {
+          <p class="field__hint">Coût incomplet : les lignes sans prix n'ont pas encore d'achat détaillé (« Ajouter », dépense Ingrédients ou Emballages)</p>
+        }
+        @if (product.recipeTitle; as recipe) {
+          <p class="field__hint">Recette « {{ recipe }} » × {{ product.recipeShare }} · quantités de la recette × dernier prix payé, plus l'emballage</p>
+        }
+      } @else if (costs.isLoading()) {
+        <p class="admin-empty">Chargement…</p>
+      } @else {
+        <p class="admin-empty">Aucun produit dans la boutique : le coût de revient se calcule pour chacun</p>
+      }
+    </div>
+
+    <div class="admin-panel">
+      <div class="lines-toolbar">
+        <h3>Lignes</h3>
+        <div class="segmented" role="radiogroup" aria-label="Type">
+          <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="kindFilter() === 'ALL'" (click)="kindFilter.set('ALL')">Tout</button>
+          <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="kindFilter() === 'INCOME'" (click)="kindFilter.set('INCOME')">Entrées</button>
+          <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="kindFilter() === 'EXPENSE'" (click)="kindFilter.set('EXPENSE')">Dépenses</button>
+        </div>
+        <yona-select class="filter-admin" label="Filtrer par admin" [options]="adminFilterOptions()" [value]="adminFilter()" (valueChange)="adminFilter.set($event ?? '')" />
+        <input class="input lines-search" type="search" placeholder="Rechercher : beurre, commande 27…" aria-label="Rechercher dans les lignes" [value]="search()" (input)="search.set($any($event.target).value)" />
+      </div>
+
+      @for (group of groups(); track group.key) {
+        <div class="month">
+          <div class="month__head">
+            <h4>{{ group.label }}</h4>
+            <span class="month__totals">+{{ formatEuros(group.income) }} · −{{ formatEuros(group.expense) }}</span>
+          </div>
+          <ul role="list" class="lines">
+            @for (entry of group.entries; track entry.id) {
+              <li class="line">
+                <button type="button" class="line__main" [attr.aria-label]="'Modifier ' + entry.label" (click)="edit(entry)">
+                  <span class="line__label">
+                    {{ entry.label }}
+                    @if (entry.orderSummary; as summary) {
+                      · {{ summary }}
+                    }
+                    @if (entry.margin !== undefined && entry.margin !== null) {
+                      · marge {{ formatEuros(entry.margin) }}
+                    }
+                  </span>
+                  <span class="line__meta">
+                    {{ entry.occurredOn | parisDate }} · {{ categoryLabels[entry.category] }}
+                    @if (entry.purchases.length) {
+                      · {{ purchaseSummary(entry) }}
+                    }
+                    @if (entry.receipt) {
+                      · <svg yonaIcon="receipt" [size]="13"></svg> ticket joint
+                    }
+                    · {{ entry.adminEmail }}
+                  </span>
+                </button>
+                @if (entry.orderId; as orderId) {
+                  <a class="icon-button" [routerLink]="['/admin/boutique/commandes', orderId]" [attr.aria-label]="'Commande n° ' + orderId"><svg yonaIcon="package" [size]="18"></svg></a>
+                }
+                <strong class="line__amount" [class.is-negative]="entry.kind === 'EXPENSE'" [class.is-positive]="entry.kind === 'INCOME'">
+                  {{ entry.kind === 'EXPENSE' ? '−' : '+' }}{{ formatEuros(entry.amount) }}
+                </strong>
+                <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer ' + entry.label" [disabled]="!!entry.orderId" (click)="remove(entry)">
+                  <svg yonaIcon="trash" [size]="18"></svg>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+      } @empty {
+        <p class="admin-empty">Aucune ligne pour cette sélection</p>
+      }
+    </div>
+
+    <yona-invoices-panel [year]="year()" />
+
+    @if (data.byAdmin.length > 1) {
+      <div class="admin-panel">
+        <h3>Par admin · {{ periodLabel() }}</h3>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th scope="col">Admin</th><th scope="col">Entrées</th><th scope="col">Dépenses</th><th scope="col">Solde</th></tr>
+            </thead>
+            <tbody>
+              @for (admin of data.byAdmin; track admin.adminEmail) {
+                <tr>
+                  <th scope="row">{{ admin.adminEmail }}</th>
+                  <td>{{ formatEuros(admin.totals.income) }}</td>
+                  <td>{{ formatEuros(admin.totals.expense) }}</td>
+                  <td>{{ formatEuros(admin.totals.balance) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  } @else if (overview.isLoading()) {
+    <p class="admin-empty">Chargement…</p>
+  }
+</section>
+
+<ng-template #costRow let-line>
+  <tr>
+    <th scope="row">{{ line.name }}</th>
+    <td>{{ quantity(line) }}</td>
+    <td>{{ paidText(line) }}</td>
+    <td [class.is-missing]="line.cost === undefined || line.cost === null">
+      {{ line.cost !== undefined && line.cost !== null ? formatEuros(line.cost) : (line.quantity ? 'prix inconnu' : '—') }}
+    </td>
+  </tr>
+</ng-template>
+
+<yona-account-entry-dialog [admins]="overview.value()?.admins ?? []" [defaultAdmin]="session.admin()?.email ?? ''" (saved)="reload()" />

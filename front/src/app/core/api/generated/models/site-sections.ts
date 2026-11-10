@@ -4,12 +4,12 @@
 export interface SiteSections {
 
   /**
-   * "Mon CAP" has a published step
+   * "Mon CAP" has a published article
    */
   capPublished: boolean;
 
   /**
-   * The shop takes orders
+   * The shop is open to all: in the menu and on the home page (not while kept for the close ones)
    */
   shopOpen: boolean;
 }

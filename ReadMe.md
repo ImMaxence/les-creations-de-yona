@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.3.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.4.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -23,6 +23,16 @@ Sur téléphone, là où se lisent la plupart des recettes :
 | Notifications | Notification reçue | Glossaire |
 | --- | --- | --- |
 | ![Notifications sur téléphone](docs/captures/telephone-notifications.png) | ![Notification d'une nouvelle recette sur l'écran verrouillé d'un iPhone](docs/captures/telephone-notification-recue.jpg) | ![Glossaire sur téléphone](docs/captures/telephone-glossaire.png) |
+
+La boutique pour les proches et le carnet de route du CAP Pâtisserie :
+
+| Boutique | Ma demande | Mon CAP |
+| --- | --- | --- |
+| ![Boutique sur ordinateur : catégories, produits, prix TTC et « Ma demande »](docs/captures/pc-boutique.png) | ![« Ma demande » sur téléphone : les produits choisis et l'estimation](docs/captures/telephone-boutique.png) | ![La frise des articles de Mon CAP sur téléphone](docs/captures/telephone-mon-cap.png) |
+
+| Un article de Mon CAP | Comptabilité | Une facture |
+| --- | --- | --- |
+| ![Un article de Mon CAP au style Carnet](docs/captures/pc-mon-cap.png) | ![Comptabilité du back-office : chiffres clés, graphique, où part l'argent, meilleures ventes](docs/captures/pc-comptabilite.png) | ![Une facture prête à imprimer ou à enregistrer en PDF](docs/captures/pc-facture.png) |
 
 ## L'IA au service de Yona
 
@@ -54,20 +64,21 @@ Chaque modèle se télécharge une seule fois, directement depuis Hugging Face, 
 - Application installable d'un bouton (« Télécharger l'application » ; sur iPhone, les deux gestes expliqués), lisible hors connexion, notifications des nouvelles recettes.
 - Glossaire de pâtisserie, mots expliqués d'un appui dans les étapes.
 - « Donner mon avis » : un message à Yona, lu dans le back-office.
-- Mon CAP : le carnet de route de Yona vers son CAP Pâtisserie, date par date, et ses observations, liées ou non à une recette.
+- Mon CAP : le carnet de route de Yona vers son CAP Pâtisserie, en articles : une frise d'aperçus, et une page par article faite de blocs (texte, grande photo, photo + texte, étapes en photos, astuce), photos en grand d'un appui ; le dernier article, ou le « Coup de cœur », sur l'accueil.
 - Recettes qui en utilisent d'autres (une pâte sablée écrite une fois, reprise dans chaque tarte) ; équivalents en pièces (« 400 g ≈ 8 œufs »).
-- Boutique pour les proches : choisir des recettes et envoyer une demande, avec un lien de suivi, sans compte ni paiement sur le site.
+- Boutique pour les proches : des produits (boîte de 6, à l'unité) aux prix TTC, recherche et catégories, « Ma demande » toujours à portée de main et gardée en quittant la page, un lien de suivi, sans compte ni paiement sur le site.
 
 **Pour Yona (back-office, connexion Google)**
 
 - Éditeur de recettes (parties, étapes minutées, matériel, conseil, thème, publication programmée avec statut « Échec » et « Publier maintenant » si elle n'a pas pu se faire, mise à la une d'avance, brouillon gardé), « Remplir avec l'IA » (Gemini lit un texte collé ou la photo d'une recette ; un modèle qui tourne dans le navigateur lit le texte collé), « Générer avec l'IA » (images dessinées dans le navigateur), aperçu, liste triable (modification, création, titre, vues).
-- Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients, mots du glossaire, étapes de Mon CAP et observations, qui reviennent à leur place une fois restaurés.
+- Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients, mots du glossaire et articles de Mon CAP, qui reviennent à leur place une fois restaurés.
 - Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur), retours des visiteurs, titres de l'accueil modifiables.
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
 - Apparence (thèmes, polices), statistiques (dont le nombre de vues, les recettes les plus vues, la mémoire et le processeur), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
-- Boutique : commandes et statuts, notification sur le téléphone à chaque nouvelle commande, produits et prix, comptabilité par admin (entrées, dépenses, totaux, export CSV).
+- Boutique : fermée, réservée aux proches ou ouverte à tous ; commandes et statuts, notification sur le téléphone à chaque nouvelle commande, produits (formats, prix TTC, avec ou sans recette) ; comptabilité par mois, trimestre ou année (chiffres clés, graphique, où part l'argent, meilleures ventes, achats détaillés, coût de revient et marges, tickets de caisse, export CSV) ; factures des commandes récupérées, numérotées à la suite et à enregistrer en PDF.
 - Tableau de bord sans la barre du site : toutes les sections dans un panneau à gauche (Blog, Boutique, Site), ouvert d'un bouton sur téléphone ; page de connexion Google, photo du compte.
-- Mon CAP et observations, rangés avec les recettes.
+- Mon CAP : articles écrits en blocs à partir d'un modèle (Récit, Pas à pas, Carnet, Vide), styles Classique ou Carnet, aperçu ordinateur et téléphone, brouillon gardé dans le navigateur jusqu'à l'enregistrement.
+- Glossaire sans quitter la recette : un mot sélectionné dans une étape s'ajoute d'un bouton, ou se garde pour plus tard ; les mots déjà connus soulignés.
 
 Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).
 
@@ -97,11 +108,11 @@ cd e2e && npm test     # parcours dans Chrome (dont accessibilité et Lighthouse
 | --- | --- |
 | [Fonctionnalités](docs/fonctionnalites.md) | La spécification : chaque page du site et du back-office |
 | [Développement](docs/developpement.md) | Stack, structure, lancement local, tests, API |
-| [Production](docs/production.md) | Mise en ligne sur Coolify, Cloudflare, services Google |
+| [Production](docs/production.md) | Mise en ligne sur Coolify, Cloudflare, services Google ; [restaurer une sauvegarde à la main](docs/production.md#restaurer-une-sauvegarde-à-la-main), [changer de nom de domaine](docs/production.md#changer-de-nom-de-domaine) |
 | [Architecture et décisions](docs/architecture.md) | Modèle de données, choix techniques, images, charte graphique |
 | [Roadmap](docs/roadmap.md) | Versions passées et points à vérifier |
 | [CHANGELOG](CHANGELOG.md) | Le détail de chaque version, aussi affiché dans le back-office |
-| [Sécurité](SECURITY-REVIEW.md) · [Restauration](docs/restauration.md) · [Google](docs/google.md) · [Domaine](docs/changement-de-domaine.md) | Revue de sécurité, procédures |
+| [Sécurité](SECURITY-REVIEW.md) · [Google](docs/google.md) | Revue de sécurité ; réglages des services Google pas à pas |
 | [IA](docs/ia.md) | « Remplir avec l'IA » et « Générer avec l'IA » : Gemini, modèles locaux, erreurs, fonctionnement |
 
 ## Licence

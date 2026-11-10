@@ -86,9 +86,16 @@ export const adminRoutes: Routes = [
         title: 'Mon CAP · Back-office',
       },
       {
-        path: 'observations',
-        loadComponent: () => import('./cap/admin-observations'),
-        title: 'Observations · Back-office',
+        path: 'mon-cap/nouveau',
+        loadComponent: () => import('./cap/admin-cap-editor'),
+        canDeactivate: [unsavedChangesGuard],
+        title: 'Nouvel article · Back-office',
+      },
+      {
+        path: 'mon-cap/:id',
+        loadComponent: () => import('./cap/admin-cap-editor'),
+        canDeactivate: [unsavedChangesGuard],
+        title: 'Modifier un article · Back-office',
       },
       {
         path: 'boutique/commandes',
@@ -99,6 +106,11 @@ export const adminRoutes: Routes = [
         path: 'boutique/commandes/:id',
         loadComponent: () => import('./shop/admin-order'),
         title: 'Commande · Back-office',
+      },
+      {
+        path: 'boutique/factures/:id',
+        loadComponent: () => import('./shop/admin-invoice'),
+        title: 'Facture · Back-office',
       },
       {
         path: 'boutique/produits',

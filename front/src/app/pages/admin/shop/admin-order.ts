@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { deleteShopOrder } from '../../../core/api/generated/fn/admin-shop/delete-shop-order';
+import { issueInvoice } from '../../../core/api/generated/fn/admin-invoices/issue-invoice';
 import { getShopOrder } from '../../../core/api/generated/fn/admin-shop/get-shop-order';
 import { updateShopOrder } from '../../../core/api/generated/fn/admin-shop/update-shop-order';
 import { AdminOrder as Order } from '../../../core/api/generated/models/admin-order';
@@ -67,18 +68,36 @@ import { NewOrders } from './new-orders';
           </ul>
         </div>
 
+        <div class="admin-panel">
+          <h3>Facture</h3>
+          @if (current.invoice; as invoice) {
+            <p class="admin-row__title">N° {{ invoice.number }} du {{ invoice.issuedOn | parisDate }}</p>
+            <p class="field__hint">La commande reste récupérée, à son montant, et ne se supprime plus</p>
+            <a yonaButton variant="secondary" [routerLink]="['/admin/boutique/factures', invoice.id]"><svg yonaIcon="receipt"></svg>Voir la facture</a>
+          } @else if (current.status !== 'PICKED_UP') {
+            <p class="admin-empty">Elle se génère une fois la commande récupérée et enregistrée</p>
+          } @else if (current.amount <= 0) {
+            <p class="admin-empty">Une commande offerte n'a pas de facture</p>
+          } @else {
+            <p class="field__hint">Pour le client qui en demande une ; son numéro suit celui de la précédente</p>
+            <button yonaButton variant="secondary" type="button" [disabled]="issuing()" (click)="issue(current)"><svg yonaIcon="receipt"></svg>Générer la facture</button>
+          }
+        </div>
+
         <form class="admin-panel" (submit)="save($event, current)">
           <h3>Suivi</h3>
           <div class="field">
             <span class="field__label">Statut</span>
-            <yona-select label="Statut" [options]="statusOptions" [value]="status()" (valueChange)="status.set($event ?? status())" />
-            @if (status() === 'PICKED_UP') {
+            <yona-select label="Statut" [options]="statusOptions" [disabled]="!!current.invoice" [value]="status()" (valueChange)="status.set($event ?? status())" />
+            @if (current.invoice) {
+              <span class="field__hint">Facturée : elle reste récupérée</span>
+            } @else if (status() === 'PICKED_UP') {
               <span class="field__hint">Une fois enregistré, le montant entre dans la comptabilité de l'admin en charge</span>
             }
           </div>
           <div class="field">
             <label class="field__label" for="order-amount">Montant (€)</label>
-            <input id="order-amount" class="input" type="number" inputmode="decimal" min="0" step="0.01" [value]="amount()" (input)="amount.set($any($event.target).value)" />
+            <input id="order-amount" class="input" type="number" inputmode="decimal" min="0" step="0.01" [disabled]="!!current.invoice" [value]="amount()" (input)="amount.set($any($event.target).value)" />
             <span class="field__hint">Le total calculé à la commande ; à changer pour une remise ou un ajout</span>
           </div>
           <div class="field">
@@ -91,7 +110,9 @@ import { NewOrders } from './new-orders';
           </div>
           <div class="admin-toolbar">
             <button yonaButton type="submit" [disabled]="saving()"><svg yonaIcon="save"></svg>Enregistrer</button>
-            <button yonaButton variant="ghost" type="button" (click)="remove(current)"><svg yonaIcon="trash"></svg>Supprimer</button>
+            @if (!current.invoice) {
+              <button yonaButton variant="ghost" type="button" (click)="remove(current)"><svg yonaIcon="trash"></svg>Supprimer</button>
+            }
           </div>
         </form>
       } @else if (order.isLoading()) {
@@ -148,6 +169,7 @@ export default class AdminOrder {
   protected readonly handledBy = signal<string | null>(null);
   protected readonly note = signal('');
   protected readonly saving = signal(false);
+  protected readonly issuing = signal(false);
 
   constructor() {
     effect(() => {
@@ -180,6 +202,24 @@ export default class AdminOrder {
       this.toaster.success('Commande enregistrée');
       this.order.reload();
       void this.newOrders.refresh();
+    }
+  }
+
+  protected async issue(order: Order): Promise<void> {
+    const confirmed = await this.confirm.ask({
+      title: 'Générer la facture ?',
+      message: `Elle sera au nom de ${order.customerName}, pour ${formatEuros(order.amount)}. Ensuite, la commande reste récupérée, à son montant, et ne se supprime plus`,
+      confirmLabel: 'Générer',
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.issuing.set(true);
+    const issued = await attempt(this.api.invoke(issueInvoice, { orderId: order.id }));
+    this.issuing.set(false);
+    if (issued.ok) {
+      this.toaster.success(`Facture n° ${issued.value.number} générée`);
+      await this.router.navigate(['/admin/boutique/factures', issued.value.id]);
     }
   }
 

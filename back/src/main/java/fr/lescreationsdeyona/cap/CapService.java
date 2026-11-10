@@ -4,38 +4,39 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
-import fr.lescreationsdeyona.cap.CapResponses.CapEntryResponse;
-import fr.lescreationsdeyona.cap.CapResponses.ObservationRecipe;
-import fr.lescreationsdeyona.cap.CapResponses.ObservationResponse;
+import fr.lescreationsdeyona.cap.CapResponses.AdminCapEntry;
+import fr.lescreationsdeyona.cap.CapResponses.AdminCapEntrySummary;
+import fr.lescreationsdeyona.cap.CapResponses.CapArticle;
+import fr.lescreationsdeyona.cap.CapResponses.CapArticleCard;
+import fr.lescreationsdeyona.cap.CapResponses.CapHighlight;
 import fr.lescreationsdeyona.cap.CapResponses.TrashedCapEntry;
-import fr.lescreationsdeyona.cap.CapResponses.TrashedObservation;
 import fr.lescreationsdeyona.common.PublicCache;
+import fr.lescreationsdeyona.common.Slugs;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.Image;
 import fr.lescreationsdeyona.image.ImageService;
-import fr.lescreationsdeyona.recipe.Recipe;
-import fr.lescreationsdeyona.recipe.RecipeRepository;
-import fr.lescreationsdeyona.recipe.RecipeStatus;
 import fr.lescreationsdeyona.trash.TrashBin;
 import fr.lescreationsdeyona.trash.TrashItem;
 import fr.lescreationsdeyona.trash.TrashKind;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import tools.jackson.databind.json.JsonMapper;
 
-/** "Mon CAP" (the timeline of the diploma) and "Mes observations" (notes about a recipe, or about none). */
+/** "Mon CAP": the articles of the road to the diploma, as a timeline and a page each. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,11 +44,10 @@ public class CapService {
 
 	private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+	/** The old address of "Mes observations", sent to /mon-cap: never an article's. */
+	static final String RESERVED_SLUG = "observations";
+
 	private final CapEntryRepository entryRepository;
-
-	private final ObservationRepository observationRepository;
-
-	private final RecipeRepository recipeRepository;
 
 	private final ImageService imageService;
 
@@ -55,191 +55,189 @@ public class CapService {
 
 	private final AuditLog auditLog;
 
+	private final JsonMapper jsonMapper;
+
 	// Public site: what is published only.
 
 	@Cacheable(PublicCache.CAP_ENTRIES)
-	public List<CapEntryResponse> publishedEntries() {
-		return entryRepository.findByPublishedTrueOrderByHappenedOnDescIdDesc().stream().map(CapService::toResponse).toList();
+	public List<CapArticleCard> publishedEntries() {
+		return entryRepository.findByPublishedTrueOrderByHappenedOnDescIdDesc().stream().map(this::toCard).toList();
 	}
 
-	@Cacheable(PublicCache.OBSERVATIONS)
-	public Page<ObservationResponse> publishedObservations(Pageable pageable) {
-		return observationRepository
-			.findByPublishedTrueOrderByObservedOnDescIdDesc(PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()))
-			.map(observation -> toResponse(observation, true));
+	@Cacheable(PublicCache.CAP_ENTRY)
+	public CapArticle publishedEntry(String slug) {
+		CapEntry entry = entryRepository.findBySlugAndPublishedTrue(slug)
+			.orElseThrow(() -> new ApiException(ErrorCode.CAP_ENTRY_NOT_FOUND));
+		List<CapBlock> blocks = blocks(entry);
+		List<CapBlock> shown = CapBlocks.shown(blocks, known(CapBlocks.imageIds(blocks)));
+		return new CapArticle(entry.getId(), entry.getTitle(), entry.getSubtitle(), entry.getSlug(), entry.getHappenedOn(),
+				imageId(entry), entry.getStyle(), shown, CapBlocks.excerpt(shown), entry.getUpdatedAt());
 	}
 
-	@Cacheable(PublicCache.RECIPE_OBSERVATIONS)
-	public List<ObservationResponse> observationsOfRecipe(String slug) {
-		return observationRepository.findPublishedOfRecipe(slug).stream().map(observation -> toResponse(observation, true)).toList();
+	/** The article chosen with "Mettre en avant", otherwise the latest one; null before the first one. */
+	@Cacheable(PublicCache.CAP_HIGHLIGHT)
+	public @Nullable CapHighlight highlight() {
+		return entryRepository.findFirstByPublishedTrueAndFeaturedTrue()
+			.map(entry -> new CapHighlight(toCard(entry), true))
+			.or(() -> entryRepository.findFirstByPublishedTrueOrderByHappenedOnDescIdDesc()
+				.map(entry -> new CapHighlight(toCard(entry), false)))
+			.orElse(null);
 	}
 
 	// Back-office
 
-	public List<CapEntryResponse> allEntries() {
-		return entryRepository.findAllByOrderByHappenedOnDescIdDesc().stream().map(CapService::toResponse).toList();
+	public List<AdminCapEntrySummary> allEntries() {
+		return entryRepository.findAllByOrderByHappenedOnDescIdDesc().stream()
+			.map(entry -> new AdminCapEntrySummary(entry.getId(), entry.getTitle(), entry.getSubtitle(), entry.getSlug(),
+					entry.getHappenedOn(), imageId(entry), entry.getStyle(), blocks(entry).size(), entry.isPublished(),
+					entry.isFeatured(), entry.getUpdatedAt()))
+			.toList();
+	}
+
+	public AdminCapEntry entry(long id) {
+		return toAdmin(findEntry(id));
 	}
 
 	@Transactional
-	public CapEntryResponse createEntry(CapEntryForm form) {
+	public AdminCapEntry createEntry(CapEntryForm form) {
 		CapEntry entry = new CapEntry();
-		applyEntry(form, entry);
+		apply(form, entry);
 		CapEntry saved = entryRepository.saveAndFlush(entry);
 		auditLog.record(AuditAction.CREATED, AuditKind.CAP_ENTRY, saved.getTitle(), saved.getId());
-		return toResponse(saved);
+		return toAdmin(saved);
 	}
 
 	@Transactional
-	public CapEntryResponse updateEntry(long id, CapEntryForm form) {
+	public AdminCapEntry updateEntry(long id, CapEntryForm form) {
 		CapEntry entry = findEntry(id);
-		AuditChanges changes = new AuditChanges().add("Titre", entry.getTitle(), form.title())
-			.add("Texte", entry.getBody(), form.body())
-			.add("Date", date(entry.getHappenedOn()), date(form.happenedOn()))
-			.add("Publiée", entry.isPublished(), form.published());
-		applyEntry(form, entry);
+		String titleBefore = entry.getTitle();
+		String subtitleBefore = entry.getSubtitle();
+		LocalDate dateBefore = entry.getHappenedOn();
+		CapStyle styleBefore = entry.getStyle();
+		String blocksBefore = entry.getBlocks();
+		boolean publishedBefore = entry.isPublished();
+		boolean featuredBefore = entry.isFeatured();
+		String blocksSummaryBefore = CapBlocks.summary(blocks(entry));
+		apply(form, entry);
 		CapEntry saved = entryRepository.saveAndFlush(entry);
+		AuditChanges changes = new AuditChanges().add("Titre", titleBefore, saved.getTitle())
+			.add("Sous-titre", subtitleBefore, saved.getSubtitle())
+			.add("Date", date(dateBefore), date(saved.getHappenedOn()))
+			.add("Style", style(styleBefore), style(saved.getStyle()))
+			.add("Blocs", blocksSummaryBefore,
+					blocksBefore.equals(saved.getBlocks()) ? blocksSummaryBefore : CapBlocks.summary(blocks(saved)) + " (modifiés)")
+			.add("Publié", publishedBefore, saved.isPublished())
+			.add("Mis en avant", featuredBefore, saved.isFeatured());
 		auditLog.record(AuditAction.UPDATED, AuditKind.CAP_ENTRY, saved.getTitle(), id, changes);
-		return toResponse(saved);
+		return toAdmin(saved);
 	}
 
-	/** To the trash for 30 days; its photo stays in the gallery. */
+	/** To the trash for 30 days; its photos stay in the gallery. */
 	@Transactional
 	public void deleteEntry(long id) {
 		CapEntry entry = findEntry(id);
-		trashBin.put(TrashBin.Entry.of(TrashKind.CAP_ENTRY, entry.getTitle(), null, entry.getImage(),
-				new TrashedCapEntry(entry.getTitle(), entry.getBody(), entry.getHappenedOn(), entry.isPublished())));
+		trashBin.put(TrashBin.Entry.of(TrashKind.CAP_ENTRY, entry.getTitle(), entry.getSlug(), entry.getImage(),
+				new TrashedCapEntry(entry.getTitle(), entry.getSubtitle(), entry.getSlug(), null, entry.getHappenedOn(),
+						entry.getStyle(), blocks(entry), entry.isPublished())));
 		entryRepository.delete(entry);
 	}
 
-	/** Created again from the trash, with its photo if still in the gallery. */
+	/**
+	 * Created again from the trash, with its photo if still in the gallery, at its address if still
+	 * free. Never put forward again by surprise.
+	 */
 	@Transactional
-	public CapEntryResponse restoreEntryFromTrash(TrashItem trashed) {
+	public AdminCapEntry restoreEntryFromTrash(TrashItem trashed) {
 		TrashedCapEntry kept = trashBin.content(trashed, TrashedCapEntry.class);
+		List<CapBlock> blocks = kept.blocks() != null ? kept.blocks() : CapBlocks.fromText(kept.body());
 		CapEntry entry = new CapEntry();
 		entry.setTitle(kept.title());
-		entry.setBody(kept.body());
+		entry.setSubtitle(kept.subtitle());
+		entry.setSlug(kept.slug() != null && !slugTaken(kept.slug()) ? kept.slug() : newSlug(kept.title()));
 		entry.setHappenedOn(kept.happenedOn());
+		entry.setStyle(kept.style() == null ? CapStyle.CLASSIC : kept.style());
+		entry.setBlocks(CapBlocks.write(jsonMapper, blocks));
 		entry.setPublished(kept.published());
 		entry.setImage(trashed.getImage());
-		return toResponse(entryRepository.saveAndFlush(entry));
+		return toAdmin(entryRepository.saveAndFlush(entry));
 	}
 
-	public Page<ObservationResponse> allObservations(Pageable pageable) {
-		return observationRepository
-			.findAllByOrderByObservedOnDescIdDesc(PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()))
-			.map(observation -> toResponse(observation, false));
-	}
-
-	@Transactional
-	public ObservationResponse createObservation(ObservationForm form) {
-		Observation observation = new Observation();
-		applyObservation(form, observation);
-		Observation saved = observationRepository.saveAndFlush(observation);
-		auditLog.record(AuditAction.CREATED, AuditKind.OBSERVATION, saved.getTitle(), saved.getId());
-		return toResponse(saved, false);
-	}
-
-	@Transactional
-	public ObservationResponse updateObservation(long id, ObservationForm form) {
-		Observation observation = findObservation(id);
-		String recipeBefore = observation.getRecipe() == null ? null : observation.getRecipe().getTitle();
-		String titleBefore = observation.getTitle();
-		String bodyBefore = observation.getBody();
-		LocalDate dateBefore = observation.getObservedOn();
-		boolean publishedBefore = observation.isPublished();
-		applyObservation(form, observation);
-		Observation saved = observationRepository.saveAndFlush(observation);
-		AuditChanges changes = new AuditChanges().add("Titre", titleBefore, saved.getTitle())
-			.add("Texte", bodyBefore, saved.getBody())
-			.add("Date", date(dateBefore), date(saved.getObservedOn()))
-			.add("Recette", recipeBefore, saved.getRecipe() == null ? null : saved.getRecipe().getTitle())
-			.add("Publiée", publishedBefore, saved.isPublished());
-		auditLog.record(AuditAction.UPDATED, AuditKind.OBSERVATION, saved.getTitle(), id, changes);
-		return toResponse(saved, false);
-	}
-
-	/** To the trash for 30 days; its photo stays in the gallery. */
-	@Transactional
-	public void deleteObservation(long id) {
-		Observation observation = findObservation(id);
-		trashBin.put(TrashBin.Entry.of(TrashKind.OBSERVATION, observation.getTitle(), null, observation.getImage(),
-				new TrashedObservation(observation.getTitle(), observation.getBody(), observation.getObservedOn(),
-						observation.getRecipe() == null ? null : observation.getRecipe().getId(), observation.isPublished())));
-		observationRepository.delete(observation);
-	}
-
-	/** Created again from the trash; "Pas de recette" if its recipe has gone meanwhile. */
-	@Transactional
-	public ObservationResponse restoreObservationFromTrash(TrashItem trashed) {
-		TrashedObservation kept = trashBin.content(trashed, TrashedObservation.class);
-		Observation observation = new Observation();
-		observation.setTitle(kept.title());
-		observation.setBody(kept.body());
-		observation.setObservedOn(kept.observedOn());
-		observation.setPublished(kept.published());
-		observation.setImage(trashed.getImage());
-		observation.setRecipe(kept.recipeId() == null ? null : recipeRepository.findById(kept.recipeId()).orElse(null));
-		return toResponse(observationRepository.saveAndFlush(observation), false);
-	}
-
-	/** A recipe out of the trash has a new id: the observations about it find it again. */
-	@Transactional
-	public int giveBackObservations(long recipeId, List<Long> observationIds) {
-		return observationIds.isEmpty() ? 0 : observationRepository.linkToRecipe(recipeId, observationIds);
-	}
-
-	private void applyEntry(CapEntryForm form, CapEntry entry) {
-		Image image = image(form.imageId());
-		entry.setTitle(Texts.capitalizeFirstLetter(form.title().strip()));
-		entry.setBody(StringUtils.hasText(form.body()) ? form.body().strip() : null);
+	/**
+	 * The address follows the title while the article is a draft: nobody has its link yet. Once
+	 * published, it stays, so that shared links keep working.
+	 */
+	private void apply(CapEntryForm form, CapEntry entry) {
+		Image image = form.imageId() == null ? null : imageService.getLandscape(form.imageId());
+		List<CapBlock> requested = form.blocks();
+		Set<UUID> known = imageService.landscapeIdsAmong(CapBlocks.imageIds(requested));
+		List<CapBlock> blocks = CapBlocks.tidy(requested, known::contains);
+		String title = Texts.capitalizeFirstLetter(form.title().strip());
+		if (entry.getSlug() == null || (!entry.isPublished() && !title.equals(entry.getTitle()))) {
+			entry.setSlug(newSlug(title, entry.getSlug()));
+		}
+		if (form.featured()) {
+			// Before this one is written: the database takes one featured article at most
+			entryRepository.unfeatureAllExcept(entry.getId() == null ? -1 : entry.getId());
+		}
+		entry.setTitle(title);
+		entry.setSubtitle(StringUtils.hasText(form.subtitle()) ? form.subtitle().strip() : null);
 		entry.setHappenedOn(form.happenedOn());
 		entry.setImage(image);
+		entry.setStyle(form.style());
+		entry.setBlocks(CapBlocks.write(jsonMapper, blocks));
 		entry.setPublished(form.published());
+		entry.setFeatured(form.featured());
 	}
 
-	private void applyObservation(ObservationForm form, Observation observation) {
-		Image image = image(form.imageId());
-		Recipe recipe = form.recipeId() == null ? null
-				: recipeRepository.findById(form.recipeId()).orElseThrow(() -> new ApiException(ErrorCode.RECIPE_NOT_FOUND));
-		observation.setTitle(Texts.capitalizeFirstLetter(form.title().strip()));
-		observation.setBody(form.body().strip());
-		observation.setObservedOn(form.observedOn());
-		observation.setImage(image);
-		observation.setRecipe(recipe);
-		observation.setPublished(form.published());
+	private String newSlug(String title) {
+		return newSlug(title, null);
 	}
 
-	private @Nullable Image image(@Nullable UUID imageId) {
-		return imageId == null ? null : imageService.getLandscape(imageId);
+	/** {@code current}: the article's own address, free for it to keep. */
+	private String newSlug(String title, @Nullable String current) {
+		return Slugs.uniqueSlug(title, "article", slug -> !slug.equals(current) && slugTaken(slug));
+	}
+
+	private boolean slugTaken(String slug) {
+		return RESERVED_SLUG.equals(slug) || entryRepository.existsBySlug(slug);
+	}
+
+	private List<CapBlock> blocks(CapEntry entry) {
+		return CapBlocks.read(jsonMapper, entry.getBlocks());
+	}
+
+	/** Those of these photos still in the gallery. */
+	private Predicate<UUID> known(Collection<UUID> imageIds) {
+		Set<UUID> found = imageIds.isEmpty() ? Set.of() : new HashSet<>(imageService.landscapeIdsAmong(imageIds));
+		return found::contains;
 	}
 
 	private CapEntry findEntry(long id) {
 		return entryRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.CAP_ENTRY_NOT_FOUND));
 	}
 
-	private Observation findObservation(long id) {
-		return observationRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.OBSERVATION_NOT_FOUND));
+	private static @Nullable UUID imageId(CapEntry entry) {
+		return entry.getImage() == null ? null : entry.getImage().getId();
 	}
 
 	private static String date(LocalDate date) {
 		return DATE.format(date);
 	}
 
-	private static CapEntryResponse toResponse(CapEntry entry) {
-		return new CapEntryResponse(entry.getId(), entry.getTitle(), entry.getBody(), entry.getHappenedOn(),
-				entry.getImage() == null ? null : entry.getImage().getId(), entry.isPublished(), entry.getUpdatedAt());
+	private static String style(CapStyle style) {
+		return style == CapStyle.NOTEBOOK ? "Carnet" : "Classique";
 	}
 
-	/** {@code forVisitors}: a recipe still in draft is not named on the site. */
-	static ObservationResponse toResponse(Observation observation, boolean forVisitors) {
-		Recipe recipe = observation.getRecipe();
-		boolean shown = recipe != null && (!forVisitors || recipe.getStatus() == RecipeStatus.PUBLISHED);
-		return new ObservationResponse(observation.getId(), observation.getTitle(), observation.getBody(),
-				observation.getObservedOn(), observation.getImage() == null ? null : observation.getImage().getId(),
-				observation.isPublished(),
-				shown ? new ObservationRecipe(recipe.getId(), recipe.getTitle(), recipe.getSlug(),
-						recipe.getMainCategory().getSlug(), recipe.getStatus()) : null,
-				observation.getUpdatedAt());
+	private CapArticleCard toCard(CapEntry entry) {
+		return new CapArticleCard(entry.getId(), entry.getTitle(), entry.getSubtitle(), entry.getSlug(), entry.getHappenedOn(),
+				imageId(entry), entry.getStyle(), CapBlocks.excerpt(blocks(entry)));
+	}
+
+	private AdminCapEntry toAdmin(CapEntry entry) {
+		List<CapBlock> blocks = blocks(entry);
+		return new AdminCapEntry(entry.getId(), entry.getTitle(), entry.getSubtitle(), entry.getSlug(), entry.getHappenedOn(),
+				imageId(entry), entry.getStyle(), CapBlocks.withKnownImages(blocks, known(CapBlocks.imageIds(blocks))),
+				entry.isPublished(), entry.isFeatured(), entry.getUpdatedAt());
 	}
 
 }

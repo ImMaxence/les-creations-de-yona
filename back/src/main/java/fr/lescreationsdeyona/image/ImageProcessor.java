@@ -48,6 +48,8 @@ public class ImageProcessor {
 
 	private static final int PORTRAIT_MIN_HEIGHT = 800;
 
+	private static final int RECEIPT_MIN_SIDE = 300;
+
 	/** Stops decompression bombs: a small file declaring a huge canvas. */
 	private static final long MAX_PIXELS = 100_000_000;
 
@@ -66,22 +68,31 @@ public class ImageProcessor {
 
 	/** A photo shown on the site: landscape or square. */
 	public ProcessedImage process(MultipartFile file) {
-		return process(file, false);
+		return process(file, Shape.LANDSCAPE);
 	}
 
 	/** The vertical photo of a recipe, offered to Pinterest. */
 	public ProcessedImage processPortrait(MultipartFile file) {
-		return process(file, true);
+		return process(file, Shape.PORTRAIT);
 	}
 
-	private ProcessedImage process(MultipartFile file, boolean portrait) {
+	/** The receipt of an expense: any shape (a long ticket), at least 300 × 300. */
+	public ProcessedImage processReceipt(MultipartFile file) {
+		return process(file, Shape.ANY);
+	}
+
+	private enum Shape {
+		LANDSCAPE, PORTRAIT, ANY
+	}
+
+	private ProcessedImage process(MultipartFile file, Shape shape) {
 		if (file.isEmpty()) {
 			throw new ApiException(ErrorCode.IMAGE_REQUIRED);
 		}
 		byte[] content = readBytes(file);
 		String format = detectFormat(content);
 		ExifOrientation orientation = ExifOrientation.of(content);
-		BufferedImage upright = orientation.applyTo(toRgb(decode(content, format, orientation, portrait)));
+		BufferedImage upright = orientation.applyTo(toRgb(decode(content, format, orientation, shape)));
 		return new ProcessedImage(WIDTHS.stream()
 			.map(width -> new ProcessedImage.Variant(width, encodeWebp(shrinkToWidth(upright, width))))
 			.toList());
@@ -119,7 +130,7 @@ public class ImageProcessor {
 
 	/** Checks the size from the file header, then decodes only the pixels the largest output needs. */
 	private static BufferedImage decode(byte[] content, String format, ExifOrientation orientation,
-			boolean portrait) {
+			Shape shape) {
 		ImageReader reader = ImageIO.getImageReadersByFormatName(format).next();
 		try (ImageInputStream input = new MemoryCacheImageInputStream(new ByteArrayInputStream(content))) {
 			reader.setInput(input, true, true);
@@ -130,11 +141,10 @@ public class ImageProcessor {
 			}
 			int width = orientation.swapsAxes() ? storedHeight : storedWidth;
 			int height = orientation.swapsAxes() ? storedWidth : storedHeight;
-			if (portrait) {
-				checkPortraitDimensions(width, height);
-			}
-			else {
-				checkDimensions(width, height);
+			switch (shape) {
+				case PORTRAIT -> checkPortraitDimensions(width, height);
+				case LANDSCAPE -> checkDimensions(width, height);
+				case ANY -> checkReceiptDimensions(width, height);
 			}
 
 			// Reading one pixel in n keeps memory low on large photos. Staying above twice the largest
@@ -162,6 +172,12 @@ public class ImageProcessor {
 		// Landscape or square: the site crops its photos to fit (4:3, 16:10…) anyway
 		if (width < height) {
 			throw new ApiException(ErrorCode.IMAGE_NOT_LANDSCAPE);
+		}
+	}
+
+	private static void checkReceiptDimensions(int width, int height) {
+		if (width < RECEIPT_MIN_SIDE || height < RECEIPT_MIN_SIDE) {
+			throw new ApiException(ErrorCode.RECEIPT_TOO_SMALL);
 		}
 	}
 

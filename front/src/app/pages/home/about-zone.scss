@@ -1,0 +1,252 @@
+@use 'mixins' as m;
+
+// The zone of "À propos": the presentation, the notifications and the article to read, framed by four
+// rounded corners in the site's colour; more room under it, before "Envie d'une douceur ?"
+:host {
+  --corner: 1.25rem;
+
+  position: relative;
+  display: grid;
+  gap: var(--space-5);
+  max-width: 52rem;
+  margin-bottom: var(--space-6);
+  padding: var(--space-6) var(--space-4);
+
+  @include m.from(md) {
+    --corner: 1.875rem;
+
+    gap: var(--space-6);
+    margin-bottom: var(--space-7);
+    padding: var(--space-7);
+  }
+}
+
+.corner {
+  position: absolute;
+  width: var(--corner);
+  height: var(--corner);
+  border: 0 solid var(--color-accent);
+  pointer-events: none;
+}
+
+.corner--top-left {
+  top: 0;
+  left: 0;
+  border-width: 2px 0 0 2px;
+  border-top-left-radius: var(--radius-md);
+}
+
+.corner--top-right {
+  top: 0;
+  right: 0;
+  border-width: 2px 2px 0 0;
+  border-top-right-radius: var(--radius-md);
+}
+
+.corner--bottom-left {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 2px 2px;
+  border-bottom-left-radius: var(--radius-md);
+}
+
+.corner--bottom-right {
+  right: 0;
+  bottom: 0;
+  border-width: 0 2px 2px 0;
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.about {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  text-align: center;
+
+  @include m.from(md) {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--space-7);
+    text-align: start;
+    justify-items: start;
+  }
+
+  h2 {
+    margin-block: var(--space-1) var(--space-3);
+    font-size: var(--text-2xl);
+  }
+
+  p:last-of-type {
+    max-width: 38rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.about__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: var(--color-accent-strong);
+    }
+  }
+}
+
+.about__portrait {
+  position: relative;
+  width: 9rem;
+  aspect-ratio: 1;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--color-surface);
+  }
+
+  // Dusty rose ring around the photo
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -0.5rem;
+    border: 2px solid var(--color-decor);
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+
+  @include m.from(md) {
+    width: 11rem;
+  }
+}
+
+// New recipe notifications: a quiet strip, without border, "Activer" in the site's colour
+.notify {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+
+  h2 {
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: 600;
+  }
+
+  p {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+}
+
+// "À lire en ce moment": an article of Mon CAP, the photo at the left (two fifths), above on phones
+.reading {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.reading__card {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  transition: border-color var(--duration-base) var(--ease-out);
+
+  @include m.from(md) {
+    grid-template-columns: 2fr 3fr;
+  }
+
+  @include m.hover {
+    border-color: color-mix(in srgb, var(--color-text) 30%, transparent);
+
+    .reading__more svg {
+      transform: translateX(3px);
+    }
+  }
+
+  &:focus-within {
+    @include m.focus-ring;
+  }
+}
+
+.reading__image {
+  position: relative;
+  display: block;
+  min-height: 11rem;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+
+  @include m.from(md) {
+    aspect-ratio: auto;
+  }
+}
+
+.reading__text {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  padding: var(--space-4) var(--space-5);
+}
+
+.reading__meta {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.reading__title {
+  font-size: var(--text-lg);
+}
+
+.reading__link {
+  color: inherit;
+  text-decoration: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.reading__subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.reading__excerpt {
+  @include m.line-clamp(2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.reading__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+
+  svg {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+}
+

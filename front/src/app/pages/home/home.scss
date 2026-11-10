@@ -146,81 +146,8 @@
   color: var(--color-text-muted);
 }
 
-.about {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-5);
-  text-align: center;
-
-  @include m.from(md) {
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    gap: var(--space-7);
-    max-width: 52rem;
-    text-align: start;
-    justify-items: start;
-  }
-
-  h2 {
-    margin-block: var(--space-1) var(--space-3);
-    font-size: var(--text-2xl);
-  }
-
-  p:last-of-type {
-    max-width: 38rem;
-    color: var(--color-text-muted);
-  }
-}
-
-.about__more {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-top: var(--space-3);
-  color: var(--color-accent);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  text-decoration: none;
-
-  @media (hover: hover) and (pointer: fine) {
-    &:hover {
-      color: var(--color-accent-strong);
-    }
-  }
-}
-
-.about__portrait {
-  position: relative;
-  width: 9rem;
-  aspect-ratio: 1;
-
-  img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: var(--color-surface);
-  }
-
-  // Dusty rose ring around the photo
-  &::before {
-    content: '';
-    position: absolute;
-    inset: -0.5rem;
-    border: 2px solid var(--color-decor);
-    border-radius: 50%;
-    opacity: 0.6;
-  }
-
-  @include m.from(md) {
-    width: 11rem;
-  }
-}
-
-// New recipe notifications ----------------------------------------------------
-
-// Under "À propos": a card of its own, centered on phones, in a row from tablets
-.notify {
+// The shop, once open to all
+.shop-teaser {
   display: grid;
   justify-items: center;
   gap: var(--space-4);
@@ -233,8 +160,6 @@
   @include m.from(md) {
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    gap: var(--space-5);
-    padding: var(--space-5) var(--space-6);
     text-align: start;
   }
 
@@ -248,7 +173,7 @@
   }
 }
 
-.notify__icon {
+.shop-teaser__icon {
   color: var(--color-accent);
 }
 

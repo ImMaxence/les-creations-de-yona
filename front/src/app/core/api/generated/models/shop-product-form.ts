@@ -5,9 +5,48 @@ export interface ShopProductForm {
   available: boolean;
 
   /**
-   * "Pour 8 personnes"
+   * Sold by batches of that many ("Boîte de 6"); absent by the unit
+   */
+  batchSize?: number;
+
+  /**
+   * For a product without recipe; one with a recipe has the recipe's
+   */
+  categoryId?: number;
+
+  /**
+   * A landscape photo of the gallery; absent shows its recipe's
+   */
+  imageId?: string;
+  name: string;
+
+  /**
+   * Packaging as written in the purchases ("Boîte kraft"), for the cost price
+   */
+  packaging?: string;
+
+  /**
+   * How many of that packaging; 1 when absent
+   */
+  packagingCount?: number;
+
+  /**
+   * "le gâteau, 8 parts"
    */
   portionLabel?: string;
+
+  /**
+   * Including taxes, for the format as bought (the whole batch)
+   */
   price: number;
-  recipeId: number;
+
+  /**
+   * Its recipe; absent for a product without recipe
+   */
+  recipeId?: number;
+
+  /**
+   * Share of its recipe in one product, for the cost price: 1 for the whole recipe; 1 when absent
+   */
+  recipeShare?: number;
 }

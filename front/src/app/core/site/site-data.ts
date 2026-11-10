@@ -53,9 +53,9 @@ export class SiteData {
   readonly content = this.contentState.asReadonly();
   /** Published menus: the "Menus" link and the home section only show when there are some. */
   readonly menus = this.menusState.asReadonly();
-  /** "Mon CAP" has a published step: its link only shows then. */
+  /** "Mon CAP" has a published article: its link only shows then. */
   readonly capPublished = computed(() => this.sectionsState().capPublished);
-  /** Open in the back-office: the "Boutique" link only shows then. */
+  /** Open to all (not while kept for the close ones): the "Boutique" link and the home section only show then. */
   readonly shopOpen = computed(() => this.sectionsState().shopOpen);
 
   async load(): Promise<void> {

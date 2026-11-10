@@ -6,9 +6,10 @@ import { Icon } from '../../shared/ui/icon/icon';
   selector: 'yona-toasts',
   imports: [Icon],
   template: `
-    <ul role="list" class="toasts" aria-live="polite">
+    <!-- A live region from the start, so that each toast added is read; each one a status, or an alert for an error -->
+    <div class="toasts" aria-live="polite">
       @for (toast of toaster.toasts(); track toast.id) {
-        <li
+        <div
           class="toast"
           [class.toast--error]="toast.kind === 'error'"
           [attr.role]="toast.kind === 'error' ? 'alert' : 'status'"
@@ -29,9 +30,9 @@ import { Icon } from '../../shared/ui/icon/icon';
           <button type="button" class="toast__close" aria-label="Fermer" (click)="toaster.dismiss(toast.id)">
             <svg yonaIcon="x" [size]="16"></svg>
           </button>
-        </li>
+        </div>
       }
-    </ul>
+    </div>
   `,
   styleUrl: './toasts.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

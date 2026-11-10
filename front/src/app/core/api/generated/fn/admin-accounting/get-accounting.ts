@@ -11,12 +11,16 @@ import { AccountingOverview } from '../../models/accounting-overview';
 
 export interface GetAccounting$Params {
   year: number;
+  period?: 'MONTH' | 'QUARTER' | 'YEAR';
+  number?: number;
 }
 
 export function getAccounting(http: HttpClient, rootUrl: string, params: GetAccounting$Params, context?: HttpContext): Observable<StrictHttpResponse<AccountingOverview>> {
   const rb = new RequestBuilder(rootUrl, getAccounting.PATH, 'get');
   if (params) {
     rb.query('year', params.year, {});
+    rb.query('period', params.period, {});
+    rb.query('number', params.number, {});
   }
 
   return http.request(

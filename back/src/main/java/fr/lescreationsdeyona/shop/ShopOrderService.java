@@ -9,11 +9,11 @@ import fr.lescreationsdeyona.common.PageResponse;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.recipe.Recipe;
-import fr.lescreationsdeyona.recipe.RecipeStatus;
 import fr.lescreationsdeyona.security.AdminProperties;
 import fr.lescreationsdeyona.shop.ShopForms.AdminOrderForm;
 import fr.lescreationsdeyona.shop.ShopForms.OrderForm;
 import fr.lescreationsdeyona.shop.ShopForms.OrderLineForm;
+import fr.lescreationsdeyona.shop.InvoiceResponses.InvoiceSummary;
 import fr.lescreationsdeyona.shop.ShopResponses.AdminOrder;
 import fr.lescreationsdeyona.shop.ShopResponses.AdminOrderLine;
 import fr.lescreationsdeyona.shop.ShopResponses.AdminOrderSummary;
@@ -79,8 +79,10 @@ public class ShopOrderService {
 
 	private final AuditLog auditLog;
 
+	private final InvoiceRepository invoiceRepository;
+
 	boolean isOpen() {
-		return settingsRepository.findById(ShopSettings.ID).map(ShopSettings::isOrdersOpen).orElse(false);
+		return settingsRepository.findById(ShopSettings.ID).map(settings -> settings.getMode().takesOrders()).orElse(false);
 	}
 
 	/** The admins are told once it is committed (see OrderReceived). */
@@ -99,6 +101,10 @@ public class ShopOrderService {
 		}
 		if (form.wantedOn() != null && form.wantedOn().isBefore(LocalDate.now(PARIS))) {
 			throw new ApiException(ErrorCode.SHOP_WANTED_DATE_PAST);
+		}
+		// Something other than the products is asked in the message
+		if (form.lines().isEmpty() && blankToNull(form.message()) == null) {
+			throw new ApiException(ErrorCode.SHOP_ORDER_EMPTY);
 		}
 		List<ShopOrderLine> lines = lines(form.lines());
 		Instant now = Instant.now();
@@ -121,7 +127,7 @@ public class ShopOrderService {
 		return new OrderPlaced(saved.getTrackingToken());
 	}
 
-	/** On sale now, each once; what they cost today is kept with the order. */
+	/** On sale now, each once; what they are and cost today is kept with the order. */
 	private List<ShopOrderLine> lines(List<OrderLineForm> formLines) {
 		List<Long> ids = formLines.stream().map(OrderLineForm::productId).toList();
 		if (new HashSet<>(ids).size() < ids.size()) {
@@ -132,11 +138,12 @@ public class ShopOrderService {
 			.collect(Collectors.toMap(ShopProduct::getId, Function.identity()));
 		return formLines.stream().map(line -> {
 			ShopProduct product = products.get(line.productId());
-			if (product == null || !product.isAvailable() || product.getRecipe().getStatus() != RecipeStatus.PUBLISHED) {
+			if (product == null || !product.onSale()) {
 				throw new ApiException(ErrorCode.SHOP_PRODUCT_UNAVAILABLE);
 			}
 			Recipe recipe = product.getRecipe();
-			return new ShopOrderLine(recipe.getId(), recipe.getTitle(), product.getPortionLabel(), product.getPrice(), line.quantity());
+			return new ShopOrderLine(product.getId(), recipe == null ? null : recipe.getId(), product.getName(), product.formatLabel(),
+					product.getPrice(), line.quantity());
 		}).toList();
 	}
 
@@ -170,6 +177,11 @@ public class ShopOrderService {
 	@Transactional
 	public AdminOrder update(long id, AdminOrderForm form) {
 		ShopOrder order = find(id);
+		// Invoiced, it stays handed over at its amount: the invoice and the accounts say so
+		if (invoiceRepository.existsByOrderId(id)
+				&& (form.status() != order.getStatus() || form.amount().compareTo(order.getAmount()) != 0)) {
+			throw new ApiException(ErrorCode.INVOICE_ORDER_LOCKED);
+		}
 		String handledBy = handledBy(order, form.handledBy());
 		AuditChanges changes = new AuditChanges().add("Statut", status(order.getStatus()), status(form.status()))
 			.add("Montant", order.getAmount(), form.amount())
@@ -191,10 +203,13 @@ public class ShopOrderService {
 		return toAdmin(saved);
 	}
 
-	/** For good (spam, a mistake); its line in the accounts goes with it. */
+	/** For good (spam, a mistake); its line in the accounts goes with it. Refused once invoiced. */
 	@Transactional
 	public void delete(long id) {
 		ShopOrder order = find(id);
+		if (invoiceRepository.existsByOrderId(id)) {
+			throw new ApiException(ErrorCode.INVOICE_ORDER_LOCKED);
+		}
 		accountingService.dropSale(id);
 		auditLog.record(AuditAction.DELETED, AuditKind.SHOP_ORDER, label(order), null);
 		orderRepository.delete(order);
@@ -251,8 +266,13 @@ public class ShopOrderService {
 				order.getCustomerEmail(), order.getCustomerPhone(), order.getWantedOn(), order.getMessage(), order.getAdminNote(),
 				order.getAmount(), order.getHandledBy(), adminProperties.emails().stream().sorted().toList(),
 				order.getLines().stream()
-					.map(line -> new AdminOrderLine(line.recipeId(), line.title(), line.portionLabel(), line.unitPrice(), line.quantity()))
+					.map(line -> new AdminOrderLine(line.productId(), line.recipeId(), line.title(), line.portionLabel(), line.unitPrice(),
+							line.quantity()))
 					.toList(),
+				invoiceRepository.findByOrderId(order.getId())
+					.map(invoice -> new InvoiceSummary(invoice.getId(), invoice.getNumber(), invoice.getOrderId(), invoice.getIssuedOn(),
+							invoice.getCustomerName(), invoice.getAmount()))
+					.orElse(null),
 				order.getCreatedAt(), order.getUpdatedAt());
 	}
 

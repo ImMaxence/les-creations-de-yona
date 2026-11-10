@@ -7,12 +7,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { CapEntryResponse } from '../../models/cap-entry-response';
+import { AdminCapEntrySummary } from '../../models/admin-cap-entry-summary';
 
 export interface ListAdminCapEntries$Params {
 }
 
-export function listAdminCapEntries(http: HttpClient, rootUrl: string, params?: ListAdminCapEntries$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CapEntryResponse>>> {
+export function listAdminCapEntries(http: HttpClient, rootUrl: string, params?: ListAdminCapEntries$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<AdminCapEntrySummary>>> {
   const rb = new RequestBuilder(rootUrl, listAdminCapEntries.PATH, 'get');
   if (params) {
   }
@@ -22,7 +22,7 @@ export function listAdminCapEntries(http: HttpClient, rootUrl: string, params?: 
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<CapEntryResponse>>;
+      return r as StrictHttpResponse<Array<AdminCapEntrySummary>>;
     })
   );
 }

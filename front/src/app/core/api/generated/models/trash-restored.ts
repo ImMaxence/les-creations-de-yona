@@ -7,7 +7,7 @@ export interface TrashRestored {
    * What was created again (recipe, category, menu, tag, ingredient, word); absent for a photo
    */
   id?: number;
-  kind: 'RECIPE' | 'CATEGORY' | 'MENU' | 'IMAGE' | 'TAG' | 'INGREDIENT' | 'GLOSSARY_TERM' | 'CAP_ENTRY' | 'OBSERVATION';
+  kind: 'RECIPE' | 'CATEGORY' | 'MENU' | 'IMAGE' | 'TAG' | 'INGREDIENT' | 'GLOSSARY_TERM' | 'CAP_ENTRY';
 
   /**
    * Menus a recipe is back in; recipes, categories, menus and "À propos" a photo is back on; recipes a tag is back on

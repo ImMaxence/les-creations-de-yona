@@ -1,39 +1,52 @@
 package fr.lescreationsdeyona.cap;
 
-import fr.lescreationsdeyona.recipe.RecipeStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
-/** What the API answers about "Mon CAP" and "Mes observations". */
+/** What the API answers about "Mon CAP". */
 public final class CapResponses {
 
 	private CapResponses() {
 	}
 
-	public record CapEntryResponse(Long id, String title,
-			@Schema(description = "Markdown rendered by the front") @Nullable String body, LocalDate happenedOn,
-			@Nullable UUID imageId, boolean published, Instant updatedAt) {
+	/** An article in the timeline, without its blocks. */
+	public record CapArticleCard(Long id, String title, @Nullable String subtitle,
+			@Schema(description = "Its page: /mon-cap/{slug}") String slug, LocalDate happenedOn, @Nullable UUID imageId,
+			CapStyle style,
+			@Schema(description = "The start of its text, without Markdown, cut at a word; absent without text") @Nullable String excerpt) {
 	}
 
-	public record ObservationResponse(Long id, String title,
-			@Schema(description = "Markdown rendered by the front") String body, LocalDate observedOn, @Nullable UUID imageId,
-			boolean published,
-			@Schema(description = "Absent for \"Pas de recette\"; on the site, a recipe still in draft is absent too") @Nullable ObservationRecipe recipe,
+	/** An article as visitors read it: its empty blocks and the photos gone from the gallery left out. */
+	public record CapArticle(Long id, String title, @Nullable String subtitle, String slug, LocalDate happenedOn,
+			@Nullable UUID imageId, CapStyle style, List<CapBlock> blocks,
+			@Schema(description = "The start of its text, for search engines") @Nullable String excerpt, Instant updatedAt) {
+	}
+
+	/** The article put forward on the home page. */
+	public record CapHighlight(CapArticleCard article,
+			@Schema(description = "Chosen with \"Mettre en avant\"; false for the latest article") boolean featured) {
+	}
+
+	public record AdminCapEntrySummary(Long id, String title, @Nullable String subtitle, String slug, LocalDate happenedOn,
+			@Nullable UUID imageId, CapStyle style, int blockCount, boolean published, boolean featured, Instant updatedAt) {
+	}
+
+	/** In the editor: every block, half-filled ones too. */
+	public record AdminCapEntry(Long id, String title, @Nullable String subtitle, String slug, LocalDate happenedOn,
+			@Nullable UUID imageId, CapStyle style, List<CapBlock> blocks, boolean published, boolean featured,
 			Instant updatedAt) {
 	}
 
-	public record ObservationRecipe(Long id, String title, String slug, String categorySlug, RecipeStatus status) {
-	}
-
-	/** A step in the trash, as JSON: its photo is kept beside it. */
-	record TrashedCapEntry(String title, @Nullable String body, LocalDate happenedOn, boolean published) {
-	}
-
-	/** An observation in the trash, as JSON. {@code recipeId}: its recipe, if still there on restore. */
-	record TrashedObservation(String title, String body, LocalDate observedOn, @Nullable Long recipeId, boolean published) {
+	/**
+	 * An article in the trash, as JSON: its photo is kept beside it. {@code body}: the text of a step trashed
+	 * before the articles (2.4), or of an observation; it then becomes its Text block.
+	 */
+	record TrashedCapEntry(String title, @Nullable String subtitle, @Nullable String slug, @Nullable String body,
+			LocalDate happenedOn, @Nullable CapStyle style, @Nullable List<CapBlock> blocks, boolean published) {
 	}
 
 }

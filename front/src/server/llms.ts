@@ -88,7 +88,7 @@ export function llmsTxt({ content, recipes, menus, glossary, capSteps }: LlmsCon
       ? [link('Glossaire de pâtisserie', GLOSSARY_PATH, `${glossary.length} mots de la pâtisserie expliqués simplement`)]
       : []),
     ...(capSteps
-      ? [link('Mon CAP', CAP_PATH, 'le carnet de route de Yona vers son CAP Pâtisserie, date par date')]
+      ? [link('Mon CAP', CAP_PATH, 'le carnet de route de Yona vers son CAP Pâtisserie, article par article')]
       : []),
     link('À propos de Yona', ABOUT_PATH, "l'autrice des recettes"),
     '',

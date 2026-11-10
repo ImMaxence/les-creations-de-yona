@@ -30,7 +30,17 @@ class TrashedImageTest {
 		assertThat(links.recipeIds()).containsExactly(1L);
 		assertThat(links.menuIds()).isEmpty();
 		assertThat(links.capEntryIds()).isEmpty();
-		assertThat(links.observationIds()).isEmpty();
+		assertThat(links.shopProductIds()).isEmpty();
+	}
+
+	@Test
+	void leavesTheObservationsOfAPhotoPutInTheTrashBefore24() {
+		TrashedImage.Links links = json.readValue("""
+				{"recipeIds":[],"pinterestRecipeIds":[],"categoryIds":[],"aboutPage":false,"menuIds":[],"capEntryIds":[2],
+				"observationIds":[3]}""", TrashedImage.Links.class);
+
+		assertThat(links.capEntryIds()).containsExactly(2L);
+		assertThat(links.shopProductIds()).isEmpty();
 	}
 
 }

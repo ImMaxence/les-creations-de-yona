@@ -16,7 +16,7 @@ export interface AuditEventResponse {
   changes?: Array<AuditChange>;
   happenedAt: string;
   id: number;
-  kind: 'RECIPE' | 'CATEGORY' | 'TAG' | 'MENU' | 'INGREDIENT' | 'GLOSSARY_TERM' | 'IMAGE' | 'TRASH' | 'APPEARANCE' | 'SITE_CONTENT' | 'SOCIAL_LINKS' | 'BACKUP' | 'GOOGLE_DRIVE' | 'FEEDBACK' | 'CAP_ENTRY' | 'OBSERVATION' | 'SHOP_SETTINGS' | 'SHOP_PRODUCT' | 'SHOP_ORDER' | 'ACCOUNT_ENTRY';
+  kind: 'RECIPE' | 'CATEGORY' | 'TAG' | 'MENU' | 'INGREDIENT' | 'GLOSSARY_TERM' | 'IMAGE' | 'TRASH' | 'APPEARANCE' | 'SITE_CONTENT' | 'SOCIAL_LINKS' | 'BACKUP' | 'GOOGLE_DRIVE' | 'FEEDBACK' | 'CAP_ENTRY' | 'OBSERVATION' | 'SHOP_SETTINGS' | 'SHOP_PRODUCT' | 'SHOP_ORDER' | 'ACCOUNT_ENTRY' | 'INVOICE';
 
   /**
    * Its title or name at that time

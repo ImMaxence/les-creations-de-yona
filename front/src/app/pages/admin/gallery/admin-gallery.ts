@@ -164,13 +164,14 @@ export default class AdminGallery {
     }
   }
 
-  /** Titles of the recipes, names of the categories, titles of the menus, and the "À propos" section showing it. */
+  /** Titles of the recipes, names of the categories, titles of the menus and articles, products, and "À propos" showing it. */
   protected usedBy(image: GalleryImage): string[] {
     return [
       ...image.recipes.map((recipe) => recipe.title),
       ...image.categories.map((category) => category.name),
       ...image.menus.map((menu) => menu.title),
       ...image.capItems,
+      ...image.shopProducts,
       ...(image.aboutPage ? ['À propos'] : []),
     ];
   }

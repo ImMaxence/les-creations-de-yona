@@ -94,54 +94,20 @@
   </section>
 }
 
-<section class="container about" yonaReveal aria-labelledby="about-title">
-  <div class="about__portrait">
-    <!-- The photo chosen in the back-office (Préférences), otherwise the one bundled with the site -->
-    @if (content().aboutImageId; as imageId) {
-      <img
-        [src]="'/api/images/' + imageId + '/800.webp'"
-        [srcset]="'/api/images/' + imageId + '/800.webp 800w, /api/images/' + imageId + '/1600.webp 1600w'"
-        sizes="(width >= 48rem) 11rem, 9rem"
-        width="480"
-        height="480"
-        loading="lazy"
-        decoding="async"
-        alt="Yona, l'autrice des recettes"
-      />
-    } @else {
-      <img
-        src="images/yona-480.webp"
-        srcset="images/yona-480.webp 480w, images/yona-960.webp 960w"
-        sizes="(width >= 48rem) 11rem, 9rem"
-        width="480"
-        height="480"
-        loading="lazy"
-        decoding="async"
-        alt="Yona, l'autrice des recettes"
-      />
-    }
-  </div>
-  <div class="about__text">
-    <p class="eyebrow">À propos</p>
-    <h2 id="about-title">{{ content().aboutTitle }}</h2>
-    @for (paragraph of aboutParagraphs(); track $index) {
-      <p>{{ paragraph }}</p>
-    }
-    <a class="about__more" [routerLink]="aboutPath">En savoir plus sur Yona <svg yonaIcon="arrow-right" [size]="16"></svg></a>
-  </div>
-</section>
-
-<!-- Only where notifications can work, or on iPhone where installing the app comes first -->
-@if (showNotify()) {
-  <section class="container notify" yonaReveal aria-labelledby="notify-title">
-    <svg class="notify__icon" yonaIcon="bell-ring" [size]="28" [strokeWidth]="1.75"></svg>
-    <div class="notify__text">
-      <h2 id="notify-title">Ne ratez aucune nouvelle recette</h2>
-      <p>Une notification à chaque recette publiée, même le site fermé. Sans compte ni e-mail, et ça s'arrête d'un appui</p>
+@if (siteData.shopOpen()) {
+  <!-- The shop, once open to all -->
+  <section class="container shop-teaser" yonaReveal aria-labelledby="shop-title">
+    <svg class="shop-teaser__icon" yonaIcon="store" [size]="28" [strokeWidth]="1.75"></svg>
+    <div>
+      <h2 id="shop-title">La boutique</h2>
+      <p>Les pâtisseries de Yona à commander : boîtes de cookies, tartes, entremets</p>
     </div>
-    <yona-notify-button [showInstallHint]="true" [prominent]="true" />
+    <a yonaButton [routerLink]="shopPath">Voir la boutique <svg yonaIcon="arrow-right"></svg></a>
   </section>
 }
+
+<!-- "À propos", the notifications and the article to read, together in a frame drawn by its four corners -->
+<yona-about-zone class="container about-zone" yonaReveal [article]="data().article" />
 
 @if (categories().length) {
   <section class="categories" aria-labelledby="categories-title">

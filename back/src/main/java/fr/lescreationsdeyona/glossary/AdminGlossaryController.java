@@ -9,6 +9,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,7 +27,13 @@ class AdminGlossaryController {
 
 	private final GlossaryService glossaryService;
 
-	@Operation(summary = "Add a word to the glossary")
+	@Operation(summary = "Every word of the glossary, those kept for later without definition included")
+	@GetMapping
+	List<GlossaryTermResponse> listAdminGlossary() {
+		return glossaryService.adminList();
+	}
+
+	@Operation(summary = "Add a word to the glossary, with its definition or kept for later without")
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	GlossaryTermResponse createGlossaryTerm(@Valid @RequestBody GlossaryTermForm form) {

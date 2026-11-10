@@ -37,7 +37,7 @@ import { RecipeCard } from '../../shared/ui/recipe-card/recipe-card';
           }
           <div class="menu__actions enter" style="--delay: 180ms">
             <button yonaButton type="button" [disabled]="adding()" (click)="addAll()">
-              <svg yonaIcon="shopping-basket"></svg>
+              <svg yonaIcon="clipboard-list"></svg>
               {{ adding() ? 'Ajout…' : 'Tout ajouter à ma liste de courses' }}
             </button>
             @if (added()) {

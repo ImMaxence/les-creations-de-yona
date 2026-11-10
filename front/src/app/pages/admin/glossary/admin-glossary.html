@@ -5,8 +5,17 @@
   </div>
   <p class="field__hint">
     Les mots de pâtisserie (émulsionner, chemiser, blanchir…) sont soulignés dans les étapes des recettes : un appui affiche
-    leur définition. Ils ont aussi leur page, « Glossaire », que Google peut afficher
+    leur définition. Ils ont aussi leur page, « Glossaire », que Google peut afficher. Un mot gardé pour plus tard
+    attend sa définition : il n'apparaît pas sur le site d'ici là
   </p>
+  @if (toComplete()) {
+    <p class="to-complete">
+      <span class="badge badge--scheduled">{{ toComplete() }} mot{{ toComplete() > 1 ? 's' : '' }} à définir</span>
+      <button type="button" class="link-button" (click)="onlyToComplete.set(!onlyToComplete())">
+        {{ onlyToComplete() ? 'Voir tous les mots' : 'Voir seulement ceux à compléter' }}
+      </button>
+    </p>
+  }
 
   <form class="admin-panel glossary-form" (submit)="save($event)">
     <h3 class="glossary-form__title">{{ editing() ? 'Modifier « ' + editing()!.name + ' »' : 'Ajouter un mot' }}</h3>
@@ -22,7 +31,7 @@
       />
     </div>
     <div class="field">
-      <label class="field__label" for="term-definition">Définition</label>
+      <label class="field__label" for="term-definition">Définition{{ editing() && !editing()!.definition ? ' (à compléter)' : '' }}</label>
       <textarea
         id="term-definition"
         class="input"
@@ -56,6 +65,11 @@
           <svg yonaIcon="plus"></svg>Ajouter au glossaire
         }
       </button>
+      @if (!editing()?.definition) {
+        <button yonaButton variant="secondary" type="button" [disabled]="saving()" (click)="save($event, true)">
+          <svg yonaIcon="hourglass"></svg>Garder pour plus tard
+        </button>
+      }
       @if (editing()) {
         <button yonaButton variant="ghost" type="button" (click)="cancel()">Annuler</button>
       }
@@ -85,8 +99,17 @@
               />
             </label>
             <div class="admin-row__main">
-              <span class="admin-row__title">{{ term.name }}</span>
-              <span class="term__definition">{{ term.definition }}</span>
+              <span class="admin-row__title">
+                {{ term.name }}
+                @if (!term.definition) {
+                  <span class="badge badge--scheduled">À compléter</span>
+                }
+              </span>
+              @if (term.definition; as definition) {
+                <span class="term__definition">{{ definition }}</span>
+              } @else {
+                <span class="term__definition">Pas encore de définition : absent du site</span>
+              }
               @if (term.forms.length) {
                 <span class="admin-row__meta">Aussi : {{ term.forms.join(', ') }}</span>
               }
@@ -103,7 +126,7 @@
         }
       </ul>
     } @else {
-      <p class="admin-empty">Le glossaire est vide : ajoutez un premier mot, comme « Chemiser » ou « Blanchir »</p>
+      <p class="admin-empty">{{ onlyToComplete() ? "Aucun mot à compléter" : "Le glossaire est vide : ajoutez un premier mot, comme « Chemiser » ou « Blanchir »" }}</p>
     }
   } @else if (terms.isLoading()) {
     <p class="admin-empty">Chargement du glossaire…</p>

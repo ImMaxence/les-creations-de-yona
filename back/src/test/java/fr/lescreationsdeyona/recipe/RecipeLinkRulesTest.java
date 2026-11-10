@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import fr.lescreationsdeyona.audit.AuditLog;
-import fr.lescreationsdeyona.cap.ObservationRepository;
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.category.CategoryRepository;
 import fr.lescreationsdeyona.error.ErrorCode;
@@ -44,7 +43,7 @@ class RecipeLinkRulesTest {
 
 	private final RecipeService service = new RecipeService(recipeRepository, categoryRepository, ingredientService,
 			mock(ImageService.class), mock(TagService.class), mock(MenuService.class), mock(TrashBin.class), recipeMapper,
-			mock(ApplicationEventPublisher.class), mock(AuditLog.class), mock(ObservationRepository.class), shopProducts);
+			mock(ApplicationEventPublisher.class), mock(AuditLog.class), shopProducts);
 
 	private final Category desserts = new Category();
 

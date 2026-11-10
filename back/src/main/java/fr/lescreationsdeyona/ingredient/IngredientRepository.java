@@ -63,4 +63,10 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 			nativeQuery = true)
 	void moveLines(long targetId, Collection<Long> sourceIds);
 
+	/** The purchases of the accounts follow the ingredient kept, for its last price paid. */
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = "update account_purchase_line set ingredient_id = :targetId where ingredient_id in (:sourceIds)",
+			nativeQuery = true)
+	void movePurchases(long targetId, Collection<Long> sourceIds);
+
 }

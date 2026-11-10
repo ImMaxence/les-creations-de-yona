@@ -39,8 +39,7 @@ const KINDS: Record<Kind, { label: string; plural: string; feminine: boolean; ed
   TAG: { label: 'Tag', plural: 'Tags', feminine: false },
   INGREDIENT: { label: 'Ingrédient', plural: 'Ingrédients', feminine: false },
   GLOSSARY_TERM: { label: 'Mot du glossaire', plural: 'Mots du glossaire', feminine: false },
-  CAP_ENTRY: { label: 'Étape du CAP', plural: 'Étapes du CAP', feminine: true },
-  OBSERVATION: { label: 'Observation', plural: 'Observations', feminine: true },
+  CAP_ENTRY: { label: 'Article de Mon CAP', plural: 'Articles de Mon CAP', feminine: false, editLink: '/admin/mon-cap' },
 };
 
 /**
@@ -273,8 +272,6 @@ function restoredMessage(restored: TrashRestored): string {
     case 'GLOSSARY_TERM':
       return `« ${restored.title} » est de nouveau dans le glossaire`;
     case 'CAP_ENTRY':
-      return `Étape « ${restored.title} » restaurée dans Mon CAP`;
-    case 'OBSERVATION':
-      return `Observation « ${restored.title} » restaurée`;
+      return `Article « ${restored.title} » restauré dans Mon CAP`;
   }
 }

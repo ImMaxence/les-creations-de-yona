@@ -3,8 +3,7 @@ package fr.lescreationsdeyona.trash;
 import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
-import fr.lescreationsdeyona.cap.CapResponses.CapEntryResponse;
-import fr.lescreationsdeyona.cap.CapResponses.ObservationResponse;
+import fr.lescreationsdeyona.cap.CapResponses.AdminCapEntry;
 import fr.lescreationsdeyona.cap.CapService;
 import fr.lescreationsdeyona.category.CategoryResponse;
 import fr.lescreationsdeyona.category.CategoryService;
@@ -93,7 +92,6 @@ public class TrashService {
 				RecipeDetail recipe = recipeService.restoreFromTrash(item);
 				RecipeLinks links = trashBin.links(item, RecipeLinks.class, RecipeLinks.NONE);
 				int menus = menuService.addBack(recipe.id(), links.menus());
-				capService.giveBackObservations(recipe.id(), links.observationIds());
 				yield new TrashRestored(TrashKind.RECIPE, recipe.title(), recipe.id(), recipe.status(), menus);
 			}
 			case CATEGORY -> {
@@ -118,12 +116,8 @@ public class TrashService {
 				yield new TrashRestored(TrashKind.GLOSSARY_TERM, term.name(), term.id(), null, 0);
 			}
 			case CAP_ENTRY -> {
-				CapEntryResponse entry = capService.restoreEntryFromTrash(item);
+				AdminCapEntry entry = capService.restoreEntryFromTrash(item);
 				yield new TrashRestored(TrashKind.CAP_ENTRY, entry.title(), entry.id(), null, 0);
-			}
-			case OBSERVATION -> {
-				ObservationResponse observation = capService.restoreObservationFromTrash(item);
-				yield new TrashRestored(TrashKind.OBSERVATION, observation.title(), observation.id(), null, 0);
 			}
 		};
 		trashRepository.delete(item);

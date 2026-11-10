@@ -15,12 +15,15 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 
 	/**
 	 * Images of the gallery, optionally only those shown (or not shown) by a recipe (as its photo
-	 * or its Pinterest photo), a category, a menu or the "À propos" section. {@code portrait}: true for the
-	 * vertical Pinterest photos only, false for all the others (landscape), null for all.
+	 * or its Pinterest photo), a category, a menu, an article of "Mon CAP" (its photo, or in its
+	 * blocks), a product of the shop or the "À propos" section. The receipts of the accounts are never
+	 * in it. {@code portrait}: true for the vertical Pinterest photos only, false for all the others
+	 * (landscape), null for all.
 	 */
 	@Query("""
 			select i from Image i
-			where (:kind is null or i.kind = :kind)
+			where i.kind <> fr.lescreationsdeyona.image.ImageKind.RECEIPT
+			and (:kind is null or i.kind = :kind)
 			and (:portrait is null
 				or (:portrait = true and i.kind = fr.lescreationsdeyona.image.ImageKind.PINTEREST)
 				or (:portrait = false and i.kind <> fr.lescreationsdeyona.image.ImageKind.PINTEREST))
@@ -28,14 +31,14 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 				or (:used = true and (exists (select 1 from Recipe r where r.image = i or r.pinterestImage = i)
 					or exists (select 1 from Category c where c.image = i)
 					or exists (select 1 from Menu m where m.image = i)
-					or exists (select 1 from CapEntry e where e.image = i)
-					or exists (select 1 from Observation o where o.image = i)
+					or exists (select 1 from CapEntry e where e.image = i or e.blocks like concat('%', cast(i.id as String), '%'))
+					or exists (select 1 from ShopProduct p where p.image = i)
 					or exists (select 1 from SiteContent s where s.aboutImage = i)))
 				or (:used = false and not exists (select 1 from Recipe r where r.image = i or r.pinterestImage = i)
 					and not exists (select 1 from Category c where c.image = i)
 					and not exists (select 1 from Menu m where m.image = i)
-					and not exists (select 1 from CapEntry e where e.image = i)
-					and not exists (select 1 from Observation o where o.image = i)
+					and not exists (select 1 from CapEntry e where e.image = i or e.blocks like concat('%', cast(i.id as String), '%'))
+					and not exists (select 1 from ShopProduct p where p.image = i)
 					and not exists (select 1 from SiteContent s where s.aboutImage = i)))""")
 	Page<Image> findGallery(@Nullable ImageKind kind, @Nullable Boolean portrait, @Nullable Boolean used,
 			Pageable pageable);
@@ -60,15 +63,29 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 			from Menu m where m.image.id in :imageIds order by m.title""")
 	List<GalleryImage.MenuUsage> findMenuUsages(Collection<UUID> imageIds);
 
+	/** Articles of "Mon CAP" showing it as their main photo. */
 	@Query("""
 			select new fr.lescreationsdeyona.image.GalleryImage$CapUsage(e.image.id, e.id, e.title)
 			from CapEntry e where e.image.id in :imageIds order by e.title""")
 	List<GalleryImage.CapUsage> findCapEntryUsages(Collection<UUID> imageIds);
 
+	/** Articles of "Mon CAP" showing it in a block: kept there by its id, which comes back with it. */
 	@Query("""
-			select new fr.lescreationsdeyona.image.GalleryImage$CapUsage(o.image.id, o.id, o.title)
-			from Observation o where o.image.id in :imageIds order by o.title""")
-	List<GalleryImage.CapUsage> findObservationUsages(Collection<UUID> imageIds);
+			select new fr.lescreationsdeyona.image.GalleryImage$CapUsage(i.id, e.id, e.title)
+			from Image i, CapEntry e
+			where i.id in :imageIds and e.blocks like concat('%', cast(i.id as String), '%') order by e.title""")
+	List<GalleryImage.CapUsage> findCapBlockUsages(Collection<UUID> imageIds);
+
+	@Query("""
+			select new fr.lescreationsdeyona.image.GalleryImage$ProductUsage(p.image.id, p.id, p.name)
+			from ShopProduct p where p.image.id in :imageIds order by p.name""")
+	List<GalleryImage.ProductUsage> findShopProductUsages(Collection<UUID> imageIds);
+
+	/** Those of these images that may be shown on the site: landscape, from the gallery. */
+	@Query("""
+			select i.id from Image i where i.id in :ids
+			and i.kind <> fr.lescreationsdeyona.image.ImageKind.PINTEREST and i.kind <> fr.lescreationsdeyona.image.ImageKind.RECEIPT""")
+	List<UUID> findLandscapeIds(Collection<UUID> ids);
 
 	// Restore from the trash: written in SQL, the entity being immutable and its date set by auditing.
 
@@ -103,8 +120,8 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 	int showOnCapEntries(UUID imageId, Collection<Long> entryIds);
 
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
-	@Query(value = "update observation set image_id = :imageId where id in (:observationIds) and image_id is null", nativeQuery = true)
-	int showOnObservations(UUID imageId, Collection<Long> observationIds);
+	@Query(value = "update shop_product set image_id = :imageId where id in (:productIds) and image_id is null", nativeQuery = true)
+	int showOnShopProducts(UUID imageId, Collection<Long> productIds);
 
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query(value = "update site_content set about_image_id = :imageId where about_image_id is null", nativeQuery = true)
@@ -127,13 +144,17 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 	@Query(value = "update menu set image_id = :replacement where image_id = :original", nativeQuery = true)
 	int replaceOnMenus(UUID original, UUID replacement);
 
+	/** Its main photo, and in its blocks, where photos are kept by their id. */
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
-	@Query(value = "update cap_entry set image_id = :replacement where image_id = :original", nativeQuery = true)
+	@Query(value = """
+			update cap_entry set image_id = case when image_id = :original then :replacement else image_id end,
+				blocks = replace(blocks, cast(:original as text), cast(:replacement as text))
+			where image_id = :original or blocks like '%' || cast(:original as text) || '%'""", nativeQuery = true)
 	int replaceOnCapEntries(UUID original, UUID replacement);
 
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
-	@Query(value = "update observation set image_id = :replacement where image_id = :original", nativeQuery = true)
-	int replaceOnObservations(UUID original, UUID replacement);
+	@Query(value = "update shop_product set image_id = :replacement where image_id = :original", nativeQuery = true)
+	int replaceOnShopProducts(UUID original, UUID replacement);
 
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query(value = "update site_content set about_image_id = :replacement where about_image_id = :original", nativeQuery = true)

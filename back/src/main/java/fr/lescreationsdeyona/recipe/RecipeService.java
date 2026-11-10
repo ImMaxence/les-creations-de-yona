@@ -4,7 +4,6 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
-import fr.lescreationsdeyona.cap.ObservationRepository;
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.category.CategoryRepository;
 import fr.lescreationsdeyona.category.CategoryResponse;
@@ -104,8 +103,6 @@ public class RecipeService {
 	private final ApplicationEventPublisher events;
 
 	private final AuditLog auditLog;
-
-	private final ObservationRepository observationRepository;
 
 	private final ShopProductRepository shopProductRepository;
 
@@ -488,7 +485,7 @@ public class RecipeService {
 		for (Recipe recipe : recipes) {
 			trashBin.put(new TrashBin.Entry(TrashKind.RECIPE, recipe.getTitle(), recipe.getSlug(), recipe.getStatus(),
 					recipe.getImage(), recipe.getPinterestImage(), recipeMapper.toDetail(recipe),
-					new RecipeLinks(menuService.placesOf(recipe.getId()), observationRepository.findIdsByRecipeId(recipe.getId())),
+					new RecipeLinks(menuService.placesOf(recipe.getId())),
 					recipe.getViewCount()));
 		}
 		pagesChanged(recipes.stream().map(RecipeService::publicPath));

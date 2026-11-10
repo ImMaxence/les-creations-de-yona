@@ -1,6 +1,7 @@
 import type { RecipeDetail } from '../app/core/api/generated/models/recipe-detail';
 import { SITE_NAME, absoluteUrl } from '../app/core/seo/page-seo';
 import { describeMold, hasParts, shownIngredients } from '../app/pages/recipe/recipe-parts';
+import { firstOfMonth } from '../app/shared/format/paris-time';
 import { formatMinutes, formatQuantity } from '../app/shared/format/units';
 import { recipeLink } from '../app/shared/routing/links';
 import { quote } from './page-markdown';
@@ -19,8 +20,8 @@ export function recipeToMarkdown(recipe: RecipeDetail): string {
     lines.push(...quote(recipe.intro), '');
   }
   lines.push(
-    `Une recette de Yona, publiée le ${LONG_DATE.format(new Date(published))} et mise à jour le ` +
-      `${LONG_DATE.format(new Date(recipe.updatedAt))} sur ${SITE_NAME} : ${url}`,
+    `Une recette de Yona, publiée le ${firstOfMonth(LONG_DATE.format(new Date(published)))} et mise à jour le ` +
+      `${firstOfMonth(LONG_DATE.format(new Date(recipe.updatedAt)))} sur ${SITE_NAME} : ${url}`,
     '',
     ...facts(recipe).map((fact) => `- ${fact}`),
     '',

@@ -1,0 +1,271 @@
+<section class="admin-section editor" aria-labelledby="editor-title">
+  <div class="admin-section__head">
+    <div class="editor__heading">
+      <a class="link-button" routerLink="/admin/mon-cap"><svg yonaIcon="arrow-left" [size]="16"></svg>Mon CAP</a>
+      <h2 id="editor-title">{{ id() ? 'Modifier l’article' : 'Nouvel article' }}</h2>
+    </div>
+    <div class="admin-section__actions">
+      <button yonaButton variant="secondary" type="button" (click)="previewOpen.set(true)"><svg yonaIcon="eye"></svg>Aperçu</button>
+      @if (wasPublished() && savedSlug()) {
+        <a yonaButton variant="ghost" target="_blank" [routerLink]="[capPath, savedSlug()]"><svg yonaIcon="external-link"></svg>Voir sur le site</a>
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="admin-empty">Chargement…</p>
+  } @else {
+    @if (recovered(); as kept) {
+      <yona-recovered-draft
+        [savedAt]="kept.savedAt"
+        [outdated]="kept.basedOn !== basedOn()"
+        outdatedText="L’article a été enregistré depuis : les reprendre remplacera cette version"
+        (resume)="resumeKept()"
+        (discard)="discardKept()"
+      />
+    }
+    <div class="admin-panel">
+      <div class="top-fields">
+        <div class="field">
+          <label class="field__label" for="article-title">Titre</label>
+          <input id="article-title" class="input input--title" maxlength="150" placeholder="Mon premier examen blanc" [value]="title()" (input)="title.set($any($event.target).value)" />
+          <span class="field__hint">Adresse : {{ address() }}{{ wasPublished() ? ' (gardée une fois publié)' : '' }}</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="article-subtitle">Sous-titre (facultatif)</label>
+          <input id="article-subtitle" class="input" maxlength="200" placeholder="Une pâte feuilletée récalcitrante" [value]="subtitle()" (input)="subtitle.set($any($event.target).value)" />
+        </div>
+        <div class="field field--date">
+          <label class="field__label" for="article-date">Date</label>
+          <input id="article-date" class="input" type="date" [value]="date()" (input)="date.set($any($event.target).value)" />
+        </div>
+        <fieldset class="field style-choice">
+          <legend class="field__label">Style</legend>
+          <div class="segmented" role="radiogroup" aria-label="Style">
+            <label class="segmented__option" [class.is-chosen]="style() === 'CLASSIC'">
+              <input type="radio" name="article-style" value="CLASSIC" [checked]="style() === 'CLASSIC'" (change)="style.set('CLASSIC')" />
+              Classique
+            </label>
+            <label class="segmented__option" [class.is-chosen]="style() === 'NOTEBOOK'">
+              <input type="radio" name="article-style" value="NOTEBOOK" [checked]="style() === 'NOTEBOOK'" (change)="style.set('NOTEBOOK')" />
+              Carnet
+            </label>
+          </div>
+          <span class="field__hint">{{ style() === 'NOTEBOOK' ? 'Un look « cahier de cours », la date mise en avant' : 'Sobre, comme le reste du site' }}</span>
+        </fieldset>
+      </div>
+      <div class="field">
+        <span class="field__label">Photo principale</span>
+        <span class="field__hint">En haut de l'article, et dans la frise de Mon CAP</span>
+        <yona-image-upload
+          [imageId]="imageId()"
+          [aiSuggestion]="title()"
+          [progress]="uploadOf('main')"
+          (fileChosen)="upload('main', $event, setMain)"
+          (galleryImageChosen)="imageId.set($event)"
+          (removed)="imageId.set(null)"
+          (retouched)="imageId.set($event)"
+        />
+      </div>
+    </div>
+
+    <ol role="list" class="blocks" aria-label="Blocs de l'article">
+      <li class="adder">
+        <ng-container *ngTemplateOutlet="adderTemplate; context: { $implicit: 0 }" />
+      </li>
+      @for (block of blocks(); track trackBlock($index, block); let i = $index, first = $first, last = $last) {
+        <li class="block">
+          <div class="block__head">
+            <span class="block__type">
+              <svg [yonaIcon]="blockIcon(block.type)" [size]="18"></svg>
+              {{ blockLabel(block.type) }}
+            </span>
+            <div class="block__actions">
+              @if (block.type === 'IMAGE_TEXT') {
+                <button type="button" class="link-button" (click)="swapSide(block)">
+                  <svg yonaIcon="arrow-left-right" [size]="16"></svg>Photo à {{ block.side === 'RIGHT' ? 'gauche' : 'droite' }}
+                </button>
+              }
+              <button type="button" class="icon-button" aria-label="Monter le bloc" title="Monter" [disabled]="first" (click)="move(i, -1)"><svg yonaIcon="arrow-up" [size]="18"></svg></button>
+              <button type="button" class="icon-button" aria-label="Descendre le bloc" title="Descendre" [disabled]="last" (click)="move(i, 1)"><svg yonaIcon="arrow-down" [size]="18"></svg></button>
+              <button type="button" class="icon-button" aria-label="Dupliquer le bloc" title="Dupliquer" (click)="duplicate(i)"><svg yonaIcon="copy" [size]="18"></svg></button>
+              <button type="button" class="icon-button icon-button--danger" aria-label="Supprimer le bloc" title="Supprimer" (click)="remove(i)"><svg yonaIcon="trash" [size]="18"></svg></button>
+            </div>
+          </div>
+
+          @switch (block.type) {
+            @case ('TEXT') {
+              <ng-container *ngTemplateOutlet="textTemplate; context: { $implicit: block, placeholder: first ? 'Le contexte, la journée, ce que vous avez préparé…' : 'La suite…' }" />
+            }
+            @case ('IMAGE') {
+              <yona-image-upload
+                [imageId]="block.imageId"
+                [aiSuggestion]="title()"
+                [progress]="uploadOf('' + block.key)"
+                (fileChosen)="upload('' + block.key, $event, setImage(block))"
+                (galleryImageChosen)="patch(block.key, { imageId: $event })"
+                (removed)="patch(block.key, { imageId: undefined })"
+                (retouched)="patch(block.key, { imageId: $event })"
+              />
+              <ng-container *ngTemplateOutlet="captionTemplate; context: { $implicit: block }" />
+            }
+            @case ('IMAGE_TEXT') {
+              <div class="photo-text" [class.is-right]="block.side === 'RIGHT'">
+                <div class="photo-text__photo">
+                  <yona-image-upload
+                    compact
+                    [imageId]="block.imageId"
+                    [progress]="uploadOf('' + block.key)"
+                    (fileChosen)="upload('' + block.key, $event, setImage(block))"
+                    (galleryImageChosen)="patch(block.key, { imageId: $event })"
+                    (removed)="patch(block.key, { imageId: undefined })"
+                    (retouched)="patch(block.key, { imageId: $event })"
+                  />
+                  <ng-container *ngTemplateOutlet="captionTemplate; context: { $implicit: block }" />
+                </div>
+                <ng-container *ngTemplateOutlet="textTemplate; context: { $implicit: block, placeholder: 'Ce que montre la photo, ce que vous avez remarqué…' }" />
+              </div>
+            }
+            @case ('STEPS') {
+              <ol role="list" class="steps">
+                @for (photo of block.photos; track photo.key; let p = $index, firstPhoto = $first, lastPhoto = $last) {
+                  <li class="step">
+                    <span class="step__number" aria-hidden="true">{{ p + 1 }}</span>
+                    <yona-image-upload
+                      compact
+                      [imageId]="photo.imageId"
+                      [progress]="uploadOf(block.key + '-' + photo.key)"
+                      (fileChosen)="upload(block.key + '-' + photo.key, $event, setStepImage(block, photo.key))"
+                      (galleryImageChosen)="patchPhoto(block, photo.key, { imageId: $event })"
+                      (removed)="patchPhoto(block, photo.key, { imageId: undefined })"
+                      (retouched)="patchPhoto(block, photo.key, { imageId: $event })"
+                    />
+                    <input class="input input--small" maxlength="200" [placeholder]="'Étape ' + (p + 1)" [attr.aria-label]="'Légende de l’étape ' + (p + 1)" [value]="photo.caption ?? ''" (input)="patchPhoto(block, photo.key, { caption: $any($event.target).value })" />
+                    <div class="step__actions">
+                      <button type="button" class="icon-button" [attr.aria-label]="'Avancer l’étape ' + (p + 1)" [disabled]="firstPhoto" (click)="movePhoto(block, p, -1)"><svg yonaIcon="arrow-left" [size]="16"></svg></button>
+                      <button type="button" class="icon-button" [attr.aria-label]="'Reculer l’étape ' + (p + 1)" [disabled]="lastPhoto" (click)="movePhoto(block, p, 1)"><svg yonaIcon="arrow-right" [size]="16"></svg></button>
+                      <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Retirer l’étape ' + (p + 1)" [disabled]="(block.photos?.length ?? 0) <= minStepPhotos" (click)="removePhoto(block, photo.key)"><svg yonaIcon="trash" [size]="16"></svg></button>
+                    </div>
+                  </li>
+                }
+              </ol>
+              @if ((block.photos?.length ?? 0) < maxStepPhotos) {
+                <button type="button" class="link-button" (click)="addPhoto(block)"><svg yonaIcon="plus" [size]="16"></svg>Ajouter une étape ({{ block.photos?.length ?? 0 }} / {{ maxStepPhotos }})</button>
+              }
+            }
+            @case ('TIP') {
+              <textarea
+                class="input"
+                rows="3"
+                placeholder="Le geste à ne pas oublier, le piège à éviter…"
+                aria-label="Astuce à retenir"
+                [maxLength]="maxTipLength"
+                [value]="block.text ?? ''"
+                (input)="patch(block.key, { text: $any($event.target).value })"
+              ></textarea>
+              <span class="field__hint">{{ (block.text ?? '').length }} / {{ maxTipLength }} caractères</span>
+            }
+          }
+        </li>
+        <li class="adder">
+          <ng-container *ngTemplateOutlet="adderTemplate; context: { $implicit: i + 1 }" />
+        </li>
+      }
+    </ol>
+    @if (!blocks().length) {
+      <p class="admin-empty">Aucun bloc : « + » pour ajouter un texte, une photo, des étapes…</p>
+    }
+
+    <div class="save-bar">
+      <label class="checkbox-field">
+        <input type="checkbox" [checked]="published()" (change)="published.set($any($event.target).checked)" />
+        Publié
+      </label>
+      <label class="checkbox-field" title="Sinon, l'accueil montre le dernier article publié">
+        <input type="checkbox" [checked]="featured()" (change)="featured.set($any($event.target).checked)" />
+        Coup de cœur de l'accueil
+      </label>
+      <div class="save-bar__actions">
+        @if (id()) {
+          <button type="button" class="icon-button icon-button--danger" aria-label="Mettre l'article à la corbeille" title="Mettre à la corbeille" (click)="trash()">
+            <svg yonaIcon="trash" [size]="18"></svg>
+          </button>
+        }
+        <button yonaButton variant="secondary" type="button" (click)="previewOpen.set(true)"><svg yonaIcon="eye"></svg>Aperçu</button>
+        <button yonaButton type="button" [disabled]="saving()" (click)="save()"><svg yonaIcon="save"></svg>{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
+      </div>
+    </div>
+  }
+</section>
+
+<!-- "+" between two blocks: the kinds of block, to add one there -->
+<ng-template #adderTemplate let-index>
+  @if (adding() === index) {
+    <div class="adder__menu" role="group" aria-label="Ajouter un bloc">
+      @for (type of blockTypes; track type.type) {
+        <button type="button" class="adder__choice" [title]="type.hint" (click)="insert(index, type.type)">
+          <svg [yonaIcon]="type.icon" [size]="18"></svg>{{ type.label }}
+        </button>
+      }
+      <button type="button" class="icon-button" aria-label="Fermer" (click)="adding.set(null)"><svg yonaIcon="x" [size]="18"></svg></button>
+    </div>
+  } @else {
+    <button type="button" class="adder__button" [attr.aria-label]="'Ajouter un bloc ici'" title="Ajouter un bloc" (click)="adding.set(index)">
+      <svg yonaIcon="plus" [size]="18"></svg>
+    </button>
+  }
+</ng-template>
+
+<!-- The text of a block: buttons put the formatting, nothing to type by hand -->
+<ng-template #textTemplate let-block let-placeholder="placeholder">
+  <div class="text-field">
+    <div class="text-tools" role="toolbar" aria-label="Mise en forme">
+      <button type="button" class="text-tools__button" title="Intertitre" (click)="markup(textarea, block, 'title')">Intertitre</button>
+      <button type="button" class="text-tools__button" title="Gras" (click)="markup(textarea, block, 'bold')"><strong>G</strong></button>
+      <button type="button" class="text-tools__button" title="Liste" (click)="markup(textarea, block, 'list')"><svg yonaIcon="list" [size]="16"></svg>Liste</button>
+      <button type="button" class="text-tools__button" title="Lien vers une recette" (click)="openRecipeLink(textarea, block)"><svg yonaIcon="book-open" [size]="16"></svg>Recette</button>
+    </div>
+    <textarea
+      #textarea
+      class="input text-field__area"
+      rows="6"
+      [placeholder]="placeholder"
+      aria-label="Texte du bloc"
+      [maxLength]="maxTextLength"
+      [value]="block.text ?? ''"
+      (input)="patch(block.key, { text: $any($event.target).value })"
+    ></textarea>
+    <span class="field__hint">Une ligne vide sépare deux paragraphes. Sélectionnez des mots avant « Gras » ou « Recette »</span>
+  </div>
+</ng-template>
+
+<ng-template #captionTemplate let-block>
+  <input class="input input--small" maxlength="300" placeholder="Légende (facultative)" aria-label="Légende de la photo" [value]="block.caption ?? ''" (input)="patch(block.key, { caption: $any($event.target).value })" />
+</ng-template>
+
+<yona-dialog title="Aperçu" subtitle="L'article tel qu'il sera en ligne" size="full" [(open)]="previewOpen">
+  <div class="preview-tools" role="radiogroup" aria-label="Écran">
+    <button type="button" class="preview-tools__option" role="radio" [attr.aria-checked]="previewDevice() === 'desktop'" (click)="previewDevice.set('desktop')">
+      <svg yonaIcon="monitor" [size]="18"></svg>Ordinateur
+    </button>
+    <button type="button" class="preview-tools__option" role="radio" [attr.aria-checked]="previewDevice() === 'phone'" (click)="previewDevice.set('phone')">
+      <svg yonaIcon="smartphone" [size]="18"></svg>Téléphone
+    </button>
+  </div>
+  @if (previewOpen()) {
+    <div class="preview" [class.is-phone]="previewDevice() === 'phone'">
+      <yona-cap-article-view [article]="previewArticle()" backLinks preview />
+    </div>
+  }
+</yona-dialog>
+
+<yona-dialog title="Lien vers une recette" size="md" [open]="linking() !== null" (closed)="linking.set(null)">
+  <div class="field">
+    <span class="field__label">Recette</span>
+    <yona-recipe-search hint="Les mots sélectionnés dans le texte mèneront à cette recette" [(chosen)]="linkedRecipe" />
+  </div>
+  <ng-container dialogActions>
+    <button yonaButton variant="ghost" type="button" (click)="linking.set(null)">Annuler</button>
+    <button yonaButton type="button" [disabled]="!linkedRecipe()" (click)="insertRecipeLink()"><svg yonaIcon="book-open"></svg>Ajouter le lien</button>
+  </ng-container>
+</yona-dialog>

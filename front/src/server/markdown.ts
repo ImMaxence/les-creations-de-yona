@@ -10,7 +10,6 @@ import {
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
   MENUS_PATH,
-  OBSERVATIONS_PATH,
   PRIVACY_POLICY_PATH,
   RECIPES_PATH,
   TERMS_OF_USE_PATH,
@@ -53,8 +52,10 @@ const RENDERED_PAGES = new Set([
   TERMS_OF_USE_PATH,
   PRIVACY_POLICY_PATH,
   CAP_PATH,
-  OBSERVATIONS_PATH,
 ]);
+
+/** An article of "Mon CAP": its whole text comes with its first render too. */
+const CAP_ARTICLE = /^\/mon-cap\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Query parameters of /recettes kept in Markdown: a category; pages make no sense (everything is listed). */
 const RECIPES_MARKDOWN_QUERY: readonly string[] = [RECIPES_QUERY.category, RECIPES_QUERY.page];
@@ -138,7 +139,7 @@ async function pageMarkdown(req: Request, path: string, render: PageRenderer): P
     const detail = await orNotFound(fetchMenu(origin, menu[1]));
     return detail && { markdown: menuMarkdown(detail), path };
   }
-  if (RENDERED_PAGES.has(path)) {
+  if (RENDERED_PAGES.has(path) || CAP_ARTICLE.test(path)) {
     const html = await render(req, path);
     const markdown = html && renderedToMarkdown(html, path);
     return markdown ? { markdown, path } : null;

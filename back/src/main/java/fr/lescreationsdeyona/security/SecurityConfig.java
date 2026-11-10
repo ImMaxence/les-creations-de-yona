@@ -18,8 +18,8 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
 
 /**
  * Public read-only API, back-office API restricted to the admins, everything else denied. The
- * only public writes are the subscriptions to notifications and the views of the recipes, which
- * need no account.
+ * only public writes need no account: the subscriptions to notifications, the views of the recipes
+ * and the visits of AI assistants, the feedback and the orders of the shop (both behind a captcha).
  * <p>
  * Login flow: the Angular back-office sends the browser to {@code /api/oauth2/authorization/google};
  * after Google, the admin lands on {@code /admin}, or on {@code /admin/acces-refuse} if refused.
@@ -27,18 +27,24 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
 @Configuration(proxyBeanMethods = false)
 class SecurityConfig {
 
-	private static final String NOTIFICATION_SUBSCRIPTIONS = "/api/notifications/subscriptions";
+	static final String NOTIFICATION_SUBSCRIPTIONS = "/api/notifications/subscriptions";
 
-	private static final String RECIPE_VIEWS = "/api/recipes/*/views";
+	static final String RECIPE_VIEWS = "/api/recipes/*/views";
 
 	/** Visits coming from an AI assistant (Statistiques). */
-	private static final String AI_VISITS = "/api/ai-visits/*";
+	static final String AI_VISITS = "/api/ai-visits/*";
 
 	/** "Donner mon avis": sent by visitors, who have no CSRF token. */
-	private static final String FEEDBACK = "/api/feedback";
+	static final String FEEDBACK = "/api/feedback";
 
 	/** An order of the shop: sent by visitors, who have no CSRF token. */
-	private static final String SHOP_ORDERS = "/api/shop/orders";
+	static final String SHOP_ORDERS = "/api/shop/orders";
+
+	/** What anyone may read: the site's pages and their data. Checked against the controllers by EndpointAccessTest. */
+	static final String[] PUBLIC_READS = { "/api/recipes/**", "/api/featured-recipe", "/api/search-suggestions", "/api/menus",
+			"/api/menus/*", "/api/ingredients", "/api/ingredients/aisles", "/api/site-content", "/api/categories/**", "/api/tags",
+			"/api/social-links/**", "/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key",
+			"/api/feedback/captcha", "/api/cap/**", "/api/shop", "/api/shop/orders/*", "/api/site-sections" };
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http, AdminOidcUserService adminOidcUserService,
@@ -46,10 +52,7 @@ class SecurityConfig {
 			@Value("${springdoc.api-docs.enabled}") boolean apiDocsEnabled) {
 		http.authorizeHttpRequests(requests -> {
 			requests.requestMatchers("/api/admin/**").hasRole(AdminOidcUserService.ADMIN_ROLE)
-				.requestMatchers(HttpMethod.GET, "/api/recipes/**", "/api/featured-recipe", "/api/search-suggestions", "/api/menus", "/api/menus/*",
-						"/api/ingredients", "/api/ingredients/aisles", "/api/site-content", "/api/categories/**", "/api/tags", "/api/social-links/**",
-						"/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key", "/api/feedback/captcha",
-						"/api/cap/**", "/api/shop", "/api/shop/orders/*", "/api/site-sections")
+				.requestMatchers(HttpMethod.GET, PUBLIC_READS)
 				.permitAll()
 				.requestMatchers(HttpMethod.POST, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.DELETE, NOTIFICATION_SUBSCRIPTIONS).permitAll()

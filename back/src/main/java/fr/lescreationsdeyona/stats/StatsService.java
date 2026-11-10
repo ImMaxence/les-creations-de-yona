@@ -157,8 +157,12 @@ public class StatsService {
 				select count(*) as total,
 					count(*) filter (where not exists (select 1 from recipe r where r.image_id = i.id or r.pinterest_image_id = i.id)
 						and not exists (select 1 from category c where c.image_id = i.id)
+						and not exists (select 1 from menu m where m.image_id = i.id)
+						and not exists (select 1 from cap_entry e where e.image_id = i.id or e.blocks like '%' || i.id::text || '%')
+						and not exists (select 1 from shop_product p where p.image_id = i.id)
 						and not exists (select 1 from site_content s where s.about_image_id = i.id)) as unused
-				from image i""")
+				from image i
+				where i.kind <> 'RECEIPT'""")
 			.query((row, index) -> new SiteStats.Images(row.getLong("total"), row.getLong("unused")))
 			.single();
 	}

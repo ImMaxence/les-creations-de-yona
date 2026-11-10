@@ -30,7 +30,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
       [routerLink]="shoppingListPath"
       [attr.aria-label]="shoppingList.count() ? 'Ma liste de courses (' + shoppingList.count() + ')' : 'Ma liste de courses'"
     >
-      <svg yonaIcon="shopping-basket" [size]="20"></svg>
+      <svg yonaIcon="clipboard-list" [size]="20"></svg>
       @if (shoppingList.count()) {
         <span class="count" aria-hidden="true">{{ shoppingList.count() }}</span>
       }

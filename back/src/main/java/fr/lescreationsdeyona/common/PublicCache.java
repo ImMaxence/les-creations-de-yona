@@ -48,9 +48,9 @@ public class PublicCache {
 
 	public static final String CAP_ENTRIES = "public-cap-entries";
 
-	public static final String OBSERVATIONS = "public-observations";
+	public static final String CAP_ENTRY = "public-cap-entry";
 
-	public static final String RECIPE_OBSERVATIONS = "public-recipe-observations";
+	public static final String CAP_HIGHLIGHT = "public-cap-highlight";
 
 	public static final String SHOP = "public-shop";
 

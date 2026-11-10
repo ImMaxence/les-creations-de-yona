@@ -2,6 +2,53 @@
 
 Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
 
+## 2.4.0 - 2026-11-10
+
+Front and backend 2.4.0. Database migrations: V21, V22.
+
+### Added
+
+- **Mon CAP in articles**: the timeline shows a preview of each article (photo, title, subtitle, first lines, "Lire la suite"), the whole card opens its own page, `/mon-cap/<title>`.
+- **Article page**: date, title and subtitle above the big photo, then the blocks: text, big photo, photo + text (left or right), steps in photos, tip. Text in a narrow column; every photo opens full screen.
+- **Article editor**: start from a model (Récit, Pas à pas, Carnet, Vide); move, duplicate, delete or add blocks with "+"; formatting buttons and links to recipes; Classique or Carnet style; preview on computer and phone; subtitle; "Coup de cœur".
+- **Home page**: "À propos", the notifications and the latest article (or the "Coup de cœur") in a frame drawn by four corners.
+- **Shop**: products with their own name and photo, sold by the unit or by batches (price per piece shown), prices including taxes; products without recipe; search, category filters, compact grid.
+- **Shop request**: "Ma demande" in a side panel on computers, a bar fixed at the bottom of phones, kept when leaving the page; a request may be made in the message only.
+- **Shop position**: closed, for close ones (banner, out of the menu and of Google) or open to all (menu, home page).
+- **Accounting**: month, quarter or year; key figures (orders, average basket, margin, change on the year before); monthly chart; where the money goes; best sales with margin; margin of each sale.
+- **Purchases**: an expense detailed line by line from the site's ingredients, price per kilo or piece worked out, last price paid kept; cost price of each product; photo of the receipt.
+- **Glossary from the recipe editor**: words selected in a step, or the "Glossaire" button, open a window to add them; "Garder pour plus tard" (shown nowhere until defined, counted); known words underlined in the steps.
+- **Invoices**: "Générer la facture" on an order handed over; numbered without gaps each year (2026-0001…), seller and customer copied, discount shown; a sheet to print or save as PDF.
+- **Billing details**: seller name, address, SIRET, contact and VAT mention, set from the accounting page, which lists the year's invoices.
+- **Article draft kept**: the article editor keeps what is typed in the browser until saved, offered back on reopening ("Reprendre", "Ignorer").
+
+### Changed
+
+- **Navigation**: "Sucré" before "Salé" in the recipes menu and the phone menu.
+- **Accounting**: "+ Ajouter" opens a window; lines grouped by month, with filters and a search.
+- **Home notifications**: a quiet strip, "Activer" in the site's colour.
+- **Shop**: no more introduction text.
+- **Shopping list icon**: a checklist, no longer the shop's basket.
+- **Login page**: gingham pattern and a scalloped pastry-box edge.
+- **Dates**: "1er novembre", as French writes the first of the month.
+- **An invoiced order** keeps its status and amount and can no longer be deleted.
+
+### Removed
+
+- **Mes observations**: the page, its button and the section under the recipes. Each observation became a draft article, its recipe linked; `/mon-cap/observations` leads to Mon CAP.
+
+### Technical
+
+- Migration V21: articles (subtitle, slug, style, blocks in JSON, featured), observations converted then dropped, shop position, product formats, product of each order line, purchase lines, receipts (kept out of the gallery, served to admins only), glossary words without definition.
+- Backups: articles, products, purchases and receipts merged; older backups migrated on restore.
+- Article layout by container queries: the same on a phone and in the editor's preview.
+- Migration V22: shop introduction dropped, billing details, invoices and their lines.
+- Backups: invoices merged; every table checked to be merged or left out on purpose (`BackupCoverageTest`).
+- API access checked against every controller (`EndpointAccessTest`).
+- Accessibility: toasts and confirmation dialogs announced properly, a page heading in the back-office.
+- Tests: 267 front, 326 backend, 181 checks in Chrome (shop, invoices, accounting and article drafts on simulated data).
+- Docs: manual restore and domain change moved into the production guide; README screenshots of the shop, Mon CAP, accounting and an invoice.
+
 ## 2.3.0 - 2026-11-09
 
 Front and backend 2.3.0. No database migration.

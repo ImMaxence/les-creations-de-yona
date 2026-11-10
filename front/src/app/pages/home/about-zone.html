@@ -1,0 +1,77 @@
+<span class="corner corner--top-left" aria-hidden="true"></span>
+<span class="corner corner--top-right" aria-hidden="true"></span>
+<span class="corner corner--bottom-left" aria-hidden="true"></span>
+<span class="corner corner--bottom-right" aria-hidden="true"></span>
+
+<section class="about" aria-labelledby="about-title">
+  <div class="about__portrait">
+    <!-- The photo chosen in the back-office (Préférences), otherwise the one bundled with the site -->
+    @if (content().aboutImageId; as imageId) {
+      <img
+        [src]="'/api/images/' + imageId + '/800.webp'"
+        [srcset]="'/api/images/' + imageId + '/800.webp 800w, /api/images/' + imageId + '/1600.webp 1600w'"
+        sizes="(width >= 48rem) 11rem, 9rem"
+        width="480"
+        height="480"
+        loading="lazy"
+        decoding="async"
+        alt="Yona, l'autrice des recettes"
+      />
+    } @else {
+      <img
+        src="images/yona-480.webp"
+        srcset="images/yona-480.webp 480w, images/yona-960.webp 960w"
+        sizes="(width >= 48rem) 11rem, 9rem"
+        width="480"
+        height="480"
+        loading="lazy"
+        decoding="async"
+        alt="Yona, l'autrice des recettes"
+      />
+    }
+  </div>
+  <div class="about__text">
+    <p class="eyebrow">À propos de Yona</p>
+    <h2 id="about-title">{{ content().aboutTitle }}</h2>
+    @for (paragraph of aboutParagraphs(); track $index) {
+      <p>{{ paragraph }}</p>
+    }
+    <a class="about__more" [routerLink]="aboutPath">En savoir plus sur Yona <svg yonaIcon="arrow-right" [size]="16"></svg></a>
+  </div>
+</section>
+
+<!-- Only where notifications can work, or on iPhone where installing the app comes first -->
+@if (showNotify()) {
+  <section class="notify" aria-labelledby="notify-title">
+    <div class="notify__text">
+      <h2 id="notify-title">Ne ratez aucune nouvelle recette</h2>
+      <p>Une notification à chaque recette publiée, sans compte ni e-mail</p>
+    </div>
+    <yona-notify-button [showInstallHint]="true" [asLink]="true" />
+  </section>
+}
+
+@if (article(); as highlight) {
+  <section class="reading" aria-labelledby="reading-title">
+    <p class="eyebrow" id="reading-title">{{ highlight.featured ? 'Coup de cœur' : 'Le dernier article' }}</p>
+    <article class="reading__card">
+      <yona-cover-image class="reading__image" [imageId]="highlight.article.imageId" sizes="(width >= 48rem) 20rem, 100vw" />
+      <div class="reading__text">
+        <p class="reading__meta">
+          Mon CAP · <time [attr.datetime]="highlight.article.happenedOn">{{ highlight.article.happenedOn | parisDate }}</time>
+        </p>
+        <h3 class="reading__title">
+          <!-- Stretched over the whole card: a tap anywhere opens the article -->
+          <a class="reading__link" [routerLink]="capArticleLink(highlight.article)">{{ highlight.article.title }}</a>
+        </h3>
+        @if (highlight.article.subtitle; as subtitle) {
+          <p class="reading__subtitle">{{ subtitle }}</p>
+        }
+        @if (highlight.article.excerpt; as excerpt) {
+          <p class="reading__excerpt">{{ excerpt }}</p>
+        }
+        <span class="reading__more" aria-hidden="true">Lire l'article <svg yonaIcon="arrow-right" [size]="16"></svg></span>
+      </div>
+    </article>
+  </section>
+}

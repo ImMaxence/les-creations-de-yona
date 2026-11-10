@@ -112,7 +112,7 @@ export function menuMarkdown(menu: MenuDetail): string {
 export function glossaryMarkdown(terms: GlossaryTermResponse[]): string {
   const lines = ['# Glossaire de pâtisserie', '', `> ${GLOSSARY_DESCRIPTION}`, ''];
   for (const term of terms) {
-    lines.push(`## ${term.name}`, '', term.definition.trim(), '');
+    lines.push(`## ${term.name}`, '', (term.definition ?? '').trim(), '');
   }
   return lines.join('\n');
 }

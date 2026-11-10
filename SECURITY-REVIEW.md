@@ -163,3 +163,37 @@ Résultat : aucune faille critique ni haute. Un point moyen-faible et deux faibl
 - Routes publiques `GET` : recettes et menus publiés seulement, recherche et tri bornés.
 - Affichage : le seul contournement du sanitizer d'Angular reste le lecteur YouTube ; Markdown et glossaire passent par `[innerHTML]` et le sanitizer.
 - Secrets : aucune clé Google, AWS ou privée, ni aucun `.env`, dans l'historique git.
+
+## Audit du 10 novembre 2026 (version 2.4.0)
+
+Portée : ce qui a changé depuis la 2.0 : Mon CAP en articles (blocs en JSON, Markdown, photos), boutique (produits, demande gardée dans le navigateur, demande par le seul message), comptabilité (achats détaillés, photos de tickets de caisse), factures, glossaire depuis l'éditeur, fusion des nouvelles tables à la restauration, et la réorganisation des règles d'accès (`SecurityConfig.PUBLIC_READS`). Lecture du code et de la configuration, appels sans session sur la pile locale, `npm audit`, recherche de secrets dans les changements en cours.
+
+Résultat : aucune faille critique, haute ni moyenne. Un point faible (transparence) corrigé, un renforcement ajouté.
+
+| # | Gravité | Fichier | Problème | Statut |
+|---|---------|---------|----------|--------|
+| 11 | Faible | `front/src/app/pages/legal/privacy-policy.html` | La demande de la boutique (nom, e-mail, téléphone, message) est gardée dans le navigateur (`yona-shop-request`), les coordonnées même après l'envoi, sans que la politique de confidentialité le dise ; sur un appareil partagé, la personne suivante les voit | Corrigé |
+| 12 | Info | `security/SecurityConfig.java` | Les règles d'accès ne sont vérifiées par aucun test : une nouvelle route publique oubliée dans la liste est refusée (page cassée), une écriture publique ajoutée par erreur passerait inaperçue | Renforcé |
+
+### Corrections
+
+- 11 : paragraphe ajouté à la politique de confidentialité (clé, contenu, ce qui reste après l'envoi, conseil pour un appareil partagé) ; date des pages légales au 10 novembre 2026. La demande relue du navigateur est aussi vérifiée champ par champ (une quantité qui n'est pas un nombre entier de 1 à 50 l'écarte), pour qu'une valeur trafiquée ne fausse pas le total affiché.
+- 12 : `SecurityConfig.PUBLIC_READS` et les adresses d'écriture publiques sont lus par `EndpointAccessTest`, qui parcourt chaque contrôleur par réflexion : tout `Admin…Controller` sous `/api/admin`, chaque lecture publique listée, aucune écriture publique hors abonnements, vues, visites d'assistants IA, retours et commandes, aucune adresse listée sans route derrière, factures et tickets réservés aux admins.
+
+### Points vérifiés sans faille exploitable
+
+- Factures : routes sous `/api/admin` (401 sans session, 403 sans jeton CSRF), numéro pris sous verrou (`SELECT … FOR UPDATE` sur `shop_settings`) et unique en base ; une facture copie vendeur, client et lignes et n'est jamais modifiée ; une commande facturée ne peut plus changer de statut ni de montant, ni être supprimée. Données du client gardées 10 ans (obligation comptable), écrit dans la politique de confidentialité.
+- Tickets de caisse : type `RECEIPT` refusé par la route publique des images (404), servi aux admins seulement avec `Cache-Control: no-store`, hors du cache du service worker (seul `/api/images/**` y est), hors de la galerie ; format vérifié sur le contenu, pixels plafonnés, 10 Mo au plus ; stockage S3 sans port publié en production.
+- Articles de Mon CAP : blocs bornés (60, astuce de 1 000 caractères, photos de la galerie seulement, types connus), texte en Markdown rendu par `[innerHTML]` et le sanitizer d'Angular (aucun `bypassSecurityTrustHtml` dans le projet) ; titre et sous-titre dans le JSON-LD `BlogPosting`, `<` échappé ; brouillon et adresse inconnue répondent 404. Un lien du texte n'est suivi par le routeur que s'il mène au site (`/…`, ni `//` ni `/\`).
+- Boutique : prix, format et disponibilité relus sur le serveur à chaque demande (rien ne vient du navigateur que l'identifiant et la quantité) ; demande par le seul message soumise aux mêmes limites (champ piège, reCAPTCHA, une minute entre deux, 5 par heure par adresse, 30 pour tout le site, 500 en attente).
+- Restauration : les lignes des factures, des achats et des produits viennent d'une base temporaire dont les tables et colonnes doivent être exactement celles du site, sans fonction, déclencheur ni règle (`ScratchDatabases.checkSchema`) ; noms de colonnes entre guillemets, valeurs en paramètres liés ; contraintes de la base (numéro, montant, SIRET) vérifiées à l'insertion. `BackupCoverageTest` oblige chaque nouvelle table à être fusionnée ou écartée exprès.
+- Brouillons des articles dans le navigateur de l'admin (`yona-article-draft-…`) : comme ceux des recettes, sur l'appareil de l'admin seulement, oubliés à l'enregistrement.
+- Appels sans session sur la pile locale : `GET /api/admin/invoices`, `…/settings`, `…/{id}`, `/api/admin/accounting/{id}/receipt` répondent 401 ; `POST …/orders/{id}/invoice` et `PUT …/invoices/settings` 403 ; `PUT /api/shop` 403, `DELETE /api/shop/orders` 401 ; `/api/cap/entries/..%2F..%2Fadmin%2Fme` 400. En-têtes de sécurité (CSP avec nonce, `X-Frame-Options`, HSTS, `nosniff`, `Referrer-Policy`) présents sur les pages.
+- Dépendances : `npm audit` sans vulnérabilité pour `front/` et `e2e/`. Le backend suit les versions gérées par Spring Boot 4 (aucun outil d'analyse des dépendances Java dans le projet : à ajouter si besoin, par exemple OWASP Dependency-Check en CI).
+- Secrets : aucune clé Google, AWS, GitHub ou privée dans les changements en cours (diff et nouveaux fichiers), aucun `.env` ajouté.
+
+### Risques acceptés
+
+- Tous les admins voient toutes les factures, commandes et tickets : une seule équipe, comme pour le reste du back-office.
+- Une facture ne se supprime pas, même générée par erreur : c'est la règle comptable (numérotation sans trou). Une erreur se corrige par une facture d'avoir, à faire à la main pour l'instant.
+- Les coordonnées gardées dans le navigateur après l'envoi d'une demande : un confort pour la demande suivante, dit dans la politique de confidentialité.

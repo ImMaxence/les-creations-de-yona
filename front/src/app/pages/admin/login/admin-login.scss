@@ -24,28 +24,54 @@
   background-color: var(--color-accent);
   color: var(--color-on-accent);
 
-  // Scallops, as on the boxes of a pâtisserie. Decorative: gone before the text they would disturb.
+  // Gingham, as the cloth of a pâtisserie: two crossed bands of the light ink, deeper where they
+  // meet. Decorative: it fades out before the text it would disturb.
   &::before {
-    --ground: var(--color-accent);
-    --scallop: color-mix(in srgb, var(--color-on-accent) 15%, var(--color-accent));
+    --ink: color-mix(in srgb, var(--color-on-accent) 13%, transparent);
 
     content: '';
     position: absolute;
     inset: 0;
     z-index: -1;
-    background-color: var(--ground);
     background-image:
-      radial-gradient(circle at 100% 150%, var(--ground) 24%, var(--scallop) 24%, var(--scallop) 28%, var(--ground) 28%, var(--ground) 36%, var(--scallop) 36%, var(--scallop) 40%, transparent 40%),
-      radial-gradient(circle at 0 150%, var(--ground) 24%, var(--scallop) 24%, var(--scallop) 28%, var(--ground) 28%, var(--ground) 36%, var(--scallop) 36%, var(--scallop) 40%, transparent 40%),
-      radial-gradient(circle at 50% 100%, var(--scallop) 10%, var(--ground) 10%, var(--ground) 23%, var(--scallop) 23%, var(--scallop) 30%, var(--ground) 30%, var(--ground) 43%, var(--scallop) 43%, var(--scallop) 50%, var(--ground) 50%, var(--ground) 63%, var(--scallop) 63%, var(--scallop) 71%, transparent 71%),
-      radial-gradient(circle at 100% 50%, var(--scallop) 5%, var(--ground) 5%, var(--ground) 15%, var(--scallop) 15%, var(--scallop) 20%, var(--ground) 20%, var(--ground) 29%, var(--scallop) 29%, var(--scallop) 34%, var(--ground) 34%, var(--ground) 44%, var(--scallop) 44%, var(--scallop) 49%, transparent 49%),
-      radial-gradient(circle at 0 50%, var(--scallop) 5%, var(--ground) 5%, var(--ground) 15%, var(--scallop) 15%, var(--scallop) 20%, var(--ground) 20%, var(--ground) 29%, var(--scallop) 29%, var(--scallop) 34%, var(--ground) 34%, var(--ground) 44%, var(--scallop) 44%, var(--scallop) 49%, transparent 49%);
-    background-size: 88px 44px;
-    mask-image: linear-gradient(to left, #000 15%, transparent 85%);
+      linear-gradient(90deg, var(--ink) 50%, transparent 50%),
+      linear-gradient(var(--ink) 50%, transparent 50%);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(to left, #000 10%, transparent 80%);
 
     @include m.from(lg) {
-      background-size: 128px 64px;
-      mask-image: linear-gradient(to bottom left, #000 20%, transparent 68%);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(130% 110% at 100% 0, #000 30%, transparent 72%);
+    }
+  }
+
+  // The scalloped edge of a pastry box, where the band meets the page: under it on phones, on its
+  // right on computers
+  &::after {
+    --scallop: 14px;
+
+    content: '';
+    position: absolute;
+    inset: 100% 0 auto;
+    height: calc(var(--scallop) / 2);
+    background: radial-gradient(circle at 50% 0, var(--color-accent) 70%, transparent 71%) 0 0 / var(--scallop) calc(var(--scallop) / 2)
+      repeat-x;
+
+    @include m.from(lg) {
+      --scallop: 22px;
+
+      inset: 0 auto 0 100%;
+      width: calc(var(--scallop) / 2);
+      height: auto;
+      background: radial-gradient(circle at 0 50%, var(--color-accent) 70%, transparent 71%) 0 0 / calc(var(--scallop) / 2) var(--scallop)
+        repeat-y;
+    }
+  }
+
+  @media (forced-colors: active) {
+    &::before,
+    &::after {
+      display: none;
     }
   }
 

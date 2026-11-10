@@ -1,4 +1,5 @@
 import type { RequestHandler } from 'express';
+import type { CapArticleCard } from '../app/core/api/generated/models/cap-article-card';
 import type { GlossaryTermResponse } from '../app/core/api/generated/models/glossary-term-response';
 import type { MenuSummary } from '../app/core/api/generated/models/menu-summary';
 import type { RecipeCard } from '../app/core/api/generated/models/recipe-card';
@@ -10,15 +11,15 @@ import {
   INSTALL_PATH,
   LEGAL_NOTICE_PATH,
   MENUS_PATH,
-  OBSERVATIONS_PATH,
   PRIVACY_POLICY_PATH,
   RECIPES_PATH,
   TERMS_OF_USE_PATH,
+  capArticleLink,
   categoryQueryParams,
   menuLink,
   recipeLink,
 } from '../app/shared/routing/links';
-import { apiOrigin, fetchCapEntries, fetchGlossary, fetchMenus, fetchObservationCount, fetchPublishedRecipes } from './api';
+import { apiOrigin, fetchCapEntries, fetchGlossary, fetchMenus, fetchPublishedRecipes } from './api';
 
 const STATIC_PATHS = ['/', RECIPES_PATH, ABOUT_PATH, INSTALL_PATH, LEGAL_NOTICE_PATH, TERMS_OF_USE_PATH, PRIVACY_POLICY_PATH];
 
@@ -27,14 +28,12 @@ function sitemapPaths(
   recipes: RecipeCard[],
   glossary: GlossaryTermResponse[],
   menus: MenuSummary[],
-  capSteps: number,
-  observations: number,
+  capArticles: CapArticleCard[],
 ): string[] {
   const categories = new Set(recipes.flatMap((recipe) => recipe.categories.map((category) => category.slug)));
   return [
     ...STATIC_PATHS,
-    ...(capSteps ? [CAP_PATH] : []),
-    ...(observations ? [OBSERVATIONS_PATH] : []),
+    ...(capArticles.length ? [CAP_PATH, ...capArticles.map((article) => capArticleLink(article).join('/'))] : []),
     ...(glossary.length ? [GLOSSARY_PATH] : []),
     ...(menus.length ? [MENUS_PATH, ...menus.map((menu) => menuLink(menu).join('/'))] : []),
     ...[...categories].map(
@@ -69,17 +68,16 @@ function toXml(paths: string[]): string {
 export const sitemap: RequestHandler = async (req, res) => {
   const origin = apiOrigin(req);
   try {
-    const [recipes, glossary, menus, capEntries, observations] = await Promise.all([
+    const [recipes, glossary, menus, capEntries] = await Promise.all([
       fetchPublishedRecipes(origin),
       fetchGlossary(origin),
       fetchMenus(origin),
       fetchCapEntries(origin),
-      fetchObservationCount(origin),
     ]);
     res
       .type('application/xml')
       .set('Cache-Control', 'public, max-age=3600')
-      .send(toXml(sitemapPaths(recipes, glossary, menus, capEntries.length, observations)));
+      .send(toXml(sitemapPaths(recipes, glossary, menus, capEntries)));
   } catch (error) {
     console.error('Sitemap unavailable', error);
     res

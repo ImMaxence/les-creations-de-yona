@@ -9,8 +9,8 @@ export interface Counts {
   glossaryTerms: number;
   images: number;
   ingredients: number;
+  invoices: number;
   menus: number;
-  observations: number;
   recipes: number;
   shopOrders: number;
   shopProducts: number;

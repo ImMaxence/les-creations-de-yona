@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
 import { createGlossaryTerm } from '../../../core/api/generated/fn/admin-glossary/create-glossary-term';
 import { deleteGlossaryTerms } from '../../../core/api/generated/fn/admin-glossary/delete-glossary-terms';
+import { listAdminGlossary } from '../../../core/api/generated/fn/admin-glossary/list-admin-glossary';
 import { updateGlossaryTerm } from '../../../core/api/generated/fn/admin-glossary/update-glossary-term';
-import { listGlossary } from '../../../core/api/generated/fn/glossary/list-glossary';
 import { GlossaryTermResponse } from '../../../core/api/generated/models/glossary-term-response';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
@@ -15,15 +15,18 @@ import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { Selection } from '../selection';
+import { MAX_DEFINITION_LENGTH, MAX_FORMS, MAX_NAME_LENGTH, splitForms, usualForms, withUsualForms } from './glossary-forms';
 
-const MAX_NAME_LENGTH = 60;
-const MAX_DEFINITION_LENGTH = 600;
-const MAX_FORMS = 20;
+export { usualForms } from './glossary-forms';
+
+/** ?a-completer: the words kept for later only. */
+export const TO_COMPLETE_QUERY = 'a-completer';
 
 /**
  * Pastry words (émulsionner, chemiser, blanchir…): explained on the glossary page, and underlined
  * in the recipe steps, with their definition at a tap. Each word is found under its name and under
- * the other spellings given (conjugated verb, plural…).
+ * the other spellings given (conjugated verb, plural…). A word kept for later ("À compléter") waits
+ * for its definition, and shows nowhere on the site until then.
  */
 @Component({
   selector: 'yona-admin-glossary',
@@ -40,11 +43,14 @@ export default class AdminGlossary {
   protected readonly glossaryPath = GLOSSARY_PATH;
   protected readonly maxNameLength = MAX_NAME_LENGTH;
   protected readonly maxDefinitionLength = MAX_DEFINITION_LENGTH;
-  protected readonly terms = resource({ loader: () => this.api.invoke(listGlossary) });
+  protected readonly terms = resource({ loader: () => this.api.invoke(listAdminGlossary) });
+  protected readonly onlyToComplete = signal(inject(ActivatedRoute).snapshot.queryParamMap.has(TO_COMPLETE_QUERY));
+  /** Kept for later, waiting for their definition. */
+  protected readonly toComplete = computed(() => (this.terms.value() ?? []).filter((term) => !term.definition).length);
   /** In the order of the site's glossary page. */
   protected readonly sortedTerms = computed(() => {
     const terms = this.terms.value();
-    return terms && [...terms].sort(byGlossaryName);
+    return terms && [...terms].filter((term) => !this.onlyToComplete() || !term.definition).sort(byGlossaryName);
   });
 
   /** The word being changed; null while adding a new one. */
@@ -62,8 +68,9 @@ export default class AdminGlossary {
   protected edit(term: GlossaryTermResponse): void {
     this.editing.set(term);
     this.name.set(term.name);
-    this.definition.set(term.definition);
+    this.definition.set(term.definition ?? '');
     this.forms.set(term.forms.join(', '));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   protected cancel(): void {
@@ -75,24 +82,23 @@ export default class AdminGlossary {
 
   /** The usual forms of a verb in -er or -ir, or the plural of a noun, added to those typed. */
   protected suggestForms(): void {
-    const suggested = usualForms(this.name().trim());
-    if (!suggested.length) {
+    if (!usualForms(this.name().trim()).length) {
       this.toaster.error("Écrivez d'abord le mot");
       return;
     }
-    const typed = splitForms(this.forms());
-    this.forms.set([...new Set([...typed, ...suggested])].join(', '));
+    this.forms.set(withUsualForms(this.forms(), this.name()));
   }
 
-  protected async save(event: Event): Promise<void> {
+  /** {@code later}: "Garder pour plus tard", without definition. */
+  protected async save(event: Event, later = false): Promise<void> {
     event.preventDefault();
     const body = {
       name: this.name().trim(),
-      definition: this.definition().trim(),
+      definition: later ? undefined : this.definition().trim(),
       forms: splitForms(this.forms()).slice(0, MAX_FORMS),
     };
-    if (!body.name || !body.definition) {
-      this.toaster.error('Donnez le mot et sa définition');
+    if (!body.name || (!later && !body.definition)) {
+      this.toaster.error(later ? 'Écrivez le mot à garder' : 'Donnez le mot et sa définition, ou gardez-le pour plus tard');
       return;
     }
     const editing = this.editing();
@@ -104,7 +110,13 @@ export default class AdminGlossary {
     );
     this.saving.set(false);
     if (saved.ok) {
-      this.toaster.success(editing ? `« ${saved.value.name} » modifié` : `« ${saved.value.name} » ajouté au glossaire`);
+      this.toaster.success(
+        later
+          ? `« ${saved.value.name} » gardé pour plus tard, à compléter`
+          : editing
+            ? `« ${saved.value.name} » modifié`
+            : `« ${saved.value.name} » ajouté au glossaire`,
+      );
       this.cancel();
       this.terms.reload();
     }
@@ -148,32 +160,4 @@ export default class AdminGlossary {
       this.terms.reload();
     }
   }
-}
-
-function splitForms(text: string): string[] {
-  return text
-    .split(',')
-    .map((form) => form.trim())
-    .filter(Boolean);
-}
-
-/**
- * "chemiser" → chemisez, chemisé, chemisée, chemisés, chemisées, chemisant; "blanchir" →
- * blanchissez, blanchi…; "ganache" → ganaches. The bare stem ("chemise") is left out: it is often
- * another word.
- */
-export function usualForms(word: string): string[] {
-  const lower = word.toLocaleLowerCase('fr');
-  if (!lower || lower.includes(' ')) {
-    return [];
-  }
-  if (lower.endsWith('er') && lower.length > 3) {
-    const stem = lower.slice(0, -2);
-    return ['ez', 'é', 'ée', 'és', 'ées', 'ant'].map((ending) => stem + ending);
-  }
-  if (lower.endsWith('ir') && lower.length > 3) {
-    const stem = lower.slice(0, -2);
-    return ['issez', 'i', 'ie', 'is', 'ies', 'issant'].map((ending) => stem + ending);
-  }
-  return /[sxz]$/.test(lower) ? [] : [lower + 's'];
 }

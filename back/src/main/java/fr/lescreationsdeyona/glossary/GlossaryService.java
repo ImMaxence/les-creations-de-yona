@@ -22,6 +22,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /** The glossary of pastry words: its page, and the words explained in the recipe steps. */
 @Service
@@ -35,9 +36,17 @@ public class GlossaryService {
 
 	private final AuditLog auditLog;
 
-	/** Sorted by name, the French way. */
+	/** The words having a definition, sorted by name, the French way: those kept for later wait for theirs. */
 	@Cacheable(PublicCache.GLOSSARY)
 	public List<GlossaryTermResponse> list() {
+		return termRepository.findAll(Sort.by("name")).stream()
+			.filter(term -> term.getDefinition() != null)
+			.map(GlossaryService::toResponse)
+			.toList();
+	}
+
+	/** Every word, those kept for later ("À compléter") included. */
+	public List<GlossaryTermResponse> adminList() {
 		return termRepository.findAll(Sort.by("name")).stream().map(GlossaryService::toResponse).toList();
 	}
 
@@ -107,7 +116,7 @@ public class GlossaryService {
 
 	private GlossaryTermResponse save(GlossaryTerm term, String name, GlossaryTermForm form) {
 		term.setName(name);
-		term.setDefinition(form.definition().strip());
+		term.setDefinition(StringUtils.hasText(form.definition()) ? form.definition().strip() : null);
 		term.getForms().clear();
 		term.getForms().addAll(forms(name, form.forms()));
 		return toResponse(termRepository.saveAndFlush(term));

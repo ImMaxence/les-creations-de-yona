@@ -1,0 +1,107 @@
+@use 'mixins' as m;
+
+.entry {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.entry__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-3);
+}
+
+// On a line of their own: an email needs the room
+.entry__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-3);
+}
+
+.entry__computed {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.purchases {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.purchases__list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+// Name, quantity and unit, price paid (and the price by the kilo under it)
+.purchase {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem 6.5rem auto;
+  grid-template-areas:
+    'item item item remove'
+    'quantity unit price price';
+  align-items: start;
+  gap: var(--space-2);
+
+  @include m.from(md) {
+    grid-template-columns: minmax(0, 2fr) 5.5rem 6.5rem minmax(0, 1fr) auto;
+    grid-template-areas: 'item quantity unit price remove';
+  }
+}
+
+.purchase__item {
+  display: grid;
+  grid-area: item;
+  gap: var(--space-1);
+}
+
+.purchase__quantity {
+  grid-area: quantity;
+}
+
+.purchase__unit {
+  grid-area: unit;
+}
+
+.purchase__price {
+  display: grid;
+  grid-area: price;
+  gap: var(--space-1);
+}
+
+.purchase .icon-button {
+  grid-area: remove;
+}
+
+.receipt__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.receipt__thumb {
+  display: block;
+  width: 5rem;
+  height: 6.5rem;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.receipt__actions {
+  display: grid;
+  gap: var(--space-1);
+}

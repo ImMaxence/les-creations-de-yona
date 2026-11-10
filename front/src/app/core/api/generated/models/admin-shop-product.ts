@@ -3,12 +3,43 @@
 
 export interface AdminShopProduct {
   available: boolean;
+  batchSize?: number;
+
+  /**
+   * Its own category, without recipe
+   */
+  categoryId?: number;
+
+  /**
+   * The categories it is found under in the shop
+   */
+  categoryNames: Array<string>;
+  format: string;
   id: number;
+
+  /**
+   * Its own photo; absent shows its recipe's
+   */
   imageId?: string;
+  name: string;
+
+  /**
+   * Available, and its recipe published if any
+   */
+  onSale: boolean;
+  packaging?: string;
+  packagingCount: number;
   portionLabel?: string;
   price: number;
-  recipeId: number;
-  recipeStatus: 'DRAFT' | 'PUBLISHED' | 'FAILED';
-  recipeTitle: string;
+  recipeId?: number;
+  recipeShare: number;
+  recipeStatus?: 'DRAFT' | 'PUBLISHED' | 'FAILED';
+  recipeTitle?: string;
+
+  /**
+   * The photo shown: its own, or its recipe's
+   */
+  shownImageId?: string;
+  unitPrice?: number;
   updatedAt: string;
 }

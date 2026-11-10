@@ -96,7 +96,6 @@ export class AdminNav {
         { path: 'ingredients', label: 'Ingrédients', icon: 'carrot' },
         { path: 'glossaire', label: 'Glossaire', icon: 'book-a' },
         { path: 'mon-cap', label: 'Mon CAP', icon: 'graduation-cap' },
-        { path: 'observations', label: 'Observations', icon: 'notebook-pen' },
       ],
     },
     {

@@ -3,6 +3,7 @@
 
 export interface AdminOrderLine {
   portionLabel?: string;
+  productId?: number;
   quantity: number;
   recipeId?: number;
   title: string;

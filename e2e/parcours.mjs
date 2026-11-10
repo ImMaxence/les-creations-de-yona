@@ -3,7 +3,7 @@
 // Captures d'écran dans e2e/resultats/. Code de sortie 1 si une vérification échoue.
 import AxeBuilder from '@axe-core/playwright';
 import lighthouse from 'lighthouse';
-import { BASE, DESKTOP, PHONE, answerCookies, api, fakeAdmin, folder, launch, newPage, pickRecipe, recipeUrl } from './outils.mjs';
+import { BASE, DESKTOP, PHONE, answerCookies, api, fakeAdmin, fakeRecaptcha, folder, goClient, launch, newPage, pickRecipe, recipeUrl } from './outils.mjs';
 
 const SHOTS = folder('resultats');
 /** Règles d'axe vérifiées : WCAG 2.1 niveaux A et AA, et ses bonnes pratiques. Aucun écart toléré. */
@@ -36,6 +36,7 @@ async function part(title, run) {
 
 const { recipe, steps, ingredients, timed } = await pickRecipe();
 const menus = await api('/api/menus');
+const capArticles = await api('/api/cap/entries');
 console.log(`Recette utilisée : ${recipe.title} (${ingredients.length} ingrédients, ${steps.length} étapes)`);
 const browser = await launch();
 
@@ -149,6 +150,8 @@ await part('Accueil (ordinateur)', async () => {
     menus.length ? '« Menus » dans le menu Recettes' : 'Pas de « Menus » sans menu publié',
     (await panel.getByRole('link', { name: 'Menus', exact: true }).count()) === (menus.length ? 1 : 0),
   );
+  const themeTitles = (await panel.locator('.panel__title').allTextContents()).map((text) => text.trim());
+  check('Menu « Recettes » : « Sucré » avant « Salé »', themeTitles.join(' | ') === 'Sucré | Salé', themeTitles.join(' | '));
   const savory = categories.find((category) => category.theme === 'SAVORY');
   if (savory) {
     const column = panel.locator('.panel__theme').filter({ hasText: 'Salé' });
@@ -159,6 +162,10 @@ await part('Accueil (ordinateur)', async () => {
   check('Barre du haut sans « Installer l’application »', (await page.locator('yona-header nav.nav').getByText("Installer l'application").count()) === 0);
   check('Pied de page avec « Installer l’application »', (await page.locator('footer').getByRole('link', { name: "Installer l'application" }).count()) === 1);
   check('Encart des notifications', await page.locator('section.notify button').isVisible());
+  check('Zone « À propos » encadrée de ses quatre coins', (await page.locator('yona-about-zone .corner').count()) === 4);
+  if (capArticles.length) {
+    check('Un article de Mon CAP à lire sous « À propos »', await page.locator('yona-about-zone .reading__card').isVisible());
+  }
 
   // Le navigateur annonce qu'il peut installer l'application
   await page.evaluate(() => {
@@ -450,10 +457,196 @@ await part('Minuteurs après un rechargement (horloge maîtrisée)', async () =>
   await page.context().close();
 });
 
+await part('Mon CAP (téléphone)', async () => {
+  const page = await newPage(browser, PHONE, errors);
+  await page.goto(BASE + '/mon-cap/observations', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  check('L’ancienne adresse de « Mes observations » mène à Mon CAP', new URL(page.url()).pathname === '/mon-cap', page.url());
+  check('Plus de bouton « Mes observations »', (await page.getByText('Mes observations').count()) === 0);
+  if (!capArticles.length) {
+    check('Mon CAP sans article : le message d’attente', await page.getByText('Les premiers articles arrivent bientôt').isVisible());
+    await page.context().close();
+    return;
+  }
+  const first = capArticles[0];
+  const card = page.locator('.timeline .card').first();
+  check('La frise : un aperçu par article, le plus récent en premier', (await page.locator('.timeline .card').count()) === capArticles.length && (await card.locator('h2').textContent()).trim() === first.title);
+  // Toute la carte s'ouvre, pas seulement le bouton
+  await card.click();
+  await page.waitForURL(`**/mon-cap/${first.slug}`);
+  check('Un appui sur la carte ouvre la page de l’article', (await page.locator('h1').textContent()).trim() === first.title);
+  check('« Tous les articles » et « Accueil » sous l’article', (await page.getByRole('link', { name: 'Tous les articles' }).count()) === 1 && (await page.getByRole('navigation', { name: 'Retour' }).getByRole('link', { name: 'Accueil' }).count()) === 1);
+  const photo = page.locator('.article .photo').first();
+  if (await photo.count()) {
+    await photo.click();
+    check('Une photo touchée s’ouvre en grand', await page.locator('dialog.viewer[open]').isVisible());
+    await page.keyboard.press('Escape');
+  }
+  const unknown = await fetch(`${BASE}/api/cap/entries/article-introuvable-e2e`);
+  check('Un article inconnu répond 404', unknown.status === 404, String(unknown.status));
+  await page.context().close();
+});
+
+/** Une boutique pour les proches, ses produits simulés : le parcours ne dépend pas des données du site. */
+const SHOP = {
+  mode: 'FRIENDS',
+  open: true,
+  pickupInfo: 'Le samedi matin, à la maison',
+  products: [
+    { id: 101, name: 'Cookies aux pépites', format: 'Boîte de 6', batchSize: 6, price: 12, unitPrice: 2, categories: [{ slug: 'biscuits', name: 'Biscuits' }] },
+    { id: 102, name: 'Tarte au citron', format: "À l'unité", price: 24, portionLabel: '8 parts', categories: [{ slug: 'tartes', name: 'Tartes' }] },
+    { id: 103, name: 'Sablés de Noël', format: 'Boîte de 12', batchSize: 12, price: 9.5, unitPrice: 0.79, categories: [{ slug: 'biscuits', name: 'Biscuits' }] },
+  ],
+};
+
+await part('Boutique (téléphone, produits simulés)', async () => {
+  const page = await newPage(browser, PHONE, errors);
+  await fakeRecaptcha(page);
+  await page.route('**/api/shop', (route) => route.fulfill({ json: SHOP }));
+  let sent = null;
+  await page.route('**/api/shop/orders', (route) => {
+    sent = route.request().postDataJSON();
+    return route.fulfill({ json: { trackingToken: 'suivi-e2e' } });
+  });
+  await page.route('**/api/shop/orders/suivi-e2e', (route) =>
+    route.fulfill({
+      json: { number: 42, status: 'NEW', amount: 24, createdAt: '2026-11-10T09:00:00Z', updatedAt: '2026-11-10T09:00:00Z', lines: [{ title: 'Cookies aux pépites', quantity: 2, unitPrice: 12 }] },
+    }),
+  );
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  await goClient(page, '/boutique');
+  const products = page.locator('.product');
+  await products.first().waitFor();
+  check('Boutique : les produits de la boutique', (await products.count()) === 3);
+  check('Boutique : le bandeau « réservée à mes proches »', await page.locator('.shop__banner').isVisible());
+  check('Boutique : plus de texte de présentation', (await page.locator('.shop__lead').count()) === 0);
+  check('Boutique : le retrait', (await page.locator('.shop__pickup').innerText()).includes('samedi'));
+  check('Boutique : le prix d’une pièce d’une boîte', (await products.first().innerText()).includes('soit 2,00'));
+
+  // Téléphone : la catégorie se choisit dans une liste
+  await page.locator('.filters__dropdown').selectOption('biscuits');
+  check('Catégorie « Biscuits » : ses produits seulement', (await products.count()) === 2);
+  await page.getByRole('searchbox', { name: 'Rechercher un produit' }).fill('CITRON');
+  const empty = page.locator('.shop__empty');
+  check('Recherche dans une catégorie sans résultat : le dire', (await empty.innerText()).includes('« Biscuits »') && (await empty.innerText()).includes('« CITRON »'));
+  await page.locator('.filters__dropdown').selectOption('');
+  check('Recherche sans tenir compte des majuscules', (await products.count()) === 1 && (await products.first().innerText()).includes('Tarte au citron'));
+  await page.getByRole('searchbox', { name: 'Rechercher un produit' }).fill('sables noel');
+  check('Recherche sans tenir compte des accents', (await products.count()) === 1 && (await products.first().innerText()).includes('Sablés de Noël'));
+  await page.getByRole('searchbox', { name: 'Rechercher un produit' }).fill('');
+
+  const cookies = page.getByRole('group', { name: 'Quantité de Cookies aux pépites' });
+  await cookies.getByRole('button', { name: 'Un de plus' }).click();
+  await cookies.getByRole('button', { name: 'Un de plus' }).click();
+  const bar = page.locator('.request-bar');
+  check('Barre « Ma demande » : nombre et total TTC', (await bar.innerText()).includes('2 produits') && (await bar.innerText()).includes('24,00'));
+  const kept = await page.evaluate(() => JSON.parse(localStorage.getItem('yona-shop-request') ?? 'null'));
+  check('La demande est gardée dans le navigateur', kept?.quantities?.['101'] === 2, JSON.stringify(kept?.quantities));
+  await goClient(page, '/');
+  await goClient(page, '/boutique');
+  await cookies.waitFor();
+  check('Revenu sur la boutique : la demande est toujours là', (await cookies.locator('.stepper__count').innerText()).trim() === '2');
+
+  await bar.click();
+  const panel = page.locator('dialog.panel[open]');
+  await panel.waitFor();
+  check('Ma demande : les produits choisis et l’estimation', (await panel.locator('.order__line').count()) === 1 && (await panel.locator('.order__total').innerText()).includes('24,00'));
+  const send = panel.getByRole('button', { name: 'Envoyer ma demande' });
+  check('Sans nom ni contact : envoi impossible', await send.isDisabled());
+  await panel.getByLabel('Votre nom').fill('Léa');
+  await panel.getByLabel('E-mail').fill('lea@example.fr');
+  await panel.getByLabel(/Votre message/).fill('Sans noix, merci');
+  await page.waitForFunction(() => !document.querySelector('dialog.panel[open] button[type="submit"]')?.disabled, null, { timeout: 5000 });
+  await page.screenshot({ path: SHOTS + 'boutique-demande.png' });
+  await send.click();
+  await page.waitForURL('**/boutique/commande/suivi-e2e');
+  check(
+    'Demande envoyée : les produits, le contact, le message et le jeton reCAPTCHA',
+    sent?.customerName === 'Léa' && sent?.customerEmail === 'lea@example.fr' && sent?.message === 'Sans noix, merci' &&
+      JSON.stringify(sent?.lines) === JSON.stringify([{ productId: 101, quantity: 2 }]) && sent?.captchaToken === 'jeton-e2e',
+    JSON.stringify(sent),
+  );
+  await page.locator('h1').waitFor();
+  check('Puis la page de suivi de la commande', (await page.locator('h1').innerText()).includes('42'));
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('yona-shop-request') ?? 'null'));
+  check('Une nouvelle demande repart vide, le contact gardé', Object.keys(after?.quantities ?? {}).length === 0 && after?.name === 'Léa' && after?.message === '');
+
+  // Une quantité trafiquée dans le navigateur ne fausse pas le total
+  await page.evaluate(() => localStorage.setItem('yona-shop-request', JSON.stringify({ quantities: { 101: 'beaucoup' }, name: '', email: '', phone: '', wantedOn: '', message: '' })));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await goClient(page, '/boutique');
+  await cookies.waitFor();
+  check('Une demande gardée illisible est ignorée', !(await bar.innerText()).includes('NaN') && (await cookies.locator('.stepper__count').innerText()).trim() === '0');
+
+  const { violations } = await new AxeBuilder({ page }).withTags(AXE_RULES).analyze();
+  check('Boutique : aucun problème d’accessibilité', violations.length === 0, violations.map((v) => `${v.id} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 2).join(' | ')})`).join(' ; '));
+  await page.context().close();
+});
+
+await part('Boutique (ordinateur, produits simulés)', async () => {
+  const page = await newPage(browser, DESKTOP, errors);
+  await page.route('**/api/shop', (route) => route.fulfill({ json: SHOP }));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  await goClient(page, '/boutique');
+  await page.locator('.product').first().waitFor();
+  const filters = page.locator('.filters__list');
+  check('Ordinateur : les catégories en colonne, avec leur nombre', (await filters.innerText()).includes('Biscuits (2)') && (await filters.innerText()).includes('Tout (3)'));
+  await filters.getByRole('button', { name: /Tartes/ }).click();
+  check('Ordinateur : une catégorie choisie est marquée', (await filters.getByRole('button', { name: /Tartes/ }).getAttribute('aria-pressed')) === 'true' && (await page.locator('.product').count()) === 1);
+  await page.getByRole('group', { name: 'Quantité de Tarte au citron' }).getByRole('button', { name: 'Un de plus' }).click();
+  const button = page.locator('.request-button');
+  check('Ordinateur : « Ma demande » en haut à droite, avec le total', (await button.innerText()).includes('1 produit') && (await button.innerText()).includes('24,00'));
+  await button.click();
+  await page.locator('dialog.panel[open]').waitFor();
+  check('Ordinateur : la demande s’ouvre sur le côté', (await page.locator('dialog.panel[open] .order').boundingBox()).x > DESKTOP.width / 3);
+  await page.keyboard.press('Escape');
+  await page.locator('dialog.panel[open]').waitFor({ state: 'detached' });
+  check('Échap ferme le panneau', true);
+  const basket = await page.locator('.request-button svg').first().innerHTML();
+  const list = await page.locator('yona-header a[aria-label^="Ma liste de courses"] svg').first().innerHTML();
+  check('L’icône de la liste de courses n’est plus le panier de la boutique', basket !== list);
+  await page.context().close();
+});
+
+await part('Mon CAP (articles simulés)', async () => {
+  const card = { id: 7, slug: 'examen-blanc-e2e', title: 'Examen blanc', subtitle: 'Une pâte feuilletée récalcitrante', happenedOn: '2026-11-01', style: 'NOTEBOOK', excerpt: 'Le matin, tout allait bien' };
+  const article = {
+    ...card,
+    updatedAt: '2026-11-02T08:00:00Z',
+    blocks: [
+      { type: 'TEXT', text: 'Le matin, **tout** allait bien. Voir les [recettes](/recettes)' },
+      { type: 'TIP', text: 'Toujours peser le beurre' },
+    ],
+  };
+  const page = await newPage(browser, PHONE, errors);
+  await page.route('**/api/cap/entries', (route) => route.fulfill({ json: [card] }));
+  await page.route(`**/api/cap/entries/${card.slug}`, (route) => route.fulfill({ json: article }));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  await goClient(page, '/mon-cap');
+  await page.locator('.timeline .card').first().waitFor();
+  check('La frise : l’aperçu de l’article, son sous-titre et ses premières lignes', (await page.locator('.timeline .card').innerText()).includes('récalcitrante') && (await page.locator('.timeline .card').innerText()).includes('Le matin'));
+  await page.locator('.timeline .card').first().click();
+  await page.waitForURL(`**/mon-cap/${card.slug}`);
+  await page.locator('h1').waitFor();
+  check('L’article : son titre', (await page.locator('h1').innerText()).trim() === 'Examen blanc');
+  check('Style « Carnet » : le 1er du mois écrit « 1er »', (await page.locator('yona-cap-article-view').innerText()).includes('1er'));
+  check('Le texte mis en forme (gras) et l’astuce encadrée', (await page.locator('yona-cap-article-view strong').count()) >= 1 && (await page.getByText('Toujours peser le beurre').isVisible()));
+  await page.locator('yona-cap-article-view a[href="/recettes"]').click();
+  await page.waitForURL('**/recettes');
+  check('Un lien du texte vers le site s’ouvre sans recharger', await page.evaluate(() => performance.getEntriesByType('navigation')[0]?.name.endsWith('/')));
+  await page.context().close();
+});
+
 await part('Accessibilité (axe, téléphone)', async () => {
-  const paths = ['/', '/recettes', new URL(recipeUrl(recipe)).pathname, '/glossaire', '/installer', '/liste-de-courses', '/favoris', '/donner-mon-avis'];
+  const paths = ['/', '/recettes', new URL(recipeUrl(recipe)).pathname, '/glossaire', '/installer', '/liste-de-courses', '/favoris', '/donner-mon-avis', '/mon-cap'];
   if (menus.length) {
     paths.push('/menus', `/menus/${menus[0].slug}`);
+  }
+  if (capArticles.length) {
+    paths.push(`/mon-cap/${capArticles[0].slug}`);
   }
   for (const path of paths) {
     const page = await newPage(browser, PHONE, errors);
@@ -527,7 +720,7 @@ await part('Connexion et cadre du back-office', async () => {
   await side.waitFor();
   await answerCookies(desktop);
   check('Ordinateur : ni barre ni pied du site', (await desktop.locator('yona-header, yona-footer').count()) === 0);
-  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 21 && (await side.boundingBox()).x === 0);
+  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 20 && (await side.boundingBox()).x === 0);
   check('Ordinateur : section courante marquée', (await side.locator('a.link.is-active').innerText()).includes('Nouveautés'));
   await side.locator('.account__email').hover();
   await desktop.locator('.tooltip.is-open').waitFor();
@@ -597,6 +790,148 @@ await part('Back-office (session simulée)', async () => {
   check('Ingrédients : rayon de chaque ingrédient', (await page.getByRole('combobox', { name: 'Rayon de Beurre' }).textContent()).includes('Crèmerie'));
   await page.getByRole('button', { name: '1 sans rayon' }).click();
   check('« 1 sans rayon » : ceux à ranger', (await page.locator('.admin-row__title').allTextContents()).join('|') === 'Sel');
+  await page.context().close();
+});
+
+await part('Factures (back-office, données simulées)', async () => {
+  const order = {
+    id: 42, status: 'PICKED_UP', amount: 20, customerName: 'Léa Martin', customerEmail: 'lea@example.fr', trackingToken: 'suivi-e2e',
+    createdAt: '2026-11-08T09:00:00Z', updatedAt: '2026-11-09T09:00:00Z', admins: ['yona@example.fr'], handledBy: 'yona@example.fr',
+    lines: [{ productId: 101, title: 'Cookies aux pépites', quantity: 2, unitPrice: 12 }],
+  };
+  const invoice = {
+    id: 7, number: '2026-0001', orderId: 42, issuedOn: '2026-11-10', customerName: 'Léa Martin', customerEmail: 'lea@example.fr',
+    sellerName: 'Yona, Les créations de Yona', sellerAddress: '1 rue des Lilas\n69000 Lyon', sellerSiret: '12345678900012',
+    vatMention: 'TVA non applicable, art. 293 B du CGI', amount: 20, linesTotal: 24, adminEmail: 'yona@example.fr',
+    lines: [{ label: 'Cookies aux pépites', detail: 'Boîte de 6', quantity: 2, unitPrice: 12, total: 24 }],
+  };
+  const summary = { id: 7, number: '2026-0001', orderId: 42, issuedOn: '2026-11-10', customerName: 'Léa Martin', amount: 20 };
+  let issued = false;
+  const page = await newPage(browser, DESKTOP, errors);
+  await fakeAdmin(page);
+  await page.route('**/api/admin/shop/orders/42', (route) => route.fulfill({ json: issued ? { ...order, invoice: summary } : order }));
+  await page.route('**/api/admin/shop/orders/42/invoice', (route) => {
+    issued = true;
+    return route.fulfill({ json: invoice });
+  });
+  await page.route('**/api/admin/invoices/7', (route) => route.fulfill({ json: invoice }));
+  await page.goto(BASE + '/admin/boutique/commandes/42', { waitUntil: 'load' });
+  await answerCookies(page);
+  const generate = page.getByRole('button', { name: 'Générer la facture' });
+  await generate.waitFor();
+  check('Commande récupérée : « Générer la facture »', await generate.isVisible());
+  await generate.click();
+  const confirm = page.getByRole('alertdialog', { name: 'Générer la facture ?' });
+  await confirm.waitFor();
+  check('Avant de générer : ce que cela fige', (await confirm.innerText()).includes('ne se supprime plus'));
+  await confirm.getByRole('button', { name: 'Générer' }).click();
+  await page.waitForURL('**/admin/boutique/factures/7');
+  const sheet = page.locator('.sheet');
+  await sheet.waitFor();
+  const text = await sheet.innerText();
+  check('Facture : numéro, vendeur, SIRET espacé, client', text.includes('2026-0001') && text.includes('Les créations de Yona') && text.includes('123 456 789 00012') && text.includes('Léa Martin'));
+  check('Facture : la ligne, la remise et le total à payer', text.includes('Cookies aux pépites') && text.includes('Remise') && /Total à payer\s*20,00/.test(text));
+  check('Facture : la mention de TVA', text.includes('293 B'));
+  check('Facture : le titre de la page, nom du PDF', (await page.title()) === 'Facture 2026-0001', await page.title());
+  const { violations } = await new AxeBuilder({ page }).withTags(AXE_RULES).analyze();
+  check('Facture : aucun problème d’accessibilité', violations.length === 0, violations.map((v) => `${v.id} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 2).join(' | ')})`).join(' ; '));
+  await page.emulateMedia({ media: 'print' });
+  check('Impression : la facture seule, sans menu ni boutons', !(await page.locator('.admin__side').isVisible()) && !(await page.getByRole('button', { name: /Imprimer/ }).isVisible()) && (await sheet.isVisible()));
+  await page.screenshot({ path: SHOTS + 'facture-impression.png' });
+  await page.emulateMedia({ media: 'screen' });
+
+  await page.goto(BASE + '/admin/boutique/commandes/42', { waitUntil: 'load' });
+  await page.getByRole('link', { name: 'Voir la facture' }).waitFor();
+  check('Commande facturée : montant figé', await page.locator('#order-amount').isDisabled());
+  check('Commande facturée : plus de « Supprimer »', (await page.getByRole('button', { name: 'Supprimer' }).count()) === 0);
+  await page.context().close();
+});
+
+await part('Comptabilité : factures et informations de facturation (données simulées)', async () => {
+  const totals = { income: 20, expense: 0, balance: 20 };
+  const overview = {
+    year: 2026, period: 'YEAR', number: 1, from: '2026-01-01', to: '2026-12-31', years: [2026], admins: ['yona@example.fr'],
+    totals, previousTotals: { income: 0, expense: 0, balance: 0 }, figures: { orders: 1, offeredOrders: 0, averageBasket: 20, marginRate: 1 },
+    months: Array.from({ length: 12 }, (_, index) => ({ month: index + 1, totals: index === 10 ? totals : { income: 0, expense: 0, balance: 0 } })),
+    expensesByCategory: [], bestSellers: [], entries: [], byAdmin: [],
+  };
+  let settingsSaved = null;
+  const page = await newPage(browser, DESKTOP, errors);
+  await fakeAdmin(page);
+  await page.route('**/api/admin/accounting?**', (route) => route.fulfill({ json: overview }));
+  await page.route('**/api/admin/accounting/costs', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/admin/invoices?**', (route) =>
+    route.fulfill({ json: [{ id: 7, number: '2026-0001', orderId: 42, issuedOn: '2026-11-10', customerName: 'Léa Martin', amount: 20 }] }),
+  );
+  await page.route('**/api/admin/invoices/settings', (route) => {
+    if (route.request().method() === 'PUT') {
+      settingsSaved = route.request().postDataJSON();
+      return route.fulfill({ json: settingsSaved });
+    }
+    return route.fulfill({ json: { vatMention: 'TVA non applicable, art. 293 B du CGI' } });
+  });
+  await page.goto(BASE + '/admin/boutique/comptabilite', { waitUntil: 'load' });
+  await answerCookies(page);
+  const panel = page.locator('yona-invoices-panel');
+  await panel.getByText('N° 2026-0001').waitFor();
+  check('Comptabilité : les factures de l’année', (await panel.innerText()).includes('Léa Martin') && (await panel.innerText()).includes('1 facture'));
+  await panel.getByRole('button', { name: 'Informations de facturation' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Informations de facturation' });
+  await dialog.waitFor();
+  await page.waitForFunction(() => document.querySelector('#seller-vat')?.value.includes('293 B'), null, { timeout: 3000 });
+  check('Informations de facturation : la mention de TVA par défaut', true);
+  await dialog.getByRole('button', { name: 'Enregistrer' }).click();
+  check('Sans nom ni adresse : refusé avant l’envoi', settingsSaved === null);
+  await dialog.getByLabel('Nom', { exact: true }).fill('Yona, Les créations de Yona');
+  await dialog.getByLabel('Adresse').fill('1 rue des Lilas\n69000 Lyon');
+  await dialog.getByLabel('SIRET (facultatif)').fill('123 456 789 00012');
+  await dialog.getByRole('button', { name: 'Enregistrer' }).click();
+  await dialog.waitFor({ state: 'hidden' });
+  check('Informations de facturation enregistrées', settingsSaved?.sellerName === 'Yona, Les créations de Yona' && settingsSaved?.sellerSiret === '123 456 789 00012', JSON.stringify(settingsSaved));
+  await page.context().close();
+});
+
+await part('Mon CAP : brouillon gardé dans le navigateur', async () => {
+  const page = await newPage(browser, DESKTOP, errors);
+  await fakeAdmin(page);
+  // Le choix d'une recette à lier lit les recettes du back-office
+  await page.route('**/api/admin/recipes?**', (route) => route.fulfill({ json: { content: [], page: 0, size: 50, totalElements: 0, totalPages: 0 } }));
+  await page.goto(BASE + '/admin/mon-cap/nouveau?modele=vide', { waitUntil: 'load' });
+  await answerCookies(page);
+  const title = page.locator('#article-title');
+  await title.waitFor();
+  await title.fill('Mon article gardé');
+  await page.waitForFunction(() => localStorage.getItem('yona-article-draft-nouveau')?.includes('Mon article gardé'), null, { timeout: 3000 });
+  check('Saisi : gardé dans le navigateur peu après', true);
+  await page.reload({ waitUntil: 'load' });
+  const banner = page.locator('yona-recovered-draft');
+  await banner.waitFor();
+  check('Page rouverte : « Des modifications non enregistrées ont été retrouvées »', (await banner.innerText()).includes('non enregistrées'));
+  await banner.getByRole('button', { name: 'Reprendre' }).click();
+  check('« Reprendre » : le titre revient', (await title.inputValue()) === 'Mon article gardé');
+  await page.reload({ waitUntil: 'load' });
+  await banner.waitFor();
+  await banner.getByRole('button', { name: 'Ignorer' }).click();
+  check('« Ignorer » : l’article reste vide et le brouillon est oublié', (await title.inputValue()) === '' && (await page.evaluate(() => localStorage.getItem('yona-article-draft-nouveau'))) === null);
+  // Caché (téléphone verrouillé, autre application) : gardé tout de suite
+  await title.fill('Écrit juste avant de verrouiller');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  check('Onglet caché : gardé sans attendre', (await page.evaluate(() => localStorage.getItem('yona-article-draft-nouveau') ?? '')).includes('verrouiller'));
+  await page.context().close();
+});
+
+await part('Connexion : motif vichy et bord festonné', async () => {
+  const page = await newPage(browser, DESKTOP, []);
+  await page.goto(BASE + '/admin/connexion', { waitUntil: 'networkidle' });
+  const pattern = await page.locator('.brand').evaluate((brand) => ({
+    cloth: getComputedStyle(brand, '::before').backgroundImage,
+    edge: getComputedStyle(brand, '::after').backgroundImage,
+  }));
+  check('Connexion : le vichy derrière le nom', (pattern.cloth.match(/linear-gradient/g) ?? []).length === 2, pattern.cloth.slice(0, 60));
+  check('Connexion : le bord festonné', pattern.edge.includes('radial-gradient'));
   await page.context().close();
 });
 

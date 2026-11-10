@@ -131,7 +131,7 @@
         />
         <div class="basket no-print">
           <button yonaButton variant="secondary" type="button" (click)="addToShoppingList()">
-            <svg yonaIcon="shopping-basket"></svg>
+            <svg yonaIcon="clipboard-list"></svg>
             {{ inShoppingList() ? 'Mettre à jour ma liste de courses' : 'Ajouter à ma liste de courses' }}
           </button>
           @if (inShoppingList()) {
@@ -219,22 +219,6 @@
             </div>
           }
         </dl>
-      </section>
-    }
-
-    @if (observations().length) {
-      <section class="questions" yonaReveal aria-labelledby="observations-title">
-        <h2 id="observations-title">Mes observations</h2>
-        <ul role="list" class="questions__list">
-          @for (observation of observations(); track observation.id) {
-            <li class="questions__item">
-              <time class="questions__date" [attr.datetime]="observation.observedOn">{{ observation.observedOn | parisDate }}</time>
-              <h3>{{ observation.title }}</h3>
-              <div class="prose" [innerHTML]="observation.body | markdown"></div>
-            </li>
-          }
-        </ul>
-        <a class="questions__more" [routerLink]="observationsPath">Toutes mes observations</a>
       </section>
     }
 

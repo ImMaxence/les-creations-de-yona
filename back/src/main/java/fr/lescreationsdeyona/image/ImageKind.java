@@ -11,7 +11,9 @@ public enum ImageKind {
 	/** Vertical photo of a recipe, offered to Pinterest by the "Épingler" button. */
 	PINTEREST("pinterest"),
 	/** Uploaded for a menu ("Menu de Noël"). */
-	MENU("menus");
+	MENU("menus"),
+	/** A photo of the receipt of an expense, in the accounts: never in the gallery, nor on the site. */
+	RECEIPT("receipts");
 
 	/** Top-level S3 folder of this kind of image. */
 	private final String folder;

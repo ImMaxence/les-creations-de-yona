@@ -139,3 +139,26 @@
   max-width: 12rem;
   aspect-ratio: 2 / 3;
 }
+
+// In a grid of photos (steps of an article): the buttons as icons under the photo
+:host(.is-compact) {
+  gap: var(--space-1);
+  justify-items: stretch;
+
+  .preview {
+    max-width: none;
+  }
+
+  .actions {
+    gap: var(--space-1);
+  }
+
+  .pick {
+    min-height: 2.25rem;
+    padding: var(--space-2);
+  }
+
+  .pick__label {
+    @include m.visually-hidden;
+  }
+}

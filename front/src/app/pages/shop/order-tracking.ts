@@ -55,10 +55,12 @@ import { Icon } from '../../shared/ui/icon/icon';
               </span>
               <span>{{ formatEuros(line.unitPrice * line.quantity) }}</span>
             </li>
+          } @empty {
+            <li><span>Demande décrite dans le message, Yona vous répond pour le prix</span></li>
           }
           <li class="tracking__total">
             <span>Total</span>
-            <span>{{ formatEuros(order().amount) }}</span>
+            <span>{{ formatEuros(order().amount) }} TTC</span>
           </li>
         </ul>
         <p class="tracking__muted">

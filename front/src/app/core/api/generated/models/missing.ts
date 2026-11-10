@@ -12,9 +12,9 @@ export interface Missing {
   glossaryTerms: number;
   images: number;
   ingredients: number;
+  invoices: number;
   menuTitles: Array<string>;
   menus: number;
-  observations: number;
   recipeTitles: Array<string>;
   recipes: number;
   shopOrders: number;

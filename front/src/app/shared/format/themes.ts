@@ -37,9 +37,12 @@ export function categoryOfThemeQueryParams(category: Pick<CategoryResponse, 'slu
   return category.theme ? { categorie: category.slug } : { categorie: category.slug, theme: themeSlug(theme) };
 }
 
-/** "Salé", then "Sucré", for the menus of the site: all the recipes of each, then its categories. */
+/**
+ * "Sucré", then "Salé", for the menus of the site (a pastry blog: the sweet side first): all the
+ * recipes of each, then its categories. The rest of the site keeps the order of a meal (THEMES).
+ */
 export function themeGroupsOf(categories: CategoryResponse[]) {
-  return THEMES.map(({ value, label, slug }) => ({
+  return [...THEMES].reverse().map(({ value, label, slug }) => ({
     theme: value,
     label,
     allLabel: `Toutes les recettes ${label.toLowerCase()}es`,

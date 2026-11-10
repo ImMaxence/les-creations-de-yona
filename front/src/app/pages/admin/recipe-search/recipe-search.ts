@@ -8,6 +8,11 @@ import { SuggestInput, Suggestion } from '../../../shared/ui/suggest-input/sugge
 export interface ChosenRecipe {
   id: number;
   title: string;
+  /** For a link to its page: /recettes/{categorySlug}/{slug}. */
+  slug?: string;
+  categorySlug?: string;
+  imageId?: string;
+  published?: boolean;
 }
 
 /** Largest page of the API: every recipe is read, page after page, and searched here. */
@@ -104,7 +109,14 @@ export class RecipeSearch {
   protected choose(label: string): void {
     const recipe = this.byLabel().get(label);
     if (recipe) {
-      this.chosen.set({ id: recipe.id, title: recipe.title });
+      this.chosen.set({
+        id: recipe.id,
+        title: recipe.title,
+        slug: recipe.slug,
+        categorySlug: recipe.categories[0]?.slug,
+        imageId: recipe.imageId,
+        published: recipe.status === 'PUBLISHED',
+      });
       this.search.set('');
     }
   }

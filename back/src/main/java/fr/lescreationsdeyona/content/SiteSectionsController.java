@@ -2,6 +2,7 @@ package fr.lescreationsdeyona.content;
 
 import fr.lescreationsdeyona.cap.CapEntryRepository;
 import fr.lescreationsdeyona.common.PublicCache;
+import fr.lescreationsdeyona.shop.ShopMode;
 import fr.lescreationsdeyona.shop.ShopSettingsRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,7 +43,7 @@ class SiteSectionsController {
 		@Cacheable(PublicCache.SITE_SECTIONS)
 		public SiteSections read() {
 			return new SiteSections(entryRepository.existsByPublishedTrue(),
-					shopSettingsRepository.findAll().stream().anyMatch(settings -> settings.isOrdersOpen()));
+					shopSettingsRepository.findAll().stream().anyMatch(settings -> settings.getMode() == ShopMode.OPEN));
 		}
 
 	}

@@ -2,9 +2,8 @@ import type { Request } from 'express';
 import type { CategoryResponse } from '../app/core/api/generated/models/category-response';
 import type { GlossaryTermResponse } from '../app/core/api/generated/models/glossary-term-response';
 import type { MenuDetail } from '../app/core/api/generated/models/menu-detail';
-import type { CapEntryResponse } from '../app/core/api/generated/models/cap-entry-response';
+import type { CapArticleCard } from '../app/core/api/generated/models/cap-article-card';
 import type { MenuSummary } from '../app/core/api/generated/models/menu-summary';
-import type { PageResponseObservationResponse } from '../app/core/api/generated/models/page-response-observation-response';
 import type { PageResponseRecipeCard } from '../app/core/api/generated/models/page-response-recipe-card';
 import type { RecipeCard } from '../app/core/api/generated/models/recipe-card';
 import type { RecipeDetail } from '../app/core/api/generated/models/recipe-detail';
@@ -96,16 +95,9 @@ export function fetchMenus(origin: string): Promise<MenuSummary[]> {
   return get<MenuSummary[]>(origin, '/api/menus').catch(() => []);
 }
 
-/** Published steps of "Mon CAP"; a failure only leaves them out. */
-export function fetchCapEntries(origin: string): Promise<CapEntryResponse[]> {
-  return get<CapEntryResponse[]>(origin, '/api/cap/entries').catch(() => []);
-}
-
-/** How many observations are published; a failure counts none. */
-export function fetchObservationCount(origin: string): Promise<number> {
-  return get<PageResponseObservationResponse>(origin, '/api/cap/observations?size=1')
-    .then((page) => page.totalElements)
-    .catch(() => 0);
+/** Published articles of "Mon CAP", without their blocks; a failure only leaves them out. */
+export function fetchCapEntries(origin: string): Promise<CapArticleCard[]> {
+  return get<CapArticleCard[]>(origin, '/api/cap/entries').catch(() => []);
 }
 
 /** Texts of the home page ("À propos"…), edited in the back-office. */

@@ -35,6 +35,8 @@ class ShopOrderServiceTest {
 
 	private final ShopProductRepository products = mock(ShopProductRepository.class);
 
+	private final InvoiceRepository invoices = mock(InvoiceRepository.class);
+
 	private final ShopSettingsRepository settingsRepository = mock(ShopSettingsRepository.class);
 
 	private final AccountingService accounting = mock(AccountingService.class);
@@ -45,13 +47,13 @@ class ShopOrderServiceTest {
 	private final AuditorAware<String> auditor = mock(AuditorAware.class);
 
 	private final ShopOrderService service = new ShopOrderService(orders, products, settingsRepository, accounting,
-			new AdminProperties(Set.of("yona@example.fr", "max@example.fr")), auditor, events, mock(AuditLog.class));
+			new AdminProperties(Set.of("yona@example.fr", "max@example.fr")), auditor, events, mock(AuditLog.class), invoices);
 
 	private final ShopSettings settings = new ShopSettings();
 
 	@BeforeEach
 	void openShop() {
-		settings.setOrdersOpen(true);
+		settings.setMode(ShopMode.FRIENDS);
 		when(settingsRepository.findById(ShopSettings.ID)).thenReturn(Optional.of(settings));
 		when(orders.saveAndFlush(any())).thenAnswer(invocation -> {
 			ShopOrder order = invocation.getArgument(0);
@@ -73,6 +75,7 @@ class ShopOrderServiceTest {
 		ShopProduct product = new ShopProduct();
 		product.setId(id);
 		product.setRecipe(recipe);
+		product.setName(title);
 		product.setPrice(new BigDecimal(price));
 		product.setPortionLabel("Pour 8");
 		product.setAvailable(available);
@@ -119,6 +122,51 @@ class ShopOrderServiceTest {
 	}
 
 	@Test
+	void keepsTheProductAndItsFormatOnEachLine() {
+		ShopProduct cookies = product(1L, "Boîte de 6 cookies", "12.00", RecipeStatus.PUBLISHED, true);
+		cookies.setBatchSize(6);
+		when(products.findAllById(any())).thenReturn(List.of(cookies));
+
+		service.create(form("camille@example.fr", null, null, line(1, 2)));
+
+		ShopOrderLine saved = savedOrder().getLines().getFirst();
+		assertThat(saved.productId()).isEqualTo(1L);
+		assertThat(saved.recipeId()).isEqualTo(101L);
+		assertThat(saved.title()).isEqualTo("Boîte de 6 cookies");
+		assertThat(saved.portionLabel()).isEqualTo("Boîte de 6");
+	}
+
+	@Test
+	void sellsAProductWithoutRecipe() {
+		ShopProduct box = product(3L, "Coffret", "20.00", RecipeStatus.PUBLISHED, true);
+		box.setRecipe(null);
+		box.setPortionLabel(null);
+		when(products.findAllById(any())).thenReturn(List.of(box));
+
+		service.create(form("camille@example.fr", null, null, line(3, 1)));
+
+		ShopOrderLine saved = savedOrder().getLines().getFirst();
+		assertThat(saved.recipeId()).isNull();
+		assertThat(saved.portionLabel()).isEqualTo("À l'unité");
+	}
+
+	@Test
+	void takesARequestMadeInTheMessageOnly() {
+		service.create(form("camille@example.fr", null, null));
+
+		ShopOrder order = savedOrder();
+		assertThat(order.getLines()).isEmpty();
+		assertThat(order.getAmount()).isEqualByComparingTo("0");
+	}
+
+	@Test
+	void refusesARequestWithoutProductNorMessage() {
+		OrderForm empty = new OrderForm("Camille", "camille@example.fr", null, null, " ", List.of(), null, "token");
+
+		assertThatThrownBy(() -> service.create(empty)).extracting("code").isEqualTo(ErrorCode.SHOP_ORDER_EMPTY);
+	}
+
+	@Test
 	void tellsTheAdminsOfTheOrderWithoutTheCustomer() {
 		service.create(form("camille@example.fr", null, null, line(1, 2), line(2, 1)));
 
@@ -128,7 +176,7 @@ class ShopOrderServiceTest {
 
 	@Test
 	void refusesAnOrderWhileClosed() {
-		settings.setOrdersOpen(false);
+		settings.setMode(ShopMode.CLOSED);
 
 		assertThatThrownBy(() -> service.create(form("camille@example.fr", null, null, line(1, 1))))
 			.extracting("code")
@@ -239,6 +287,44 @@ class ShopOrderServiceTest {
 
 		verify(accounting).dropSale(12L);
 		verify(orders).delete(order);
+	}
+
+	@Test
+	void keepsAnInvoicedOrderHandedOverAtItsAmount() {
+		existingOrder(OrderStatus.PICKED_UP, "max@example.fr");
+		when(invoices.existsByOrderId(12L)).thenReturn(true);
+
+		assertThatThrownBy(() -> service.update(12, new AdminOrderForm(OrderStatus.READY, new BigDecimal("30.00"), null, null)))
+			.extracting("code")
+			.isEqualTo(ErrorCode.INVOICE_ORDER_LOCKED);
+		assertThatThrownBy(() -> service.update(12, new AdminOrderForm(OrderStatus.PICKED_UP, new BigDecimal("25.00"), null, null)))
+			.extracting("code")
+			.isEqualTo(ErrorCode.INVOICE_ORDER_LOCKED);
+		assertThatThrownBy(() -> service.delete(12)).extracting("code").isEqualTo(ErrorCode.INVOICE_ORDER_LOCKED);
+		verify(accounting, never()).dropSale(12L);
+	}
+
+	@Test
+	void letsTheNoteOfAnInvoicedOrderChange() {
+		ShopOrder order = existingOrder(OrderStatus.PICKED_UP, "max@example.fr");
+		when(invoices.existsByOrderId(12L)).thenReturn(true);
+
+		service.update(12, new AdminOrderForm(OrderStatus.PICKED_UP, new BigDecimal("30.00"), "Payé en espèces", null));
+
+		assertThat(order.getAdminNote()).isEqualTo("Payé en espèces");
+	}
+
+	@Test
+	void tellsTheInvoiceOfAnOrder() {
+		existingOrder(OrderStatus.PICKED_UP, "max@example.fr");
+		Invoice invoice = new Invoice();
+		invoice.setId(3L);
+		invoice.setNumber("2026-0003");
+		invoice.setOrderId(12L);
+		invoice.setAmount(new BigDecimal("30.00"));
+		when(invoices.findByOrderId(12L)).thenReturn(Optional.of(invoice));
+
+		assertThat(service.get(12).invoice().number()).isEqualTo("2026-0003");
 	}
 
 }

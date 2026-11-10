@@ -86,15 +86,16 @@ public enum ErrorCode {
 	FEEDBACK_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre message"),
 
 	// "Mon CAP"
-	CAP_ENTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette étape du CAP n'existe plus"),
-	OBSERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette observation n'existe plus"),
+	CAP_ENTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "Cet article n'existe pas ou plus"),
+	CAP_BLOCKS_TOO_MANY(HttpStatus.BAD_REQUEST, "Un article compte 60 blocs au plus"),
+	CAP_TIP_TOO_LONG(HttpStatus.BAD_REQUEST, "Une astuce tient en 1000 caractères au plus"),
 
 	// Shop
 	SHOP_CLOSED(HttpStatus.CONFLICT, "La boutique est fermée pour le moment"),
 	SHOP_PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce produit n'est plus dans la boutique"),
-	SHOP_PRODUCT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Cette recette est déjà dans la boutique"),
-	SHOP_PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "Une des recettes choisies n'est plus disponible : rechargez la page"),
-	SHOP_PRODUCT_DUPLICATE(HttpStatus.BAD_REQUEST, "Une même recette est choisie plusieurs fois"),
+	SHOP_PRODUCT_UNAVAILABLE(HttpStatus.CONFLICT, "Un des produits choisis n'est plus disponible : rechargez la page"),
+	SHOP_PRODUCT_DUPLICATE(HttpStatus.BAD_REQUEST, "Un même produit est choisi plusieurs fois"),
+	SHOP_ORDER_EMPTY(HttpStatus.BAD_REQUEST, "Choisissez au moins un produit, ou décrivez votre demande dans le message"),
 	SHOP_CONTACT_REQUIRED(HttpStatus.BAD_REQUEST, "Laissez un e-mail ou un téléphone pour que Yona puisse vous répondre"),
 	SHOP_WANTED_DATE_PAST(HttpStatus.BAD_REQUEST, "La date souhaitée est déjà passée"),
 	SHOP_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre commande"),
@@ -105,10 +106,21 @@ public enum ErrorCode {
 	SHOP_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette commande n'existe pas ou plus"),
 	SHOP_ADMIN_UNKNOWN(HttpStatus.BAD_REQUEST, "Cette personne n'est pas administratrice du site"),
 
+	// Invoices
+	INVOICE_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette facture n'existe pas"),
+	INVOICE_ORDER_NOT_HANDED_OVER(HttpStatus.CONFLICT, "Une facture s'émet une fois la commande récupérée"),
+	INVOICE_ORDER_OFFERED(HttpStatus.CONFLICT, "Une commande offerte n'a pas de facture"),
+	INVOICE_ALREADY_ISSUED(HttpStatus.CONFLICT, "Cette commande a déjà sa facture"),
+	INVOICE_SELLER_MISSING(HttpStatus.CONFLICT, "Renseignez d'abord le nom et l'adresse du vendeur (Comptabilité, « Informations de facturation »)"),
+	INVOICE_SIRET_INVALID(HttpStatus.BAD_REQUEST, "Le SIRET compte 14 chiffres"),
+	INVOICE_ORDER_LOCKED(HttpStatus.CONFLICT, "Cette commande a sa facture : elle reste récupérée, à son montant, et ne se supprime plus"),
+
 	// Accounting
 	ACCOUNT_ENTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette ligne n'existe plus"),
 	ACCOUNT_ENTRY_FROM_ORDER(HttpStatus.CONFLICT, "Cette ligne vient d'une commande : son montant se change depuis la commande, et elle disparaît si la commande n'est plus récupérée"),
 	ACCOUNT_CATEGORY_INVALID(HttpStatus.BAD_REQUEST, "La catégorie « Vente » ne va qu'avec une entrée d'argent"),
+	ACCOUNT_PURCHASE_INVALID(HttpStatus.BAD_REQUEST, "Le détail des achats ne va qu'avec une dépense « Ingrédients » ou « Emballages »"),
+	ACCOUNT_RECEIPT_EXPENSE_ONLY(HttpStatus.BAD_REQUEST, "Un ticket de caisse ne va qu'avec une dépense"),
 
 	// Ingredients
 	INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ingrédient introuvable"),
@@ -145,6 +157,7 @@ public enum ErrorCode {
 	IMAGE_NOT_LANDSCAPE(HttpStatus.BAD_REQUEST, "L'image doit être en paysage ou carrée"),
 	PORTRAIT_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image Pinterest doit mesurer au moins 600 × 800 pixels"),
 	IMAGE_NOT_PORTRAIT(HttpStatus.BAD_REQUEST, "L'image Pinterest doit être verticale (3:4 ou plus haute, 2:3 conseillé)"),
+	RECEIPT_TOO_SMALL(HttpStatus.BAD_REQUEST, "La photo du ticket doit mesurer au moins 300 × 300 pixels"),
 	STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Le stockage des images est indisponible, réessayez plus tard"),
 
 	// Backup

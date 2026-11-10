@@ -1,0 +1,496 @@
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { attempt } from '../../../core/api/attempt';
+import { Api } from '../../../core/api/generated/api';
+import { uploadImage } from '../../../core/api/generated/fn/admin-images/upload-image';
+import { createCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/create-cap-entry';
+import { deleteCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/delete-cap-entry';
+import { getAdminCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/get-admin-cap-entry';
+import { updateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/update-cap-entry';
+import { AdminCapEntry } from '../../../core/api/generated/models/admin-cap-entry';
+import { CapBlock } from '../../../core/api/generated/models/cap-block';
+import { CapEntryForm } from '../../../core/api/generated/models/cap-entry-form';
+import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
+import { ImageUploads } from '../../../core/api/image-uploads';
+import { Confirm } from '../../../core/dialog/confirm';
+import { Toaster } from '../../../core/notifications/toaster';
+import { SiteData } from '../../../core/site/site-data';
+import { CAP_PATH } from '../../../shared/routing/links';
+import { Button } from '../../../shared/ui/button/button';
+import { CapArticleContent, CapArticleView } from '../../../shared/ui/cap-article/cap-article-view';
+import { Dialog } from '../../../shared/ui/dialog/dialog';
+import { Icon } from '../../../shared/ui/icon/icon';
+import { IconName } from '../../../shared/ui/icon/icons';
+import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
+import { DraftKeeper, KeptDraft, readKeptDraft } from '../kept-draft';
+import { RecoveredDraft } from '../recovered-draft';
+import { UnsavedChanges } from '../recipe-editor/unsaved-changes.guard';
+import { ChosenRecipe, RecipeSearch } from '../recipe-search/recipe-search';
+import {
+  BLOCK_TYPES,
+  BlockType,
+  MAX_BLOCKS,
+  MAX_STEP_PHOTOS,
+  MAX_TIP_LENGTH,
+  MIN_STEP_PHOTOS,
+  blockLabel,
+  emptyBlock,
+  slugOf,
+  templateOf,
+} from './cap-templates';
+import { ArticleDraft, isArticleDraft, keptArticleKey } from './article-draft';
+
+/** A photo of "Étapes en photos", with a key of its own for the page to follow it when moved. */
+interface EditorPhoto {
+  key: number;
+  imageId?: string;
+  caption?: string;
+}
+
+/** A block being written. */
+interface EditorBlock extends Omit<CapBlock, 'photos'> {
+  key: number;
+  photos?: EditorPhoto[];
+}
+
+type Markup = 'title' | 'bold' | 'list';
+
+const MAX_TEXT_LENGTH = 20000;
+
+/** Today in Paris, as the date field wants it. */
+function today(): string {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
+}
+
+let nextKey = 1;
+
+/**
+ * Writing an article of "Mon CAP" without typing anything technical: the fields at the top, then
+ * the blocks one under the other (up, down, duplicate, delete; a "+" between two adds one), laid down
+ * by the model chosen. "Aperçu" shows it as it will be online, on a computer and on a phone.
+ */
+@Component({
+  selector: 'yona-admin-cap-editor',
+  imports: [Button, CapArticleView, Dialog, Icon, ImageUpload, NgTemplateOutlet, RecipeSearch, RecoveredDraft, RouterLink],
+  templateUrl: './admin-cap-editor.html',
+  styleUrl: './admin-cap-editor.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export default class AdminCapEditor implements UnsavedChanges {
+  private readonly api = inject(Api);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly imageUploads = inject(ImageUploads);
+  private readonly confirm = inject(Confirm);
+  private readonly toaster = inject(Toaster);
+  private readonly siteData = inject(SiteData);
+
+  protected readonly capPath = CAP_PATH;
+  protected readonly blockTypes = BLOCK_TYPES;
+  protected readonly blockLabel = blockLabel;
+  protected readonly maxBlocks = MAX_BLOCKS;
+  protected readonly maxStepPhotos = MAX_STEP_PHOTOS;
+  protected readonly minStepPhotos = MIN_STEP_PHOTOS;
+  protected readonly maxTipLength = MAX_TIP_LENGTH;
+  protected readonly maxTextLength = MAX_TEXT_LENGTH;
+
+  /** Null until it is saved for the first time. */
+  protected readonly id = signal<number | null>(null);
+  protected readonly loading = signal(false);
+  protected readonly savedSlug = signal<string | null>(null);
+  protected readonly wasPublished = signal(false);
+  protected readonly title = signal('');
+  protected readonly subtitle = signal('');
+  protected readonly date = signal(today());
+  protected readonly imageId = signal<string | null>(null);
+  protected readonly style = signal<'CLASSIC' | 'NOTEBOOK'>('CLASSIC');
+  protected readonly published = signal(false);
+  protected readonly featured = signal(false);
+  protected readonly blocks = signal<EditorBlock[]>([]);
+  protected readonly saving = signal(false);
+  /** Share sent of each photo uploading, by slot ("main", "12", "12-3"). */
+  protected readonly uploads = signal<Readonly<Record<string, number>>>({});
+  /** Where the "+" menu is open: the index the new block takes; null when closed. */
+  protected readonly adding = signal<number | null>(null);
+  protected readonly previewOpen = signal(false);
+  protected readonly previewDevice = signal<'desktop' | 'phone'>('desktop');
+  /** "Lien vers une recette": the text block it goes in, and where in its text. */
+  protected readonly linking = signal<{ key: number; start: number; end: number } | null>(null);
+  protected readonly linkedRecipe = signal<ChosenRecipe | null>(null);
+  private readonly saved = signal('');
+  /** updatedAt of the article as loaded or saved; null while new. */
+  protected readonly basedOn = signal<string | null>(null);
+  /** An article typed earlier in this browser and never saved, offered back. */
+  protected readonly recovered = signal<KeptDraft<ArticleDraft> | null>(null);
+  private readonly keeper = new DraftKeeper<ArticleDraft>(
+    () => keptArticleKey(this.id()),
+    () => (this.hasUnsavedChanges() ? { savedAt: new Date().toISOString(), basedOn: this.basedOn(), draft: this.draft() } : null),
+    () => !this.loading() && !this.recovered(),
+  );
+
+  /** Its address: made from the title while it is a draft, then kept. */
+  protected readonly address = computed(() =>
+    `${CAP_PATH}/${this.wasPublished() && this.savedSlug() ? this.savedSlug() : slugOf(this.title())}`,
+  );
+  protected readonly previewArticle = computed<CapArticleContent>(() => ({
+    title: this.title().trim(),
+    subtitle: this.subtitle().trim() || null,
+    happenedOn: this.date() || today(),
+    imageId: this.imageId(),
+    style: this.style(),
+    blocks: this.formBlocks(),
+  }));
+  private readonly snapshot = computed(() => JSON.stringify(this.form()));
+  private readonly draftSnapshot = computed(() => JSON.stringify(this.draft()));
+
+  constructor() {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (id) {
+      void this.load(id);
+    } else {
+      this.blocks.set(templateOf(this.route.snapshot.queryParamMap.get('modele')).blocks().map(toEditor));
+      this.saved.set(this.snapshot());
+      this.offerKept();
+    }
+    // Each change kept in this browser shortly after typing, until saved
+    effect(() => {
+      this.draftSnapshot();
+      untracked(() => this.keeper.changed());
+    });
+  }
+
+  hasUnsavedChanges(): boolean {
+    return !this.loading() && this.snapshot() !== this.saved();
+  }
+
+  private async load(id: number): Promise<void> {
+    this.loading.set(true);
+    const loaded = await attempt(this.api.invoke(getAdminCapEntry, { id }));
+    this.loading.set(false);
+    if (loaded.ok) {
+      this.fill(loaded.value);
+      this.offerKept();
+    } else {
+      void this.router.navigate(['/admin/mon-cap']);
+    }
+  }
+
+  private fill(entry: AdminCapEntry): void {
+    this.id.set(entry.id);
+    this.savedSlug.set(entry.slug);
+    this.wasPublished.set(entry.published);
+    this.title.set(entry.title);
+    this.subtitle.set(entry.subtitle ?? '');
+    this.date.set(entry.happenedOn);
+    this.imageId.set(entry.imageId ?? null);
+    this.style.set(entry.style);
+    this.published.set(entry.published);
+    this.featured.set(entry.featured);
+    this.blocks.set(entry.blocks.map(toEditor));
+    this.basedOn.set(entry.updatedAt);
+    this.saved.set(this.snapshot());
+  }
+
+  // Kept in this browser
+
+  /** On opening: the article as left unsaved here, if it differs from the one shown. */
+  private offerKept(): void {
+    const kept = readKeptDraft(keptArticleKey(this.id()), isArticleDraft);
+    if (kept && JSON.stringify(kept.draft) !== this.draftSnapshot()) {
+      this.recovered.set(kept);
+    } else {
+      this.keeper.forget();
+    }
+  }
+
+  /** "Reprendre": the article as it was left. */
+  protected resumeKept(): void {
+    const kept = this.recovered();
+    if (!kept) {
+      return;
+    }
+    const { draft } = kept;
+    this.title.set(draft.title);
+    this.subtitle.set(draft.subtitle);
+    this.date.set(draft.date);
+    this.imageId.set(draft.imageId);
+    this.style.set(draft.style);
+    this.published.set(draft.published);
+    this.featured.set(draft.featured);
+    this.blocks.set(draft.blocks.map(toEditor));
+    this.recovered.set(null);
+  }
+
+  /** "Ignorer": the saved article stays, the typed one is forgotten. */
+  protected discardKept(): void {
+    this.keeper.forget();
+    this.recovered.set(null);
+  }
+
+  /** The fields as typed, untrimmed: what is kept in this browser. */
+  private draft(): ArticleDraft {
+    return {
+      title: this.title(),
+      subtitle: this.subtitle(),
+      date: this.date(),
+      imageId: this.imageId(),
+      style: this.style(),
+      published: this.published(),
+      featured: this.featured(),
+      blocks: this.formBlocks(),
+    };
+  }
+
+  // Blocks
+
+  protected trackBlock(_: number, block: EditorBlock): number {
+    return block.key;
+  }
+
+  protected patch(key: number, changes: Partial<EditorBlock>): void {
+    this.blocks.update((blocks) => blocks.map((block) => (block.key === key ? { ...block, ...changes } : block)));
+  }
+
+  protected insert(index: number, type: BlockType): void {
+    if (this.blocks().length >= MAX_BLOCKS) {
+      this.toaster.error(`Un article compte ${MAX_BLOCKS} blocs au plus`);
+      return;
+    }
+    // A new photo + text goes to the other side of the one before, as in the model "Carnet"
+    const before = [...this.blocks().slice(0, index)].reverse().find((block) => block.type === 'IMAGE_TEXT');
+    const block = toEditor(emptyBlock(type, before?.side === 'LEFT' ? 'RIGHT' : 'LEFT'));
+    this.blocks.update((blocks) => [...blocks.slice(0, index), block, ...blocks.slice(index)]);
+    this.adding.set(null);
+  }
+
+  protected move(index: number, delta: number): void {
+    this.blocks.update((blocks) => {
+      const moved = [...blocks];
+      const [block] = moved.splice(index, 1);
+      moved.splice(index + delta, 0, block!);
+      return moved;
+    });
+  }
+
+  protected duplicate(index: number): void {
+    if (this.blocks().length >= MAX_BLOCKS) {
+      this.toaster.error(`Un article compte ${MAX_BLOCKS} blocs au plus`);
+      return;
+    }
+    const copy = toEditor(toForm(this.blocks()[index]!));
+    this.blocks.update((blocks) => [...blocks.slice(0, index + 1), copy, ...blocks.slice(index + 1)]);
+  }
+
+  protected async remove(index: number): Promise<void> {
+    const block = this.blocks()[index]!;
+    if (!isEmpty(block)) {
+      const confirmed = await this.confirm.ask({
+        title: 'Supprimer ce bloc ?',
+        message: `Le bloc « ${blockLabel(block.type)} » et ce qu'il contient disparaissent de l'article`,
+        confirmLabel: 'Supprimer',
+      });
+      if (!confirmed) {
+        return;
+      }
+    }
+    this.blocks.update((blocks) => blocks.filter((other) => other.key !== block.key));
+  }
+
+  protected swapSide(block: EditorBlock): void {
+    this.patch(block.key, { side: block.side === 'RIGHT' ? 'LEFT' : 'RIGHT' });
+  }
+
+  protected addPhoto(block: EditorBlock): void {
+    this.patch(block.key, { photos: [...(block.photos ?? []), { key: nextKey++ }] });
+  }
+
+  protected removePhoto(block: EditorBlock, photoKey: number): void {
+    this.patch(block.key, { photos: (block.photos ?? []).filter((photo) => photo.key !== photoKey) });
+  }
+
+  protected patchPhoto(block: EditorBlock, photoKey: number, changes: Partial<EditorPhoto>): void {
+    this.patch(block.key, {
+      photos: (block.photos ?? []).map((photo) => (photo.key === photoKey ? { ...photo, ...changes } : photo)),
+    });
+  }
+
+  /** The photo of a step, moved one place. */
+  protected movePhoto(block: EditorBlock, index: number, delta: number): void {
+    const photos = [...(block.photos ?? [])];
+    const [photo] = photos.splice(index, 1);
+    photos.splice(index + delta, 0, photo!);
+    this.patch(block.key, { photos });
+  }
+
+  protected blockIcon(type: BlockType): IconName {
+    return BLOCK_TYPES.find((known) => known.type === type)?.icon ?? 'type';
+  }
+
+  // Photos: a new one goes to the gallery, then shows where it was chosen
+
+  protected readonly setMain = (imageId: string): void => this.imageId.set(imageId);
+
+  protected setImage(block: EditorBlock): (imageId: string) => void {
+    return (imageId) => this.patch(block.key, { imageId });
+  }
+
+  /** Read again once sent: the block may have changed meanwhile. */
+  protected setStepImage(block: EditorBlock, photoKey: number): (imageId: string) => void {
+    return (imageId) => {
+      const current = this.blocks().find((other) => other.key === block.key);
+      if (current) {
+        this.patchPhoto(current, photoKey, { imageId });
+      }
+    };
+  }
+
+  protected uploadOf(slot: string): number | null {
+    return this.uploads()[slot] ?? null;
+  }
+
+  protected async upload(slot: string, file: File, chosen: (imageId: string) => void): Promise<void> {
+    this.uploads.update((uploads) => ({ ...uploads, [slot]: 0 }));
+    const sent = await attempt(
+      this.imageUploads.send<GalleryImage>(uploadImage.PATH, file, (share) => this.uploads.update((uploads) => ({ ...uploads, [slot]: share })), 'POST'),
+    );
+    this.uploads.update(({ [slot]: _, ...others }) => others);
+    if (sent.ok) {
+      chosen(sent.value.id);
+    }
+  }
+
+  // Text: buttons rather than Markdown typed by hand
+
+  protected markup(textarea: HTMLTextAreaElement, block: EditorBlock, markup: Markup): void {
+    const text = block.text ?? '';
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = text.slice(start, end);
+    const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+    let next: string;
+    let cursor: [number, number];
+    if (markup === 'bold') {
+      const word = selected || 'texte en gras';
+      next = `${text.slice(0, start)}**${word}**${text.slice(end)}`;
+      cursor = [start + 2, start + 2 + word.length];
+    } else {
+      const prefix = markup === 'title' ? '## ' : '- ';
+      const lines = text.slice(lineStart, end || lineStart).split('\n');
+      const marked = lines.map((line) => (line.startsWith(prefix) ? line : prefix + line)).join('\n');
+      next = text.slice(0, lineStart) + marked + text.slice(end || lineStart);
+      cursor = [lineStart + marked.length, lineStart + marked.length];
+    }
+    this.patch(block.key, { text: next });
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(...cursor);
+    });
+  }
+
+  protected openRecipeLink(textarea: HTMLTextAreaElement, block: EditorBlock): void {
+    this.linkedRecipe.set(null);
+    this.linking.set({ key: block.key, start: textarea.selectionStart, end: textarea.selectionEnd });
+  }
+
+  /** "[Tarte au citron](/recettes/tartes/tarte-au-citron)": the words selected link to the recipe chosen. */
+  protected insertRecipeLink(): void {
+    const target = this.linking();
+    const recipe = this.linkedRecipe();
+    const block = this.blocks().find((other) => other.key === target?.key);
+    if (!target || !recipe?.slug || !recipe.categorySlug || !block) {
+      return;
+    }
+    const text = block.text ?? '';
+    const words = text.slice(target.start, target.end).trim() || recipe.title;
+    const link = `[${words}](/recettes/${recipe.categorySlug}/${recipe.slug})`;
+    this.patch(block.key, { text: text.slice(0, target.start) + link + text.slice(target.end) });
+    if (!recipe.published) {
+      this.toaster.info('Cette recette n’est pas encore publiée : le lien mènera à une page introuvable d’ici là');
+    }
+    this.linking.set(null);
+  }
+
+  // Article
+
+  protected async save(): Promise<void> {
+    if (!this.title().trim() || !this.date()) {
+      this.toaster.error('Donnez un titre et une date à cet article');
+      return;
+    }
+    if (this.blocks().some((block) => block.type === 'STEPS' && (block.photos ?? []).filter((photo) => photo.imageId).length === 1)) {
+      this.toaster.error(`Un bloc « Étapes en photos » compte ${MIN_STEP_PHOTOS} photos au moins`);
+      return;
+    }
+    const body = this.form();
+    const id = this.id();
+    const keptKey = keptArticleKey(id);
+    this.saving.set(true);
+    const saved = await attempt(id ? this.api.invoke(updateCapEntry, { id, body }) : this.api.invoke(createCapEntry, { body }));
+    this.saving.set(false);
+    if (!saved.ok) {
+      return;
+    }
+    this.fill(saved.value);
+    // A new article was kept as "nouveau": saved, it has its id
+    this.keeper.forget(keptKey);
+    this.recovered.set(null);
+    this.toaster.success(saved.value.published ? 'Article enregistré, en ligne' : 'Brouillon enregistré');
+    void this.siteData.load();
+    if (!id) {
+      void this.router.navigate(['/admin/mon-cap', saved.value.id], { replaceUrl: true });
+    }
+  }
+
+  protected async trash(): Promise<void> {
+    const id = this.id();
+    if (!id) {
+      return;
+    }
+    const confirmed = await this.confirm.ask({
+      title: 'Mettre cet article à la corbeille ?',
+      message: `« ${this.title()} » disparaît du site et reste 30 jours dans la corbeille, d'où il peut être restauré`,
+      confirmLabel: 'Mettre à la corbeille',
+    });
+    if (confirmed && (await attempt(this.api.invoke(deleteCapEntry, { id }))).ok) {
+      this.saved.set(this.snapshot());
+      this.keeper.forget();
+      this.toaster.success('Article mis à la corbeille');
+      void this.siteData.load();
+      void this.router.navigate(['/admin/mon-cap']);
+    }
+  }
+
+  private form(): CapEntryForm {
+    return {
+      title: this.title().trim(),
+      subtitle: this.subtitle().trim() || undefined,
+      happenedOn: this.date(),
+      imageId: this.imageId() ?? undefined,
+      style: this.style(),
+      blocks: this.formBlocks(),
+      published: this.published(),
+      featured: this.featured(),
+    };
+  }
+
+  private formBlocks(): CapBlock[] {
+    return this.blocks().map(toForm);
+  }
+}
+
+function toEditor(block: CapBlock): EditorBlock {
+  return { ...block, key: nextKey++, photos: block.photos?.map((photo) => ({ ...photo, key: nextKey++ })) };
+}
+
+function toForm({ key: _, photos, ...block }: EditorBlock): CapBlock {
+  const form: CapBlock = { ...block };
+  if (photos) {
+    form.photos = photos.map(({ key: __, ...photo }) => photo);
+  }
+  return form;
+}
+
+function isEmpty(block: EditorBlock): boolean {
+  return !block.text?.trim() && !block.imageId && !block.caption?.trim() && !(block.photos ?? []).some((photo) => photo.imageId || photo.caption?.trim());
+}

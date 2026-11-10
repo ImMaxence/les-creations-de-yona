@@ -7,10 +7,11 @@ import { Confirm, ConfirmRequest } from './confirm';
 @Component({
   selector: 'yona-confirm-dialog',
   imports: [Button, Dialog],
+  // [role] rather than role="…": a plain attribute would also stay on <yona-dialog>, an alert dialog without a name
   template: `
     <yona-dialog
       size="sm"
-      role="alertdialog"
+      [role]="'alertdialog'"
       [title]="request()?.title ?? ''"
       [open]="isOpen()"
       (closed)="confirm.answer(false)"

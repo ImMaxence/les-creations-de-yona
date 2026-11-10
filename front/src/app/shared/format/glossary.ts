@@ -98,7 +98,7 @@ export function highlightTerms(html: string, matcher: GlossaryMatcher): string {
           return word;
         }
         seen.add(term.id);
-        return `<dfn class="glossary-term" role="button" tabindex="0" title="${escapeAttribute(term.definition)}">${word}</dfn>`;
+        return `<dfn class="glossary-term" role="button" tabindex="0" title="${escapeAttribute(term.definition ?? '')}">${word}</dfn>`;
       });
     })
     .join('');
@@ -145,4 +145,22 @@ function spellings(key: string): string {
 
 function escapeAttribute(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+/**
+ * A text as typed in the editor, escaped, every glossary word in a `<mark>`: drawn under the field,
+ * it underlines the words the glossary already explains. A last line break keeps its height.
+ */
+export function markTerms(text: string, matcher: GlossaryMatcher): string {
+  const escape = (part: string) => part.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]!);
+  const pattern = matcher.pattern;
+  const marked = pattern
+    ? text
+        .split(new RegExp(`(${pattern.source})`, pattern.flags))
+        .map((part, index) => (index % 2 ? `<mark>${escape(part)}</mark>` : escape(part)))
+        .join('')
+    : escape(text);
+  return `${marked}\n`;
 }

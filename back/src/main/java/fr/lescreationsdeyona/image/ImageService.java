@@ -88,19 +88,63 @@ public class ImageService {
 					.collect(Collectors.groupingBy(GalleryImage.MenuUsage::imageId, Collectors.mapping(
 							usage -> new GalleryImage.UsingMenu(usage.id(), usage.title()), Collectors.toList())));
 		Map<UUID, List<String>> capItems = ids.isEmpty() ? Map.of()
-				: Stream.concat(imageRepository.findCapEntryUsages(ids).stream(), imageRepository.findObservationUsages(ids).stream())
+				: Stream.concat(imageRepository.findCapEntryUsages(ids).stream(), imageRepository.findCapBlockUsages(ids).stream())
+					.distinct()
 					.collect(Collectors.groupingBy(GalleryImage.CapUsage::imageId,
 							Collectors.mapping(GalleryImage.CapUsage::title, Collectors.toList())));
+		Map<UUID, List<String>> products = ids.isEmpty() ? Map.of()
+				: imageRepository.findShopProductUsages(ids)
+					.stream()
+					.collect(Collectors.groupingBy(GalleryImage.ProductUsage::imageId,
+							Collectors.mapping(GalleryImage.ProductUsage::name, Collectors.toList())));
 		UUID aboutImageId = siteContentRepository.findAboutImageId().orElse(null);
 		return images.map(image -> new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(),
 				recipes.getOrDefault(image.getId(), List.of()), categories.getOrDefault(image.getId(), List.of()),
 				menus.getOrDefault(image.getId(), List.of()), image.getId().equals(aboutImageId),
-				capItems.getOrDefault(image.getId(), List.of())));
+				capItems.getOrDefault(image.getId(), List.of()), products.getOrDefault(image.getId(), List.of())));
 	}
 
-	/** Opens a variant for the public site. Ids are random UUIDs, so they cannot be guessed. */
+	/**
+	 * Opens a variant for the public site. Ids are random UUIDs, so they cannot be guessed. The
+	 * receipts of the accounts are not served here: only to the admins ({@link #openReceipt}).
+	 */
 	public ImageStorage.StoredFile open(UUID id, int width) {
-		return imageStorage.open(get(id).key(width));
+		Image image = get(id);
+		if (image.getKind() == ImageKind.RECEIPT) {
+			throw new ApiException(ErrorCode.IMAGE_NOT_FOUND);
+		}
+		return imageStorage.open(image.key(width));
+	}
+
+	/** The receipt of an expense, for the back-office. */
+	public ImageStorage.StoredFile openReceipt(UUID id) {
+		Image image = get(id);
+		if (image.getKind() != ImageKind.RECEIPT) {
+			throw new ApiException(ErrorCode.IMAGE_NOT_FOUND);
+		}
+		return imageStorage.open(image.key(ImageProcessor.WIDTHS.getLast()));
+	}
+
+	/** A new receipt, kept apart from the gallery; called by the accounts, inside their transaction. */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public Image createReceipt(ProcessedImage processed) {
+		return create(ImageKind.RECEIPT, processed);
+	}
+
+	/** A receipt replaced or gone with its expense: its files go once that is committed. Never in the trash. */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void deleteReceipt(Image receipt) {
+		if (receipt.getKind() != ImageKind.RECEIPT) {
+			return;
+		}
+		String folder = receipt.getS3Prefix();
+		imageRepository.delete(receipt);
+		onCompletion(TransactionSynchronization.STATUS_COMMITTED, () -> imageStorage.deleteFolder(folder));
+	}
+
+	/** Those of these ids that are photos of the gallery that the site may show (landscape). */
+	public Set<UUID> landscapeIdsAmong(Collection<UUID> ids) {
+		return ids.isEmpty() ? Set.of() : new HashSet<>(imageRepository.findLandscapeIds(ids));
 	}
 
 	/** An image of the gallery, to show it on a recipe or a category. */
@@ -116,6 +160,9 @@ public class ImageService {
 	/** A landscape image of the gallery, to show it on a recipe, a category or the home page. */
 	public Image getLandscape(UUID id) {
 		Image image = get(id);
+		if (image.getKind() == ImageKind.RECEIPT) {
+			throw new ApiException(ErrorCode.IMAGE_NOT_FOUND);
+		}
 		if (image.getKind() == ImageKind.PINTEREST) {
 			throw new ApiException(ErrorCode.IMAGE_NOT_LANDSCAPE);
 		}
@@ -148,7 +195,7 @@ public class ImageService {
 		Image image = create(ImageKind.GALLERY, processed);
 		auditLog.record(AuditAction.CREATED, AuditKind.IMAGE, "Photo ajoutée à la galerie", null);
 		return new GalleryImage(image.getId(), image.getKind(), image.getCreatedAt(), List.of(), List.of(), List.of(),
-				false, List.of());
+				false, List.of(), List.of());
 	}
 
 	/**
@@ -164,7 +211,7 @@ public class ImageService {
 		imageRepository.replaceOnCategories(id, replacement.getId());
 		imageRepository.replaceOnMenus(id, replacement.getId());
 		imageRepository.replaceOnCapEntries(id, replacement.getId());
-		imageRepository.replaceOnObservations(id, replacement.getId());
+		imageRepository.replaceOnShopProducts(id, replacement.getId());
 		imageRepository.replaceOnAboutPage(id, replacement.getId());
 		trash(id, title);
 		GalleryImage replaced = galleryImage(replacement);
@@ -190,9 +237,11 @@ public class ImageService {
 					.toList(),
 				imageRepository.findMenuUsages(ids).stream().map(usage -> new GalleryImage.UsingMenu(usage.id(), usage.title())).toList(),
 				image.getId().equals(siteContentRepository.findAboutImageId().orElse(null)),
-				Stream.concat(imageRepository.findCapEntryUsages(ids).stream(), imageRepository.findObservationUsages(ids).stream())
+				Stream.concat(imageRepository.findCapEntryUsages(ids).stream(), imageRepository.findCapBlockUsages(ids).stream())
+					.distinct()
 					.map(GalleryImage.CapUsage::title)
-					.toList());
+					.toList(),
+				imageRepository.findShopProductUsages(ids).stream().map(GalleryImage.ProductUsage::name).toList());
 	}
 
 	private static List<String> shownOn(GalleryImage image) {
@@ -201,6 +250,7 @@ public class ImageService {
 		image.categories().forEach(category -> names.add(category.name()));
 		image.menus().forEach(menu -> names.add(menu.title()));
 		names.addAll(image.capItems());
+		names.addAll(image.shopProducts());
 		if (image.aboutPage()) {
 			names.add("À propos");
 		}
@@ -224,13 +274,15 @@ public class ImageService {
 		List<GalleryImage.CategoryUsage> categories = imageRepository.findCategoryUsages(List.of(id));
 		List<GalleryImage.MenuUsage> menus = imageRepository.findMenuUsages(List.of(id));
 		List<GalleryImage.CapUsage> capEntries = imageRepository.findCapEntryUsages(List.of(id));
-		List<GalleryImage.CapUsage> observations = imageRepository.findObservationUsages(List.of(id));
+		List<GalleryImage.CapUsage> capBlocks = imageRepository.findCapBlockUsages(List.of(id));
+		List<GalleryImage.ProductUsage> products = imageRepository.findShopProductUsages(List.of(id));
 		boolean aboutPage = id.equals(siteContentRepository.findAboutImageId().orElse(null));
 		List<String> shownOn = new ArrayList<>();
 		Stream.concat(recipes.stream(), pinterest.stream()).map(GalleryImage.RecipeUsage::title).distinct().forEach(shownOn::add);
 		categories.forEach(category -> shownOn.add(category.name()));
 		menus.forEach(menu -> shownOn.add(menu.title()));
-		Stream.concat(capEntries.stream(), observations.stream()).map(GalleryImage.CapUsage::title).forEach(shownOn::add);
+		Stream.concat(capEntries.stream(), capBlocks.stream()).map(GalleryImage.CapUsage::title).distinct().forEach(shownOn::add);
+		products.forEach(product -> shownOn.add(product.name()));
 		if (aboutPage) {
 			shownOn.add("À propos");
 		}
@@ -239,7 +291,7 @@ public class ImageService {
 				categories.stream().map(GalleryImage.CategoryUsage::id).toList(), aboutPage,
 				menus.stream().map(GalleryImage.MenuUsage::id).toList(),
 				capEntries.stream().map(GalleryImage.CapUsage::id).toList(),
-				observations.stream().map(GalleryImage.CapUsage::id).toList());
+				products.stream().map(GalleryImage.ProductUsage::id).toList());
 		trashBin.put(new TrashBin.Entry(TrashKind.IMAGE, title != null ? title : trashedTitle(shownOn), null, null, null, null,
 				new TrashedImage(image.getId(), image.getKind(), image.getS3Prefix(), image.getCreatedAt()), links, null));
 		imageRepository.delete(image);
@@ -280,8 +332,8 @@ public class ImageService {
 		if (!links.capEntryIds().isEmpty()) {
 			shown += imageRepository.showOnCapEntries(kept.id(), links.capEntryIds());
 		}
-		if (!links.observationIds().isEmpty()) {
-			shown += imageRepository.showOnObservations(kept.id(), links.observationIds());
+		if (!links.shopProductIds().isEmpty()) {
+			shown += imageRepository.showOnShopProducts(kept.id(), links.shopProductIds());
 		}
 		if (links.aboutPage()) {
 			shown += imageRepository.showOnAboutPage(kept.id());
