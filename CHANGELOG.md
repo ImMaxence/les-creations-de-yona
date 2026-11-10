@@ -1,637 +1,651 @@
 # Changelog
 
-Front and backend share one version number (semantic versioning: major breaks existing data, minor adds features, patch fixes). How to release: [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Versions before 1.1.0 are summed up in the [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md).
+Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
+
+## 2.5.1 - 2026-11-10
+
+Front et backend 2.5.1. Pas de migration de la base
+
+### Ajouté
+
+- **Paramètres par défaut** : un bouton dans le menu Clair / Sombre et sur la page Accessibilité remet le site comme il vient (taille du texte, contraste, animations, police, liens, espacement, et clair ou sombre selon l'appareil)
+
+### Modifié
+
+- **Icône de l'accessibilité** : le symbole universel, une personne bras ouverts dans un cercle, à la place de l'icône qui se lisait comme un fauteuil roulant
+- **Menu Clair / Sombre** : « Accessibilité » à la place de « Plus de réglages »
+- **Nouveautés** : le CHANGELOG entièrement réécrit en français, avec les rubriques Ajouté, Modifié, Corrigé, Retiré et Technique
 
 ## 2.5.0 - 2026-11-10
 
-Front and backend 2.5.0. No database migration.
+Front et backend 2.5.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Accessibility page**: text size, stronger contrast, fewer animations, plain font, underlined links, text spacing and light or dark, applied at once on every page and kept in the browser.
-- **Accessibility statement**: a legal page on the RGAA model (state of conformity, checks made, known limits, contact, recourse), linked from the footer.
-- **Tooltips**: the icons of the header (search, favourites, shopping list, display) and every icon without text show their name on hover or keyboard focus.
-- **Nouveautés**: versions grouped under Version 2 and Version 1; each version a table of its changes, with a coloured pill for each kind (Ajouté, Modifié, Corrigé, Retiré, Technique).
+- **Page Accessibilité** : taille du texte, contraste renforcé, moins d'animations, police simple, liens soulignés, texte espacé, clair ou sombre ; appliqués tout de suite sur toutes les pages et gardés dans le navigateur
+- **Déclaration d'accessibilité** : une page légale sur le modèle du RGAA (état de conformité, vérifications faites, limites connues, contact, voies de recours), liée depuis le pied de page
+- **Infobulles** : les icônes de la barre du haut (recherche, favoris, liste de courses, affichage) et toute icône sans texte montrent leur nom au survol ou au clavier
+- **Nouveautés** : les versions rangées sous Version 2 et Version 1 ; chaque version en tableau, une pastille de couleur par type de changement (Ajouté, Modifié, Corrigé, Retiré, Technique)
 
-### Changed
+### Modifié
 
-- **Phone menu**: the current page on a light veil within the margins, more space under the search field and between the pages and the sections.
-- **Phone menu sections**: the + turns into × in place, without sliding; a section unfolds where it is, without scrolling the menu by itself.
-- **Phone menu close button**: no more ring around the cross.
-- **Light and dark menu**: "Plus de réglages" leads to the accessibility page.
+- **Menu téléphone** : la page en cours sur un voile clair dans les marges, plus d'espace sous la recherche et entre les pages et les sections
+- **Sections du menu téléphone** : le + devient × sur place, sans glisser ; une section se déplie là où elle est, sans faire défiler le menu
+- **Bouton de fermeture du menu téléphone** : plus de cercle autour de la croix
+- **Menu Clair / Sombre** : « Plus de réglages » mène à la page Accessibilité
 
-### Technical
+### Technique
 
-- Display choices written on `<html>` before the first paint (inline script of `index.html`), as the light or dark choice.
-- Tests: 287 front, 326 backend, 212 checks in Chrome, among them the tooltips, the phone menu, the accessibility page and its statement, and reflow at 320 px.
+- Réglages d'affichage écrits sur `<html>` avant le premier affichage (script en ligne de `index.html`), comme le choix clair ou sombre
+- Tests : 287 front, 326 backend, 212 vérifications dans Chrome, dont les infobulles, le menu téléphone, la page Accessibilité et sa déclaration, et l'affichage à 320 px
 
 ## 2.4.0 - 2026-11-10
 
-Front and backend 2.4.0. Database migrations: V21, V22.
+Front et backend 2.4.0. Migrations de la base : V21, V22
 
-### Added
+### Ajouté
 
-- **Mon CAP in articles**: the timeline shows a preview of each article (photo, title, subtitle, first lines, "Lire la suite"), the whole card opens its own page, `/mon-cap/<title>`.
-- **Article page**: date, title and subtitle above the big photo, then the blocks: text, big photo, photo + text (left or right), steps in photos, tip. Text in a narrow column; every photo opens full screen.
-- **Article editor**: start from a model (Récit, Pas à pas, Carnet, Vide); move, duplicate, delete or add blocks with "+"; formatting buttons and links to recipes; Classique or Carnet style; preview on computer and phone; subtitle; "Coup de cœur".
-- **Home page**: "À propos", the notifications and the latest article (or the "Coup de cœur") in a frame drawn by four corners.
-- **Shop**: products with their own name and photo, sold by the unit or by batches (price per piece shown), prices including taxes; products without recipe; search, category filters, compact grid.
-- **Shop request**: "Ma demande" in a side panel on computers, a bar fixed at the bottom of phones, kept when leaving the page; a request may be made in the message only.
-- **Shop position**: closed, for close ones (banner, out of the menu and of Google) or open to all (menu, home page).
-- **Accounting**: month, quarter or year; key figures (orders, average basket, margin, change on the year before); monthly chart; where the money goes; best sales with margin; margin of each sale.
-- **Purchases**: an expense detailed line by line from the site's ingredients, price per kilo or piece worked out, last price paid kept; cost price of each product; photo of the receipt.
-- **Glossary from the recipe editor**: words selected in a step, or the "Glossaire" button, open a window to add them; "Garder pour plus tard" (shown nowhere until defined, counted); known words underlined in the steps.
-- **Invoices**: "Générer la facture" on an order handed over; numbered without gaps each year (2026-0001…), seller and customer copied, discount shown; a sheet to print or save as PDF.
-- **Billing details**: seller name, address, SIRET, contact and VAT mention, set from the accounting page, which lists the year's invoices.
-- **Article draft kept**: the article editor keeps what is typed in the browser until saved, offered back on reopening ("Reprendre", "Ignorer").
+- **Mon CAP en articles** : la frise montre un aperçu de chaque article (photo, titre, sous-titre, premières lignes, « Lire la suite »), toute la carte ouvre sa page, `/mon-cap/<titre>`
+- **Page d'un article** : date, titre et sous-titre au-dessus de la grande photo, puis les blocs : texte, grande photo, photo + texte (à gauche ou à droite), étapes en photos, astuce. Le texte en colonne étroite ; chaque photo s'ouvre en grand
+- **Éditeur d'articles** : partir d'un modèle (Récit, Pas à pas, Carnet, Vide) ; déplacer, dupliquer, supprimer ou ajouter des blocs avec « + » ; boutons de mise en forme et liens vers les recettes ; style Classique ou Carnet ; aperçu ordinateur et téléphone ; sous-titre ; « Coup de cœur »
+- **Accueil** : « À propos », les notifications et le dernier article (ou le « Coup de cœur ») dans un cadre dessiné par quatre coins
+- **Boutique** : des produits avec leur propre nom et leur photo, vendus à l'unité ou par lot (prix à la pièce affiché), prix TTC ; des produits sans recette ; recherche, filtres par catégorie, grille compacte
+- **Demande de la boutique** : « Ma demande » dans un volet sur ordinateur, une barre fixée en bas sur téléphone, gardée en quittant la page ; une demande peut se faire par le seul message
+- **Position de la boutique** : fermée, pour les proches (bandeau, hors du menu et de Google) ou ouverte à tous (menu, accueil)
+- **Comptabilité** : par mois, trimestre ou année ; chiffres clés (commandes, panier moyen, marge, évolution sur l'année d'avant) ; graphique mois par mois ; où part l'argent ; meilleures ventes et leur marge ; marge de chaque vente
+- **Achats** : une dépense détaillée ligne par ligne à partir des ingrédients du site, prix au kilo ou à la pièce calculé, dernier prix payé retenu ; coût de revient de chaque produit ; photo du ticket de caisse
+- **Glossaire depuis l'éditeur de recettes** : les mots sélectionnés dans une étape, ou le bouton « Glossaire », ouvrent une fenêtre pour les ajouter ; « Garder pour plus tard » (affiché nulle part tant qu'il n'est pas défini, compté) ; les mots connus soulignés dans les étapes
+- **Factures** : « Générer la facture » sur une commande récupérée ; numérotées sans trou chaque année (2026-0001…), vendeur et client recopiés, remise affichée ; une feuille à imprimer ou à enregistrer en PDF
+- **Informations de facturation** : nom, adresse, SIRET, contact et mention de TVA du vendeur, réglés depuis la comptabilité, qui liste les factures de l'année
+- **Brouillon des articles gardé** : l'éditeur d'articles garde ce qui est tapé dans le navigateur jusqu'à l'enregistrement, et le propose à la réouverture (« Reprendre », « Ignorer »)
 
-### Changed
+### Modifié
 
-- **Navigation**: "Sucré" before "Salé" in the recipes menu and the phone menu.
-- **Accounting**: "+ Ajouter" opens a window; lines grouped by month, with filters and a search.
-- **Home notifications**: a quiet strip, "Activer" in the site's colour.
-- **Shop**: no more introduction text.
-- **Shopping list icon**: a checklist, no longer the shop's basket.
-- **Login page**: gingham pattern and a scalloped pastry-box edge.
-- **Dates**: "1er novembre", as French writes the first of the month.
-- **An invoiced order** keeps its status and amount and can no longer be deleted.
+- **Navigation** : « Sucré » avant « Salé » dans le menu des recettes et le menu téléphone
+- **Comptabilité** : « + Ajouter » ouvre une fenêtre ; lignes regroupées par mois, avec filtres et recherche
+- **Notifications de l'accueil** : un bandeau discret, « Activer » dans la couleur du site
+- **Boutique** : plus de texte de présentation
+- **Icône de la liste de courses** : une liste à cocher, plus le panier de la boutique
+- **Page de connexion** : motif vichy et bord festonné de boîte de pâtisserie
+- **Dates** : « 1er novembre », comme le français écrit le premier du mois
+- **Une commande facturée** garde son statut et son montant et ne peut plus être supprimée
 
-### Removed
+### Retiré
 
-- **Mes observations**: the page, its button and the section under the recipes. Each observation became a draft article, its recipe linked; `/mon-cap/observations` leads to Mon CAP.
+- **Mes observations** : la page, son bouton et la partie sous les recettes. Chaque observation est devenue un article en brouillon, sa recette en lien ; `/mon-cap/observations` mène à Mon CAP
 
-### Technical
+### Technique
 
-- Migration V21: articles (subtitle, slug, style, blocks in JSON, featured), observations converted then dropped, shop position, product formats, product of each order line, purchase lines, receipts (kept out of the gallery, served to admins only), glossary words without definition.
-- Backups: articles, products, purchases and receipts merged; older backups migrated on restore.
-- Article layout by container queries: the same on a phone and in the editor's preview.
-- Migration V22: shop introduction dropped, billing details, invoices and their lines.
-- Backups: invoices merged; every table checked to be merged or left out on purpose (`BackupCoverageTest`).
-- API access checked against every controller (`EndpointAccessTest`).
-- Accessibility: toasts and confirmation dialogs announced properly, a page heading in the back-office.
-- Tests: 267 front, 326 backend, 181 checks in Chrome (shop, invoices, accounting and article drafts on simulated data).
-- Docs: manual restore and domain change moved into the production guide; README screenshots of the shop, Mon CAP, accounting and an invoice.
+- Migration V21 : articles (sous-titre, adresse, style, blocs en JSON, mise en avant), observations converties puis supprimées, position de la boutique, formats des produits, produit de chaque ligne de commande, lignes d'achat, tickets de caisse (hors de la galerie, servis aux admins seulement), mots du glossaire sans définition
+- Sauvegardes : articles, produits, achats et tickets fusionnés ; les anciennes sauvegardes migrées à la restauration
+- Mise en page des articles par requêtes de conteneur : la même sur un téléphone et dans l'aperçu de l'éditeur
+- Migration V22 : texte de présentation de la boutique retiré, informations de facturation, factures et leurs lignes
+- Sauvegardes : factures fusionnées ; chaque table vérifiée fusionnée ou écartée exprès (`BackupCoverageTest`)
+- Accès à l'API vérifié pour chaque contrôleur (`EndpointAccessTest`)
+- Accessibilité : messages et fenêtres de confirmation bien annoncés, un titre de page dans le back-office
+- Tests : 267 front, 326 backend, 181 vérifications dans Chrome (boutique, factures, comptabilité et brouillons d'articles sur des données simulées)
+- Documentation : restauration à la main et changement de domaine déplacés dans le guide de production ; captures du ReadMe pour la boutique, Mon CAP, la comptabilité et une facture
 
 ## 2.3.0 - 2026-11-09
 
-Front and backend 2.3.0. No database migration.
+Front et backend 2.3.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Phone menu**: the page shown stands out, and its section comes unfolded.
-- **Sign-in page**: a scallop pattern on the left panel.
+- **Menu téléphone** : la page affichée ressort, et sa section arrive dépliée
+- **Page de connexion** : un motif en écailles sur le panneau de gauche
 
-### Fixed
+### Corrigé
 
-- **Phone menu**: the text typed in the search, and its suggestions, were invisible.
+- **Menu téléphone** : le texte tapé dans la recherche, et ses suggestions, étaient invisibles
 
 ## 2.2.0 - 2026-11-09
 
-Front and backend 2.2.0. No database migration.
+Front et backend 2.2.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Back-office panel**: each group opens and closes, and stays as you left it.
+- **Panneau du back-office** : chaque groupe s'ouvre et se ferme, et reste comme on l'a laissé
 
-### Changed
+### Modifié
 
-- **Phone menu**: pages first, then sections; plain rows inside a section; closing is faster.
+- **Menu téléphone** : les pages d'abord, puis les sections ; des lignes simples dans une section ; la fermeture est plus rapide
 
-### Fixed
+### Corrigé
 
-- **Back-office**: no more page transition, which blocked scrolling and clicks during a change of section.
-- **Light/dark choice**: "Sombre" no longer touches the edge in the panel.
+- **Back-office** : plus de transition de page, qui bloquait le défilement et les clics pendant un changement de section
+- **Choix clair / sombre** : « Sombre » ne touche plus le bord dans le panneau
 
 ## 2.1.1 - 2026-11-09
 
-Front and backend 2.1.1. No database migration.
+Front et backend 2.1.1. Pas de migration de la base
 
-### Changed
+### Modifié
 
-- **Phone menu**: redone in the site's colour, one list in large type; an arrow leads to a page, a plus unfolds several.
-- **Back-office panel**: stronger group titles, no scroll bar.
+- **Menu téléphone** : refait dans la couleur du site, une seule liste en grands caractères ; une flèche mène à une page, un plus en déplie plusieurs
+- **Panneau du back-office** : titres de groupe plus marqués, plus de barre de défilement
 
-### Fixed
+### Corrigé
 
-- **Admin photo**: the service worker blocked the picture of the Google account.
-- **Back-office panel**: icons of the light/dark choice are back; the full email shows on hover.
+- **Photo de l'admin** : le service worker bloquait la photo du compte Google
+- **Panneau du back-office** : les icônes du choix clair / sombre sont de retour ; l'e-mail complet s'affiche au survol
 
 ## 2.1.0 - 2026-11-09
 
-Front and backend 2.1.0. No database migration.
+Front et backend 2.1.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Back-office dashboard**: the site's bar and footer give way to a side panel with every section; on phones, a bar opens the same panel with large rows.
-- **Sign-in page** (`/admin/connexion`): Google's button in colour, also shown when a session expires.
-- **Admin photo**: the picture of the Google account, or the first letter of the name.
-- **Infinite scroll**: every paged list loads as you go down, in place of page numbers and "per page". Cards far from the screen are not rendered, and Back returns to the same spot.
+- **Tableau de bord du back-office** : la barre et le pied du site laissent place à un panneau latéral avec toutes les sections ; sur téléphone, une barre ouvre le même panneau, en grandes lignes
+- **Page de connexion** (`/admin/connexion`) : le bouton de Google en couleur, aussi affiché quand une session expire
+- **Photo de l'admin** : la photo du compte Google, ou la première lettre du nom
+- **Défilement infini** : chaque liste paginée se charge en descendant, à la place des numéros de page et du « par page ». Les cartes loin de l'écran ne sont pas dessinées, et le retour arrière revient au même endroit
 
-### Changed
+### Modifié
 
-- **Navigation**: one "Recettes" panel in the bar.
-- **Phone menu**: large rows for single pages, cards that unfold for sections of several pages, and the search at the top.
-- **Phone header**: the site's name on one line, beside the menu button only.
-- **Recipes on phones**: all filters fold behind one "Filtres" button showing how many are active.
-- **Notifications button**: shorter on the home page; once on, the status and "Désactiver" are separate.
-- **Phones**: larger navigation buttons in the footer and the back-office bar.
+- **Navigation** : un seul panneau « Recettes » dans la barre
+- **Menu téléphone** : de grandes lignes pour les pages seules, des cartes dépliables pour les sections de plusieurs pages, et la recherche en haut
+- **En-tête sur téléphone** : le nom du site sur une ligne, à côté du seul bouton du menu
+- **Recettes sur téléphone** : tous les filtres repliés derrière un bouton « Filtres » qui montre combien sont actifs
+- **Bouton des notifications** : plus court sur l'accueil ; une fois activées, l'état et « Désactiver » sont séparés
+- **Téléphones** : boutons de navigation plus grands dans le pied de page et la barre du back-office
 
 ## 2.0.1 - 2026-11-09
 
-Front and backend 2.0.1. No database migration.
+Front et backend 2.0.1. Pas de migration de la base
 
-### Changed
+### Modifié
 
-- **Back-office menu**: three entries (Blog, Boutique, Site), each opening a panel, in place of three rows of links.
-- **Observations, shop products**: the recipe is found with a search field instead of a drop-down list.
-- **Orders**: the alert for new orders says plainly what it does.
+- **Menu du back-office** : trois entrées (Blog, Boutique, Site), chacune ouvrant un panneau, à la place de trois rangées de liens
+- **Observations, produits de la boutique** : la recette se trouve avec un champ de recherche plutôt qu'une liste déroulante
+- **Commandes** : l'alerte des nouvelles commandes dit clairement ce qu'elle fait
 
-### Fixed
+### Corrigé
 
-- **Accounts**: a long email no longer overflows the form, nor gets cut off in the admin filter.
+- **Comptabilité** : un long e-mail ne déborde plus du formulaire et n'est plus coupé dans le filtre par admin
 
 ## 2.0.0 - 2026-11-09
 
-Front and backend 2.0.0. Database migration: V20.
+Front et backend 2.0.0. Migration de la base : V20
 
-### Added
+### Ajouté
 
-- **Shop** (`/boutique`, closed until opened in the back-office): recipes chosen by the admin, with a price, a free text and Google's captcha. No payment on the site.
-- **Orders**: statuses from "Nouvelle" to "Récupérée" or "Annulée", a secret tracking link for the customer, no account needed.
-- **Order alerts**: a badge in the back-office, and a push notification on the admins' devices that ask for it.
-- **Accounts**: orders picked up come in by themselves, expenses are typed by hand, each line counted for an admin; totals by month and by admin, CSV export.
-- **Mon CAP** (`/mon-cap`): a dated timeline of the diploma, with text and photos.
-- **Mes observations** (`/mon-cap/observations`): notes about a recipe or about none, also shown on the recipe's page.
-- **Recipes used as parts**: a recipe can be a part of another one, whole or multiplied ("Pâte sablée × 0.5"), up to 3 levels. Total, cooking mode, shopping list, search and structured data all follow.
-- **Ingredient equivalents**: the weight of one piece, to show "400 g (≈ 8 œufs)", following the servings.
+- **Boutique** (`/boutique`, fermée tant qu'elle n'est pas ouverte dans le back-office) : des recettes choisies par l'admin, avec un prix, un texte libre et le captcha de Google. Aucun paiement sur le site
+- **Commandes** : des statuts de « Nouvelle » à « Récupérée » ou « Annulée », un lien de suivi secret pour le client, sans compte
+- **Alertes de commande** : une pastille dans le back-office, et une notification sur les appareils des admins qui la demandent
+- **Comptabilité** : les commandes récupérées entrent d'elles-mêmes, les dépenses se saisissent à la main, chaque ligne comptée pour un admin ; totaux par mois et par admin, export CSV
+- **Mon CAP** (`/mon-cap`) : une frise datée du diplôme, avec du texte et des photos
+- **Mes observations** (`/mon-cap/observations`) : des notes sur une recette ou sur aucune, montrées aussi sur la page de la recette
+- **Recettes utilisées comme parties** : une recette peut être une partie d'une autre, entière ou multipliée (« Pâte sablée × 0,5 »), jusqu'à 3 niveaux. Total, mode cuisine, liste de courses, recherche et données structurées suivent
+- **Équivalents des ingrédients** : le poids d'une pièce, pour afficher « 400 g (≈ 8 œufs) », selon les portions
 
-### Changed
+### Modifié
 
-- **Back-office**: sections in three groups, Blog, Boutique and Site.
-- **Deleting a recipe**: refused while another recipe uses it, or while it is in the shop.
-- **Legal pages**: the shop and its data; orders are in the backups, and are erased 12 months after being finished.
+- **Back-office** : les sections en trois groupes, Blog, Boutique et Site
+- **Suppression d'une recette** : refusée tant qu'une autre recette l'utilise, ou qu'elle est dans la boutique
+- **Pages légales** : la boutique et ses données ; les commandes sont dans les sauvegardes, et effacées 12 mois après être terminées
 
-### Technical
+### Technique
 
-- Backup and restore: new tables included and merged, orders too (found by their tracking link, each keeping its number when free); order numbers continue after the accounts on a new server.
-- `RecaptchaBox` shared by the feedback and shop forms.
-- Backend: `POST /api/shop/orders` limited to one order a minute and 5 an hour per address, 30 an hour for the whole site.
+- Sauvegarde et restauration : nouvelles tables comprises et fusionnées, commandes aussi (retrouvées par leur lien de suivi, chacune gardant son numéro s'il est libre) ; la numérotation des commandes continue après la comptabilité sur un nouveau serveur
+- `RecaptchaBox` partagé par les formulaires d'avis et de la boutique
+- Backend : `POST /api/shop/orders` limité à une commande par minute et 5 par heure par adresse, 30 par heure pour tout le site
 
 ## 1.22.0 - 2026-11-08
 
-Front and backend 1.22.0. No database migration.
+Front et backend 1.22.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Local AI, download**: amount downloaded, amount left, speed and time left.
-- **Local AI, download**: a link to report a failed download on GitHub, already filled in.
-- **Local AI, while it runs**: the list of what is being done, the time elapsed, the time left for an image, and a warning that the computer may slow down.
-- **Phones and tablets**: local AI greyed out, with the reason.
-- **ReadMe**: the AI of the back-office, with screenshots.
-- **Recipe editor**: a "Publier" button in the bar always in sight, with a confirmation, next to "Enregistrer le brouillon".
+- **IA locale, téléchargement** : quantité téléchargée, reste à télécharger, débit et temps restant
+- **IA locale, téléchargement** : un lien pour signaler un échec sur GitHub, déjà rempli
+- **IA locale, pendant le travail** : la liste de ce qui se fait, le temps écoulé, le temps restant pour une image, et l'avertissement que l'ordinateur peut ralentir
+- **Téléphones et tablettes** : IA locale grisée, avec la raison
+- **ReadMe** : les IA du back-office, avec des captures
+- **Éditeur de recettes** : un bouton « Publier » toujours visible dans la barre, avec confirmation, à côté de « Enregistrer le brouillon »
 
-### Changed
+### Modifié
 
-- **Models named in full**: Gemma 4 E4B by Google, FLUX.2 klein 4B by Black Forest Labs, Qwen3 4B by Alibaba; where they come from (Hugging Face) and where they are kept (the browser's cache).
-- **Remplir avec l'IA**: taller text field.
-- **Legal pages**: the three local models named, with their makers; kept in the browser's cache until deleted.
+- **Modèles nommés en entier** : Gemma 4 E4B de Google, FLUX.2 klein 4B de Black Forest Labs, Qwen3 4B d'Alibaba ; d'où ils viennent (Hugging Face) et où ils sont gardés (le cache du navigateur)
+- **Remplir avec l'IA** : champ de texte plus haut
+- **Pages légales** : les trois modèles locaux nommés, avec leurs auteurs ; gardés dans le cache du navigateur jusqu'à leur suppression
 
 ## 1.21.1 - 2026-11-08
 
-Front and backend 1.21.1. No database migration.
+Front et backend 1.21.1. Pas de migration de la base
 
-### Fixed
+### Corrigé
 
-- **Remplir avec l'IA**: the choice between Gemini and the local AI looks like two real buttons, and says what each one reads.
+- **Remplir avec l'IA** : le choix entre Gemini et l'IA locale ressemble à deux vrais boutons, et dit ce que chacun lit
 
-### Changed
+### Modifié
 
-- **Remplir avec l'IA, Générer avec l'IA**: the model in use is named (Gemini, Gemma 4 E4B, FLUX.2 klein 4B); a photo is announced as read by Gemini.
-- **Remplir avec l'IA**: "Essayer avec un exemple" writes a sample recipe in the empty text field.
-- **Privacy policy**: names the local models, and says a recipe photo only goes to Gemini.
+- **Remplir avec l'IA, Générer avec l'IA** : le modèle utilisé est nommé (Gemini, Gemma 4 E4B, FLUX.2 klein 4B) ; une photo est annoncée comme lue par Gemini
+- **Remplir avec l'IA** : « Essayer avec un exemple » écrit une recette d'exemple dans le champ vide
+- **Politique de confidentialité** : nomme les modèles locaux, et dit qu'une photo de recette ne va qu'à Gemini
 
 ## 1.21.0 - 2026-11-08
 
-Front and backend 1.21.0. No database migration.
+Front et backend 1.21.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Remplir avec l'IA, local model**: Gemma 4 E4B runs in the admin's browser (WebGPU), for pasted text only, next to Gemini; downloaded once from Hugging Face (5.2 GB), kept in the browser, removable. Still usable when Gemini is out of quota.
-- **Générer avec l'IA**: every photo field of the back-office can draw an image in the browser with FLUX.2 klein 4B (6.5 GB), then send it to the photo editor.
+- **Remplir avec l'IA, modèle local** : Gemma 4 E4B tourne dans le navigateur de l'admin (WebGPU), pour un texte collé seulement, à côté de Gemini ; téléchargé une fois depuis Hugging Face (5,2 Go), gardé dans le navigateur, supprimable. Utilisable même quand le quota de Gemini est épuisé
+- **Générer avec l'IA** : chaque champ photo du back-office peut dessiner une image dans le navigateur avec FLUX.2 klein 4B (6,5 Go), puis l'envoyer à l'éditeur de photos
 
-### Changed
+### Modifié
 
-- **Legal pages**: privacy policy and legal notice cover the models running in the admin's browser.
+- **Pages légales** : politique de confidentialité et mentions légales couvrent les modèles qui tournent dans le navigateur de l'admin
 
-### Technical
+### Technique
 
-- Front: `core/local-ai/` (pinned model files, Cache storage, one Web Worker per network so that graphics memory is freed); ONNX Runtime's WebAssembly served by the site (`/ort/`).
-- Backend: `GET /api/admin/recipe-ai/local-prompt` and `POST /api/admin/recipe-ai/local-draft`: same rules and same checks as Gemini.
-- CSP: `wasm-unsafe-eval`, and Hugging Face in `connect-src`.
+- Front : `core/local-ai/` (fichiers de modèle épinglés, stockage Cache, un Web Worker par réseau pour libérer la mémoire graphique) ; le WebAssembly d'ONNX Runtime servi par le site (`/ort/`)
+- Backend : `GET /api/admin/recipe-ai/local-prompt` et `POST /api/admin/recipe-ai/local-draft` : mêmes règles et mêmes vérifications que Gemini
+- CSP : `wasm-unsafe-eval`, et Hugging Face dans `connect-src`
 
 ## 1.20.1 - 2026-11-08
 
-Front and backend 1.20.1. No database migration.
+Front et backend 1.20.1. Pas de migration de la base
 
-### Fixed
+### Corrigé
 
-- **Donner mon avis**: the reCAPTCHA failed to load, or stayed on "Chargement…", in browsers with the service worker: its Content-Security-Policy did not allow Google's scripts.
+- **Donner mon avis** : le reCAPTCHA ne se chargeait pas, ou restait sur « Chargement… », dans les navigateurs avec le service worker : sa Content-Security-Policy n'autorisait pas les scripts de Google
 
-### Changed
+### Modifié
 
-- **Donner mon avis**: the reCAPTCHA is shown as soon as the page opens, without a first click; privacy policy updated.
-- **`devops/.env.example`**: `RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` set to Google's public test keys, with where to create the production ones.
+- **Donner mon avis** : le reCAPTCHA s'affiche dès l'ouverture de la page, sans premier clic ; politique de confidentialité mise à jour
+- **`devops/.env.example`** : `RECAPTCHA_SITE_KEY` et `RECAPTCHA_SECRET_KEY` réglées sur les clés de test publiques de Google, avec où créer celles de la production
 
-### Technical
+### Technique
 
-- Service worker registered at a new address (`ngsw-worker.js?v=2`), so installed browsers replace the one holding the old policy.
+- Service worker enregistré à une nouvelle adresse (`ngsw-worker.js?v=2`), pour que les navigateurs installés remplacent celui qui gardait l'ancienne politique
 
 ## 1.20.0 - 2026-11-08
 
-Front and backend 1.20.0. No database migration. New required production variables: `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`.
+Front et backend 1.20.0. Pas de migration de la base. Nouvelles variables obligatoires en production : `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`
 
-### Changed
+### Modifié
 
-- **Donner mon avis**: Google reCAPTCHA v2 checkbox instead of the 1.19.0 check, loaded only after the visitor's click.
-- **Privacy policy**: what Google receives with the reCAPTCHA.
+- **Donner mon avis** : la case Google reCAPTCHA v2 à la place de la vérification de la 1.19.0, chargée seulement après le clic du visiteur
+- **Politique de confidentialité** : ce que Google reçoit avec le reCAPTCHA
 
-### Technical
+### Technique
 
-- Backend: `GET /api/feedback/captcha` replaces `GET /api/feedback/challenge`; each answer checked with Google outside any transaction, 20 checks an hour per address, message refused when Google cannot answer.
-- SSR server: CSP opened to Google's reCAPTCHA (scripts and frame).
-- Keys: [docs/google.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/google.md#5-recaptcha); Google's public test keys by default in the local stack.
+- Backend : `GET /api/feedback/captcha` remplace `GET /api/feedback/challenge` ; chaque réponse vérifiée auprès de Google hors de toute transaction, 20 vérifications par heure et par adresse, message refusé quand Google ne répond pas
+- Serveur SSR : CSP ouverte au reCAPTCHA de Google (scripts et cadre)
+- Clés : [docs/google.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/google.md#5-recaptcha) ; les clés de test publiques de Google par défaut sur la pile locale
 
 ## 1.19.0 - 2026-11-08
 
-Front and backend 1.19.0. No database migration.
+Front et backend 1.19.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Donner mon avis**: "Je ne suis pas un robot" checkbox, required to send a message. The browser solves a one-time challenge from the backend: no third-party service, no cookie.
+- **Donner mon avis** : case « Je ne suis pas un robot », obligatoire pour envoyer un message. Le navigateur résout un défi unique du backend : aucun service tiers, aucun cookie
 
-### Fixed
+### Corrigé
 
-- **Statistics, machine memory**: the disk cache no longer counts as used (a server up for a while looked almost full); the tile now leads with the memory used, not the free part.
-- **Donner mon avis**: a refused message shows the real reason (one a minute, too many messages…) instead of a generic connection error.
+- **Statistiques, mémoire de la machine** : le cache disque ne compte plus comme utilisé (un serveur allumé depuis un moment semblait presque plein) ; la tuile met maintenant en avant la mémoire utilisée, pas la part libre
+- **Donner mon avis** : un message refusé montre la vraie raison (un par minute, trop de messages…) au lieu d'une erreur de connexion générique
 
-### Technical
+### Technique
 
-- Backend: `GET /api/feedback/challenge`, `feedback/FeedbackCaptcha` (signed SHA-256 proof of work); `POST /api/feedback` refused without a solved challenge.
-- Backend: available memory from `MemAvailable`, or the free memory plus the inactive disk cache in a container with a limit.
+- Backend : `GET /api/feedback/challenge`, `feedback/FeedbackCaptcha` (preuve de travail SHA-256 signée) ; `POST /api/feedback` refusé sans défi résolu
+- Backend : mémoire disponible lue dans `MemAvailable`, ou mémoire libre plus cache disque inactif dans un conteneur limité
 
 ## 1.18.1 - 2026-11-02
 
-Front and backend 1.18.1. Database migration: V19.
+Front et backend 1.18.1. Migration de la base : V19
 
-### Fixed
+### Corrigé
 
-- **Security, notifications**: new subscriptions limited to 10 an hour per address and 300 an hour for the whole site, so a script can no longer fill the 20,000 places; a subscription its push service refuses 3 times in a row (400, 403…) is removed.
-- **Security, `/sitemap.xml`, `/llms.txt`, `/llms-full.txt`**: an address with a query string is redirected (301) to the plain one, instead of being built again from the API past Cloudflare's cache.
-- **Dependencies**: Angular 22.2.4 (build tools 22.2.5, Vite 8.3.5) and body-parser 2.4.0, `npm audit` clean.
+- **Sécurité, notifications** : nouveaux abonnements limités à 10 par heure par adresse et 300 par heure pour tout le site, pour qu'un script ne puisse plus remplir les 20 000 places ; un abonnement refusé 3 fois de suite par son service (400, 403…) est retiré
+- **Sécurité, `/sitemap.xml`, `/llms.txt`, `/llms-full.txt`** : une adresse avec des paramètres est redirigée (301) vers l'adresse simple, au lieu d'être refaite depuis l'API en passant le cache de Cloudflare
+- **Dépendances** : Angular 22.2.4 (outils de build 22.2.5, Vite 8.3.5) et body-parser 2.4.0, `npm audit` sans alerte
 
-### Technical
+### Technique
 
-- Backend: the visitor's address for the public limits in `common/ClientAddress` (feedback and notifications).
-- Security review of 2026-11-02 in [SECURITY-REVIEW.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/SECURITY-REVIEW.md).
+- Backend : l'adresse du visiteur pour les limites publiques dans `common/ClientAddress` (avis et notifications)
+- Revue de sécurité du 2 novembre 2026 dans [SECURITY-REVIEW.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/SECURITY-REVIEW.md)
 
 ## 1.18.0 - 2026-11-02
 
-Front and backend 1.18.0. No database migration.
+Front et backend 1.18.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Every page in Markdown**: the address of an indexable page + `.md` (`/index.md` for the home page, `/recettes.md?categorie=desserts` for a category, `…/index.md` too), or the page's own address asked for with `Accept: text/markdown`. Announced by each page, canonical address kept on the page.
-- **`/llms-full.txt`**: the whole text of the site in one file (Yona, every recipe in full, the menus, the glossary), linked from `/llms.txt`.
+- **Chaque page en Markdown** : l'adresse d'une page indexable + `.md` (`/index.md` pour l'accueil, `/recettes.md?categorie=desserts` pour une catégorie, `…/index.md` aussi), ou l'adresse de la page demandée avec `Accept: text/markdown`. Annoncée par chaque page, l'adresse canonique restant celle de la page
+- **`/llms-full.txt`** : tout le texte du site en un fichier (Yona, chaque recette en entier, les menus, le glossaire), lié depuis `/llms.txt`
 
-### Changed
+### Modifié
 
-- **robots.txt**: every robot allowed, AI training included (GPTBot, ClaudeBot, CCBot…), named with the AI search robots. Cached one hour instead of one day.
-- **Conditions d'utilisation**: AI training no longer refused (text and data mining, article L122-5-3); reproducing the contents still needs the author's consent.
-- **Installer l'application**: the steps for iPhone, Android and computer are all in the page, readable without JavaScript.
-- **Social cards**: the site's icon for a page without a photo, the category's photo for a category page.
+- **robots.txt** : tous les robots autorisés, entraînement des IA compris (GPTBot, ClaudeBot, CCBot…), nommés avec les robots de recherche des IA. Gardé une heure en cache au lieu d'un jour
+- **Conditions d'utilisation** : l'entraînement des IA n'est plus refusé (fouille de textes et de données, article L122-5-3) ; reproduire les contenus demande toujours l'accord de l'autrice
+- **Installer l'application** : les étapes pour iPhone, Android et ordinateur sont toutes dans la page, lisibles sans JavaScript
+- **Cartes de partage** : l'icône du site pour une page sans photo, la photo de la catégorie pour une page de catégorie
 
-### Technical
+### Technique
 
-- SSR server: pages in Markdown in `front/src/server/markdown.ts`, written from the API (`page-markdown.ts`) or converted from the rendered page with Turndown (`rendered-markdown.ts`: installation, legal pages).
+- Serveur SSR : pages en Markdown dans `front/src/server/markdown.ts`, écrites depuis l'API (`page-markdown.ts`) ou converties depuis la page rendue avec Turndown (`rendered-markdown.ts` : installation, pages légales)
 
 ## 1.17.0 - 2026-11-01
 
-Front and backend 1.17.0. No database migration.
+Front et backend 1.17.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Conditions d'utilisation** page (`/conditions-d-utilisation`): free access, recipes to make with care (allergies, hygiene, indicative quantities and timers), visitor messages, forbidden uses, sharing and reuse of the contents, AI assistants welcome to quote with a link, AI training refused (article L122-5-3 of the French intellectual property code). Linked from the footer, the legal notice, the feedback page, the sitemap and `/llms.txt`.
+- **Page Conditions d'utilisation** (`/conditions-d-utilisation`) : accès libre, recettes à réaliser avec prudence (allergies, hygiène, quantités et minuteurs indicatifs), messages des visiteurs, usages interdits, partage et réutilisation des contenus, assistants IA bienvenus pour citer avec un lien, entraînement des IA refusé (article L122-5-3 du Code de la propriété intellectuelle). Liée depuis le pied de page, les mentions légales, la page d'avis, le sitemap et `/llms.txt`
 
 ## 1.16.0 - 2026-11-01
 
-Front and backend 1.16.0. Database migration: V18.
+Front et backend 1.16.0. Migration de la base : V18
 
-### Added
+### Ajouté
 
-- **Questions fréquentes** in the recipe editor: questions and answers shown under the recipe, given to search engines as FAQPage and kept in the history, the trash and the backups.
-- **"À propos de Yona"** page (`/a-propos`): the text, photo and networks of the home page's "À propos", linked from the home page, the footer and each recipe ("Une recette de Yona").
-- **`/llms.txt`**: the site described for AI assistants, with every published recipe, menu and page, built on each request like the sitemap.
-- **Recipes in Markdown**: the address of a recipe + `.md` (`/recettes/tartes/tarte-aux-pommes.md`), announced by each page, canonical address kept on the page.
-- **IndexNow**: Bing (ChatGPT Search, Copilot) and the other IndexNow engines are told at once of each recipe published, changed, unpublished or deleted. Production only.
-- **Statistiques, "Visites venant des assistants IA"**: visits coming from ChatGPT, Perplexity, Gemini, Copilot, Claude… over 30 days and 12 months, counted once per tab with nothing about the visitor.
+- **Questions fréquentes** dans l'éditeur de recettes : questions et réponses affichées sous la recette, données aux moteurs de recherche en FAQPage et gardées dans l'historique, la corbeille et les sauvegardes
+- **Page « À propos de Yona »** (`/a-propos`) : le texte, la photo et les réseaux de l'« À propos » de l'accueil, liée depuis l'accueil, le pied de page et chaque recette (« Une recette de Yona »)
+- **`/llms.txt`** : le site décrit pour les assistants IA, avec chaque recette, menu et page publiés, refait à chaque demande comme le sitemap
+- **Recettes en Markdown** : l'adresse d'une recette + `.md` (`/recettes/tartes/tarte-aux-pommes.md`), annoncée par chaque page, l'adresse canonique restant celle de la page
+- **IndexNow** : Bing (ChatGPT Search, Copilot) et les autres moteurs IndexNow sont prévenus aussitôt de chaque recette publiée, modifiée, dépubliée ou supprimée. En production seulement
+- **Statistiques, « Visites venant des assistants IA »** : les visites venues de ChatGPT, Perplexity, Gemini, Copilot, Claude… sur 30 jours et 12 mois, comptées une fois par onglet, sans rien sur le visiteur
 
-### Changed
+### Modifié
 
-- **robots.txt**: AI assistants that answer with a link (OAI-SearchBot, PerplexityBot, Claude-SearchBot…) named and welcome; robots collecting for AI training (GPTBot, ClaudeBot, CCBot…) refused. Google-Extended stays allowed (Gemini's answers).
-- **Structured data**: one JSON-LD graph per page, the site (`WebSite`) and Yona (`Person`) shared by every page; recipes with `BreadcrumbList`, their YouTube video (`VideoObject`) and language; recipe lists and menus as `CollectionPage` and `ItemList`.
+- **robots.txt** : les assistants IA qui répondent avec un lien (OAI-SearchBot, PerplexityBot, Claude-SearchBot…) nommés et bienvenus ; les robots qui collectent pour l'entraînement des IA (GPTBot, ClaudeBot, CCBot…) refusés. Google-Extended reste autorisé (les réponses de Gemini)
+- **Données structurées** : un graphe JSON-LD par page, le site (`WebSite`) et Yona (`Person`) partagés par chaque page ; les recettes avec `BreadcrumbList`, leur vidéo YouTube (`VideoObject`) et leur langue ; les listes de recettes et les menus en `CollectionPage` et `ItemList`
 
-### Technical
+### Technique
 
-- SSR server: API calls of the sitemap, `llms.txt` and Markdown versions in one module (`front/src/server/api.ts`).
-- Backend: `app.site-url` (`SITE_URL`) and `app.indexnow` (`INDEXNOW_ENABLED`, set in `compose.prod.yaml`), key file `front/public/f5d890788ccc4557ecd282dea7299d26.txt`.
+- Serveur SSR : appels à l'API du sitemap, de `llms.txt` et des versions Markdown dans un seul module (`front/src/server/api.ts`)
+- Backend : `app.site-url` (`SITE_URL`) et `app.indexnow` (`INDEXNOW_ENABLED`, réglé dans `compose.prod.yaml`), fichier de clé `front/public/f5d890788ccc4557ecd282dea7299d26.txt`
 
 ## 1.15.0 - 2026-10-31
 
-Front and backend 1.15.0. No database migration.
+Front et backend 1.15.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Restore, "Ajouter ce qui manque"**: also brings back the backup's Préférences (texts and photo of the home page, footer) and Apparence when the site's were never edited, e.g. on a new server. Edited ones stay as they are.
-- **Restore**: menus are counted, listed among what is missing and in the report; searches without a result (Statistiques) are merged too.
+- **Restauration, « Ajouter ce qui manque »** : reprend aussi les Préférences de la sauvegarde (textes et photo de l'accueil, pied de page) et l'Apparence quand celles du site n'ont jamais été modifiées, par exemple sur un nouveau serveur. Celles déjà modifiées restent telles quelles
+- **Restauration** : les menus sont comptés, listés parmi ce qui manque et dans le compte rendu ; les recherches sans résultat (Statistiques) sont fusionnées aussi
 
-### Fixed
+### Corrigé
 
-- **Restore refused any archive holding a menu photo** ("archive invalide"): the `menus/` folder was not accepted. The accepted folders now come from the image kinds, so a new kind cannot be forgotten again.
+- **La restauration refusait toute archive contenant la photo d'un menu** (« archive invalide ») : le dossier `menus/` n'était pas accepté. Les dossiers acceptés viennent désormais des types de photo, pour qu'un nouveau type ne puisse plus être oublié
 
-### Changed
+### Modifié
 
-- "Sauvegarde" page: lists everything the archive holds, and what stays on the server (history, visitors' messages, notification subscribers, Google Drive account).
+- **Page Sauvegarde** : liste tout ce que contient l'archive, et ce qui reste sur le serveur (historique, messages des visiteurs, abonnés aux notifications, compte Google Drive)
 
 ## 1.14.1 - 2026-10-29
 
-Front and backend 1.14.1. No database migration.
+Front et backend 1.14.1. Pas de migration de la base
 
-### Fixed
+### Corrigé
 
-- **Public pages slow to load** (1 to 5 s per request): the service worker, busy installing a new version, held every answer of the API. The page now asks the API directly, as the back-office does, and keeps its own copy in the browser for offline reading (used when the network does not answer within 3 s).
+- **Pages publiques lentes à charger** (1 à 5 s par requête) : le service worker, occupé à installer une nouvelle version, retenait chaque réponse de l'API. La page interroge maintenant l'API directement, comme le back-office, et garde sa propre copie dans le navigateur pour la lecture hors connexion (utilisée quand le réseau ne répond pas en 3 s)
 
 ## 1.14.0 - 2026-10-29
 
-Front and backend 1.14.0. No database migration.
+Front et backend 1.14.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Connection lost / back**: a toast says the site is offline (recipes already opened stay readable) until the connection comes back, then "Connexion retrouvée".
-- **"Mettre à jour"**: a page opened before a deployment offers the new version in a toast as soon as it is ready, instead of waiting for a change of page.
+- **Connexion perdue / retrouvée** : un message dit que le site est hors connexion (les recettes déjà ouvertes restent lisibles) jusqu'au retour de la connexion, puis « Connexion retrouvée »
+- **« Mettre à jour »** : une page ouverte avant un déploiement propose la nouvelle version dans un message dès qu'elle est prête, sans attendre un changement de page
 
-### Changed
+### Modifié
 
-- **Faster pages**: the answers of the public API (recipes, categories, menus, texts, theme, search suggestions) are kept in the backend's memory, emptied at every change made in the back-office, scheduled publication or restored backup. About 10 ms instead of 15 to 50 ms each; pages rendered by the server 80 to 100 ms instead of 110 to 200 ms (local measures).
-- **Back-office always up to date**: never served from the service worker's copy, it loads the version on the server.
+- **Pages plus rapides** : les réponses de l'API publique (recettes, catégories, menus, textes, thème, suggestions de recherche) sont gardées dans la mémoire du backend, vidées à chaque changement fait dans le back-office, publication programmée ou sauvegarde restaurée. Environ 10 ms au lieu de 15 à 50 ms chacune ; pages rendues par le serveur en 80 à 100 ms au lieu de 110 à 200 ms (mesures locales)
+- **Back-office toujours à jour** : jamais servi depuis la copie du service worker, il charge la version du serveur
 
-### Technical
+### Technique
 
-- Every API answer says the backend version (`X-App-Version`); a front older than it looks for its new version at once.
-- Spring Cache with Caffeine: 500 answers per cache at most, 10 minutes at most.
-- 134 backend tests, 104 front tests, 82 Chrome checks.
+- Chaque réponse de l'API donne la version du backend (`X-App-Version`) ; un front plus ancien cherche aussitôt sa nouvelle version
+- Spring Cache avec Caffeine : 500 réponses par cache au plus, 10 minutes au plus
+- 134 tests backend, 104 tests front, 82 vérifications dans Chrome
 
 ## 1.13.0 - 2026-10-29
 
-Front and backend 1.13.0. No database migration.
+Front et backend 1.13.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- **Live server curves** in Statistics ("Suivre en direct"): processor and memory of the backend measured every 1, 2 or 5 s, the last 60 drawn, values on hover.
-- **Free rotation** in the photo editor: a dial to press and turn, stopping on 0, 90, 180 and 270°; the frame stays on the tilted photo, no empty corner.
+- **Courbes du serveur en direct** dans les Statistiques (« Suivre en direct ») : processeur et mémoire du backend mesurés toutes les 1, 2 ou 5 s, les 60 dernières mesures dessinées, valeurs au survol
+- **Rotation libre** dans l'éditeur de photos : une molette à presser et tourner, qui s'arrête sur 0, 90, 180 et 270° ; le cadre reste sur la photo inclinée, sans coin vide
 
-### Changed
+### Modifié
 
-- **Smaller photos accepted**: landscape or square, 800 × 450 px at least (1200 × 800 and 4:3 before); Pinterest 600 × 800 (1000 × 1333). Any image the browser opens (iPhone HEIC, WebP) goes through the editor, sent as JPEG; 10 MB at most.
+- **Photos plus petites acceptées** : paysage ou carré, 800 × 450 px au moins (1200 × 800 et 4:3 avant) ; Pinterest 600 × 800 (1000 × 1333). Toute image que le navigateur ouvre (HEIC de l'iPhone, WebP) passe par l'éditeur, envoyée en JPEG ; 10 Mo au plus
 
-### Fixed
+### Corrigé
 
-- Statistics exported as PDF: charts printed, "Actualiser" buttons left out.
+- Statistiques exportées en PDF : graphiques imprimés, boutons « Actualiser » laissés de côté
 
-### Technical
+### Technique
 
-- **Backend memory** about 370 to 400 MB at rest (420 MB in 1.12.0): heap capped at 256 MB, quick compiler (C1) only.
-- API: `GET /api/admin/stats/server` (memory and processor alone, for the live curves); `PUT /api/admin/images/{id}` follows the same size rules as an upload.
-- 131 backend tests, 100 front tests, 82 Chrome checks.
+- **Mémoire du backend** d'environ 370 à 400 Mo au repos (420 Mo en 1.12.0) : tas plafonné à 256 Mo, compilateur rapide (C1) seulement
+- API : `GET /api/admin/stats/server` (mémoire et processeur seuls, pour les courbes en direct) ; `PUT /api/admin/images/{id}` suit les mêmes règles de taille qu'un envoi
+- 131 tests backend, 100 tests front, 82 vérifications dans Chrome
 
 ## 1.12.0 - 2026-10-29
 
-Front and backend 1.12.0. Database migration: V17.
+Front et backend 1.12.0. Migration de la base : V17
 
-### Added
+### Ajouté
 
-- **Photo editor** before every upload and on photos already on the site ("Retoucher", also in the gallery): crop (free, 4:3, 3:2, 16:9; 2:3, 3:4 for Pinterest), quarter turns, mirror, filters (Bright, Gourmet, Soft, Contrasted, Fresh, Black and white), brightness, contrast, colours and warmth. A retouched photo replaces the original wherever it is shown; the original goes to the trash.
-- **History details**: each update lists the fields changed, old value struck through, new value next to it; for ingredients, steps and other lists, the lines removed and added. Photo changes of a recipe are recorded too.
-- **Smarter search**: words are also looked for in the steps and the equipment; a time is understood ("dessert en 30 min", "brioche 1h30"), as are "rapide", "facile" and "sans cuisson".
+- **Éditeur de photos** avant chaque envoi et sur les photos déjà en ligne (« Retoucher », aussi dans la galerie) : recadrage (libre, 4:3, 3:2, 16:9 ; 2:3, 3:4 pour Pinterest), quarts de tour, miroir, filtres (Lumineux, Gourmand, Doux, Contrasté, Frais, Noir et blanc), luminosité, contraste, couleurs et chaleur. Une photo retouchée remplace l'originale partout où elle s'affiche ; l'originale va à la corbeille
+- **Détail de l'historique** : chaque modification liste les champs changés, l'ancienne valeur barrée, la nouvelle à côté ; pour les ingrédients, les étapes et les autres listes, les lignes retirées et ajoutées. Les changements de photo d'une recette sont notés aussi
+- **Recherche plus fine** : les mots sont aussi cherchés dans les étapes et le matériel ; un temps est compris (« dessert en 30 min », « brioche 1h30 »), comme « rapide », « facile » et « sans cuisson »
 
-### Changed
+### Modifié
 
-- **A single featured recipe** on the home page again (the latest published one when none is chosen).
-- **Home page**: the 3 latest savory recipes and the 3 latest sweet ones, each with a link to all recipes of the theme, instead of the 3 latest.
-- Photos larger than 2400 px are made smaller in the browser before upload: quicker from a phone.
+- **Une seule recette à la une** de nouveau sur l'accueil (la dernière publiée quand aucune n'est choisie)
+- **Accueil** : les 3 dernières recettes salées et les 3 dernières sucrées, chacune avec un lien vers toutes les recettes du thème, au lieu des 3 dernières
+- Les photos de plus de 2400 px sont réduites dans le navigateur avant l'envoi : plus rapide depuis un téléphone
 
-### Fixed
+### Corrigé
 
-- Home search bar wider than a phone screen when a number of people was typed; long placeholder cut with an ellipsis.
-- Tapping − and + quickly (servings) zoomed the page in on iPhone.
+- La barre de recherche de l'accueil dépassait l'écran d'un téléphone quand un nombre de personnes était tapé ; texte indicatif long coupé par des points de suspension
+- Toucher vite − et + (portions) zoomait la page sur iPhone
 
-### Technical
+### Technique
 
-- **Backend memory** about 420 MB at rest instead of 700 to 800 MB: heap capped at 320 MB, G1 giving memory back when idle, GC and compiler threads for 2 cores, native memory trimmed, 5 database connections, 40 web threads at most.
-- API: `changes` on history lines, `PUT /api/admin/images/{id}` (retouched photo), `theme` of `/api/featured-recipe` kept for installed apps only.
-- 131 backend tests, 98 front tests, 82 Chrome checks.
+- **Mémoire du backend** d'environ 420 Mo au repos au lieu de 700 à 800 Mo : tas plafonné à 320 Mo, G1 qui rend la mémoire au repos, fils du ramasse-miettes et du compilateur pour 2 cœurs, mémoire native réduite, 5 connexions à la base, 40 fils web au plus
+- API : `changes` sur les lignes de l'historique, `PUT /api/admin/images/{id}` (photo retouchée), `theme` de `/api/featured-recipe` gardé pour les applications installées seulement
+- 131 tests backend, 98 tests front, 82 vérifications dans Chrome
 
 ## 1.11.0 - 2026-10-29
 
-Front and backend 1.11.0. Database migration: V16. Includes 1.10.1, never released.
+Front et backend 1.11.0. Migration de la base : V16. Comprend la 1.10.1, jamais publiée
 
-### Added
+### Ajouté
 
-- **Themes belong to categories**: each category is Sweet, Savory or Both. A recipe takes the theme of its main category; it is chosen by hand only in a "Both" category.
-- **"Salé" and "Sucré" menus** in the navbar (and on phones) instead of "Catégories": each theme with its categories and "All savory recipes". A "Both" category shows in each menu it has recipes for, opening only those.
-- **Back-office Categories**: theme of each category; changing it moves its recipes (after confirmation).
-- **"Scheduled" status** (blue) in the back-office for a draft with a publication time, with its own filter.
+- **Les thèmes appartiennent aux catégories** : chaque catégorie est Sucré, Salé ou Les deux. Une recette prend le thème de sa catégorie principale ; il ne se choisit à la main que dans une catégorie « Les deux »
+- **Menus « Salé » et « Sucré »** dans la barre du haut (et sur téléphone) à la place de « Catégories » : chaque thème avec ses catégories et « Toutes les recettes salées ». Une catégorie « Les deux » apparaît dans chaque menu dont elle a des recettes, en n'ouvrant que celles-là
+- **Catégories du back-office** : le thème de chaque catégorie ; le changer déplace ses recettes (après confirmation)
+- **Statut « Programmée »** (bleu) dans le back-office pour un brouillon avec une heure de publication, avec son propre filtre
 
-### Changed
+### Modifié
 
-- Savory before sweet everywhere (menus, filters, home page), as a meal goes.
-- **Recipes page** reorganised: search on its own line, then labelled filters (Type, Number of people, Ingredients, Category).
-- **Number of people**: a − / + counter (number can be typed, × to reset) instead of the "Comme la recette" menu.
-- Existing categories classified from their name, recipes following their main category (fixes the all-sweet migration of 1.10.0).
+- Le salé avant le sucré partout (menus, filtres, accueil), comme un repas
+- **Page des recettes** réorganisée : la recherche sur sa propre ligne, puis des filtres titrés (Type, Nombre de personnes, Ingrédients, Catégorie)
+- **Nombre de personnes** : un compteur − / + (nombre à taper, × pour revenir) à la place du menu « Comme la recette »
+- Les catégories existantes classées d'après leur nom, les recettes suivant leur catégorie principale (corrige la migration tout-sucré de la 1.10.0)
 
-### Technical
+### Technique
 
-- API: `theme` and `publishedThemes` on categories, `PUT /api/admin/categories/{id}` renamed `updateCategory` (name and theme), `theme` of the recipe form optional, `scheduled` filter on `/api/admin/recipes`.
-- 122 backend tests, 89 front tests, 81 Chrome checks.
+- API : `theme` et `publishedThemes` sur les catégories, `PUT /api/admin/categories/{id}` renommé `updateCategory` (nom et thème), `theme` facultatif dans le formulaire de recette, filtre `scheduled` sur `/api/admin/recipes`
+- 122 tests backend, 89 tests front, 81 vérifications dans Chrome
 
 ## 1.10.0 - 2026-10-29
 
-Front and backend 1.10.0. Database migration: V15.
+Front et backend 1.10.0. Migration de la base : V15
 
-### Added
+### Ajouté
 
-- **Sweet and savory themes**: every recipe is one or the other; theme filter on the recipes page and in the back-office.
-- **Home page**: one featured recipe per theme, side by side.
-- **Feature a scheduled recipe**: it becomes the featured one of its theme once published.
-- **"Failed" status** (red) next to Draft (grey) and Published (green): a scheduled recipe more than 30 min late (site down, old backup restored) or failing 3 times in a row is not published; reason shown, "Publish now" button.
-- **Smarter search**: "cake salé" suggests the savory theme (and still finds "caramel au beurre salé"), "gâteau au yaourt" suggests the Yaourt ingredient, "gâteau 8" shows a "8 pers." chip with − and +; "No result" message with an icon.
-- **Recipes page**: "For how many people?" carried to the recipes opened.
-- **Shopping list**: − and + per recipe; items read "Butter (90 g)".
-- **Statistics**: memory and processor in use, failed publications, sweet and savory counts.
-- **What's new**: GitHub and Coolify buttons.
+- **Thèmes sucré et salé** : chaque recette est l'un ou l'autre ; filtre par thème sur la page des recettes et dans le back-office
+- **Accueil** : une recette à la une par thème, côte à côte
+- **Mettre à la une une recette programmée** : elle devient celle de son thème une fois publiée
+- **Statut « Échec »** (rouge) à côté de Brouillon (gris) et Publiée (vert) : une recette programmée en retard de plus de 30 min (site arrêté, vieille sauvegarde restaurée) ou en échec 3 fois de suite n'est pas publiée ; raison affichée, bouton « Publier maintenant »
+- **Recherche plus fine** : « cake salé » propose le thème salé (et trouve toujours « caramel au beurre salé »), « gâteau au yaourt » propose l'ingrédient Yaourt, « gâteau 8 » montre une pastille « 8 pers. » avec − et + ; message « Aucun résultat » avec une icône
+- **Page des recettes** : « Pour combien de personnes ? » reporté sur les recettes ouvertes
+- **Liste de courses** : − et + par recette ; les articles se lisent « Beurre (90 g) »
+- **Statistiques** : mémoire et processeur utilisés, publications en échec, nombre de recettes sucrées et salées
+- **Nouveautés** : boutons GitHub et Coolify
 
-### Changed
+### Modifié
 
-- Changelog in English, versions renumbered from 3.x to 1.x.
-- Shop aisles named as in a supermarket: "Bakery" removed (its ingredients left without aisle), "Fresh" added, a hint for each.
-- History: 20 lines a page, pagination above and below the list.
-- Visitor feedback: one message a minute per address, 30 an hour for the whole site, duplicates kept once.
+- Changelog en anglais, versions renumérotées de 3.x en 1.x
+- Rayons nommés comme au supermarché : « Boulangerie » retiré (ses ingrédients laissés sans rayon), « Frais » ajouté, une aide pour chacun
+- Historique : 20 lignes par page, pagination au-dessus et au-dessous de la liste
+- Avis des visiteurs : un message par minute par adresse, 30 par heure pour tout le site, doublons gardés une fois
 
-### Fixed
+### Corrigé
 
-- Glossary: a word with a hyphen disabled every word; hyphens, underscores and spaces now match alike.
-- Feedback page: email field border; back-office feedback cards: outline kept on unread messages.
-- Changelog links open the file on GitHub instead of a missing page of the site.
+- Glossaire : un mot avec un tiret désactivait tous les mots ; tirets, tirets bas et espaces se valent désormais
+- Page d'avis : bordure du champ e-mail ; cartes des avis dans le back-office : contour gardé sur les messages non lus
+- Les liens du changelog ouvrent le fichier sur GitHub au lieu d'une page absente du site
 
-### Technical
+### Technique
 
-- API: `theme` on recipes, `GET /api/featured-recipe?theme=`, `POST /api/admin/recipes/{id}/publish`, `themes` in search suggestions, `server` in statistics, `theme` read by the AI.
-- 117 backend tests, 84 front tests, 74 Chrome checks (themes, smart search, failed status, shopping list servings, GitHub links).
+- API : `theme` sur les recettes, `GET /api/featured-recipe?theme=`, `POST /api/admin/recipes/{id}/publish`, `themes` dans les suggestions de recherche, `server` dans les statistiques, `theme` lu par l'IA
+- 117 tests backend, 84 tests front, 74 vérifications dans Chrome (thèmes, recherche fine, statut d'échec, portions de la liste de courses, liens GitHub)
 
 ## 1.9.0 - 2026-10-28
 
-Front and backend 1.9.0. Database migration: V14.
+Front et backend 1.9.0. Migration de la base : V14
 
-### Added
+### Ajouté
 
-- Site-wide search: header magnifier and home page bar, words matched in titles, categories, tags and ingredients, suggestions by kind; "tarte 8 personnes" opens recipes for 8.
-- "Give feedback" form for visitors; "Feedback" page in the back-office.
-- Back-office history (who did what, kept 6 months), editable home page titles.
-- Trash also keeps tags, ingredients and glossary words.
+- Recherche dans tout le site : loupe de l'en-tête et barre de l'accueil, mots cherchés dans les titres, catégories, tags et ingrédients, suggestions par type ; « tarte 8 personnes » ouvre les recettes pour 8
+- Formulaire « Donner mon avis » pour les visiteurs ; page « Retours » dans le back-office
+- Historique du back-office (qui a fait quoi, gardé 6 mois), titres de l'accueil modifiables
+- La corbeille garde aussi les tags, les ingrédients et les mots du glossaire
 
-### Technical
+### Technique
 
-- `GET /api/search-suggestions`, `POST /api/feedback` (honeypot, 5 an hour per address), `/api/admin/feedback`, `/api/admin/history`.
+- `GET /api/search-suggestions`, `POST /api/feedback` (champ piège, 5 par heure par adresse), `/api/admin/feedback`, `/api/admin/history`
 
 ## 1.8.1 - 2026-10-28
 
-Front and backend 1.8.1. No database migration.
+Front et backend 1.8.1. Pas de migration de la base
 
-### Technical
+### Technique
 
-- Documentation: corporate networks and Cloudflare Bot Fight Mode.
+- Documentation : réseaux d'entreprise et Bot Fight Mode de Cloudflare
 
 ## 1.8.0 - 2026-10-28
 
-Front and backend 1.8.0. No database migration.
+Front et backend 1.8.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- "Fill with AI" in the recipe editor: Gemini reads pasted text or a photo and fills the form, nothing saved ([docs/ia.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/ia.md)).
+- « Remplir avec l'IA » dans l'éditeur de recettes : Gemini lit un texte collé ou une photo et remplit le formulaire, sans rien enregistrer ([docs/ia.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/ia.md))
 
-### Changed
+### Modifié
 
-- Menus without a photo show the default visual.
+- Les menus sans photo montrent le visuel par défaut
 
 ## 1.7.0 - 2026-10-28
 
-Front and backend 1.7.0. Database migration: V13.
+Front et backend 1.7.0. Migration de la base : V13
 
-### Added
+### Ajouté
 
-- A photo for each menu.
+- Une photo pour chaque menu
 
-### Fixed
+### Corrigé
 
-- Offline: pages already seen open at once, no more 30 s wait then "Forbidden".
-- Installed app recognised from the browser; Search Console recipe steps completed.
+- Hors connexion : les pages déjà vues s'ouvrent tout de suite, plus d'attente de 30 s puis « Forbidden »
+- Application installée reconnue depuis le navigateur ; étapes des recettes complétées pour la Search Console
 
 ## 1.6.0 - 2026-10-28
 
-Front and backend 1.6.0. No database migration.
+Front et backend 1.6.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- Trash: multiple selection to restore or erase.
+- Corbeille : sélection multiple pour restaurer ou effacer
 
 ## 1.5.3 - 2026-10-28
 
-Front and backend 1.5.3. No database migration.
+Front et backend 1.5.3. Pas de migration de la base
 
-### Fixed
+### Corrigé
 
-- Back-office recipe list keeps its scroll position when sorting or filtering.
+- La liste des recettes du back-office garde sa position quand on trie ou filtre
 
 ## 1.5.2 - 2026-10-27
 
-Front and backend 1.5.2. No database migration.
+Front et backend 1.5.2. Pas de migration de la base
 
-### Fixed
+### Corrigé
 
-- Back-office recipe list empty ("sort not allowed").
+- Liste des recettes du back-office vide (« tri non autorisé »)
 
 ## 1.5.1 - 2026-10-27
 
-Front and backend 1.5.1. No database migration.
+Front et backend 1.5.1. Pas de migration de la base
 
-### Changed
+### Modifié
 
-- No full stop at the end of texts shown on the site.
+- Plus de point à la fin des textes affichés sur le site
 
 ## 1.5.0 - 2026-10-27
 
-Front and backend 1.5.0. Database migration: V12.
+Front et backend 1.5.0. Migration de la base : V12
 
-### Added
+### Ajouté
 
-- "Download the app" button; recipe view counts and most viewed recipes; sortable back-office recipe list.
-- Trash also keeps categories, menus and photos, restored where they were.
+- Bouton « Télécharger l'application » ; nombre de vues des recettes et recettes les plus vues ; liste des recettes du back-office triable
+- La corbeille garde aussi les catégories, les menus et les photos, restaurés à leur place
 
 ## 1.4.0 - 2026-10-27
 
-Front and backend 1.4.0. Database migration: V11.
+Front et backend 1.4.0. Migration de la base : V11
 
-### Added
+### Ajouté
 
-- Menus (recipes for an occasion) with "Add all to my shopping list".
-- Timers survive a page reload.
+- Menus (des recettes pour une occasion) avec « Tout ajouter à ma liste de courses »
+- Les minuteurs survivent à un rechargement de la page
 
-### Technical
+### Technique
 
-- Accessibility (axe) and Lighthouse checks in the Chrome run; gateway compression.
+- Vérifications d'accessibilité (axe) et Lighthouse dans le parcours Chrome ; compression par la passerelle
 
 ## 1.3.0 - 2026-10-27
 
-Front and backend 1.3.0. Database migration: V10.
+Front et backend 1.3.0. Migration de la base : V10
 
-### Added
+### Ajouté
 
-- Timers kept across pages, free timer; shopping list sorted by aisle; equipment list.
+- Minuteurs gardés d'une page à l'autre, minuteur libre ; liste de courses rangée par rayon ; liste du matériel
 
-### Technical
+### Technique
 
-- End-to-end Chrome run (`e2e/`), documentation split into `docs/`, MIT licence.
+- Parcours de bout en bout dans Chrome (`e2e/`), documentation découpée dans `docs/`, licence MIT
 
 ## 1.2.0 - 2026-10-27
 
-Front and backend 1.2.0. No database migration.
+Front et backend 1.2.0. Pas de migration de la base
 
-### Added
+### Ajouté
 
-- Search with several ingredients, personal notes, cooking mode "Mise en place" and "+ 1 min", install banner, "What's new" page.
+- Recherche à plusieurs ingrédients, notes personnelles, « Mise en place » et « + 1 min » du mode cuisine, bandeau d'installation, page « Nouveautés »
 
-### Technical
+### Technique
 
-- Unit tests: Vitest (front), JUnit (backend).
+- Tests unitaires : Vitest (front), JUnit (backend)
 
 ## 1.1.0 - 2026-10-26
 
-Front and backend 1.1.0. Database migration: V9.
+Front et backend 1.1.0. Migration de la base : V9
 
-### Added
+### Ajouté
 
-- New recipe notifications, mold size adaptation, "Plan my time", rest time, tips, related recipes, glossary.
-- Back-office: trash, scheduled publication, duplicate, auto-saved draft, nightly Google Drive backup.
+- Notifications des nouvelles recettes, adaptation à la taille du moule, « Organiser mon temps », temps de repos, conseils, recettes proches, glossaire
+- Back-office : corbeille, publication programmée, dupliquer, brouillon enregistré automatiquement, sauvegarde de nuit sur Google Drive
 
-### Technical
+### Technique
 
-- Built-in icons instead of `@lucide/angular` (first load 730 → 505 KB).
+- Icônes intégrées à la place de `@lucide/angular` (premier chargement de 730 à 505 Ko)

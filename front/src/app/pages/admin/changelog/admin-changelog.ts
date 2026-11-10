@@ -7,7 +7,7 @@ import { firstOfMonth } from '../../../shared/format/paris-time';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 
-/** "### Added", "### Changed"… of the CHANGELOG; "other" for a heading it does not know. */
+/** "### Ajouté", "### Modifié"… of the CHANGELOG (in English until 2.5.0); "other" for a heading it does not know. */
 export type ChangeKind = 'added' | 'changed' | 'fixed' | 'removed' | 'technical' | 'other';
 
 /** A line of a version: its kind, its bold title when it has one, the rest; both as inline HTML. */
@@ -49,6 +49,11 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 };
 
 const HEADINGS: Record<string, ChangeKind> = {
+  ajouté: 'added',
+  modifié: 'changed',
+  corrigé: 'fixed',
+  retiré: 'removed',
+  technique: 'technical',
   added: 'added',
   changed: 'changed',
   fixed: 'fixed',
@@ -236,7 +241,8 @@ export function changesOf(body: string): Pick<ChangelogVersion, 'summary' | 'cha
   return {
     summary: summary.length ? inline(summary.join(' ')) : '',
     changes: changes.map(({ kind: changeKind, markdown }) => {
-      const titled = /^\*\*(.+?):?\*\*:?\s*(.*)$/.exec(markdown);
+      // "**Title**: text" (English, until 2.5.0), "**Titre** : texte" (French)
+      const titled = /^\*\*(.+?):?\*\*\s*:?\s*(.*)$/.exec(markdown);
       return titled
         ? { kind: changeKind, title: inline(titled[1]!), text: inline(titled[2]!) }
         : { kind: changeKind, title: null, text: inline(markdown) };

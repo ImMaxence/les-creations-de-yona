@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ColorScheme } from './color-scheme';
 import {
   DEFAULT_PREFERENCES,
   DisplayPreferencesStore,
@@ -94,6 +95,21 @@ describe('DisplayPreferencesStore', () => {
 
     expect(localStorage.getItem(PREFERENCES_KEY)).toBeNull();
     expect(ATTRIBUTES.some((name) => document.documentElement.hasAttribute(name))).toBe(false);
+  });
+
+  it('goes back to the site as it comes, light or dark included', () => {
+    const store = TestBed.inject(DisplayPreferencesStore);
+    const colorScheme = TestBed.inject(ColorScheme);
+    store.update({ textSize: 'large' });
+    colorScheme.set('dark');
+    expect(store.onSiteDefaults()).toBe(false);
+
+    store.resetAll();
+
+    expect(store.onSiteDefaults()).toBe(true);
+    expect(colorScheme.preference()).toBe('auto');
+    expect(document.documentElement.hasAttribute('data-color-scheme')).toBe(false);
+    expect(localStorage.getItem('yona-color-scheme')).toBeNull();
   });
 
   it('still applies the choice when the browser refuses to store it', () => {

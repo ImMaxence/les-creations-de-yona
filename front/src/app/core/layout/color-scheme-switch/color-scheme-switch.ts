@@ -1,6 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal } from '@angular/core';
 import { ColorScheme, ColorSchemePreference } from '../../theme/color-scheme';
+import { DisplayPreferencesStore } from '../../theme/display-preferences';
+import { Toaster } from '../../notifications/toaster';
 import { RouterLink } from '@angular/router';
 import { ACCESSIBILITY_PATH } from '../../../shared/routing/links';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -35,6 +37,8 @@ export class ColorSchemeSwitch {
   readonly layout = input<'compact' | 'full'>('compact');
 
   protected readonly colorScheme = inject(ColorScheme);
+  protected readonly displayPreferences = inject(DisplayPreferencesStore);
+  private readonly toaster = inject(Toaster);
   protected readonly options = OPTIONS;
   protected readonly accessibilityPath = ACCESSIBILITY_PATH;
   protected readonly current = computed(
@@ -47,6 +51,13 @@ export class ColorSchemeSwitch {
   protected choose(preference: ColorSchemePreference): void {
     this.colorScheme.set(preference);
     this.open.set(false);
+  }
+
+  /** Light or dark following the system, and every choice of the page Accessibilité undone. */
+  protected resetAll(): void {
+    this.displayPreferences.resetAll();
+    this.open.set(false);
+    this.toaster.success('Paramètres par défaut du site rétablis');
   }
 
   protected closeOnOutsideClick(event: MouseEvent): void {

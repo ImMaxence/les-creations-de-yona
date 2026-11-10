@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ColorSchemeSwitch } from '../../core/layout/color-scheme-switch/color-scheme-switch';
-import { DisplayPreferences, DisplayPreferencesStore, isDefault } from '../../core/theme/display-preferences';
+import { Toaster } from '../../core/notifications/toaster';
+import { DisplayPreferences, DisplayPreferencesStore } from '../../core/theme/display-preferences';
 import { ACCESSIBILITY_STATEMENT_PATH, FEEDBACK_PATH } from '../../shared/routing/links';
 import { Button } from '../../shared/ui/button/button';
 import { Icon } from '../../shared/ui/icon/icon';
@@ -42,7 +43,13 @@ export default class Accessibility {
   protected readonly statementPath = ACCESSIBILITY_STATEMENT_PATH;
   protected readonly feedbackPath = FEEDBACK_PATH;
   protected readonly contactEmail = CONTACT_EMAIL;
-  protected readonly changed = computed(() => !isDefault(this.store.preferences()));
+  private readonly toaster = inject(Toaster);
+
+  /** The site as it comes: these choices undone, light or dark following the device. */
+  protected resetAll(): void {
+    this.store.resetAll();
+    this.toaster.success('Paramètres par défaut du site rétablis');
+  }
 
   protected setTextSize(textSize: DisplayPreferences['textSize']): void {
     this.store.update({ textSize });

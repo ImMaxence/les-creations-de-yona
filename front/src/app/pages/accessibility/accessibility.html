@@ -9,12 +9,7 @@
   </header>
 
   <section class="panel enter" style="--delay: 180ms" aria-labelledby="display-title">
-    <div class="panel__head">
-      <h2 id="display-title" class="panel__title">Affichage</h2>
-      <button yonaButton variant="ghost" type="button" [disabled]="!changed()" (click)="store.reset()">
-        <svg yonaIcon="rotate-ccw"></svg>Tout remettre par défaut
-      </button>
-    </div>
+    <h2 id="display-title" class="panel__title">Affichage</h2>
 
     <fieldset class="setting">
       <legend class="setting__label">Taille du texte</legend>
@@ -47,6 +42,15 @@
         </li>
       }
     </ul>
+
+    <div class="defaults">
+      <button yonaButton variant="secondary" type="button" [disabled]="store.onSiteDefaults()" (click)="resetAll()">
+        <svg yonaIcon="rotate-ccw"></svg>Paramètres par défaut
+      </button>
+      <p class="defaults__hint">
+        {{ store.onSiteDefaults() ? 'Le site est affiché comme il vient : rien n’a été changé' : 'Texte normal, contraste, police et animations d’origine, clair ou sombre selon votre appareil' }}
+      </p>
+    </div>
   </section>
 
   <section class="access__part enter" style="--delay: 240ms" aria-labelledby="built-in-title">

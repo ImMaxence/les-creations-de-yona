@@ -1,5 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
-import { DOCUMENT, Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { DOCUMENT, Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { ColorScheme } from './color-scheme';
 
 /** How a visitor wants the site shown, besides light or dark (page Accessibilité). */
 export interface DisplayPreferences {
@@ -81,6 +82,9 @@ export class DisplayPreferencesStore {
   private readonly state = signal<DisplayPreferences>(this.isBrowser ? readPreferences(this.stored()) : { ...DEFAULT_PREFERENCES });
 
   readonly preferences = this.state.asReadonly();
+  private readonly colorScheme = inject(ColorScheme);
+  /** Nothing changed: neither these choices nor light or dark ("Auto"). */
+  readonly onSiteDefaults = computed(() => isDefault(this.state()) && this.colorScheme.preference() === 'auto');
 
   update(changes: Partial<DisplayPreferences>): void {
     this.apply({ ...this.state(), ...changes });
@@ -88,6 +92,12 @@ export class DisplayPreferencesStore {
 
   reset(): void {
     this.apply({ ...DEFAULT_PREFERENCES });
+  }
+
+  /** "Paramètres par défaut": the site as it comes, light or dark following the system included. */
+  resetAll(): void {
+    this.reset();
+    this.colorScheme.set('auto');
   }
 
   private apply(preferences: DisplayPreferences): void {

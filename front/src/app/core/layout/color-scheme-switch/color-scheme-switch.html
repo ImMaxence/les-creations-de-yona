@@ -58,12 +58,18 @@
           </button>
         </li>
       }
-      <!-- Text size, contrast, motion…: the other display choices -->
+      <!-- Text size, contrast, motion…: the other display choices, and the way back to the site as it comes -->
       <li class="panel__more">
         <a class="panel__option" [routerLink]="accessibilityPath" (click)="open.set(false)">
           <svg yonaIcon="accessibility" [size]="18"></svg>
-          Plus de réglages
+          Accessibilité
         </a>
+      </li>
+      <li>
+        <button type="button" class="panel__option" [disabled]="displayPreferences.onSiteDefaults()" (click)="resetAll()">
+          <svg yonaIcon="rotate-ccw" [size]="18"></svg>
+          Paramètres par défaut
+        </button>
       </li>
     </ul>
   }

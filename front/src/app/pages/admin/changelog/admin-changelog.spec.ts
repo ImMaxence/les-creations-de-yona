@@ -77,6 +77,15 @@ describe('changesOf', () => {
     expect(kinds).toEqual(['added', 'changed', 'fixed', 'technical', 'other']);
   });
 
+  it('reads the French headings of the CHANGELOG, and a title followed by « : »', () => {
+    const { changes } = changesOf(
+      ['### Ajouté', '- **Boutique** : ouverte', '### Modifié', '- b', '### Corrigé', '- c', '### Retiré', '- d', '### Technique', '- e'].join('\n'),
+    );
+
+    expect(changes.map((change) => change.kind)).toEqual(['added', 'changed', 'fixed', 'removed', 'technical']);
+    expect(changes[0]).toEqual({ kind: 'added', title: 'Boutique', text: 'ouverte' });
+  });
+
   it('reads a title written with its colon inside the bold', () => {
     expect(changesOf('### Added\n- **Shop:** open').changes[0]).toEqual({ kind: 'added', title: 'Shop', text: 'open' });
   });

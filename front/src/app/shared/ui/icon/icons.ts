@@ -6,7 +6,9 @@
 export type IconNode = readonly [tag: 'path' | 'circle' | 'rect' | 'line' | 'polyline' | 'polygon' | 'ellipse', attributes: Readonly<Record<string, string>>];
 
 export const ICONS = {
-  'accessibility': [['circle',{cx:'16',cy:'4',r:'1'}],['path',{d:'m18 19 1-7-6 1'}],['path',{d:'m5 8 3-3 5.5 3-2.36 3.5'}],['path',{d:'M4.24 14.5a5 5 0 0 0 6.88 6'}],['path',{d:'M13.76 17.5a5 5 0 0 0-6.88-6'}]],
+  // The universal symbol of accessibility (a person, arms open, in a circle): Lucide's "person-standing",
+  // three quarters of its size, in its "circle". Not Lucide's own "accessibility", read as a wheelchair.
+  'accessibility': [['circle',{cx:'12',cy:'12',r:'10'}],['circle',{cx:'12',cy:'6.75',r:'0.75'}],['path',{d:'m7.5 8.25 4.5 1.5 4.5-1.5'}],['path',{d:'M12 9.75v3'}],['path',{d:'m9.75 16.5 2.25-3.75 2.25 3.75'}]],
   'arrow-down': [['path',{d:'M12 5v14'}],['path',{d:'m19 12-7 7-7-7'}]],
   'arrow-left': [['path',{d:'m12 19-7-7 7-7'}],['path',{d:'M19 12H5'}]],
   'arrow-left-right': [['path',{d:'M8 3 4 7l4 4'}],['path',{d:'M4 7h16'}],['path',{d:'m16 21 4-4-4-4'}],['path',{d:'M20 17H4'}]],

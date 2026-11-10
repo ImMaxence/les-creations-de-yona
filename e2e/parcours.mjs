@@ -688,7 +688,13 @@ await part('Infobulles de la barre du haut (ordinateur)', async () => {
   check('Clavier : le premier Tab mène à « Aller au contenu »', (await page.evaluate(() => document.activeElement?.textContent?.trim())) === 'Aller au contenu');
   await page.locator('yona-header .scheme-switch .trigger').click();
   await page.locator('#color-scheme-menu').waitFor();
-  check('Menu Clair / Sombre : « Plus de réglages » vers Accessibilité', (await page.locator('#color-scheme-menu a').getAttribute('href')) === '/accessibilite');
+  const schemeMenu = page.locator('#color-scheme-menu');
+  check('Menu Clair / Sombre : « Accessibilité » vers la page', (await schemeMenu.getByRole('link', { name: 'Accessibilité' }).getAttribute('href')) === '/accessibilite');
+  check('Menu Clair / Sombre : « Paramètres par défaut » sans effet tant que rien n’a changé', await schemeMenu.getByRole('button', { name: 'Paramètres par défaut' }).isDisabled());
+  await schemeMenu.getByRole('button', { name: 'Sombre' }).click();
+  await page.locator('yona-header .scheme-switch .trigger').click();
+  await schemeMenu.getByRole('button', { name: 'Paramètres par défaut' }).click();
+  check('« Paramètres par défaut » : de nouveau selon l’appareil', (await page.evaluate(() => document.documentElement.getAttribute('data-color-scheme') ?? localStorage.getItem('yona-color-scheme'))) === null);
   await page.context().close();
 });
 
@@ -716,8 +722,8 @@ await part('Accessibilité : réglages d’affichage et déclaration (téléphon
   await page.screenshot({ path: SHOTS + 'accessibilite-reglages.png' });
   await page.goto(BASE + '/accessibilite', { waitUntil: 'networkidle' });
   check('Les réglages relus sur la page', await page.getByRole('switch', { name: /Contraste renforcé/ }).isChecked());
-  await page.getByRole('button', { name: 'Tout remettre par défaut' }).click();
-  check('« Tout remettre par défaut » : plus aucun réglage, rien de gardé', JSON.stringify(await root()) === '{}' && (await page.evaluate(() => localStorage.getItem('yona-accessibility'))) === null);
+  await page.getByRole('button', { name: 'Paramètres par défaut' }).click();
+  check('« Paramètres par défaut » : plus aucun réglage, rien de gardé', JSON.stringify(await root()) === '{}' && (await page.evaluate(() => localStorage.getItem('yona-accessibility'))) === null);
   await page.getByRole('link', { name: 'Déclaration d’accessibilité' }).or(page.getByRole('link', { name: "Déclaration d'accessibilité" })).first().click();
   await page.waitForURL('**/declaration-d-accessibilite');
   const statement = await page.locator('main').innerText();

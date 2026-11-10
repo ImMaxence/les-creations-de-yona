@@ -34,14 +34,6 @@
   }
 }
 
-.panel__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
 .panel__title {
   font-size: var(--text-xl);
 }
@@ -105,6 +97,25 @@
 
 .switches {
   display: grid;
+}
+
+// Back to the site as it comes, under the choices
+.defaults {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.defaults .button {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.defaults__hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 
 // A row per choice: its name and what it does, the switch on the right
