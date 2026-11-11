@@ -1,6 +1,8 @@
-// The page shown: a light veil of the panel's text colour, within the margins of the menu. Not
-// the white of the search field just above, which made the two look alike.
+// The page shown: a light veil of the panel's text colour. Not the white of the search field just
+// above, which made the two look alike. The veil spills into the margins of the menu, so that its
+// label and arrow stay in line with the other rows; the line of the row above goes, not to cut it.
 @mixin current {
+  margin-inline: calc(-1 * var(--current-bleed));
   border-bottom-color: transparent;
   border-radius: var(--radius-md);
   background-color: color-mix(in srgb, var(--color-on-accent) 16%, transparent);
@@ -35,6 +37,8 @@
 .menu {
   // The centre of the menu button in the header: the colour spreads from there
   --menu-origin: calc(100% - 2.4rem) 2rem;
+  // How far the veil of the page shown spills into the margins (see current)
+  --current-bleed: var(--space-2);
 
   position: fixed;
   inset: 0;
@@ -182,10 +186,16 @@ yona-navigation-progress {
 }
 
 // One page shown at a time: inside a section, it is the row that says so, not "Recettes" above it
-.menu:not(:has(.sub.is-active)) a.entry.is-active {
-  @include current;
+.menu:not(:has(.sub.is-active)) {
+  a.entry.is-active {
+    @include current;
 
-  padding-inline: var(--space-3);
+    padding-inline: var(--current-bleed);
+  }
+
+  li:has(+ li > a.entry.is-active) > .entry {
+    border-bottom-color: transparent;
+  }
 }
 
 .entry__label {
@@ -221,9 +231,10 @@ yona-navigation-progress {
   scroll-margin-block: var(--space-4);
   interpolate-size: allow-keywords;
 
+  // Clipped in height only: the veil of the page shown spills sideways (see current)
   &::details-content {
     block-size: 0;
-    overflow: clip;
+    overflow: visible clip;
     transition:
       block-size var(--duration-slow) var(--ease-out),
       content-visibility var(--duration-slow) allow-discrete;
@@ -282,16 +293,20 @@ yona-navigation-progress {
     transform: translateX(4px);
   }
 
-  // A section clips what goes past it: the row stays within, only its arrow comes in
   &.is-active {
     @include current;
 
-    padding-right: var(--space-3);
+    padding-right: var(--current-bleed);
+    padding-left: calc(var(--space-4) + var(--current-bleed));
 
     .sub__label {
       font-style: italic;
     }
   }
+}
+
+li:has(+ li > .sub.is-active) > .sub {
+  border-bottom-color: transparent;
 }
 
 .sub--all {

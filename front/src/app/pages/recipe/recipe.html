@@ -234,7 +234,7 @@
     @if (related().length) {
       <section class="related no-print" aria-labelledby="related-title">
         <h2 id="related-title" class="related__title" yonaReveal>Vous aimerez aussi</h2>
-        <ul role="list" class="related__grid">
+        <ul role="list" class="recipe-grid">
           @for (card of related(); track card.slug) {
             <li yonaReveal><yona-recipe-card [recipe]="card" /></li>
           }

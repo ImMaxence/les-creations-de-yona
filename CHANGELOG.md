@@ -2,6 +2,16 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.5.2 - 2026-11-11
+
+Front et backend 2.5.2. Pas de migration de la base
+
+### Corrigé
+
+- **Vous aimerez aussi** : les cartes ne débordent plus de l'écran sur téléphone quand une catégorie a un nom long
+- **Menu sur les pages recette** : le bouton du menu ne sort plus de l'écran sur téléphone
+- **Menu téléphone** : la page en cours est alignée sur les autres lignes, sans le trait de la ligne du dessus
+
 ## 2.5.1 - 2026-11-10
 
 Front et backend 2.5.1. Pas de migration de la base

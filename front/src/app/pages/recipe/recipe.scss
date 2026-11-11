@@ -260,27 +260,17 @@
   }
 }
 
-// "Vous aimerez aussi": the same cards as the recipes page
+// "Vous aimerez aussi": the same cards, in the same grid as the recipes page (recipe-grid, global).
+// Its column never grows wider than the screen: a long category name no longer widens the page,
+// nor the fixed header with it, which pushed the menu button out of sight on phones.
 .related {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 
 .related__title {
   font-size: var(--text-2xl);
-}
-
-.related__grid {
-  display: grid;
-  gap: var(--space-5);
-
-  @include m.from(sm) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @include m.from(lg) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 .footer {
