@@ -2,6 +2,15 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.6.1 - 2026-11-11
+
+Front et backend 2.6.1. Pas de migration de la base
+
+### Technique
+
+- **Backend** : la JVM sur ses réglages par défaut, sans les limites des versions 1.12 et 1.13 (compilateur C1 seul, 2 cœurs) ; plus rapide à plein régime ; mémoire Java limitée à 512 Mo (256 Mo avant)
+- **Base de données et serveur web** : 10 connexions à la base et 200 threads Tomcat au plus, les valeurs par défaut (5 et 40 avant)
+
 ## 2.6.0 - 2026-11-11
 
 Front et backend 2.6.0. Pas de migration de la base
