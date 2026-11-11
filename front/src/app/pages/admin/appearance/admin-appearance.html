@@ -156,11 +156,12 @@
             }
           </span>
           <span class="preset__name">
-            <svg yonaIcon="palette" [size]="16"></svg>Personnalisé
+            <span class="preset__custom"><svg yonaIcon="palette" [size]="16"></svg>Personnalisé</span>
             @if (isCustom()) {
               <svg yonaIcon="check" [size]="16"></svg>
             }
           </span>
+          <span class="preset__hint">Mes propres couleurs</span>
         </button>
       </div>
 
@@ -233,7 +234,7 @@
 
   <details class="admin-fold" [open]="folds.isOpen('radius')" (toggle)="folds.onToggle('radius', $event)">
     <summary class="admin-fold__summary">
-      <svg yonaIcon="square" [size]="20" [strokeWidth]="1.75" class="admin-fold__icon"></svg>
+      <svg yonaIcon="corner-radius" [size]="20" [strokeWidth]="1.75" class="admin-fold__icon"></svg>
       <span class="admin-fold__title">Arrondi des coins</span>
       <span class="admin-fold__digest">{{ draft().radiusPx }} px</span>
       <svg yonaIcon="chevron-down" [size]="18" class="admin-fold__chevron"></svg>

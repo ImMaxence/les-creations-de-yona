@@ -132,7 +132,8 @@ export default class AdminProducts {
   protected readonly modes = SHOP_MODES;
 
   private readonly settings = resource({ loader: () => this.api.invoke(getShopSettings) });
-  protected readonly mode = signal<ShopMode>('CLOSED');
+  /** Null until the settings are read: no position is shown as chosen before the true one is known. */
+  protected readonly mode = signal<ShopMode | null>(null);
   protected readonly pickup = signal('');
   protected readonly savingSettings = signal(false);
 
@@ -181,10 +182,14 @@ export default class AdminProducts {
 
   protected async saveSettings(event: Event): Promise<void> {
     event.preventDefault();
+    const mode = this.mode();
+    if (!mode) {
+      return;
+    }
     this.savingSettings.set(true);
     const saved = await attempt(
       this.api.invoke(updateShopSettings, {
-        body: { mode: this.mode(), pickupInfo: this.pickup().trim() || undefined },
+        body: { mode, pickupInfo: this.pickup().trim() || undefined },
       }),
     );
     this.savingSettings.set(false);

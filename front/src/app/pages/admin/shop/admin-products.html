@@ -21,7 +21,7 @@
       <label class="field__label" for="shop-pickup">Retrait (facultatif)</label>
       <textarea id="shop-pickup" class="input" rows="2" maxlength="1000" placeholder="Où et quand venir chercher sa commande" [value]="pickup()" (input)="pickup.set($any($event.target).value)"></textarea>
     </div>
-    <button yonaButton type="submit" [disabled]="savingSettings()"><svg yonaIcon="save"></svg>Enregistrer</button>
+    <button yonaButton type="submit" [disabled]="savingSettings() || !mode()"><svg yonaIcon="save"></svg>Enregistrer</button>
   </form>
 
   <form class="admin-panel" (submit)="saveProduct($event)">

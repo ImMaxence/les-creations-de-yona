@@ -8,14 +8,14 @@
     </button>
   } @else {
     <!-- Computers: the panel folds into a column of icons, for more room on the page -->
-    <button type="button" class="round" [attr.aria-label]="rail() ? 'Déplier le menu' : 'Replier le menu'" [attr.aria-expanded]="!rail()" (click)="railToggled.emit()">
-      <svg [yonaIcon]="rail() ? 'panel-left-open' : 'panel-left-close'" [size]="20"></svg>
+    <button type="button" class="round fold" [attr.aria-label]="rail() ? 'Déplier le menu' : 'Replier le menu'" [attr.aria-expanded]="!rail()" (click)="toggleRail()">
+      <svg yonaIcon="chevrons-left" [size]="20"></svg>
     </button>
   }
 </div>
 
 @if (rail()) {
-  <a class="site-link site-link--rail" routerLink="/" aria-label="Retour au site"><svg yonaIcon="chevron-left" [size]="18"></svg></a>
+  <a class="site-link site-link--rail" routerLink="/" aria-label="Retour au site"><svg yonaIcon="house" [size]="20"></svg></a>
   <nav class="rail" aria-label="Sections du back-office">
     @for (group of groups; track group.id) {
       <ul role="list" class="rail__group" [attr.aria-label]="group.label">

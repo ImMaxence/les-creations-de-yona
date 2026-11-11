@@ -16,6 +16,7 @@ import { filter } from 'rxjs';
 import { AdminSession } from '../../../core/auth/admin-session';
 import { ConfirmDialog } from '../../../core/dialog/confirm-dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { SKELETON_DELAY } from '../../../shared/ui/skeleton/skeleton';
 import { UnreadFeedback } from '../feedback/unread-feedback';
 import { NewOrders } from '../shop/new-orders';
 import { AdminWatch } from './admin-watch';
@@ -33,6 +34,9 @@ function readRail(): boolean {
   }
 }
 
+/** The API of the back-office answers fast: its skeletons show only when an answer takes longer than this. */
+const ADMIN_SKELETON_DELAY_MS = 500;
+
 /** From this width, the side panel stays open: `lg` in _variables.scss. */
 const WIDE_SCREEN = '(width >= 64rem)';
 
@@ -48,6 +52,8 @@ const WIDE_SCREEN = '(width >= 64rem)';
   templateUrl: './admin-layout.html',
   styleUrls: ['./admin-frame.scss', './admin-layout.scss'],
   encapsulation: ViewEncapsulation.None,
+  // Reaches every page of the back-office, drawn inside this frame
+  providers: [{ provide: SKELETON_DELAY, useValue: ADMIN_SKELETON_DELAY_MS }],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class AdminLayout {

@@ -426,9 +426,16 @@ img.admin-thumb {
       content-visibility var(--duration-base) allow-discrete;
   }
 
+  // Once unfolded, what goes over the edge is no longer cut off: a list of choices, the ring of a chosen card
   &[open]::details-content {
     block-size: auto;
+    overflow: visible;
     opacity: 1;
+    transition:
+      block-size var(--duration-base) var(--ease-in-out),
+      opacity var(--duration-fast) var(--ease-out),
+      content-visibility var(--duration-base) allow-discrete,
+      overflow 0s var(--duration-base) allow-discrete;
   }
 }
 
@@ -483,10 +490,11 @@ img.admin-thumb {
   }
 }
 
+// A gap under the title: its hover does not merge with the cards below, of the same colour
 .admin-fold__body {
   display: grid;
   gap: var(--space-4);
-  padding: 0 var(--space-5) var(--space-5);
+  padding: var(--space-3) var(--space-5) var(--space-5);
 
   @include m.below(sm) {
     padding-inline: var(--space-3);

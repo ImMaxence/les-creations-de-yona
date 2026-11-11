@@ -11,6 +11,7 @@ import {
   linkedSignal,
   output,
   resource,
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
@@ -73,7 +74,7 @@ function readClosedGroups(): string[] {
   templateUrl: './admin-nav.html',
   styleUrl: './admin-nav.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class.is-drawer]': 'drawer()' },
+  host: { '[class.is-drawer]': 'drawer()', '[class.is-toggled]': 'toggled()' },
 })
 export class AdminNav {
   readonly drawer = input(false, { transform: booleanAttribute });
@@ -83,6 +84,9 @@ export class AdminNav {
   readonly railToggled = output();
   /** "Fermer le menu", in the drawer. */
   readonly closed = output();
+
+  /** Folded or unfolded by hand since it was drawn: only then does its content fade in (never on arrival). */
+  protected readonly toggled = signal(false);
 
   protected readonly session = inject(AdminSession);
   private readonly toaster = inject(Toaster);
@@ -169,6 +173,11 @@ export class AdminNav {
           this.openGroups.update((open) => (this.drawer() ? new Set([current]) : new Set(open).add(current)));
         }
       });
+  }
+
+  protected toggleRail(): void {
+    this.toggled.set(true);
+    this.railToggled.emit();
   }
 
   protected isOpen(id: string): boolean {

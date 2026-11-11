@@ -5,6 +5,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  // Its width of arrival at once: the side panel around it slides, nothing inside moves or wraps meanwhile
+  // (less the line at the edge of the side panel)
+  width: calc(var(--admin-side) - 1px);
   height: 100dvh;
   padding: var(--space-4);
 }
@@ -12,6 +15,7 @@
 // In the drawer the whole panel scrolls, it may be taller than the screen
 :host(.is-drawer) {
   gap: var(--space-4);
+  width: auto;
   height: auto;
   min-height: 100%;
 }
@@ -33,12 +37,57 @@
   border-radius: 50%;
   -webkit-tap-highlight-color: transparent;
 
+  transition: background-color var(--duration-fast) var(--ease-out);
+
   &:active {
     background-color: var(--color-surface);
   }
 
   @include m.hover {
-    background-color: var(--color-bg);
+    background-color: var(--color-surface);
+  }
+}
+
+// "Replier le menu": two chevrons that turn to point where the panel will go
+.fold {
+  color: var(--color-text-muted);
+
+  svg {
+    transition: transform var(--duration-slow) var(--ease-in-out);
+  }
+
+  &[aria-expanded='false'] svg {
+    transform: rotate(180deg);
+  }
+
+  @include m.hover {
+    color: var(--color-text);
+  }
+}
+
+// Folded or unfolded: what the panel holds fades in at its new place (two names, so that each change replays it)
+:host(.is-toggled) yona-brand-logo,
+:host(.is-toggled) .site-link,
+:host(.is-toggled) .groups,
+:host(.is-toggled) .rail,
+:host(.is-toggled) .account {
+  animation: nav-unfold var(--duration-slow) var(--ease-in-out) both;
+}
+
+// The account stays in place from one to the other: its animation is replayed by its other name
+:host(.is-toggled:has(.rail)) .account {
+  animation-name: nav-fold;
+}
+
+@keyframes nav-unfold {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes nav-fold {
+  from {
+    opacity: 0;
   }
 }
 

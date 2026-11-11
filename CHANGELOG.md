@@ -2,6 +2,22 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.7.3 - 2026-11-11
+
+Front et backend 2.7.3. Pas de migration de la base
+
+### Modifié
+
+- **Chargements du back-office** : plus de formes grises qui clignotent ; elles n'apparaissent que si la réponse met plus d'une demi-seconde, sinon la page attend sans rien montrer
+- **Menu du back-office** : il se replie et se déplie plus doucement, la page suit au même rythme, et son bouton devient deux chevrons qui se retournent ; replié, « Retour au site » est une maison, pour ne pas le confondre avec lui
+- **Apparence** : « Personnalisé » mis en avant (fond teinté, contour en pointillés, « Mes propres couleurs ») ; une icône de coin arrondi pour « Arrondi des coins », à la place du carré pris pour une case à cocher
+
+### Corrigé
+
+- **Accordéons** (Apparence, Statistiques) : une liste déroulante ouverte n'est plus coupée par le bord de son encart, ni le contour du thème choisi
+- **Accordéons** : un espace sous le titre, dont le survol ne se mélange plus avec les encarts du dessous
+- **Produits** : « La boutique » ne montre plus « Fermée » un instant avant le vrai choix ; rien n'est coché tant que la réponse n'est pas arrivée
+
 ## 2.7.2 - 2026-11-11
 
 Front et backend 2.7.2. Pas de migration de la base

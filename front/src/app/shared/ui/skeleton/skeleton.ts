@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, InjectionToken, computed, inject, input, signal } from '@angular/core';
 
 /**
  * What is coming, drawn in grey while it loads:
@@ -11,113 +11,122 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
  */
 export type SkeletonKind = 'rows' | 'cards' | 'tiles' | 'figures' | 'form' | 'recipe' | 'list' | 'article';
 
+/**
+ * How long a skeleton waits before it shows, in milliseconds: an answer that comes sooner shows
+ * nothing at all, grey shapes for an instant would only flash. None by default; the back-office
+ * provides its own (admin-layout.ts).
+ */
+export const SKELETON_DELAY = new InjectionToken<number>('SKELETON_DELAY', { factory: () => 0 });
+
 /** Widths that vary from one line to the next, as real text does. */
 const WIDTHS = ['92%', '78%', '85%', '64%', '88%', '70%'];
 
 @Component({
   selector: 'yona-skeleton',
   template: `
-    <span class="visually-hidden">Chargement…</span>
-    @switch (kind()) {
-      @case ('rows') {
-        <ul role="list" class="rows" aria-hidden="true">
-          @for (item of items(); track item) {
-            <li class="row">
-              <span class="bone row__thumb"></span>
-              <span class="row__main">
-                <span class="bone line line--title" [style.width]="width(item, 1)"></span>
-                <span class="bone line line--small" [style.width]="width(item, 3)"></span>
-              </span>
-              <span class="bone row__action"></span>
-              <span class="bone row__action"></span>
-            </li>
-          }
-        </ul>
-      }
-      @case ('cards') {
-        <ul role="list" class="cards" aria-hidden="true">
-          @for (item of items(); track item) {
-            <li class="card">
-              <span class="bone card__image"></span>
-              <span class="bone line line--small" style="width: 35%"></span>
-              <span class="bone line line--title" [style.width]="width(item, 0)"></span>
-              <span class="bone line line--small" [style.width]="width(item, 3)"></span>
-            </li>
-          }
-        </ul>
-      }
-      @case ('tiles') {
-        <ul role="list" class="tiles" aria-hidden="true">
-          @for (item of items(); track item) {
-            <li class="bone tile"></li>
-          }
-        </ul>
-      }
-      @case ('figures') {
-        <div class="figures" aria-hidden="true">
-          @for (item of items(); track item) {
-            <div class="figure">
-              <span class="bone line line--small" style="width: 55%"></span>
-              <span class="bone figure__number"></span>
-              <span class="bone line line--small" [style.width]="width(item, 1)"></span>
-            </div>
-          }
-        </div>
-      }
-      @case ('form') {
-        <div class="form" aria-hidden="true">
-          @for (item of items(); track item) {
-            <div class="field">
-              <span class="bone line line--small" style="width: 8rem"></span>
-              <span class="bone input" [class.input--tall]="item % 3 === 2"></span>
-            </div>
-          }
-        </div>
-      }
-      @case ('recipe') {
-        <div class="page" aria-hidden="true">
-          <span class="bone hero"></span>
-          <div class="page__body">
-            <span class="bone line line--small" style="width: 30%"></span>
-            <span class="bone line line--heading" style="width: 70%"></span>
-            <span class="bone line" style="width: 90%"></span>
-            <span class="bone line" style="width: 60%"></span>
-            <div class="facts">
-              @for (fact of [0, 1, 2, 3]; track fact) {
-                <span class="bone fact"></span>
-              }
-            </div>
+    @if (shown()) {
+      <span class="visually-hidden">Chargement…</span>
+      @switch (kind()) {
+        @case ('rows') {
+          <ul role="list" class="rows" aria-hidden="true">
             @for (item of items(); track item) {
-              <span class="bone line" [style.width]="width(item, 0)"></span>
+              <li class="row">
+                <span class="bone row__thumb"></span>
+                <span class="row__main">
+                  <span class="bone line line--title" [style.width]="width(item, 1)"></span>
+                  <span class="bone line line--small" [style.width]="width(item, 3)"></span>
+                </span>
+                <span class="bone row__action"></span>
+                <span class="bone row__action"></span>
+              </li>
             }
-          </div>
-        </div>
-      }
-      @case ('list') {
-        <div class="page page--padded" aria-hidden="true">
-          <span class="bone line line--heading" style="width: 45%"></span>
-          <span class="bone line" style="width: 70%"></span>
-          <ul role="list" class="cards">
+          </ul>
+        }
+        @case ('cards') {
+          <ul role="list" class="cards" aria-hidden="true">
             @for (item of items(); track item) {
               <li class="card">
                 <span class="bone card__image"></span>
+                <span class="bone line line--small" style="width: 35%"></span>
                 <span class="bone line line--title" [style.width]="width(item, 0)"></span>
                 <span class="bone line line--small" [style.width]="width(item, 3)"></span>
               </li>
             }
           </ul>
-        </div>
-      }
-      @case ('article') {
-        <div class="page page--padded page--narrow" aria-hidden="true">
-          <span class="bone line line--small" style="width: 25%"></span>
-          <span class="bone line line--heading" style="width: 80%"></span>
-          <span class="bone line" style="width: 55%"></span>
-          <span class="bone hero hero--inline"></span>
-          @for (item of items(); track item) {
-            <span class="bone line" [style.width]="width(item, 0)"></span>
-          }
-        </div>
+        }
+        @case ('tiles') {
+          <ul role="list" class="tiles" aria-hidden="true">
+            @for (item of items(); track item) {
+              <li class="bone tile"></li>
+            }
+          </ul>
+        }
+        @case ('figures') {
+          <div class="figures" aria-hidden="true">
+            @for (item of items(); track item) {
+              <div class="figure">
+                <span class="bone line line--small" style="width: 55%"></span>
+                <span class="bone figure__number"></span>
+                <span class="bone line line--small" [style.width]="width(item, 1)"></span>
+              </div>
+            }
+          </div>
+        }
+        @case ('form') {
+          <div class="form" aria-hidden="true">
+            @for (item of items(); track item) {
+              <div class="field">
+                <span class="bone line line--small" style="width: 8rem"></span>
+                <span class="bone input" [class.input--tall]="item % 3 === 2"></span>
+              </div>
+            }
+          </div>
+        }
+        @case ('recipe') {
+          <div class="page" aria-hidden="true">
+            <span class="bone hero"></span>
+            <div class="page__body">
+              <span class="bone line line--small" style="width: 30%"></span>
+              <span class="bone line line--heading" style="width: 70%"></span>
+              <span class="bone line" style="width: 90%"></span>
+              <span class="bone line" style="width: 60%"></span>
+              <div class="facts">
+                @for (fact of [0, 1, 2, 3]; track fact) {
+                  <span class="bone fact"></span>
+                }
+              </div>
+              @for (item of items(); track item) {
+                <span class="bone line" [style.width]="width(item, 0)"></span>
+              }
+            </div>
+          </div>
+        }
+        @case ('list') {
+          <div class="page page--padded" aria-hidden="true">
+            <span class="bone line line--heading" style="width: 45%"></span>
+            <span class="bone line" style="width: 70%"></span>
+            <ul role="list" class="cards">
+              @for (item of items(); track item) {
+                <li class="card">
+                  <span class="bone card__image"></span>
+                  <span class="bone line line--title" [style.width]="width(item, 0)"></span>
+                  <span class="bone line line--small" [style.width]="width(item, 3)"></span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+        @case ('article') {
+          <div class="page page--padded page--narrow" aria-hidden="true">
+            <span class="bone line line--small" style="width: 25%"></span>
+            <span class="bone line line--heading" style="width: 80%"></span>
+            <span class="bone line" style="width: 55%"></span>
+            <span class="bone hero hero--inline"></span>
+            @for (item of items(); track item) {
+              <span class="bone line" [style.width]="width(item, 0)"></span>
+            }
+          </div>
+        }
       }
     }
   `,
@@ -331,13 +340,25 @@ const WIDTHS = ['92%', '78%', '85%', '64%', '88%', '70%'];
       border-radius: var(--radius-md);
     }
   `,
-  host: { role: 'status', 'aria-live': 'polite' },
+  host: { role: 'status', 'aria-live': 'polite', '[style.display]': 'shown() ? null : "none"' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Skeleton {
   readonly kind = input<SkeletonKind>('rows');
   /** How many rows, cards, tiles, figures, fields or lines of text. */
   readonly count = input(6);
+
+  /** False while it waits (SKELETON_DELAY): nothing drawn, no room taken. */
+  protected readonly shown = signal(true);
+
+  constructor() {
+    const delay = inject(SKELETON_DELAY);
+    if (delay > 0) {
+      this.shown.set(false);
+      const timer = setTimeout(() => this.shown.set(true), delay);
+      inject(DestroyRef).onDestroy(() => clearTimeout(timer));
+    }
+  }
 
   protected readonly items = computed(() => Array.from({ length: this.count() }, (_, index) => index));
 
