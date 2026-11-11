@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
@@ -42,7 +43,7 @@ type MergeChoice = { keptId: number } | { newName: string };
  */
 @Component({
   selector: 'yona-admin-ingredients',
-  imports: [Icon, RouterLink, BulkBar, Button, Select],
+  imports: [Icon, RouterLink, BulkBar, Button, Select, Skeleton],
   templateUrl: './admin-ingredients.html',
   styleUrl: './admin-ingredients.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

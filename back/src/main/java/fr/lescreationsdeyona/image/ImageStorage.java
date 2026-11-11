@@ -55,6 +55,17 @@ public class ImageStorage {
 			.map(S3Object::key);
 	}
 
+	/** Whether the bucket answers: one key asked for, nothing read (Statistiques, "Versions et santé"). */
+	public boolean reachable() {
+		try {
+			s3.listObjectsV2(request -> request.bucket(properties.bucket()).maxKeys(1));
+			return true;
+		}
+		catch (RuntimeException ex) {
+			return false;
+		}
+	}
+
 	/** Files of the bucket and their total size, orphans included. */
 	public record Usage(long files, long bytes) {
 	}

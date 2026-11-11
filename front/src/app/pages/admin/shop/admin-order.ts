@@ -9,7 +9,7 @@ import { updateShopOrder } from '../../../core/api/generated/fn/admin-shop/updat
 import { AdminOrder as Order } from '../../../core/api/generated/models/admin-order';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
-import { ORDER_STATUS_LABELS, OrderStatus } from '../../../shared/format/order-status';
+import { ORDER_STATUS_LABELS, OrderStatus, orderStatusBadge } from '../../../shared/format/order-status';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { formatEuros } from '../../../shared/format/units';
 import { orderTrackingLink } from '../../../shared/routing/links';
@@ -17,11 +17,12 @@ import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { NewOrders } from './new-orders';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 /** An order: what was asked, how to answer, and its status, amount and admin in charge. */
 @Component({
   selector: 'yona-admin-order',
-  imports: [Button, Icon, ParisDatePipe, RouterLink, Select],
+  imports: [Button, Icon, ParisDatePipe, RouterLink, Select, Skeleton],
   template: `
     <section class="admin-section" aria-labelledby="order-title">
       <div class="admin-section__head">
@@ -116,7 +117,7 @@ import { NewOrders } from './new-orders';
           </div>
         </form>
       } @else if (order.isLoading()) {
-        <p class="admin-empty">Chargement…</p>
+        <yona-skeleton kind="form" [count]="3" />
       } @else {
         <p class="admin-empty">Cette commande n'existe plus</p>
       }
@@ -148,7 +149,7 @@ export default class AdminOrder {
   protected readonly formatEuros = formatEuros;
   protected readonly trackingLink = (order: Order) => orderTrackingLink(order.trackingToken);
   protected readonly statusOptions: SelectOption<OrderStatus>[] = (Object.entries(ORDER_STATUS_LABELS) as [OrderStatus, string][]).map(
-    ([value, label]) => ({ value, label }),
+    ([value, label]) => ({ value, label, badge: orderStatusBadge(value).replace('badge--', '') }),
   );
   protected readonly order = resource({
     params: () => this.id(),

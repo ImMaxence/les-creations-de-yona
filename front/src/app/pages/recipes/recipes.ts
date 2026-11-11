@@ -25,6 +25,8 @@ import {
   sameName,
 } from './recipes.resolver';
 import { Icon } from '../../shared/ui/icon/icon';
+import { Skeleton } from '../../shared/ui/skeleton/skeleton';
+import { SlowNavigation, pathOf } from '../../core/layout/page-skeleton/slow-navigation';
 
 /** The first tap on + from nothing: a meal for two, then one more at each tap. */
 const FIRST_SERVINGS = 2;
@@ -43,6 +45,7 @@ const SERVINGS_DELAY_MS = 500;
     Reveal,
     SearchBox,
     Select,
+    Skeleton,
     VirtualItem,
   ],
   templateUrl: './recipes.html',
@@ -63,6 +66,12 @@ export default class Recipes {
   protected readonly recipesPath = RECIPES_PATH;
 
   protected readonly filters = computed(() => this.data().filters);
+  private readonly slowNavigation = inject(SlowNavigation);
+  /** Other filters, slow to apply: the cards to come, in grey, in place of the old ones. */
+  protected readonly filtering = computed(() => {
+    const target = this.slowNavigation.target();
+    return !!target && pathOf(target) === RECIPES_PATH;
+  });
   /** The first page comes with the resolver (rendered by the server), the next ones as the visitor goes down. */
   protected readonly list = new InfiniteList({
     first: () => this.data().result,

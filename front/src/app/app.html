@@ -3,7 +3,11 @@
 @if (!backOffice()) {
   <yona-header />
 }
-<main #main id="contenu" class="main" [class.main--bare]="backOffice()" tabindex="-1">
+<main #main id="contenu" class="main" [class.main--bare]="backOffice()" [class.main--waiting]="!!pageSkeleton()" tabindex="-1">
+  <!-- The next page, drawn in grey while it is slow to come; the page left stays alive under it, in case the visitor stays -->
+  @if (pageSkeleton(); as kind) {
+    <yona-skeleton class="page-skeleton" [kind]="kind" [count]="kind === 'list' ? 6 : 8" />
+  }
   <router-outlet />
 </main>
 @if (!backOffice()) {

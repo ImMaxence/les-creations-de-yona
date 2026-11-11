@@ -16,6 +16,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { Selection } from '../selection';
 import { MAX_DEFINITION_LENGTH, MAX_FORMS, MAX_NAME_LENGTH, splitForms, usualForms, withUsualForms } from './glossary-forms';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 export { usualForms } from './glossary-forms';
 
@@ -30,7 +31,7 @@ export const TO_COMPLETE_QUERY = 'a-completer';
  */
 @Component({
   selector: 'yona-admin-glossary',
-  imports: [Icon, RouterLink, BulkBar, Button],
+  imports: [Icon, RouterLink, BulkBar, Button, Skeleton],
   templateUrl: './admin-glossary.html',
   styleUrl: './admin-glossary.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

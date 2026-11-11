@@ -1,5 +1,7 @@
 package fr.lescreationsdeyona.theme;
 
+import org.jspecify.annotations.Nullable;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -40,6 +42,9 @@ public class AppearancePreset {
 	private BodyFont bodyFont;
 
 	private int radiusPx;
+
+	/** {@link CustomColors} as JSON; null for a look without colors chosen by hand. */
+	private @Nullable String customColors;
 
 	@CreatedDate
 	@Column(updatable = false)

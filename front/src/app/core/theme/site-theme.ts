@@ -6,6 +6,7 @@ import { updateTheme } from '../api/generated/fn/admin-theme/update-theme';
 import { ThemeResponse } from '../api/generated/models/theme-response';
 import { ColorScheme, ColorSchemePreference } from './color-scheme';
 import { BODY_FONTS, DISPLAY_FONTS } from './theme-fonts';
+import { customPalette } from './custom-palette';
 import { THEME_PRESETS, ThemePalette } from './theme-presets';
 
 export const DEFAULT_THEME: ThemeResponse = {
@@ -69,9 +70,9 @@ export class SiteTheme {
   }
 
   private write(theme: ThemeResponse, preference: ColorSchemePreference): void {
-    const preset = THEME_PRESETS[theme.preset];
+    const { light, dark } = palettesOf(theme);
     this.document.documentElement.setAttribute('style', themeStyle(theme));
-    this.writeBrowserColor(preset.light.bg, preset.dark.bg, preference);
+    this.writeBrowserColor(light.bg, dark.bg, preference);
   }
 
   /** Color of the browser bar and of the installed app's status bar: the page background. */
@@ -97,9 +98,17 @@ export class SiteTheme {
   }
 }
 
+/** The light and dark palettes of a theme: a theme of the site, or the colors chosen by hand. */
+export function palettesOf(theme: Pick<ThemeResponse, 'preset' | 'customColors'>): { light: ThemePalette; dark: ThemePalette } {
+  if (theme.preset === 'PERSONNALISE' && theme.customColors) {
+    return { light: customPalette(theme.customColors.light, 'light'), dark: customPalette(theme.customColors.dark, 'dark') };
+  }
+  return THEME_PRESETS[theme.preset];
+}
+
 /** --color-bg: light-dark(#fcf9f5, #1d1411); … --font-display: …; --radius-base: 16px */
 export function themeStyle(theme: ThemeResponse): string {
-  const { light, dark } = THEME_PRESETS[theme.preset];
+  const { light, dark } = palettesOf(theme);
   const colors = (Object.keys(light) as (keyof ThemePalette)[]).map(
     (key) => `--color-${toKebabCase(key)}: light-dark(${light[key]}, ${dark[key]})`,
   );

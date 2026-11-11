@@ -10,6 +10,7 @@ import {
   input,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Skeleton, SkeletonKind } from '../skeleton/skeleton';
 import { InfiniteList } from './infinite-list';
 
 /** The next page is asked for this far before the end of the list comes on screen. */
@@ -21,12 +22,17 @@ const LOAD_AHEAD = '800px 0px';
  */
 @Component({
   selector: 'yona-infinite-scroll',
+  imports: [Skeleton],
   template: `
     @if (list().failed()) {
       <p class="note" role="alert">La suite n'a pas pu se charger</p>
       <button type="button" class="more" (click)="list().reload()">Réessayer</button>
     } @else if (list().isLoadingMore()) {
-      <p class="note" role="status"><span class="spinner" aria-hidden="true"></span>Chargement…</p>
+      @if (skeleton(); as kind) {
+        <yona-skeleton class="skeleton" [kind]="kind" [count]="kind === 'cards' ? 3 : kind === 'tiles' ? 8 : 3" />
+      } @else {
+        <p class="note" role="status"><span class="spinner" aria-hidden="true"></span>Chargement…</p>
+      }
     } @else if (list().hasMore()) {
       @if (nextHref(); as href) {
         <a class="more" [href]="href" (click)="$event.preventDefault(); list().loadMore()">Afficher la suite</a>
@@ -72,6 +78,11 @@ const LOAD_AHEAD = '800px 0px';
       }
     }
 
+    // The next items, drawn in grey where they will come
+    .skeleton {
+      flex: 1 1 100%;
+    }
+
     .more {
       padding: var(--space-2) var(--space-4);
       border-radius: var(--radius-pill);
@@ -88,6 +99,8 @@ export class InfiniteScroll {
   readonly list = input.required<InfiniteList<any, any>>();
   /** Lists with an address of their own: a true link to ?page=n, for search engines. */
   readonly linked = input(false, { transform: booleanAttribute });
+  /** While the next page loads: grey shapes of the items to come, rather than a spinner. */
+  readonly skeleton = input<SkeletonKind | null>(null);
 
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly router = inject(Router);

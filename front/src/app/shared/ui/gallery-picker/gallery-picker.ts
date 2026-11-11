@@ -7,6 +7,7 @@ import { CoverImage } from '../cover-image/cover-image';
 import { Dialog } from '../dialog/dialog';
 import { InfiniteList } from '../infinite-scroll/infinite-list';
 import { InfiniteScroll } from '../infinite-scroll/infinite-scroll';
+import { Skeleton } from '../skeleton/skeleton';
 
 const PAGE_SIZE = 12;
 
@@ -17,7 +18,7 @@ const PAGE_SIZE = 12;
  */
 @Component({
   selector: 'yona-gallery-picker',
-  imports: [CoverImage, Dialog, InfiniteScroll, ParisDatePipe],
+  imports: [CoverImage, Dialog, InfiniteScroll, ParisDatePipe, Skeleton],
   templateUrl: './gallery-picker.html',
   styleUrl: './gallery-picker.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

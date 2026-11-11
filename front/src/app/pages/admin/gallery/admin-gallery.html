@@ -97,9 +97,9 @@
   } @else if (images.isEmpty()) {
     <p class="admin-empty">Aucune image</p>
   } @else if (images.isLoading()) {
-    <p class="admin-empty">Chargement…</p>
+    <yona-skeleton kind="tiles" [count]="12" />
   }
-  <yona-infinite-scroll [list]="images" />
+  <yona-infinite-scroll skeleton="tiles" [list]="images" />
 </section>
 
 <yona-photo-editor

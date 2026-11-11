@@ -26,6 +26,7 @@ import { ADMIN_CATEGORIES_QUERY } from '../categories/admin-categories-query';
 import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
 import { Selection } from '../selection';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 type KindFilter = 'ALL' | GalleryImage['kind'];
 type UsageFilter = 'ALL' | 'USED' | 'UNUSED';
@@ -40,8 +41,7 @@ const PAGE_SIZE = 24;
  */
 @Component({
   selector: 'yona-admin-gallery',
-  imports: [
-    Icon,
+  imports: [Icon,
     RouterLink,
     BulkBar,
     Button,
@@ -50,8 +50,7 @@ const PAGE_SIZE = 24;
     PhotoEditor,
     Select,
     ParisDatePipe,
-    VirtualItem,
-  ],
+    VirtualItem, Skeleton],
   templateUrl: './admin-gallery.html',
   styleUrl: './admin-gallery.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

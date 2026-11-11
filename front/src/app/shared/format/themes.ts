@@ -37,12 +37,15 @@ export function categoryOfThemeQueryParams(category: Pick<CategoryResponse, 'slu
   return category.theme ? { categorie: category.slug } : { categorie: category.slug, theme: themeSlug(theme) };
 }
 
+/** "Sucré", then "Salé": a pastry blog shows the sweet side first (menus, latest recipes of the home page). */
+export const SWEET_FIRST = [...THEMES].reverse();
+
 /**
- * "Sucré", then "Salé", for the menus of the site (a pastry blog: the sweet side first): all the
- * recipes of each, then its categories. The rest of the site keeps the order of a meal (THEMES).
+ * The menus of the site, the sweet side first: all the recipes of each, then its categories. The
+ * filters keep the order of a meal (THEMES).
  */
 export function themeGroupsOf(categories: CategoryResponse[]) {
-  return [...THEMES].reverse().map(({ value, label, slug }) => ({
+  return SWEET_FIRST.map(({ value, label, slug }) => ({
     theme: value,
     label,
     allLabel: `Toutes les recettes ${label.toLowerCase()}es`,

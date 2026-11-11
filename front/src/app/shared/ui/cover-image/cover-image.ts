@@ -1,5 +1,5 @@
 import { IMAGE_LOADER, ImageLoaderConfig, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, booleanAttribute, input, signal, viewChild } from '@angular/core';
 import { Icon } from '../icon/icon';
 
 /** The API serves every image in two WebP widths: /api/images/{id}/800.webp and /1600.webp. */
@@ -17,6 +17,7 @@ function apiImageLoader({ src, width }: ImageLoaderConfig): string {
   templateUrl: './cover-image.html',
   styleUrl: './cover-image.scss',
   providers: [{ provide: IMAGE_LOADER, useValue: apiImageLoader }],
+  host: { '[class.is-loading]': '!!imageId() && loadedId() !== imageId()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CoverImage {
@@ -27,4 +28,19 @@ export class CoverImage {
   readonly sizes = input('100vw');
   /** Above the fold (largest image of the page): loaded first, never lazily. */
   readonly priority = input(false, { transform: booleanAttribute });
+
+  /** The photo shown at last: until then, its place breathes. */
+  protected readonly loadedId = signal<string | null>(null);
+  private readonly image = viewChild<ElementRef<HTMLImageElement>>('image');
+
+  constructor() {
+    // Loaded before the page came to life (rendered by the server), the photo said nothing
+    afterRenderEffect(() => {
+      const image = this.image()?.nativeElement;
+      const id = this.imageId();
+      if (image?.complete && image.naturalWidth > 0 && id) {
+        this.loadedId.set(id);
+      }
+    });
+  }
 }

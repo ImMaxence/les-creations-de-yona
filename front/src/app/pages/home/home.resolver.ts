@@ -6,7 +6,7 @@ import { getFeaturedRecipe } from '../../core/api/generated/fn/recipes/get-featu
 import { listPublishedRecipes } from '../../core/api/generated/fn/recipes/list-published-recipes';
 import { CapHighlight } from '../../core/api/generated/models/cap-highlight';
 import { RecipeCard } from '../../core/api/generated/models/recipe-card';
-import { THEMES, Theme } from '../../shared/format/themes';
+import { SWEET_FIRST, Theme } from '../../shared/format/themes';
 
 export const LATEST_RECIPES_COUNT = 3;
 
@@ -35,13 +35,13 @@ export const homeResolver: ResolveFn<HomeData> = async () => {
     // 204 without any published recipe
     api.invoke(getFeaturedRecipe, {}) as Promise<RecipeCard | null>,
     // One more than shown: the featured recipe, already above, is left out of its theme
-    Promise.all(THEMES.map(({ value }) => api.invoke(listPublishedRecipes, { theme: value, size: LATEST_RECIPES_COUNT + 1 }))),
+    Promise.all(SWEET_FIRST.map(({ value }) => api.invoke(listPublishedRecipes, { theme: value, size: LATEST_RECIPES_COUNT + 1 }))),
     // An extra: the home page still shows without it. 204 before the first article.
     (api.invoke(getCapHighlight) as Promise<CapHighlight | null>).catch(() => null),
   ]);
   return {
     featured: featured ?? null,
-    latest: THEMES.map(({ value }, index) => ({
+    latest: SWEET_FIRST.map(({ value }, index) => ({
       theme: value,
       recipes: latest[index].content.filter((recipe) => recipe.slug !== featured?.slug).slice(0, LATEST_RECIPES_COUNT),
     })).filter((group) => group.recipes.length > 0),

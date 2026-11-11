@@ -21,7 +21,10 @@ class RecipeAiServiceTest {
 
 	private final Gemini gemini = mock(Gemini.class);
 
-	private final RecipeAiService service = new RecipeAiService(gemini, JsonMapper.builder().build(),
+	private final Claude claude = mock(Claude.class);
+
+	private final RecipeAiService service = new RecipeAiService(
+			new OnlineAi(gemini, new GeminiStatus(gemini), claude, new ClaudeStatus(claude)), JsonMapper.builder().build(),
 			mock(CategoryRepository.class), mock(TagRepository.class), mock(IngredientRepository.class));
 
 	@Test

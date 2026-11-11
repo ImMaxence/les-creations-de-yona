@@ -2,6 +2,43 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.7.0 - 2026-11-11
+
+Front et backend 2.7.0. Deux migrations de la base (V23, V24), appliquées au démarrage. Claude : variable `ANTHROPIC_API_KEY` à ajouter dans Coolify (facultative)
+
+### Ajouté
+
+- **Mon CAP** : « Écrire avec l'IA » dans un article, à partir de notes tapées, dictées ou en photo : titre, sous-titre et blocs proposés (récit, pas à pas ou carnet), les photos déjà placées gardées ; quatre exemples de notes d'un clic ; aussi depuis « Nouvel article »
+- **Claude d'Anthropic** : troisième IA au choix dans « Remplir avec l'IA » et « Écrire avec l'IA », à côté de Gemini et de l'IA locale (payée à l'usage)
+- **Logos des IA** : chaque choix montre la marque de qui fait le travail (Gemini, Claude, Google, OpenAI)
+- **Dictée** : « Dicter » dans les deux fenêtres de l'IA ; Whisper d'OpenAI écrit ce que vous dites, sur l'ordinateur, puis l'IA choisie s'en sert
+- **Journaux** : une page du back-office avec les erreurs et avertissements du serveur et des navigateurs des visiteurs, regroupés et comptés, et un badge dans le menu pour les nouvelles erreurs
+- **Statistiques** : un encart « Versions et santé » (versions du site et de l'API, base de données, stockage des photos, Spring Boot et Java, depuis quand le serveur tourne, erreurs du jour)
+- **Statistiques** : l'historique de la mémoire et du processeur sur 7, 30 ou 90 jours, mesuré toutes les 10 minutes
+- **Historique** : ce que les autres ont fait depuis votre dernière visite marqué « Nouveau », et compté dans un badge du menu
+- **Nouveautés** : un badge « Nouveau » dans le menu tant que la version en ligne n'a pas été lue
+- **Apparence** : des couleurs personnalisées (fond, cartes, texte, accent, en clair et en sombre), avec une alerte si le texte devient difficile à lire
+- **Apparence** : 12 nouvelles polices (Bricolage Grotesque, Newsreader, Shantell Sans, Grandstander, Imbue, Playpen Sans, Raleway, Rubik, Outfit, Figtree, Crimson Pro, Bitter)
+- **Menu du back-office** : un bouton en haut pour le replier en colonne d'icônes sur ordinateur, retenu d'une visite à l'autre
+- **Chargements** : des skeletons partout à la place de « Chargement… » (listes, galerie, statistiques, formulaires), une page grise le temps qu'arrive une page lente du site, et les photos qui respirent avant d'apparaître
+- **SEO de Mon CAP** : chaque article dans llms.txt avec son résumé, leur texte entier dans llms-full.txt, et des données structurées plus riches (Blog, sujet, mots-clés, longueur)
+
+### Modifié
+
+- **Statistiques** : les encarts en accordéons (Versions et santé, Serveur, Recettes, À faire, Visiteurs), chacun retenu ouvert ou fermé
+- **Apparence** : Mes préréglages, Couleurs, Polices et Arrondi en accordéons, le choix actuel dans leur titre ; chaque police montrée dans son propre style dans la liste
+- **Filtres des statuts** : Publiées, Programmées, Brouillons et En échec aux couleurs de leurs badges (recettes et commandes)
+- **Listes déroulantes** : aussi larges que leur choix le plus long, sans texte coupé, et ouvertes vers la gauche au bord de l'écran
+- **Menu du site sur ordinateur** : une pastille douce au survol des liens, à la place du trait qui glissait
+- **Accueil** : Sucré avant Salé dans les dernières recettes
+- **Pages légales** : les nouvelles polices, Claude et Whisper dans les crédits ; la politique de confidentialité parle de Claude, de la dictée et du journal des erreurs des navigateurs
+
+### Technique
+
+- **Claude** : SDK Java officiel d'Anthropic, réponses au format JSON imposé, modèle réglable (`CLAUDE_MODEL`, Claude Haiku 5.5 par défaut : rapide et peu cher, assez pour ranger un texte)
+- **Journaux** : un appender Logback garde les WARN et ERROR, écrits en base toutes les 20 secondes, 30 jours et 2 000 lignes au plus ; les navigateurs envoient leurs erreurs (30 par minute au plus pour tout le site)
+- **Base** : tables `admin_seen` (ce que chaque admin a vu), `app_log` (journal) et `server_sample` (mémoire et processeur, 90 jours) ; thème « Personnalisé » et nouvelles polices
+
 ## 2.6.1 - 2026-11-11
 
 Front et backend 2.6.1. Pas de migration de la base

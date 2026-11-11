@@ -13,12 +13,16 @@
   (click)="toggle()"
   (keydown)="onKeydown($event)"
 >
-  <span class="trigger__label">{{ selectedLabel() }}</span>
+  @if (selectedOption()?.badge; as badge) {
+    <span class="trigger__label"><span class="badge" [class]="'badge badge--' + badge">{{ selectedLabel() }}</span></span>
+  } @else {
+    <span class="trigger__label" [style.font-family]="selectedOption()?.font ?? null">{{ selectedLabel() }}</span>
+  }
   <svg yonaIcon="chevron-down" class="trigger__chevron" [size]="16"></svg>
 </button>
 
 @if (open()) {
-  <div class="list" animate.enter="list--enter" animate.leave="list--leave">
+  <div class="list" [class.list--end]="alignEnd()" animate.enter="list--enter" animate.leave="list--leave">
     @if (searchable()) {
       <input
         #filterInput
@@ -52,6 +56,10 @@
               {{ item.option.label }}
               <small class="option__hint">{{ item.option.hint }}</small>
             </span>
+          } @else if (item.option.badge) {
+            <span class="badge" [class]="'badge badge--' + item.option.badge">{{ item.option.label }}</span>
+          } @else if (item.option.font) {
+            <span class="option__font" [style.font-family]="item.option.font">{{ item.option.label }}</span>
           } @else {
             {{ item.option.label }}
           }

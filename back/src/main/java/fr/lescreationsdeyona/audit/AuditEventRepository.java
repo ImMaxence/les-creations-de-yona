@@ -14,6 +14,10 @@ interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
 	@Query("select e from AuditEvent e where (:kind is null or e.kind = :kind) order by e.happenedAt desc, e.id desc")
 	Page<AuditEvent> findLatest(@Nullable AuditKind kind, Pageable pageable);
 
+	/** What the others (other admins, the site itself) did since then. */
+	@Query("select count(e) from AuditEvent e where e.happenedAt > :since and e.actor <> :admin")
+	long countByOthersSince(Instant since, String admin);
+
 	@Modifying
 	@Query("delete from AuditEvent e where e.happenedAt < :before")
 	int deleteHappenedBefore(Instant before);

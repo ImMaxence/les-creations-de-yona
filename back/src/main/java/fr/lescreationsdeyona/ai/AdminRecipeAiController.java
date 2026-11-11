@@ -28,12 +28,12 @@ class AdminRecipeAiController {
 		return recipeAiService.status();
 	}
 
-	@Operation(summary = "Read a recipe with Gemini, to fill the editor; nothing is saved",
+	@Operation(summary = "Read a recipe with Gemini or Claude, to fill the editor; nothing is saved",
 			description = "A pasted text (20,000 characters at most), a photo (JPEG or PNG, 10 MB max), or both. "
 					+ "Takes a few seconds, sometimes half a minute; one at a time.")
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	RecipeAiDraft fillRecipeWithAi(@ModelAttribute RecipeAiRequest request) {
-		return recipeAiService.draft(request.text(), request.image());
+		return recipeAiService.draft(request.text(), request.image(), request.engine() == null ? AiEngine.GEMINI : request.engine());
 	}
 
 	@Operation(summary = "What the model running in the browser is told to read a recipe")

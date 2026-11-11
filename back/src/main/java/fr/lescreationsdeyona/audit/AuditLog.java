@@ -1,6 +1,8 @@
 package fr.lescreationsdeyona.audit;
 
 import fr.lescreationsdeyona.common.PageResponse;
+import fr.lescreationsdeyona.monitoring.AdminSeen;
+import fr.lescreationsdeyona.monitoring.Unseen;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -42,6 +44,8 @@ public class AuditLog {
 
 	private final JsonMapper jsonMapper;
 
+	private final AdminSeen adminSeen;
+
 	@Transactional
 	public void record(AuditAction action, AuditKind kind, String label, @Nullable Long targetId) {
 		save(action, kind, label, targetId, null);
@@ -64,6 +68,15 @@ public class AuditLog {
 			.map(event -> new AuditEventResponse(event.getId(), event.getHappenedAt(), event.getActor(), event.getAction(),
 					event.getKind(), event.getLabel(), event.getTargetId(),
 					event.getChanges() == null ? null : jsonMapper.readValue(event.getChanges(), CHANGES))));
+	}
+
+	/** What the others did since this admin last opened the history: its own changes are known to it. */
+	public Unseen unseen() {
+		Instant since = adminSeen.of(AdminSeen.Topic.HISTORY)
+			.map(AdminSeen.Mark::at)
+			.orElseGet(() -> Instant.now().minus(Unseen.FIRST_TIME));
+		long count = adminSeen.admin().map(admin -> repository.countByOthersSince(since, admin)).orElse(0L);
+		return new Unseen(count, since);
 	}
 
 	/** Every night, what is older than 6 months. */

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
+import { countUnseenHistory } from '../../../core/api/generated/fn/admin-history/count-unseen-history';
 import { listHistory } from '../../../core/api/generated/fn/admin-history/list-history';
 import { AuditEventResponse } from '../../../core/api/generated/models/audit-event-response';
 import { parisDateTime } from '../../../shared/format/paris-time';
@@ -8,6 +9,9 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
 import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { AdminSession } from '../../../core/auth/admin-session';
+import { AdminWatch } from '../layout/admin-watch';
 
 type Kind = AuditEventResponse['kind'];
 type Action = AuditEventResponse['action'];
@@ -63,7 +67,7 @@ const ACTIONS: Record<Action, string> = {
  */
 @Component({
   selector: 'yona-admin-history',
-  imports: [Icon, InfiniteScroll, RouterLink, Select],
+  imports: [Icon, InfiniteScroll, RouterLink, Select, Skeleton],
   template: `
     <section class="admin-section" aria-labelledby="history-title">
       <div class="admin-section__head">
@@ -71,7 +75,7 @@ const ACTIONS: Record<Action, string> = {
       </div>
       <p class="field__hint">
         Ce qui a été fait dans le back-office, par qui et quand, les 6 derniers mois. Les publications programmées sont
-        faites par le site lui-même
+        faites par le site lui-même. « Nouveau » : ce que les autres ont fait depuis votre dernière visite
       </p>
       <div class="admin-toolbar">
         <yona-select label="Type" [options]="kindOptions" [value]="kind()" (valueChange)="changeKind($event)" />
@@ -83,9 +87,12 @@ const ACTIONS: Record<Action, string> = {
           </p>
           <ul role="list" class="admin-list admin-list--infinite" [class.is-busy]="events.isLoading()">
             @for (event of events.items(); track event.id) {
-              <li class="admin-row">
+              <li class="admin-row" [class.is-new]="isNew(event)">
                 <div class="admin-row__main">
                   <span class="admin-row__title">
+                    @if (isNew(event)) {
+                      <span class="badge badge--featured">Nouveau</span>
+                    }
                     <span class="admin-label">{{ kinds[event.kind].label }}</span>
                     @if (linkOf(event); as link) {
                       <a class="link-button" [routerLink]="link">{{ event.label }}</a>
@@ -130,12 +137,19 @@ const ACTIONS: Record<Action, string> = {
       } @else if (events.isEmpty()) {
         <p class="admin-empty">Rien pour le moment</p>
       } @else if (events.isLoading()) {
-        <p class="admin-empty">Chargement…</p>
+        <yona-skeleton kind="rows" [count]="6" />
       }
-      <yona-infinite-scroll [list]="events" />
+      <yona-infinite-scroll skeleton="rows" [list]="events" />
     </section>
   `,
   styles: `
+    /* Done by the others since the last visit: a line of the accent colour on its left */
+    .admin-row.is-new {
+      box-shadow:
+        inset 3px 0 0 var(--color-accent),
+        0 0 0 1px var(--color-line);
+    }
+
     .changes {
       margin-top: var(--space-1);
       font-size: var(--text-sm);
@@ -205,6 +219,29 @@ const ACTIONS: Record<Action, string> = {
 })
 export default class AdminHistory {
   private readonly api = inject(Api);
+  private readonly session = inject(AdminSession);
+  private readonly watch = inject(AdminWatch);
+  /** The last visit: what the others did after it is new. Null until known. */
+  private readonly since = signal<string | null>(null);
+
+  constructor() {
+    void this.markSeen();
+  }
+
+  /** Read before being marked seen: the rows new at this visit stay so until the next one. */
+  private async markSeen(): Promise<void> {
+    try {
+      this.since.set((await this.api.invoke(countUnseenHistory)).since);
+    } catch {
+      return;
+    }
+    await this.watch.historySeen();
+  }
+
+  protected isNew(event: AuditEventResponse): boolean {
+    const since = this.since();
+    return !!since && Date.parse(event.happenedAt) > Date.parse(since) && event.actor !== this.session.admin()?.email;
+  }
 
   /** A few changes show at once; more, folded under their count. */
   protected readonly openedUpTo = 4;

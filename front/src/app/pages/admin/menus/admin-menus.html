@@ -140,6 +140,6 @@
       <p class="admin-empty">Aucun menu pour le moment</p>
     }
   } @else if (menus.isLoading()) {
-    <p class="admin-empty">Chargement…</p>
+    <yona-skeleton kind="rows" [count]="4" />
   }
 </section>

@@ -32,7 +32,7 @@ class EndpointAccessTest {
 
 	/** What visitors may send, by method: the rest is denied. */
 	private static final Map<HttpMethod, List<String>> PUBLIC_WRITES = Map.of(HttpMethod.POST,
-			List.of(SecurityConfig.NOTIFICATION_SUBSCRIPTIONS, SecurityConfig.RECIPE_VIEWS, SecurityConfig.AI_VISITS, SecurityConfig.FEEDBACK,
+			List.of(SecurityConfig.NOTIFICATION_SUBSCRIPTIONS, SecurityConfig.RECIPE_VIEWS, SecurityConfig.AI_VISITS, SecurityConfig.BROWSER_ERRORS, SecurityConfig.FEEDBACK,
 					SecurityConfig.SHOP_ORDERS),
 			HttpMethod.DELETE, List.of(SecurityConfig.NOTIFICATION_SUBSCRIPTIONS));
 

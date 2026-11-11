@@ -1,65 +1,106 @@
 <div class="top">
-  <yona-brand-logo />
+  @if (!rail()) {
+    <yona-brand-logo />
+  }
   @if (drawer()) {
     <button type="button" class="round" aria-label="Fermer le menu" (click)="closed.emit()">
       <svg yonaIcon="x" [size]="24"></svg>
     </button>
+  } @else {
+    <!-- Computers: the panel folds into a column of icons, for more room on the page -->
+    <button type="button" class="round" [attr.aria-label]="rail() ? 'Déplier le menu' : 'Replier le menu'" [attr.aria-expanded]="!rail()" (click)="railToggled.emit()">
+      <svg [yonaIcon]="rail() ? 'panel-left-open' : 'panel-left-close'" [size]="20"></svg>
+    </button>
   }
 </div>
 
-<a class="site-link" routerLink="/"><svg yonaIcon="chevron-left" [size]="18"></svg>Retour au site</a>
-
-<nav class="groups" aria-label="Sections du back-office">
-  @for (group of groups; track group.id) {
-    <section class="group" routerLinkActive="is-current" [attr.aria-label]="group.label">
-      <button
-        type="button"
-        class="group__toggle"
-        [attr.aria-expanded]="isOpen(group.id)"
-        [attr.aria-controls]="'admin-menu-' + group.id"
-        (click)="toggleGroup(group.id)"
-      >
-        <span class="group__badge"><svg [yonaIcon]="group.icon" [size]="drawer() ? 20 : 16"></svg></span>
-        <span class="group__label">{{ group.label }}</span>
-        <!-- Open, each section says it itself -->
-        @if (!isOpen(group.id) && groupCount(group); as count) {
-          <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
-        }
-        <span class="group__chevron"><svg yonaIcon="chevron-down" [size]="drawer() ? 20 : 16" aria-hidden="true"></svg></span>
-      </button>
-      <ul role="list" class="links" [class.is-closed]="!isOpen(group.id)" [id]="'admin-menu-' + group.id">
+@if (rail()) {
+  <a class="site-link site-link--rail" routerLink="/" aria-label="Retour au site"><svg yonaIcon="chevron-left" [size]="18"></svg></a>
+  <nav class="rail" aria-label="Sections du back-office">
+    @for (group of groups; track group.id) {
+      <ul role="list" class="rail__group" [attr.aria-label]="group.label">
         @for (link of group.links; track link.path) {
           <li>
-            <a class="link" [routerLink]="link.path" routerLinkActive="is-active">
-              <svg [yonaIcon]="link.icon" [size]="drawer() ? 20 : 18"></svg>
-              <span class="link__label">{{ link.label }}</span>
+            <a class="rail__link" [routerLink]="link.path" routerLinkActive="is-active" [attr.aria-label]="railLabel(link)">
+              <svg [yonaIcon]="link.icon" [size]="20"></svg>
               @if (link.count?.(); as count) {
-                <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
+                <span class="rail__count" aria-hidden="true">{{ count > 99 ? '99+' : count }}</span>
+              } @else if (link.badge?.()) {
+                <span class="rail__dot" aria-hidden="true"></span>
               }
             </a>
           </li>
         }
       </ul>
-    </section>
-  }
-</nav>
+    }
+  </nav>
+} @else {
+  <a class="site-link" routerLink="/"><svg yonaIcon="chevron-left" [size]="18"></svg>Retour au site</a>
 
-<div class="account">
+  <nav class="groups" aria-label="Sections du back-office">
+    @for (group of groups; track group.id) {
+      <section class="group" routerLinkActive="is-current" [attr.aria-label]="group.label">
+        <button
+          type="button"
+          class="group__toggle"
+          [attr.aria-expanded]="isOpen(group.id)"
+          [attr.aria-controls]="'admin-menu-' + group.id"
+          (click)="toggleGroup(group.id)"
+        >
+          <span class="group__badge"><svg [yonaIcon]="group.icon" [size]="drawer() ? 20 : 16"></svg></span>
+          <span class="group__label">{{ group.label }}</span>
+          <!-- Open, each section says it itself -->
+          @if (!isOpen(group.id)) {
+            @if (groupCount(group); as count) {
+              <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
+            } @else if (groupHasNews(group)) {
+              <span class="nav-dot" aria-label="Du nouveau"></span>
+            }
+          }
+          <span class="group__chevron"><svg yonaIcon="chevron-down" [size]="drawer() ? 20 : 16" aria-hidden="true"></svg></span>
+        </button>
+        <ul role="list" class="links" [class.is-closed]="!isOpen(group.id)" [id]="'admin-menu-' + group.id">
+          @for (link of group.links; track link.path) {
+            <li>
+              <a class="link" [routerLink]="link.path" routerLinkActive="is-active">
+                <svg [yonaIcon]="link.icon" [size]="drawer() ? 20 : 18"></svg>
+                <span class="link__label">{{ link.label }}</span>
+                @if (link.count?.(); as count) {
+                  <span class="nav-count" [attr.aria-label]="count + ' ' + (link.countLabel ?? 'en attente')">{{ count > 99 ? '99+' : count }}</span>
+                } @else if (link.badge?.(); as badge) {
+                  <span class="nav-badge">{{ badge }}</span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </nav>
+}
+
+<div class="account" [class.account--rail]="rail()">
   @if (session.admin(); as admin) {
     <div class="account__who">
       <yona-admin-avatar [name]="admin.name || admin.email" [picture]="admin.picture" />
-      <span class="account__text">
-        <span class="account__name">{{ admin.name }}</span>
-        <span class="account__email" [attr.data-tooltip]="admin.email">{{ admin.email }}</span>
-      </span>
+      @if (!rail()) {
+        <span class="account__text">
+          <span class="account__name">{{ admin.name }}</span>
+          <span class="account__email" [attr.data-tooltip]="admin.email">{{ admin.email }}</span>
+        </span>
+      }
       @if (!drawer()) {
         <button type="button" class="round" aria-label="Se déconnecter" (click)="signOut()"><svg yonaIcon="log-out" [size]="18"></svg></button>
       }
     </div>
   }
-  <yona-color-scheme-switch layout="full" />
+  @if (!rail()) {
+    <yona-color-scheme-switch layout="full" />
+  }
   @if (drawer()) {
     <button type="button" class="account__out" (click)="signOut()"><svg yonaIcon="log-out" [size]="18"></svg>Se déconnecter</button>
   }
-  <p class="account__versions">Site v{{ frontVersion }} · API v{{ backVersion.value()?.version ?? '…' }}</p>
+  @if (!rail()) {
+    <p class="account__versions">Site v{{ frontVersion }} · API v{{ backVersion.value()?.version ?? '…' }}</p>
+  }
 </div>

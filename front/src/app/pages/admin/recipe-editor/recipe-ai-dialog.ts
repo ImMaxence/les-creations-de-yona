@@ -1,15 +1,19 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, model, output, resource, signal } from '@angular/core';
 import { Api } from '../../../core/api/generated/api';
+import { getClaudeAvailability } from '../../../core/api/generated/fn/admin-claude/get-claude-availability';
 import { fillRecipeWithAi } from '../../../core/api/generated/fn/admin-recipe-ai/fill-recipe-with-ai';
 import { getRecipeAiLocalPrompt } from '../../../core/api/generated/fn/admin-recipe-ai/get-recipe-ai-local-prompt';
 import { readRecipeAiLocalAnswer } from '../../../core/api/generated/fn/admin-recipe-ai/read-recipe-ai-local-answer';
 import { RecipeAiDraft } from '../../../core/api/generated/models/recipe-ai-draft';
+import { AiEngine, claudeName, engineInUse, localStages, storeEngine, storedEngine } from '../../../core/local-ai/ai-engine';
 import { RECIPE_MODEL } from '../../../core/local-ai/local-models';
 import { AiStage, isPhoneOrTablet } from '../../../core/local-ai/local-ai-format';
 import { RecipeReaderProgress, readRecipeLocally } from '../../../core/local-ai/read-recipe-locally';
+import { AiEngines } from '../../../shared/ui/ai-engines/ai-engines';
 import { Button } from '../../../shared/ui/button/button';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
+import { Dictation } from '../../../shared/ui/dictation/dictation';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { PHOTO_ACCEPT, photoFileError } from '../../../shared/ui/image-upload/photo-file';
 import { LocalAiProgress } from '../../../shared/ui/local-ai-progress/local-ai-progress';
@@ -18,6 +22,8 @@ import { LocalModelSetup } from '../../../shared/ui/local-model-setup/local-mode
 const MAX_TEXT_LENGTH = 20_000;
 /** Errors after which the button must be greyed out: the editor asks for the status again. */
 const LASTING_ERRORS = new Set(['AI_NOT_CONFIGURED', 'AI_KEY_REFUSED', 'AI_DAILY_QUOTA']);
+/** The same for Claude: the window asks for its status again. */
+const LASTING_CLAUDE_ERRORS = new Set(['CLAUDE_NOT_CONFIGURED', 'CLAUDE_KEY_REFUSED', 'CLAUDE_NO_CREDIT']);
 
 /** "Essayer avec un exemple": parts, quantities, times and a mold, to see what the AI fills in. */
 const EXAMPLE_RECIPE = `Tarte aux pommes et caramel au beurre salé, pour 8 personnes.
@@ -35,62 +41,39 @@ Enfourne 40 minutes à 180 °C. Verse le caramel sur la tarte à la sortie du fo
 
 Astuce : encore meilleure tiède, avec une boule de glace à la vanille.`;
 
-type Engine = 'gemini' | 'local';
-
-/** What the model of the browser is doing, in the order it happens. */
-function recipeStages(progress: RecipeReaderProgress): AiStage[] {
-  const filesDone = progress.type !== 'files' || progress.share >= 1;
-  const current = progress.type === 'writing' ? 3 : progress.type === 'reading' ? 2 : filesDone ? 1 : 0;
-  const state = (stage: number): AiStage['state'] => (stage < current ? 'done' : stage === current ? 'running' : 'waiting');
-  return [
-    {
-      label: 'Ouverture du modèle',
-      detail: progress.type === 'files' && !filesDone ? `Lecture des fichiers sur le disque, ${Math.round(progress.share * 100)} %` : 'Lecture des fichiers sur le disque',
-      state: state(0),
-    },
-    { label: 'Installation dans la carte graphique', detail: 'Le plus long au démarrage : de quelques secondes à quelques minutes', state: state(1) },
-    { label: 'Analyse de la recette', detail: 'Le modèle lit le texte et les consignes du site', state: state(2) },
-    {
-      label: 'Écriture de la recette',
-      detail: progress.type === 'writing' ? `${progress.characters} caractères écrits` : 'Le formulaire se remplira à la fin',
-      state: state(3),
-    },
-  ];
-}
-
-const ENGINE_KEY = 'yona-recipe-ai-engine';
-
-function storedEngine(): Engine {
-  try {
-    return localStorage.getItem(ENGINE_KEY) === 'local' ? 'local' : 'gemini';
-  } catch {
-    return 'gemini';
-  }
-}
+const LOCAL_WORK = {
+  reading: 'Analyse de la recette',
+  readingDetail: 'Le modèle lit le texte et les consignes du site',
+  writing: 'Écriture de la recette',
+  writingDetail: 'Le formulaire se remplira à la fin',
+};
 
 /**
- * "Remplir avec l'IA": a pasted recipe and/or the photo of one, read by Gemini; or a pasted recipe
- * read by a model running in this browser. The draft read is handed to the editor, which fills the
+ * "Remplir avec l'IA": a pasted (or dictated) recipe and/or the photo of one, read by Gemini or
+ * Claude; or a pasted recipe read by a model running in this browser. The draft read is handed to the editor, which fills the
  * form; nothing is saved here. The API's errors are shown as a toast (adminErrorsInterceptor) and
  * kept under the button.
  */
 @Component({
   selector: 'yona-recipe-ai-dialog',
-  imports: [Button, Dialog, Icon, LocalAiProgress, LocalModelSetup],
+  imports: [AiEngines, Button, Dialog, Dictation, Icon, LocalAiProgress, LocalModelSetup],
   template: `
-    <yona-dialog title="Remplir avec l'IA" [subtitle]="engine() === 'gemini' ? 'Gemini de Google, en ligne' : recipeModel.name + ', sur cet ordinateur'" [closeOnBackdrop]="!reading()" [(open)]="open">
+    <yona-dialog title="Remplir avec l'IA" [subtitle]="subtitle()" [closeOnBackdrop]="!reading()" [(open)]="open">
       <div class="ai">
-        <div class="ai__engines" role="group" aria-label="Quelle IA utiliser">
-          <button type="button" class="engine" [attr.aria-pressed]="engine() === 'gemini'" [disabled]="reading() || !!geminiUnavailable()" (click)="chooseEngine('gemini')">
-            <span class="engine__name">Gemini</span>
-            <span class="engine__detail">Google, en ligne. Texte ou photo</span>
-          </button>
-          <button type="button" class="engine" [attr.aria-pressed]="engine() === 'local'" [disabled]="reading() || onPhone" (click)="chooseEngine('local')">
-            <span class="engine__name">IA locale</span>
-            <span class="engine__detail">{{ onPhone ? 'Sur ordinateur seulement : ne fonctionne pas sur téléphone ou tablette' : recipeModel.name + ', sur cet ordinateur. Texte seulement' }}</span>
-          </button>
-        </div>
-        @if (engine() === 'gemini') {
+        <yona-ai-engines
+          [engine]="engine()"
+          [disabled]="reading()"
+          [geminiUnavailable]="!!geminiUnavailable()"
+          [claude]="claude.value() ?? null"
+          (chosen)="chooseEngine($event)"
+        />
+        @if (engine() === 'claude') {
+          <p class="field__hint">
+            Collez ou dictez une recette, ou envoyez la photo d'une recette écrite : le formulaire se remplit, rien n'est
+            enregistré. Payant : quelques centimes par recette, sur le compte Anthropic du site. Relisez tout avant
+            d'enregistrer
+          </p>
+        } @else if (engine() === 'gemini') {
           <p class="field__hint">
             Collez une recette (notes, message, page recopiée) ou envoyez la photo d'une recette écrite : le formulaire se
             remplit, rien n'est enregistré. Relisez tout avant d'enregistrer. N'envoyez rien de personnel : sur l'offre
@@ -108,6 +91,7 @@ function storedEngine(): Engine {
         }
         <div class="field">
           <label class="field__label" for="ai-text">Texte de la recette</label>
+          <yona-dictation [disabled]="reading()" (transcribed)="addDictation($event)" />
           <textarea
             id="ai-text"
             class="input ai__text"
@@ -128,7 +112,7 @@ function storedEngine(): Engine {
             }
           </div>
         </div>
-        @if (engine() === 'gemini') {
+        @if (engine() !== 'local') {
         <div class="field">
           <span class="field__label">Photo (facultative)</span>
           <input #file type="file" class="visually-hidden" tabindex="-1" aria-hidden="true" [accept]="accept" (change)="choosePhoto($event)" />
@@ -146,7 +130,7 @@ function storedEngine(): Engine {
               </button>
             </div>
           }
-          <span class="field__hint">JPEG ou PNG, 10 Mo maximum : recette manuscrite, capture d'écran. Une photo est toujours lue par Gemini, de Google</span>
+          <span class="field__hint">JPEG ou PNG, 10 Mo maximum : recette manuscrite, capture d'écran. Une photo est lue en ligne, par {{ onlineName() }}</span>
         </div>
         }
         @if (reading() && engine() === 'local') {
@@ -154,7 +138,7 @@ function storedEngine(): Engine {
         } @else if (reading()) {
           <p class="ai__status" role="status">
             <svg yonaIcon="loader-circle" class="spin" [size]="18"></svg>
-            Gemini lit la recette… Cela prend de quelques secondes à une minute
+            {{ onlineName() }} lit la recette… Cela prend de quelques secondes à une minute
           </p>
         } @else if (error(); as message) {
           <p class="ai__status ai__status--error" role="alert">
@@ -179,43 +163,6 @@ function storedEngine(): Engine {
     .ai {
       display: grid;
       gap: var(--space-4);
-    }
-
-    .ai__engines {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-      gap: var(--space-2);
-    }
-
-    .engine {
-      display: grid;
-      gap: var(--space-1);
-      padding: var(--space-3) var(--space-4);
-      border: 1px solid var(--color-line);
-      border-radius: var(--radius-md);
-      background: none;
-      color: var(--color-text);
-      text-align: left;
-      cursor: pointer;
-
-      &[aria-pressed='true'] {
-        border-color: var(--color-accent);
-        box-shadow: inset 0 0 0 1px var(--color-accent);
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    }
-
-    .engine__name {
-      font-weight: 600;
-    }
-
-    .engine__detail {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
     }
 
     .ai__text {
@@ -281,17 +228,26 @@ export class RecipeAiDialog {
 
   protected readonly recipeModel = RECIPE_MODEL;
   protected readonly onPhone = isPhoneOrTablet();
-  private readonly chosenEngine = signal<Engine>(storedEngine());
-  /** Gemini out of service: the local model, whatever was chosen. On a phone: Gemini, the only one that can work. */
-  protected readonly engine = computed<Engine>(() => {
-    if (this.geminiUnavailable()) {
-      return 'local';
+  private readonly chosenEngine = signal<AiEngine>(storedEngine());
+  /** Whether Claude can be chosen, and its model: asked when the window is created. */
+  protected readonly claude = resource({ loader: () => this.api.invoke(getClaudeAvailability) });
+  protected readonly engine = computed(() =>
+    engineInUse(this.chosenEngine(), { gemini: !this.geminiUnavailable(), claude: !!this.claude.value()?.available, onPhone: this.onPhone }),
+  );
+  protected readonly onlineName = computed(() => (this.engine() === 'claude' ? claudeName(this.claude.value()?.model) : 'Gemini'));
+  protected readonly subtitle = computed(() => {
+    switch (this.engine()) {
+      case 'claude':
+        return this.onlineName() + ' d’Anthropic, en ligne';
+      case 'gemini':
+        return 'Gemini de Google, en ligne';
+      default:
+        return this.recipeModel.name + ', sur cet ordinateur';
     }
-    return this.onPhone ? 'gemini' : this.chosenEngine();
   });
   protected readonly localReady = signal(false);
   private readonly localProgress = signal<RecipeReaderProgress>({ type: 'files', share: 0 });
-  protected readonly localStages = computed<AiStage[]>(() => recipeStages(this.localProgress()));
+  protected readonly localStages = computed<AiStage[]>(() => localStages(this.localProgress(), LOCAL_WORK));
   private controller: AbortController | null = null;
   protected readonly accept = PHOTO_ACCEPT;
   protected readonly maxTextLength = MAX_TEXT_LENGTH;
@@ -302,7 +258,7 @@ export class RecipeAiDialog {
   protected readonly reading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly canRead = computed(
-    () => !this.reading() && (this.engine() === 'gemini' ? !!this.text().trim() || !!this.photo() : !!this.text().trim() && this.localReady()),
+    () => !this.reading() && (this.engine() !== 'local' ? !!this.text().trim() || !!this.photo() : !!this.text().trim() && this.localReady()),
   );
 
   constructor() {
@@ -312,14 +268,15 @@ export class RecipeAiDialog {
     });
   }
 
-  protected chooseEngine(engine: Engine): void {
+  protected chooseEngine(engine: AiEngine): void {
     this.chosenEngine.set(engine);
     this.error.set(null);
-    try {
-      localStorage.setItem(ENGINE_KEY, engine);
-    } catch {
-      // Storage disabled: the choice lasts until the page is left
-    }
+    storeEngine(engine);
+  }
+
+  /** What was dictated, after what was typed. */
+  protected addDictation(dictated: string): void {
+    this.text.update((text) => (text.trim() ? `${text.trimEnd()}\n${dictated}` : dictated).slice(0, MAX_TEXT_LENGTH));
   }
 
   protected stop(): void {
@@ -355,7 +312,7 @@ export class RecipeAiDialog {
     this.error.set(null);
     this.controller = new AbortController();
     try {
-      const draft = this.engine() === 'gemini' ? await this.readWithGemini() : await this.readLocally(this.controller.signal);
+      const draft = this.engine() === 'local' ? await this.readLocally(this.controller.signal) : await this.readOnline();
       this.filled.emit(draft);
       this.text.set('');
       this.removePhoto();
@@ -374,15 +331,22 @@ export class RecipeAiDialog {
       if (problem?.code && LASTING_ERRORS.has(problem.code)) {
         this.unavailable.emit();
       }
+      if (problem?.code && LASTING_CLAUDE_ERRORS.has(problem.code)) {
+        this.claude.reload();
+      }
     } finally {
       this.reading.set(false);
       this.controller = null;
     }
   }
 
-  private readWithGemini(): Promise<RecipeAiDraft> {
+  private readOnline(): Promise<RecipeAiDraft> {
     return this.api.invoke(fillRecipeWithAi, {
-      body: { text: this.text().trim() || undefined, image: this.photo() ?? undefined },
+      body: {
+        text: this.text().trim() || undefined,
+        image: this.photo() ?? undefined,
+        engine: this.engine() === 'claude' ? 'CLAUDE' : 'GEMINI',
+      },
     });
   }
 

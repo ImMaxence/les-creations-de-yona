@@ -29,6 +29,12 @@ export const DISPLAY_FONTS: Record<DisplayFontId, FontChoice> = {
   FREDOKA: { label: 'Fredoka', family: "'Fredoka Variable', system-ui, sans-serif" },
   JOSEFIN_SANS: { label: 'Josefin Sans', family: "'Josefin Sans Variable', 'Futura', system-ui, sans-serif" },
   KALNIA: { label: 'Kalnia', family: "'Kalnia Variable', Didot, Georgia, serif" },
+  BRICOLAGE_GROTESQUE: { label: 'Bricolage Grotesque', family: "'Bricolage Grotesque Variable', system-ui, sans-serif" },
+  NEWSREADER: { label: 'Newsreader', family: "'Newsreader Variable', Georgia, serif" },
+  SHANTELL_SANS: { label: 'Shantell Sans', family: "'Shantell Sans Variable', 'Comic Sans MS', cursive" },
+  GRANDSTANDER: { label: 'Grandstander', family: "'Grandstander Variable', system-ui, sans-serif" },
+  IMBUE: { label: 'Imbue', family: "'Imbue Variable', Didot, Georgia, serif" },
+  PLAYPEN_SANS: { label: 'Playpen Sans', family: "'Playpen Sans Variable', 'Comic Sans MS', cursive" },
 };
 
 export const BODY_FONTS: Record<BodyFontId, FontChoice> = {
@@ -45,4 +51,10 @@ export const BODY_FONTS: Record<BodyFontId, FontChoice> = {
   WORK_SANS: { label: 'Work Sans', family: "'Work Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
   MANROPE: { label: 'Manrope', family: "'Manrope Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
   MERRIWEATHER: { label: 'Merriweather', family: "'Merriweather Variable', Georgia, serif" },
+  RALEWAY: { label: 'Raleway', family: "'Raleway Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+  RUBIK: { label: 'Rubik', family: "'Rubik Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+  OUTFIT: { label: 'Outfit', family: "'Outfit Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+  FIGTREE: { label: 'Figtree', family: "'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+  CRIMSON_PRO: { label: 'Crimson Pro', family: "'Crimson Pro Variable', Georgia, serif" },
+  BITTER: { label: 'Bitter', family: "'Bitter Variable', Georgia, serif" },
 };

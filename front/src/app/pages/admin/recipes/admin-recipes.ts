@@ -40,6 +40,7 @@ import { FilterChip } from '../filter-chip/filter-chip';
 import { Selection } from '../selection';
 import { ADMIN_RECIPES_QUERY } from './admin-recipes-query';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 /**
  * As the list shows it: a draft with a publication time is "Programmée", a status of its own for
@@ -100,8 +101,7 @@ const ALL_TAGS = '';
  */
 @Component({
   selector: 'yona-admin-recipes',
-  imports: [
-    Icon,
+  imports: [Icon,
     RouterLink,
     BulkBar,
     FilterChip,
@@ -109,8 +109,7 @@ const ALL_TAGS = '';
     CoverImage,
     Select,
     InfiniteScroll,
-    ParisDatePipe,
-  ],
+    ParisDatePipe, Skeleton],
   templateUrl: './admin-recipes.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -138,10 +137,10 @@ export default class AdminRecipes {
   protected readonly themeLabel = themeLabel;
   protected readonly statusOptions: SelectOption<StatusFilter>[] = [
     { value: 'ALL', label: 'Tous les statuts' },
-    { value: 'PUBLISHED', label: 'Publiées' },
-    { value: 'SCHEDULED', label: 'Programmées' },
-    { value: 'DRAFT', label: 'Brouillons' },
-    { value: 'FAILED', label: 'En échec' },
+    { value: 'PUBLISHED', label: 'Publiées', badge: 'published' },
+    { value: 'SCHEDULED', label: 'Programmées', badge: 'scheduled' },
+    { value: 'DRAFT', label: 'Brouillons', badge: 'draft' },
+    { value: 'FAILED', label: 'En échec', badge: 'failed' },
   ];
   protected readonly themeOptions: SelectOption<ThemeFilter>[] = [
     { value: 'ALL', label: 'Sucré et salé' },

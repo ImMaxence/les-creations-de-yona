@@ -704,11 +704,11 @@ class RestoredData {
 	private long mergePresets(JdbcClient scratch, JdbcClient site) {
 		long added = 0;
 		for (Map<String, Object> row : scratch.sql("""
-				select name, preset, display_font, body_font, radius_px, created_at, updated_at, updated_by
+				select name, preset, display_font, body_font, radius_px, custom_colors, created_at, updated_at, updated_by
 				from appearance_preset""").query().listOfRows()) {
 			added += site.sql("""
-					insert into appearance_preset (name, preset, display_font, body_font, radius_px, created_at, updated_at, updated_by)
-					values (:name, :preset, :display_font, :body_font, :radius_px, :created_at, :updated_at, :updated_by)
+					insert into appearance_preset (name, preset, display_font, body_font, radius_px, custom_colors, created_at, updated_at, updated_by)
+					values (:name, :preset, :display_font, :body_font, :radius_px, :custom_colors, :created_at, :updated_at, :updated_by)
 					on conflict (name) do nothing""")
 				.params(row)
 				.update();

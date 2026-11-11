@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
@@ -8,7 +8,9 @@ import { createCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/cre
 import { deleteCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/delete-cap-entry';
 import { getAdminCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/get-admin-cap-entry';
 import { updateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/update-cap-entry';
+import { getCapAiStatus } from '../../../core/api/generated/fn/admin-mon-cap-ai/get-cap-ai-status';
 import { AdminCapEntry } from '../../../core/api/generated/models/admin-cap-entry';
+import { CapAiDraft } from '../../../core/api/generated/models/cap-ai-draft';
 import { CapBlock } from '../../../core/api/generated/models/cap-block';
 import { CapEntryForm } from '../../../core/api/generated/models/cap-entry-form';
 import { GalleryImage } from '../../../core/api/generated/models/gallery-image';
@@ -16,6 +18,7 @@ import { ImageUploads } from '../../../core/api/image-uploads';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
+import { parisDateTime } from '../../../shared/format/paris-time';
 import { CAP_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { CapArticleContent, CapArticleView } from '../../../shared/ui/cap-article/cap-article-view';
@@ -40,6 +43,9 @@ import {
   templateOf,
 } from './cap-templates';
 import { ArticleDraft, isArticleDraft, keptArticleKey } from './article-draft';
+import { CapAiForm, formOfTemplate, hasContent, withPhotosKept } from './cap-ai';
+import { CapAiDialog } from './cap-ai-dialog';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 /** A photo of "Étapes en photos", with a key of its own for the page to follow it when moved. */
 interface EditorPhoto {
@@ -72,7 +78,7 @@ let nextKey = 1;
  */
 @Component({
   selector: 'yona-admin-cap-editor',
-  imports: [Button, CapArticleView, Dialog, Icon, ImageUpload, NgTemplateOutlet, RecipeSearch, RecoveredDraft, RouterLink],
+  imports: [Button, CapAiDialog, CapArticleView, Dialog, Icon, ImageUpload, NgTemplateOutlet, RecipeSearch, RecoveredDraft, RouterLink, Skeleton],
   templateUrl: './admin-cap-editor.html',
   styleUrl: './admin-cap-editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -118,6 +124,22 @@ export default class AdminCapEditor implements UnsavedChanges {
   /** "Lien vers une recette": the text block it goes in, and where in its text. */
   protected readonly linking = signal<{ key: number; start: number; end: number } | null>(null);
   protected readonly linkedRecipe = signal<ChosenRecipe | null>(null);
+  /** "Écrire avec l'IA": Gemini greyed out, with the reason, when it cannot work (no key, quota used…). */
+  protected readonly aiStatus = resource({ loader: () => this.api.invoke(getCapAiStatus) });
+  /** Opened at once when coming from "Écrire avec l'IA" of "Nouvel article". */
+  protected readonly aiOpen = signal(this.route.snapshot.queryParamMap.has('ia'));
+  /** The shape of the model chosen in "Nouvel article"; the AI's choice for an article already saved. */
+  protected readonly aiForm: CapAiForm = formOfTemplate(this.route.snapshot.queryParamMap.get('modele'));
+  /** The article was written by the AI and not saved since: a banner asks to check it. */
+  protected readonly aiWritten = signal(false);
+  /** Why Gemini cannot be used now; null when it can. */
+  protected readonly geminiUnavailable = computed(() => {
+    const status = this.aiStatus.value();
+    if (!status || status.available) {
+      return null;
+    }
+    return status.availableAgainAt ? `${status.reason} (vers ${parisDateTime(status.availableAgainAt)})` : (status.reason ?? '');
+  });
   private readonly saved = signal('');
   /** updatedAt of the article as loaded or saved; null while new. */
   protected readonly basedOn = signal<string | null>(null);
@@ -411,6 +433,29 @@ export default class AdminCapEditor implements UnsavedChanges {
     this.linking.set(null);
   }
 
+  // "Écrire avec l'IA"
+
+  /** The title and blocks written by the AI replace those typed, after confirmation; the photos placed stay. */
+  protected async writeWithAi(written: CapAiDraft): Promise<void> {
+    if (
+      hasContent(this.title(), this.subtitle(), this.formBlocks()) &&
+      !(await this.confirm.ask({
+        title: 'Remplacer le texte de l’article ?',
+        message: 'Le titre, le sous-titre et les blocs sont remplacés par ceux de l’IA. Les photos déjà placées restent, aux places prévues pour des photos',
+        confirmLabel: 'Remplacer',
+      }))
+    ) {
+      return;
+    }
+    if (written.title) {
+      this.title.set(written.title);
+    }
+    this.subtitle.set(written.subtitle ?? '');
+    this.blocks.set(withPhotosKept(written.blocks, this.formBlocks()).map(toEditor));
+    this.aiWritten.set(true);
+    this.toaster.success('Article écrit par l’IA : relisez-le et ajoutez les photos avant d’enregistrer');
+  }
+
   // Article
 
   protected async save(): Promise<void> {
@@ -435,6 +480,7 @@ export default class AdminCapEditor implements UnsavedChanges {
     // A new article was kept as "nouveau": saved, it has its id
     this.keeper.forget(keptKey);
     this.recovered.set(null);
+    this.aiWritten.set(false);
     this.toaster.success(saved.value.published ? 'Article enregistré, en ligne' : 'Brouillon enregistré');
     void this.siteData.load();
     if (!id) {

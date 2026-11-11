@@ -2,6 +2,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import {
   ApplicationConfig,
   DOCUMENT,
+  ErrorHandler,
   inject,
   isDevMode,
   provideAppInitializer,
@@ -28,6 +29,7 @@ import { routes } from './app.routes';
 import { AiVisits } from './core/analytics/ai-visits';
 import { adminErrorsInterceptor } from './core/api/admin-errors.interceptor';
 import { provideApiConfiguration } from './core/api/generated/api-configuration';
+import { ReportingErrorHandler } from './core/errors/reporting-error-handler';
 import { apiCacheInterceptor } from './core/pwa/api-cache';
 import { AppUpdates } from './core/pwa/app-updates';
 import { ConnectionStatus } from './core/pwa/connection-status';
@@ -69,6 +71,8 @@ function skipTransitionWhenNeeded({ transition }: ViewTransitionInfo): void {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    // The errors of the visitors' browsers, in the back-office's "Journaux"
+    { provide: ErrorHandler, useClass: ReportingErrorHandler },
     provideRouter(
       routes,
       withComponentInputBinding(),

@@ -5,6 +5,9 @@
       <h2 id="editor-title">{{ id() ? 'Modifier l’article' : 'Nouvel article' }}</h2>
     </div>
     <div class="admin-section__actions">
+      <button yonaButton variant="secondary" type="button" title="Écrire le titre et les blocs à partir de vos notes" (click)="aiOpen.set(true)">
+        <svg yonaIcon="sparkles"></svg>Écrire avec l'IA
+      </button>
       <button yonaButton variant="secondary" type="button" (click)="previewOpen.set(true)"><svg yonaIcon="eye"></svg>Aperçu</button>
       @if (wasPublished() && savedSlug()) {
         <a yonaButton variant="ghost" target="_blank" [routerLink]="[capPath, savedSlug()]"><svg yonaIcon="external-link"></svg>Voir sur le site</a>
@@ -12,9 +15,28 @@
     </div>
   </div>
 
+  @if (geminiUnavailable(); as reason) {
+    <p class="field__hint ai-unavailable">
+      <svg yonaIcon="sparkles" [size]="14"></svg>
+      Gemini : {{ reason }}. L'IA locale reste possible
+    </p>
+  }
+
   @if (loading()) {
-    <p class="admin-empty">Chargement…</p>
+    <yona-skeleton kind="form" [count]="4" />
   } @else {
+    @if (aiWritten()) {
+      <div class="admin-panel ai-written" role="status">
+        <svg yonaIcon="sparkles" [size]="22" [strokeWidth]="1.75"></svg>
+        <div>
+          <p class="ai-written__title">Écrit par l'IA : relisez tout avant d'enregistrer</p>
+          <p class="field__hint">Vérifiez que tout est juste et dans vos mots, puis ajoutez les photos aux places prévues : une place laissée vide n'apparaît pas sur le site</p>
+        </div>
+        <div class="ai-written__actions">
+          <button yonaButton variant="ghost" type="button" (click)="aiWritten.set(false)">J'ai compris</button>
+        </div>
+      </div>
+    }
     @if (recovered(); as kept) {
       <yona-recovered-draft
         [savedAt]="kept.savedAt"
@@ -258,6 +280,8 @@
     </div>
   }
 </yona-dialog>
+
+<yona-cap-ai-dialog [(open)]="aiOpen" [initialForm]="aiForm" [geminiUnavailable]="geminiUnavailable()" (written)="writeWithAi($event)" (unavailable)="aiStatus.reload()" />
 
 <yona-dialog title="Lien vers une recette" size="md" [open]="linking() !== null" (closed)="linking.set(null)">
   <div class="field">

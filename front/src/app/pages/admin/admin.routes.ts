@@ -172,6 +172,11 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./history/admin-history'),
         title: 'Historique · Back-office',
       },
+      {
+        path: 'journaux',
+        loadComponent: () => import('./logs/admin-logs'),
+        title: 'Journaux · Back-office',
+      },
     ],
   },
 ];

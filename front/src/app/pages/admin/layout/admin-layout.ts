@@ -18,8 +18,20 @@ import { ConfirmDialog } from '../../../core/dialog/confirm-dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { UnreadFeedback } from '../feedback/unread-feedback';
 import { NewOrders } from '../shop/new-orders';
+import { AdminWatch } from './admin-watch';
 import { AdminAvatar } from './admin-avatar/admin-avatar';
 import { AdminNav } from './admin-nav/admin-nav';
+
+const RAIL_KEY = 'admin-side-rail';
+
+/** Read at once: the panel must not fold before the eyes. */
+function readRail(): boolean {
+  try {
+    return localStorage.getItem(RAIL_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 /** From this width, the side panel stays open: `lg` in _variables.scss. */
 const WIDE_SCREEN = '(width >= 64rem)';
@@ -43,11 +55,16 @@ export default class AdminLayout {
   private readonly router = inject(Router);
   private readonly unreadFeedback = inject(UnreadFeedback);
   private readonly newOrders = inject(NewOrders);
+  private readonly watch = inject(AdminWatch);
 
   /** The back-office is drawn in the browser only: the width is known from the first render. */
   private readonly wideScreen = inject(DOCUMENT).defaultView!.matchMedia(WIDE_SCREEN);
   protected readonly wide = signal(this.wideScreen.matches);
-  protected readonly waiting = computed(() => this.unreadFeedback.count() + this.newOrders.count());
+  protected readonly waiting = computed(
+    () => this.unreadFeedback.count() + this.newOrders.count() + this.watch.historyCount() + this.watch.logsCount(),
+  );
+  /** Computers: the panel folded into a column of icons, remembered in this browser. */
+  protected readonly rail = signal(readRail());
   private readonly drawer = viewChild<ElementRef<HTMLDialogElement>>('drawer');
 
   constructor() {
@@ -58,6 +75,7 @@ export default class AdminLayout {
     // The badges of "Retours" and "Commandes": counted when the back-office opens, and at each change of section
     void this.unreadFeedback.refresh();
     void this.newOrders.refresh();
+    void this.watch.refresh();
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
@@ -66,6 +84,7 @@ export default class AdminLayout {
       .subscribe(() => {
         void this.unreadFeedback.refresh();
         void this.newOrders.refresh();
+        void this.watch.refresh();
       });
     // The panel stays open while the next section loads, then gives way to it
     this.router.events
@@ -81,6 +100,15 @@ export default class AdminLayout {
         takeUntilDestroyed(),
       )
       .subscribe(() => this.closeDrawer());
+  }
+
+  protected toggleRail(): void {
+    this.rail.update((rail) => !rail);
+    try {
+      localStorage.setItem(RAIL_KEY, this.rail() ? '1' : '0');
+    } catch {
+      // Storage blocked: kept for this visit only
+    }
   }
 
   protected openDrawer(): void {

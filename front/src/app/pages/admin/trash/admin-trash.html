@@ -100,6 +100,6 @@
       </div>
     }
   } @else if (items.isLoading()) {
-    <p class="admin-empty">Chargement de la corbeille…</p>
+    <yona-skeleton kind="rows" [count]="5" />
   }
 </section>

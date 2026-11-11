@@ -36,6 +36,24 @@ describe('llmsTxt', () => {
     expect(text).toContain("- [Conditions d'utilisation](https://les-creations-de-yona.fr/conditions-d-utilisation)");
   });
 
+  it('lists each article of Mon CAP, with its subtitle and its start', () => {
+    const text = llmsTxt({
+      content: CONTENT,
+      recipes: [],
+      menus: [],
+      glossary: [],
+      capArticles: [
+        { id: 1, slug: 'examen-blanc', title: 'Mon premier examen blanc', subtitle: 'Cinq heures', excerpt: 'Ce matin, tarte aux pommes.', happenedOn: '2026-11-10', style: 'CLASSIC' },
+      ],
+    });
+
+    expect(text).toContain('## Mon CAP\n');
+    expect(text).toContain(
+      '- [Mon premier examen blanc](https://les-creations-de-yona.fr/mon-cap/examen-blanc): Cinq heures · Ce matin, tarte aux pommes.',
+    );
+    expect(text).toContain('- [Mon CAP](https://les-creations-de-yona.fr/mon-cap)');
+  });
+
   it('leaves out the menus and the glossary when there are none', () => {
     const text = llmsTxt({ content: CONTENT, recipes: [], menus: [], glossary: [] });
 

@@ -91,6 +91,11 @@ app:
     # Free tier: Flash models only. Tried in order, the next one when a model is overloaded.
     models: ${GEMINI_MODELS:gemini-flash-latest,gemini-flash-lite-latest}
     timeout: 45s
+  claude:
+    # Claude, of Anthropic: a third choice in the windows of the AI, paid per use. Without a key, greyed out.
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${CLAUDE_MODEL:claude-haiku-5-5}
+    timeout: 90s
 
 springdoc:
   # Without it, responses are documented as */* and the generated front client reads them as Blob.

@@ -15,6 +15,15 @@
   padding-top: 0;
 }
 
+// The next page is slow to come: its skeleton in place of the page left (hidden, not destroyed)
+.main--waiting > :not(.page-skeleton) {
+  display: none;
+}
+
+.page-skeleton {
+  animation: fade-in var(--duration-base) var(--ease-out) both;
+}
+
 .skip-link {
   position: fixed;
   top: var(--space-2);

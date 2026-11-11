@@ -5,6 +5,21 @@
   background-color: var(--color-surface);
 }
 
+// Until the photo arrives, its place breathes, as the skeletons do
+:host(.is-loading)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--color-text) 7%, transparent);
+  animation: breathe 1.4s var(--ease-in-out) infinite alternate;
+}
+
+@keyframes breathe {
+  to {
+    opacity: 0.4;
+  }
+}
+
 img {
   object-fit: cover;
   transform: scale(var(--cover-scale, 1));

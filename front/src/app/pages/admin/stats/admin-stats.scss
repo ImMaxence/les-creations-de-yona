@@ -462,3 +462,72 @@ a.admin-row__title {
   color: var(--color-danger);
   font-weight: 700;
 }
+
+// "Versions et santé" ---------------------------------------------------------------------------
+
+.health {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.health__item {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+
+  dt {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  dd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    margin: 0;
+    font-weight: 700;
+  }
+}
+
+.health__item--wide {
+  grid-column: 1 / -1;
+}
+
+.health__detail {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+// OK in green, a part that does not answer in red, warnings alone in amber
+.state {
+  padding: 0.1rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, #2e9b55 18%, transparent);
+  color: color-mix(in srgb, #2e9b55 65%, var(--color-text));
+  font-size: var(--text-sm);
+}
+
+.state--warn {
+  background-color: color-mix(in srgb, #d08a1e 18%, transparent);
+  color: color-mix(in srgb, #d08a1e 65%, var(--color-text));
+}
+
+.state--down {
+  background-color: color-mix(in srgb, var(--color-danger) 16%, transparent);
+  color: var(--color-danger);
+}
+
+.health__warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-danger);
+}

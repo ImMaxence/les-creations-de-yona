@@ -61,6 +61,46 @@
   }
 }
 
+// "Écrire avec l'IA": Gemini out of service, then the article written and not saved yet
+.ai-unavailable {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.ai-written {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+
+  > svg {
+    color: var(--color-accent);
+  }
+
+  @include m.from(md) {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+}
+
+.ai-written__title {
+  font-weight: 700;
+}
+
+.ai-written__actions {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: var(--space-2);
+
+  @include m.from(md) {
+    grid-column: auto;
+  }
+}
+
 // The blocks, one under the other, a "+" between two
 .blocks {
   display: grid;

@@ -20,6 +20,10 @@ export interface SelectOption<T> {
   label: string;
   /** Under the label in the list, smaller: what the choice holds (a shop aisle's products). */
   hint?: string;
+  /** The label as a badge of the back-office, in its colour: "published" for .badge--published. */
+  badge?: string;
+  /** The label written in this font (CSS font-family), to see it before choosing it. */
+  font?: string;
 }
 
 let nextId = 0;
@@ -78,6 +82,10 @@ export class Select<T> {
   protected readonly selectedLabel = computed(
     () => this.options()[this.selectedIndex()]?.label ?? this.placeholder(),
   );
+  /** The option shown on the button, with its badge or its font; none for a list to pick from. */
+  protected readonly selectedOption = computed(() => (this.pickOnly() ? undefined : this.options()[this.selectedIndex()]));
+  /** Too close to the right edge of the screen: the list opens towards the left. */
+  protected readonly alignEnd = signal(false);
 
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
@@ -152,8 +160,19 @@ export class Select<T> {
 
   private show(index: number): void {
     this.filter.set('');
+    this.alignEnd.set(false);
     this.open.set(true);
     this.activeIndex.set(Math.max(0, index));
+    // As wide as its longest option: it may go past the button, but never off the screen
+    afterNextRender(
+      () => {
+        const list = this.host.querySelector<HTMLElement>('.list');
+        if (list && list.getBoundingClientRect().right > document.documentElement.clientWidth - 8) {
+          this.alignEnd.set(true);
+        }
+      },
+      { injector: this.injector },
+    );
     if (this.searchable()) {
       afterNextRender(() => this.filterInput()?.nativeElement.focus(), { injector: this.injector });
     }

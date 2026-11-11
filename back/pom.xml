@@ -13,7 +13,7 @@
 	<groupId>fr.lescreationsdeyona</groupId>
 	<artifactId>back</artifactId>
 	<!-- Semantic version, shown in the back-office: bump it with front/package.json at each release. -->
-	<version>2.6.1</version>
+	<version>2.7.0</version>
 	<name>back</name>
 	<description>API of the Les créations de Yona cooking blog</description>
 	<licenses>
@@ -25,6 +25,7 @@
 
 	<properties>
 		<java.version>25</java.version>
+		<anthropic.version>3.3.0</anthropic.version>
 		<aws-sdk.version>2.57.0</aws-sdk.version>
 		<lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
@@ -113,6 +114,12 @@
 					<artifactId>netty-nio-client</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<!-- Claude, Anthropic's AI: "Remplir avec l'IA" and "Écrire avec l'IA" when chosen (paid, per use). -->
+		<dependency>
+			<groupId>com.anthropic</groupId>
+			<artifactId>anthropic-java</artifactId>
+			<version>${anthropic.version}</version>
 		</dependency>
 		<!-- JPEG decoding that also handles CMYK and slightly broken files, unlike the JDK decoder. -->
 		<dependency>

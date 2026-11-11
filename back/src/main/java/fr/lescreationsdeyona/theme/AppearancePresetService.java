@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Looks saved under a name. Applying one only fills the Apparence form: saving it is a separate step. */
 @Service
@@ -21,8 +22,10 @@ public class AppearancePresetService {
 
 	private final AuditLog auditLog;
 
+	private final JsonMapper jsonMapper;
+
 	public List<AppearancePresetResponse> list() {
-		return repository.findAll(Sort.by("name")).stream().map(AppearancePresetService::toResponse).toList();
+		return repository.findAll(Sort.by("name")).stream().map(this::toResponse).toList();
 	}
 
 	@Transactional
@@ -60,17 +63,19 @@ public class AppearancePresetService {
 		auditLog.record(AuditAction.DELETED, AuditKind.APPEARANCE, "Préréglage « " + preset.getName() + " »", null);
 	}
 
-	private static void apply(AppearancePreset preset, String name, ThemeForm theme) {
+	private void apply(AppearancePreset preset, String name, ThemeForm theme) {
 		preset.setName(name);
 		preset.setPreset(theme.preset());
 		preset.setDisplayFont(theme.displayFont());
 		preset.setBodyFont(theme.bodyFont());
 		preset.setRadiusPx(theme.radiusPx());
+		preset.setCustomColors(theme.customColors() == null ? null : jsonMapper.writeValueAsString(theme.customColors()));
 	}
 
-	private static AppearancePresetResponse toResponse(AppearancePreset preset) {
+	private AppearancePresetResponse toResponse(AppearancePreset preset) {
 		return new AppearancePresetResponse(preset.getId(), preset.getName(), new ThemeResponse(preset.getPreset(),
-				preset.getDisplayFont(), preset.getBodyFont(), preset.getRadiusPx()), preset.getUpdatedAt(),
+				preset.getDisplayFont(), preset.getBodyFont(), preset.getRadiusPx(),
+				ThemeService.customColors(jsonMapper, preset.getCustomColors())), preset.getUpdatedAt(),
 				preset.getUpdatedBy());
 	}
 

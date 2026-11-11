@@ -11,6 +11,11 @@
   }
 }
 
+// Folded: a column of icons, the page takes the room
+:root:has(.admin__side.is-rail) {
+  --admin-side: 4.5rem;
+}
+
 .admin__side {
   position: fixed;
   inset: 0 auto 0 0;
@@ -18,6 +23,7 @@
   width: var(--admin-side);
   border-right: 1px solid var(--color-line);
   background-color: var(--color-bg);
+  transition: width var(--duration-base) var(--ease-out);
 }
 
 .admin__bar {

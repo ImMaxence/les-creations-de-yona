@@ -1,7 +1,7 @@
 <div class="admin">
   @if (wide()) {
-    <aside class="admin__side">
-      <yona-admin-nav />
+    <aside class="admin__side" [class.is-rail]="rail()">
+      <yona-admin-nav [rail]="rail()" (railToggled)="toggleRail()" />
     </aside>
   } @else {
     <header class="admin__bar">

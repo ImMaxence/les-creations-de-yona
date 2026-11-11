@@ -9,11 +9,12 @@ import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { BLOCK_TYPES, CAP_TEMPLATES, CapTemplate } from './cap-templates';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 /** "Mon CAP": the articles, the latest first; "Nouvel article" starts from a model. */
 @Component({
   selector: 'yona-admin-cap',
-  imports: [Button, CoverImage, Dialog, Icon, ParisDatePipe, RouterLink],
+  imports: [Button, CoverImage, Dialog, Icon, ParisDatePipe, RouterLink, Skeleton],
   template: `
     <section class="admin-section" aria-labelledby="cap-title">
       <div class="admin-section__head">
@@ -61,11 +62,11 @@ import { BLOCK_TYPES, CAP_TEMPLATES, CapTemplate } from './cap-templates';
           <p class="admin-empty">Aucun article pour le moment : « Nouvel article » pour écrire le premier</p>
         }
       } @else if (entries.isLoading()) {
-        <p class="admin-empty">Chargement…</p>
+        <yona-skeleton kind="rows" [count]="4" />
       }
     </section>
 
-    <yona-dialog title="Nouvel article" subtitle="Choisissez un modèle : les blocs se changent ensuite" size="lg" [(open)]="choosing">
+    <yona-dialog title="Nouvel article" subtitle="Choisissez un modèle, ou laissez l'IA écrire : les blocs se changent ensuite" size="lg" [(open)]="choosing">
       <ul role="list" class="templates">
         @for (template of templates; track template.id) {
           <li>
@@ -83,6 +84,13 @@ import { BLOCK_TYPES, CAP_TEMPLATES, CapTemplate } from './cap-templates';
           </li>
         }
       </ul>
+      <button type="button" class="template template--ai" (click)="startWithAi()">
+        <svg yonaIcon="sparkles" [size]="22" [strokeWidth]="1.75"></svg>
+        <span class="template__ai-text">
+          <span class="template__name">Écrire avec l'IA</span>
+          <span class="template__purpose">À partir de vos notes, tapées ou en photo : l'IA propose le titre et les blocs, vous ajoutez les photos</span>
+        </span>
+      </button>
     </yona-dialog>
   `,
   styles: `
@@ -146,6 +154,24 @@ import { BLOCK_TYPES, CAP_TEMPLATES, CapTemplate } from './cap-templates';
     .template__block--empty {
       color: var(--color-text-muted);
     }
+
+    .template--ai {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      margin-top: var(--space-3);
+      border-style: dashed;
+
+      > svg {
+        flex: none;
+        color: var(--color-accent);
+      }
+    }
+
+    .template__ai-text {
+      display: grid;
+      gap: var(--space-1);
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -165,5 +191,11 @@ export default class AdminCap {
   protected start(template: CapTemplate): void {
     this.choosing.set(false);
     void this.router.navigate(['/admin/mon-cap/nouveau'], { queryParams: { modele: template.id } });
+  }
+
+  /** An empty article, the window of the AI open: it lays the blocks down itself. */
+  protected startWithAi(): void {
+    this.choosing.set(false);
+    void this.router.navigate(['/admin/mon-cap/nouveau'], { queryParams: { modele: 'vide', ia: '' } });
   }
 }

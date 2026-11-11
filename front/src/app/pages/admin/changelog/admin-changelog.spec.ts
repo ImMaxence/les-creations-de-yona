@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { FRONT_VERSION } from '../../../core/version';
+import { AdminWatch } from '../layout/admin-watch';
 import AdminChangelog, { REPOSITORY_URL, changesOf, groupsOf, onGitHub, versionsOf } from './admin-changelog';
 
 const CHANGELOG = [
@@ -112,6 +113,11 @@ describe('onGitHub', () => {
 });
 
 describe('AdminChangelog', () => {
+  beforeEach(() => {
+    // Opening the page marks it read: nothing to ask the backend here
+    TestBed.configureTestingModule({ providers: [{ provide: AdminWatch, useValue: { changelogRead: () => Promise.resolve() } }] });
+  });
+
   it('shows Version 2 then Version 1, opens the latest version, and builds another one only once opened', async () => {
     const fixture = TestBed.createComponent(AdminChangelog);
     await fixture.whenStable();

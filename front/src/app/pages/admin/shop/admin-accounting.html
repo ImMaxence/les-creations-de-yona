@@ -179,7 +179,7 @@
           <p class="field__hint">Recette « {{ recipe }} » × {{ product.recipeShare }} · quantités de la recette × dernier prix payé, plus l'emballage</p>
         }
       } @else if (costs.isLoading()) {
-        <p class="admin-empty">Chargement…</p>
+        <yona-skeleton kind="rows" [count]="3" />
       } @else {
         <p class="admin-empty">Aucun produit dans la boutique : le coût de revient se calcule pour chacun</p>
       }
@@ -270,7 +270,7 @@
       </div>
     }
   } @else if (overview.isLoading()) {
-    <p class="admin-empty">Chargement…</p>
+    <yona-skeleton kind="figures" [count]="4" />
   }
 </section>
 

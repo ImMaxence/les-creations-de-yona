@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { Router, RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
@@ -49,7 +50,7 @@ const KINDS: Record<Kind, { label: string; plural: string; feminine: boolean; ed
  */
 @Component({
   selector: 'yona-admin-trash',
-  imports: [Icon, RouterLink, Button, CoverImage, ParisDatePipe, Select, BulkBar],
+  imports: [Icon, RouterLink, Button, CoverImage, ParisDatePipe, Select, BulkBar, Skeleton],
   templateUrl: './admin-trash.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

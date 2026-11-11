@@ -1,4 +1,6 @@
 import type { RequestHandler } from 'express';
+import type { CapArticle } from '../app/core/api/generated/models/cap-article';
+import type { CapArticleCard } from '../app/core/api/generated/models/cap-article-card';
 import type { GlossaryTermResponse } from '../app/core/api/generated/models/glossary-term-response';
 import type { MenuDetail } from '../app/core/api/generated/models/menu-detail';
 import type { MenuSummary } from '../app/core/api/generated/models/menu-summary';
@@ -16,10 +18,12 @@ import {
   MENUS_PATH,
   RECIPES_PATH,
   TERMS_OF_USE_PATH,
+  capArticleLink,
   menuLink,
 } from '../app/shared/routing/links';
 import {
   apiOrigin,
+  fetchCapArticle,
   fetchCapEntries,
   fetchGlossary,
   fetchMenu,
@@ -30,6 +34,7 @@ import {
   fetchSocialLinks,
 } from './api';
 import { aboutMarkdown, glossaryMarkdown, link, menuMarkdown, recipesByTheme, textParagraphs } from './page-markdown';
+import { capArticleToMarkdown } from './cap-markdown';
 import { recipeToMarkdown } from './recipe-markdown';
 
 const SUMMARY =
@@ -44,15 +49,15 @@ export interface LlmsContent {
   recipes: RecipeCard[];
   menus: MenuSummary[];
   glossary: GlossaryTermResponse[];
-  /** Published steps of "Mon CAP". */
-  capSteps?: number;
+  /** Published articles of "Mon CAP", the latest first. */
+  capArticles?: CapArticleCard[];
 }
 
 /**
  * The site described for AI assistants (https://llmstxt.org): what it is, who writes it, and every
  * published recipe, menu and page worth reading, in Markdown.
  */
-export function llmsTxt({ content, recipes, menus, glossary, capSteps }: LlmsContent): string {
+export function llmsTxt({ content, recipes, menus, glossary, capArticles = [] }: LlmsContent): string {
   const lines = [
     `# ${SITE_NAME}`,
     '',
@@ -79,6 +84,18 @@ export function llmsTxt({ content, recipes, menus, glossary, capSteps }: LlmsCon
       '',
     );
   }
+  if (capArticles.length) {
+    lines.push(
+      '## Mon CAP',
+      '',
+      'Le carnet de route de Yona vers son CAP Pâtisserie : ses journées de formation, ses examens, les techniques apprises',
+      '',
+      ...capArticles.map((article) =>
+        link(article.title, capArticleLink(article).join('/'), [article.subtitle, article.excerpt && excerpt(article.excerpt, 200)].filter(Boolean).join(' · ')),
+      ),
+      '',
+    );
+  }
   lines.push(
     '## Pages',
     '',
@@ -87,7 +104,7 @@ export function llmsTxt({ content, recipes, menus, glossary, capSteps }: LlmsCon
     ...(glossary.length
       ? [link('Glossaire de pâtisserie', GLOSSARY_PATH, `${glossary.length} mots de la pâtisserie expliqués simplement`)]
       : []),
-    ...(capSteps
+    ...(capArticles.length
       ? [link('Mon CAP', CAP_PATH, 'le carnet de route de Yona vers son CAP Pâtisserie, article par article')]
       : []),
     link('À propos de Yona', ABOUT_PATH, "l'autrice des recettes"),
@@ -113,18 +130,21 @@ export interface LlmsFullContent {
   recipes: RecipeDetail[];
   menus: MenuDetail[];
   glossary: GlossaryTermResponse[];
+  /** "Mon CAP", the latest first. */
+  capArticles?: CapArticle[];
 }
 
 /**
  * llms-full.txt: the whole text of the site in one file, for an assistant that reads it all at once
  * rather than page by page. The pages one after the other, as their Markdown versions, between "---".
  */
-export function llmsFullTxt({ content, socialLinks, recipes, menus, glossary }: LlmsFullContent): string {
+export function llmsFullTxt({ content, socialLinks, recipes, menus, glossary, capArticles = [] }: LlmsFullContent): string {
   const pages = [
     aboutMarkdown(content, socialLinks),
     ...recipes.map(recipeToMarkdown),
     ...menus.map(menuMarkdown),
     ...(glossary.length ? [glossaryMarkdown(glossary)] : []),
+    ...capArticles.map(capArticleToMarkdown),
   ];
   const head = [
     `# ${SITE_NAME} : tout le texte`,
@@ -133,7 +153,8 @@ export function llmsFullTxt({ content, socialLinks, recipes, menus, glossary }: 
     '',
     `Ci-dessous : Yona, puis ${recipes.length} recette${recipes.length > 1 ? 's' : ''} en entier (salées, puis ` +
       'sucrées, les plus récentes en premier)' +
-      `${menus.length ? ', les menus' : ''}${glossary.length ? ' et le glossaire de pâtisserie' : ''}. ` +
+      `${menus.length ? ', les menus' : ''}${glossary.length ? ', le glossaire de pâtisserie' : ''}` +
+      `${capArticles.length ? ' et les articles de Mon CAP' : ''}. ` +
       `La liste des pages est dans ${absoluteUrl('/llms.txt')} ; chacune existe aussi seule en Markdown, ` +
       'à son adresse suivie de « .md »',
     '',
@@ -155,7 +176,7 @@ export const llms: RequestHandler = async (req, res) => {
       fetchGlossary(origin),
       fetchCapEntries(origin),
     ]);
-    sendText(res, llmsTxt({ content, recipes, menus, glossary, capSteps: capEntries.length }));
+    sendText(res, llmsTxt({ content, recipes, menus, glossary, capArticles: capEntries }));
   } catch (error) {
     console.error('llms.txt unavailable', error);
     sendUnavailable(res);
@@ -166,17 +187,19 @@ export const llms: RequestHandler = async (req, res) => {
 export const llmsFull: RequestHandler = async (req, res) => {
   const origin = apiOrigin(req);
   try {
-    const [content, socialLinks, cards, menuSummaries, glossary] = await Promise.all([
+    const [content, socialLinks, cards, menuSummaries, glossary, capCards] = await Promise.all([
       fetchSiteContent(origin),
       fetchSocialLinks(origin),
       fetchPublishedRecipes(origin),
       fetchMenus(origin),
       fetchGlossary(origin),
+      fetchCapEntries(origin),
     ]);
     const ordered = THEMES.flatMap((theme) => cards.filter((card) => (card.theme ?? 'SWEET') === theme.value));
     const recipes = await inBatches(ordered, (card) => fetchRecipe(origin, card.slug));
     const menus = await Promise.all(menuSummaries.map((menu) => fetchMenu(origin, menu.slug)));
-    sendText(res, llmsFullTxt({ content, socialLinks, recipes, menus, glossary }));
+    const capArticles = await inBatches(capCards, (card) => fetchCapArticle(origin, card.slug));
+    sendText(res, llmsFullTxt({ content, socialLinks, recipes, menus, glossary, capArticles }));
   } catch (error) {
     console.error('llms-full.txt unavailable', error);
     sendUnavailable(res);

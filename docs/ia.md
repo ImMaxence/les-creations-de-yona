@@ -1,6 +1,6 @@
-# L'IA du back-office : Gemini et modèles locaux
+# L'IA du back-office : Gemini, Claude et modèles locaux
 
-Depuis la 1.8.0, l'éditeur de recettes du back-office a un bouton **« Remplir avec l'IA »** : Gemini, l'IA de Google, lit une recette collée ou photographiée et remplit le formulaire. Gratuit (offre gratuite de l'API Gemini). Retour au [ReadMe](../ReadMe.md).
+Depuis la 1.8.0, l'éditeur de recettes du back-office a un bouton **« Remplir avec l'IA »** : Gemini, l'IA de Google, lit une recette collée ou photographiée et remplit le formulaire. Gratuit (offre gratuite de l'API Gemini). Depuis la 2.7.0, Claude d'Anthropic est un troisième choix (payé à l'usage), les articles de Mon CAP ont **« Écrire avec l'IA »**, et les deux fenêtres ont **« Dicter »** (Whisper, sur l'ordinateur). Retour au [ReadMe](../ReadMe.md).
 
 ## Pour Yona
 
@@ -13,6 +13,27 @@ Depuis la 1.8.0, l'éditeur de recettes du back-office a un bouton **« Remplir 
 Ce que l'IA remplit : titre, présentation, portions, temps (préparation, repos, cuisson), difficulté si la recette l'indique, parties (s'il y en a), ingrédients (quantité, unité, précision), étapes (durée, ingrédients utilisés), matériel, moule, conseil, et catégories et tags choisis **parmi ceux du site**. Les ingrédients déjà connus gardent leur nom (« oeufs » devient « Œufs » s'il existe), pour éviter les doublons. Elle garde le ton du texte (tutoiement ou vouvoiement) et n'invente rien : ce que la recette ne dit pas reste vide.
 
 N'envoyer que la recette : sur l'offre gratuite, Google peut conserver et relire ce qu'on lui envoie, et s'en servir pour améliorer ses services. Pas de visage, d'adresse ni de document personnel sur la photo.
+
+## Écrire un article de Mon CAP (2.7)
+
+1. Dans un article, **« Écrire avec l'IA »** en haut ; ou, dans « Nouvel article », la carte **« Écrire avec l'IA »** (un article vide, la fenêtre ouverte).
+2. Choisir la forme : L'IA choisit, Récit (une journée, un examen), Pas à pas (une technique) ou Carnet (plusieurs remarques). Venant d'un modèle de « Nouvel article », sa forme est déjà choisie.
+3. Écrire ou dicter ses notes en vrac, et/ou envoyer la photo de notes manuscrites (Gemini et Claude). Quatre boutons d'exemple remplissent le champ (examen blanc, technique pas à pas, remarques de la semaine, journée de stage).
+4. **« Écrire l'article »** : titre, sous-titre et blocs proposés (texte en Markdown, grande photo, photo + texte, étapes en photos avec leurs légendes, astuce). Si l'article contenait déjà du texte, une confirmation est demandée ; les photos déjà placées sont gardées, aux places prévues pour des photos (les autres à la fin). Un bandeau rappelle de tout relire et d'ajouter les photos : une place laissée vide n'apparaît pas sur le site.
+
+L'IA n'invente rien (ni fait, ni quantité, ni note), garde les mots et les nombres des notes, écrit à la première personne. Côté backend : `CapAiPrompt` (consigne et schéma), `CapAiReader` (blocs bornés à 20, longueurs de l'éditeur, liens retirés, « # » devenu intertitre, 2 à 8 étapes, côté des photos + texte alternés), `CapAiService` ; `POST /api/admin/cap-ai` (multipart : `text`, `image`, `form`, `engine`), `POST /api/admin/cap-ai/local-prompt` et `…/local-draft` pour l'IA locale. Essai du 2026-11-11 avec Gemini Flash-Lite : article juste en 2 s (Flash avait dépassé les 45 s ce jour-là).
+
+## Claude (2.7)
+
+Troisième choix des deux fenêtres, avec son logo : **Claude Haiku 5.5** d'Anthropic par défaut, rapide et peu cher, assez pour ranger un texte ou des notes dans le format du site. Payé à l'usage (environ un dixième de centime par recette ou article : 0,10 $ le million de mots-jetons lus, 0,50 $ le million écrits), sans offre gratuite ; Anthropic ne s'entraîne pas sur ce qu'on lui envoie par l'API.
+
+- Mise en place : créer une clé sur https://console.anthropic.com (API Keys) et y mettre du crédit. Dans Coolify : `ANTHROPIC_API_KEY` (la clé), et facultatif `CLAUDE_MODEL` (par défaut `claude-haiku-5-5` ; `claude-sonnet-5-5` ou `claude-opus-5-5` pour lire des photos de recettes manuscrites difficiles, plus cher). En local : les mêmes dans `devops/.env`.
+- Sans clé, Claude est grisé avec la raison. Une clé refusée ou un compte sans crédit le grisent 10 minutes (rien n'est demandé à Anthropic pour le savoir : chaque question est payée).
+- Backend : SDK Java officiel (`com.anthropic:anthropic-java`), `Claude` (réponse au format JSON imposé par `output_config.format`, schéma de Gemini rendu strict : objets fermés, types nullables en `anyOf`), effort `medium`, 90 s au plus, aucun nouvel essai automatique ; avec Sonnet 5.5, Opus 5.5 ou Fable 5.2, une demande refusée par Claude passe à un autre modèle d'Anthropic (`fallbacks: "default"`) ; Haiku n'a pas ce repli, un refus s'affiche. `OnlineAi` choisit Gemini ou Claude ; la réponse passe par les mêmes contrôles (`RecipeAiReader`, `CapAiReader`). État : `GET /api/admin/claude`.
+
+## Dictée (2.7)
+
+**« Dicter »** sous le champ de texte des deux fenêtres : le navigateur demande le micro, Whisper large-v3-turbo d'OpenAI (licence MIT, 570 Mo en `q4f16`) écrit ce qui a été dit, en français, dans un worker, sur l'ordinateur : rien n'est envoyé, l'enregistrement n'est pas gardé. Le texte s'ajoute au champ ; l'IA choisie le lit au clic sur le bouton principal. 5 minutes au plus par dictée. Sur téléphone, le bouton n'apparaît pas : le micro du clavier fait la même chose. Front : `core/local-ai/speech.worker.ts`, `transcribe-locally.ts` (enregistrement en 16 kHz mono), `shared/ui/dictation`.
 
 ## Quand le bouton est grisé ou qu'une erreur s'affiche
 

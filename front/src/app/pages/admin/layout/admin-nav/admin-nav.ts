@@ -5,6 +5,7 @@ import {
   Signal,
   afterNextRender,
   booleanAttribute,
+  computed,
   inject,
   input,
   linkedSignal,
@@ -27,14 +28,19 @@ import { IconName } from '../../../../shared/ui/icon/icons';
 import { UnreadFeedback } from '../../feedback/unread-feedback';
 import { NewOrders } from '../../shop/new-orders';
 import { AdminAvatar } from '../admin-avatar/admin-avatar';
+import { AdminWatch } from '../admin-watch';
 
 
 interface AdminLink {
   path: string;
   label: string;
   icon: IconName;
-  /** What waits there: unread messages, new orders. */
+  /** What waits there: unread messages, new orders, changes of the others, new errors. */
   count?: Signal<number>;
+  /** Read after the count: "3 en attente", "3 nouvelles erreurs". */
+  countLabel?: string;
+  /** A word rather than a number: "Nouveau" on a changelog not read yet. */
+  badge?: Signal<string | null>;
 }
 
 interface AdminGroup {
@@ -71,6 +77,10 @@ function readClosedGroups(): string[] {
 })
 export class AdminNav {
   readonly drawer = input(false, { transform: booleanAttribute });
+  /** Folded into a column of icons (computers): every section in sight, each named on hover. */
+  readonly rail = input(false, { transform: booleanAttribute });
+  /** "Replier le menu" or "Déplier le menu". */
+  readonly railToggled = output();
   /** "Fermer le menu", in the drawer. */
   readonly closed = output();
 
@@ -78,6 +88,7 @@ export class AdminNav {
   private readonly toaster = inject(Toaster);
   private readonly router = inject(Router);
   private readonly api = inject(Api);
+  private readonly watch = inject(AdminWatch);
 
   protected readonly frontVersion = FRONT_VERSION;
   /** Loaded once with the back-office; shown as "…" until then. */
@@ -121,8 +132,14 @@ export class AdminNav {
         { path: 'preferences', label: 'Préférences', icon: 'sliders-horizontal' },
         { path: 'sauvegarde', label: 'Sauvegarde', icon: 'database-backup' },
         { path: 'corbeille', label: 'Corbeille', icon: 'trash' },
-        { path: 'historique', label: 'Historique', icon: 'history' },
-        { path: 'nouveautes', label: 'Nouveautés', icon: 'sparkles' },
+        { path: 'historique', label: 'Historique', icon: 'history', count: this.watch.historyCount, countLabel: 'changements à voir' },
+        { path: 'journaux', label: 'Journaux', icon: 'scroll-text', count: this.watch.logsCount, countLabel: 'nouvelles erreurs' },
+        {
+          path: 'nouveautes',
+          label: 'Nouveautés',
+          icon: 'sparkles',
+          badge: computed(() => (this.watch.changelogNew() ? 'Nouveau' : null)),
+        },
       ],
     },
   ];
@@ -178,6 +195,18 @@ export class AdminNav {
     } catch {
       // Storage blocked or full: kept for this visit only
     }
+  }
+
+  /** Without a number, a dot: a section has something new ("Nouveautés"). */
+  protected groupHasNews(group: AdminGroup): boolean {
+    return group.links.some((link) => !!link.badge?.());
+  }
+
+  /** Folded, the name of a section says what waits there too. */
+  protected railLabel(link: AdminLink): string {
+    const count = link.count?.() ?? 0;
+    const badge = link.badge?.();
+    return count ? `${link.label} (${count} ${link.countLabel ?? 'en attente'})` : badge ? `${link.label} (${badge.toLowerCase()})` : link.label;
   }
 
   /** What waits in all the sections of an entry, shown while it is closed. */

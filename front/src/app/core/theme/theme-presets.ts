@@ -42,7 +42,7 @@ const DANGER_DARK = '#f08c78';
  * Contrasts checked with WCAG: text ≥ 7:1, muted text and accent ≥ 4.5:1 on bg and surface,
  * onAccent ≥ 4.5:1 on accent.
  */
-export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
+const SITE_PRESETS: Record<Exclude<ThemePresetId, 'PERSONNALISE'>, ThemePreset> = {
   PATISSERIE_CHIC: {
     label: 'Pâtisserie chic',
     light: {
@@ -583,4 +583,13 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
       shadow: '#000000',
     },
   },
+};
+
+/**
+ * The themes of the site, and "Personnalisé": its colors are chosen by hand (custom-palette.ts); until
+ * they are, those of "Pâtisserie chic".
+ */
+export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
+  ...SITE_PRESETS,
+  PERSONNALISE: { label: 'Personnalisé', light: SITE_PRESETS.PATISSERIE_CHIC.light, dark: SITE_PRESETS.PATISSERIE_CHIC.dark },
 };

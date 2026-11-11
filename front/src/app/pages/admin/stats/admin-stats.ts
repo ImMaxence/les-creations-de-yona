@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, resource } from '
 import { RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
+import { getSiteHealth } from '../../../core/api/generated/fn/admin-stats/get-site-health';
 import { getStats } from '../../../core/api/generated/fn/admin-stats/get-stats';
 import { deleteSearchMisses } from '../../../core/api/generated/fn/admin-search-misses/delete-search-misses';
 import { AiVisits } from '../../../core/api/generated/models/ai-visits';
@@ -9,11 +10,16 @@ import { IncompleteRecipe } from '../../../core/api/generated/models/incomplete-
 import { NamedCount } from '../../../core/api/generated/models/named-count';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
+import { FRONT_VERSION } from '../../../core/version';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
+import { parisDateTime } from '../../../shared/format/paris-time';
 import { formatBytes } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { RememberedFolds } from '../remembered-folds';
+import { ServerHistoryChart } from './server-history';
 import { ServerLive } from './server-live';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 const MONTH = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' });
 const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -74,12 +80,13 @@ interface Bar {
  */
 @Component({
   selector: 'yona-admin-stats',
-  imports: [
-    Icon,
+  imports: [Icon,
     RouterLink,
     Button,
     ParisDatePipe,
+    ServerHistoryChart,
     ServerLive,
+    Skeleton,
   ],
   templateUrl: './admin-stats.html',
   styleUrl: './admin-stats.scss',
@@ -91,6 +98,29 @@ export default class AdminStats {
   private readonly toaster = inject(Toaster);
 
   protected readonly stats = resource({ loader: () => this.api.invoke(getStats, {}) });
+  /** "Versions et santé": asked apart, light, each part answering on its own. */
+  protected readonly health = resource({ loader: () => this.api.invoke(getSiteHealth) });
+  protected readonly frontVersion = FRONT_VERSION;
+  protected readonly dateTime = parisDateTime;
+  protected readonly uptime = duration;
+  /** The parts of the page open last time in this browser; "Versions et santé" the first time. */
+  protected readonly folds = new RememberedFolds('admin-stats-open', ['health']);
+  /** In the title of "Versions et santé", closed or open. */
+  protected readonly healthDigest = computed(() => {
+    const check = this.health.value();
+    if (!check) {
+      return this.health.isLoading() ? '…' : 'Inconnu';
+    }
+    if (!check.databaseOk || !check.storageOk) {
+      return !check.databaseOk ? 'Base de données hors service' : 'Stockage des photos hors service';
+    }
+    return check.errorsLast24Hours ? this.plural(check.errorsLast24Hours, 'erreur en 24 h', 'erreurs en 24 h') : 'Tout va bien';
+  });
+  /** In the title of "Serveur": the memory of the backend now. */
+  protected readonly serverDigest = computed(() => {
+    const usage = this.stats.value()?.server;
+    return usage ? `Backend ${formatBytes(usage.backendMemoryBytes ?? usage.heapUsedBytes)}` : '';
+  });
   protected readonly formatBytes = formatBytes;
   protected readonly analyticsUrl = ANALYTICS_URL;
   protected readonly missingLabels = MISSING_LABELS;

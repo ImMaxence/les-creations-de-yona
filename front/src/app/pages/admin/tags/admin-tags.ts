@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { attempt } from '../../../core/api/attempt';
@@ -23,7 +24,7 @@ const MAX_NAME_LENGTH = 40;
  */
 @Component({
   selector: 'yona-admin-tags',
-  imports: [Icon, RouterLink, BulkBar, Button],
+  imports: [Icon, RouterLink, BulkBar, Button, Skeleton],
   templateUrl: './admin-tags.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

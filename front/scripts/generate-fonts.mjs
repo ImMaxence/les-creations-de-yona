@@ -26,6 +26,13 @@ const SOURCES = [
   ['josefin-sans', 'wght.css'],
   ['josefin-sans', 'wght-italic.css'],
   ['kalnia', 'wght.css'],
+  ['bricolage-grotesque', 'opsz.css'],
+  ['newsreader', 'opsz.css'],
+  ['newsreader', 'opsz-italic.css'],
+  ['shantell-sans', 'wght.css'],
+  ['grandstander', 'wght.css'],
+  ['imbue', 'opsz.css'],
+  ['playpen-sans', 'wght.css'],
   ['inter', 'wght.css'],
   ['nunito', 'wght.css'],
   ['dm-sans', 'wght.css'],
@@ -36,6 +43,13 @@ const SOURCES = [
   ['work-sans', 'wght.css'],
   ['manrope', 'wght.css'],
   ['merriweather', 'opsz.css'],
+  ['raleway', 'wght.css'],
+  ['rubik', 'wght.css'],
+  ['outfit', 'wght.css'],
+  ['figtree', 'wght.css'],
+  ['crimson-pro', 'wght.css'],
+  ['crimson-pro', 'wght-italic.css'],
+  ['bitter', 'wght.css'],
 ];
 const KEPT_SUBSET = /-latin(-ext)?-/;
 const OUTPUT = 'src/styles/_fonts.scss';

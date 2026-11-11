@@ -132,19 +132,28 @@ public enum ErrorCode {
 	// Social links
 	DUPLICATE_SOCIAL_PLATFORM(HttpStatus.BAD_REQUEST, "Chaque réseau social ne peut apparaître qu'une seule fois"),
 
-	// "Remplir avec l'IA" (Gemini)
+	// "Remplir avec l'IA" (recipes) and "Écrire avec l'IA" (articles of "Mon CAP"), Gemini or the local model
 	AI_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "Le remplissage par IA n'est pas configuré : il manque la clé Gemini (GEMINI_API_KEY)"),
 	AI_KEY_REFUSED(HttpStatus.SERVICE_UNAVAILABLE, "Google refuse la clé Gemini : vérifiez-la dans Google AI Studio"),
 	AI_DAILY_QUOTA(HttpStatus.TOO_MANY_REQUESTS, "Les demandes gratuites à Gemini sont épuisées pour aujourd'hui : réessayez demain matin"),
 	AI_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Trop de demandes à Gemini en une minute : réessayez dans un instant"),
 	AI_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Gemini est indisponible pour le moment (très demandé) : réessayez dans quelques minutes"),
-	AI_BUSY(HttpStatus.CONFLICT, "Une recette est déjà en cours de lecture par l'IA : attendez la fin"),
+	AI_BUSY(HttpStatus.CONFLICT, "L'IA travaille déjà sur une autre demande : attendez la fin"),
 	AI_INPUT_REQUIRED(HttpStatus.BAD_REQUEST, "Collez le texte d'une recette ou envoyez une photo"),
 	AI_TEXT_TOO_LONG(HttpStatus.BAD_REQUEST, "Le texte dépasse 20 000 caractères"),
 	AI_NOT_A_RECIPE(HttpStatus.BAD_REQUEST, "L'IA n'a pas trouvé de recette dans ce texte ou cette photo"),
 	AI_BLOCKED(HttpStatus.BAD_REQUEST, "Gemini a refusé de lire ce contenu"),
 	AI_BAD_RESPONSE(HttpStatus.BAD_GATEWAY, "La réponse de Gemini est illisible : réessayez"),
 	AI_LOCAL_BAD_RESPONSE(HttpStatus.BAD_REQUEST, "La réponse de l'IA locale est illisible : réessayez"),
+	CLAUDE_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "Claude n'est pas configuré : il manque la clé d'Anthropic (ANTHROPIC_API_KEY)"),
+	CLAUDE_KEY_REFUSED(HttpStatus.SERVICE_UNAVAILABLE, "Anthropic refuse la clé de Claude : vérifiez-la dans la console d'Anthropic"),
+	CLAUDE_NO_CREDIT(HttpStatus.SERVICE_UNAVAILABLE, "Plus de crédit sur le compte Anthropic : rechargez-le dans la console d'Anthropic"),
+	CLAUDE_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Trop de demandes à Claude en une minute : réessayez dans un instant"),
+	CLAUDE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Claude est indisponible pour le moment (très demandé) : réessayez dans quelques minutes"),
+	CLAUDE_REFUSED(HttpStatus.BAD_REQUEST, "Claude a refusé de lire ce contenu"),
+	CLAUDE_BAD_RESPONSE(HttpStatus.BAD_GATEWAY, "La réponse de Claude est illisible : réessayez"),
+	CAP_AI_INPUT_REQUIRED(HttpStatus.BAD_REQUEST, "Écrivez quelques notes sur l'article ou envoyez la photo de vos notes"),
+	CAP_AI_NO_ARTICLE(HttpStatus.BAD_REQUEST, "L'IA n'a pas su écrire d'article avec ces notes : ajoutez des détails"),
 
 	// Images
 	IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Image introuvable"),
@@ -179,7 +188,8 @@ public enum ErrorCode {
 
 	// Appearance presets
 	APPEARANCE_PRESET_NOT_FOUND(HttpStatus.NOT_FOUND, "Préréglage introuvable"),
-	APPEARANCE_PRESET_NAME_TAKEN(HttpStatus.CONFLICT, "Un préréglage porte déjà ce nom");
+	APPEARANCE_PRESET_NAME_TAKEN(HttpStatus.CONFLICT, "Un préréglage porte déjà ce nom"),
+	THEME_CUSTOM_COLORS_REQUIRED(HttpStatus.BAD_REQUEST, "Choisissez les couleurs du thème personnalisé");
 
 	private final HttpStatus status;
 

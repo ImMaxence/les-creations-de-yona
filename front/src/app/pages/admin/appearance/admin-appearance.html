@@ -8,102 +8,145 @@
     du site
   </p>
 
-  <section class="admin-panel appearance__group" aria-labelledby="looks-title">
-    <h3 id="looks-title" class="field__label">Mes préréglages</h3>
-    <p class="field__hint">
-      Un préréglage garde un thème de couleurs, deux polices et un arrondi sous le nom de votre choix. Cliquez dessus
-      pour remplir les choix plus bas (et les essayer), puis enregistrez pour les visiteurs
-    </p>
-    @if (savedLooks.value(); as looks) {
-      @if (looks.length) {
-        <ul role="list" class="looks">
-          @for (look of looks; track look.id) {
-            <li class="look" [class.is-selected]="currentLookId() === look.id">
-              @if (renamingId() === look.id) {
-                <form class="look__rename" (submit)="$event.preventDefault(); rename(look)">
-                  <input
-                    class="input"
-                    aria-label="Nouveau nom du préréglage"
-                    [maxLength]="maxPresetNameLength"
-                    [value]="renamedName()"
-                    (input)="renamedName.set($any($event.target).value)"
-                  />
-                  <button type="submit" class="icon-button" aria-label="Valider le nom"><svg yonaIcon="check" [size]="18"></svg></button>
-                  <button type="button" class="icon-button" aria-label="Annuler" (click)="renamingId.set(null)"><svg yonaIcon="x" [size]="18"></svg></button>
-                </form>
-              } @else {
-                <button type="button" class="look__apply" [attr.aria-pressed]="currentLookId() === look.id" (click)="applyLook(look)">
-                  <span class="preset__swatches" aria-hidden="true">
-                    @for (palette of palettesOf(look); track $index) {
-                      <span class="preset__scheme" [style.background-color]="palette.bg">
-                        <span [style.background-color]="palette.surface"></span>
-                        <span [style.background-color]="palette.accent"></span>
-                        <span [style.background-color]="palette.decor"></span>
-                        <span [style.background-color]="palette.text"></span>
-                      </span>
-                    }
-                  </span>
-                  <span class="preset__name">
-                    {{ look.name }}
-                    @if (currentLookId() === look.id) {
-                      <svg yonaIcon="check" [size]="16"></svg>
-                    }
-                  </span>
-                  <span class="look__details">
-                    <span>{{ presetLabel(look) }}</span>
-                    <span>{{ fontsOf(look) }}</span>
-                    <span>Arrondi {{ look.theme.radiusPx }} px</span>
-                  </span>
-                </button>
-                <div class="look__actions">
-                  <button type="button" class="icon-button" [attr.aria-label]="'Remplacer « ' + look.name + ' » par les choix actuels'" (click)="overwriteLook(look)">
-                    <svg yonaIcon="refresh-cw" [size]="16"></svg>
+  <!-- Each part folded away, remembered open or closed in this browser: its title says the current choice -->
+  <details class="admin-fold" [open]="folds.isOpen('looks')" (toggle)="folds.onToggle('looks', $event)">
+    <summary class="admin-fold__summary">
+      <svg yonaIcon="save" [size]="20" [strokeWidth]="1.75" class="admin-fold__icon"></svg>
+      <span class="admin-fold__title">Mes préréglages</span>
+      <span class="admin-fold__digest">{{ looksDigest() }}</span>
+      <svg yonaIcon="chevron-down" [size]="18" class="admin-fold__chevron"></svg>
+    </summary>
+    <div class="admin-fold__body">
+      <p class="field__hint">
+        Un préréglage garde un thème de couleurs, deux polices et un arrondi sous le nom de votre choix. Cliquez dessus
+        pour remplir les choix plus bas (et les essayer), puis enregistrez pour les visiteurs
+      </p>
+      @if (savedLooks.value(); as looks) {
+        @if (looks.length) {
+          <ul role="list" class="looks">
+            @for (look of looks; track look.id) {
+              <li class="look" [class.is-selected]="currentLookId() === look.id">
+                @if (renamingId() === look.id) {
+                  <form class="look__rename" (submit)="$event.preventDefault(); rename(look)">
+                    <input
+                      class="input"
+                      aria-label="Nouveau nom du préréglage"
+                      [maxLength]="maxPresetNameLength"
+                      [value]="renamedName()"
+                      (input)="renamedName.set($any($event.target).value)"
+                    />
+                    <button type="submit" class="icon-button" aria-label="Valider le nom"><svg yonaIcon="check" [size]="18"></svg></button>
+                    <button type="button" class="icon-button" aria-label="Annuler" (click)="renamingId.set(null)"><svg yonaIcon="x" [size]="18"></svg></button>
+                  </form>
+                } @else {
+                  <button type="button" class="look__apply" [attr.aria-pressed]="currentLookId() === look.id" (click)="applyLook(look)">
+                    <span class="preset__swatches" aria-hidden="true">
+                      @for (palette of palettesOf(look.theme); track $index) {
+                        <span class="preset__scheme" [style.background-color]="palette.bg">
+                          <span [style.background-color]="palette.surface"></span>
+                          <span [style.background-color]="palette.accent"></span>
+                          <span [style.background-color]="palette.decor"></span>
+                          <span [style.background-color]="palette.text"></span>
+                        </span>
+                      }
+                    </span>
+                    <span class="preset__name">
+                      {{ look.name }}
+                      @if (currentLookId() === look.id) {
+                        <svg yonaIcon="check" [size]="16"></svg>
+                      }
+                    </span>
+                    <span class="look__details">
+                      <span>{{ presetLabel(look) }}</span>
+                      <span>{{ fontsOf(look) }}</span>
+                      <span>Arrondi {{ look.theme.radiusPx }} px</span>
+                    </span>
                   </button>
-                  <button type="button" class="icon-button" [attr.aria-label]="'Renommer « ' + look.name + ' »'" (click)="startRename(look)">
-                    <svg yonaIcon="pencil" [size]="16"></svg>
-                  </button>
-                  <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer « ' + look.name + ' »'" (click)="removeLook(look)">
-                    <svg yonaIcon="trash" [size]="16"></svg>
-                  </button>
-                </div>
-              }
-            </li>
-          }
-        </ul>
-      } @else {
-        <p class="admin-empty">Aucun préréglage pour le moment : composez une apparence plus bas, puis enregistrez-la ici</p>
+                  <div class="look__actions">
+                    <button type="button" class="icon-button" [attr.aria-label]="'Remplacer « ' + look.name + ' » par les choix actuels'" (click)="overwriteLook(look)">
+                      <svg yonaIcon="refresh-cw" [size]="16"></svg>
+                    </button>
+                    <button type="button" class="icon-button" [attr.aria-label]="'Renommer « ' + look.name + ' »'" (click)="startRename(look)">
+                      <svg yonaIcon="pencil" [size]="16"></svg>
+                    </button>
+                    <button type="button" class="icon-button icon-button--danger" [attr.aria-label]="'Supprimer « ' + look.name + ' »'" (click)="removeLook(look)">
+                      <svg yonaIcon="trash" [size]="16"></svg>
+                    </button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="admin-empty">Aucun préréglage pour le moment : composez une apparence plus bas, puis enregistrez-la ici</p>
+        }
+      } @else if (savedLooks.isLoading()) {
+        <yona-skeleton kind="rows" [count]="2" />
       }
-    }
-    <div class="look__new">
-      <input
-        class="input"
-        placeholder="Nom du préréglage (ex. Couleur test Maxence)"
-        aria-label="Nom du nouveau préréglage"
-        [maxLength]="maxPresetNameLength"
-        [value]="newPresetName()"
-        (input)="newPresetName.set($any($event.target).value)"
-        (keydown.enter)="saveLook($event)"
-      />
-      <button yonaButton variant="secondary" type="button" (click)="saveLook($event)">
-        <svg yonaIcon="save"></svg>Enregistrer les choix actuels comme préréglage
-      </button>
+      <div class="look__new">
+        <input
+          class="input"
+          placeholder="Nom du préréglage (ex. Couleur test Maxence)"
+          aria-label="Nom du nouveau préréglage"
+          [maxLength]="maxPresetNameLength"
+          [value]="newPresetName()"
+          (input)="newPresetName.set($any($event.target).value)"
+          (keydown.enter)="saveLook($event)"
+        />
+        <button yonaButton variant="secondary" type="button" (click)="saveLook($event)">
+          <svg yonaIcon="save"></svg>Enregistrer les choix actuels comme préréglage
+        </button>
+      </div>
     </div>
-  </section>
+  </details>
 
-  <fieldset class="admin-panel appearance__group">
-    <legend class="field__label">Couleurs</legend>
-    <div class="presets" role="radiogroup" aria-label="Thème de couleurs">
-      @for (preset of presets; track preset.id) {
+  <details class="admin-fold" [open]="folds.isOpen('colors')" (toggle)="folds.onToggle('colors', $event)">
+    <summary class="admin-fold__summary">
+      <svg yonaIcon="palette" [size]="20" [strokeWidth]="1.75" class="admin-fold__icon"></svg>
+      <span class="admin-fold__title">Couleurs</span>
+      <span class="admin-fold__digest">{{ presetName() }}</span>
+      <svg yonaIcon="chevron-down" [size]="18" class="admin-fold__chevron"></svg>
+    </summary>
+    <div class="admin-fold__body">
+      <div class="presets" role="radiogroup" aria-label="Thème de couleurs">
+        @for (preset of presets; track preset.id) {
+          <button
+            type="button"
+            role="radio"
+            class="preset"
+            [class.is-selected]="draft().preset === preset.id"
+            [attr.aria-checked]="draft().preset === preset.id"
+            (click)="update('preset', preset.id)"
+          >
+            <span class="preset__swatches" aria-hidden="true">
+              @for (palette of [preset.light, preset.dark]; track $index) {
+                <span class="preset__scheme" [style.background-color]="palette.bg">
+                  <span [style.background-color]="palette.surface"></span>
+                  <span [style.background-color]="palette.accent"></span>
+                  <span [style.background-color]="palette.decor"></span>
+                  <span [style.background-color]="palette.text"></span>
+                </span>
+              }
+            </span>
+            <span class="preset__name">
+              {{ preset.label }}
+              @if (draft().preset === preset.id) {
+                <svg yonaIcon="check" [size]="16"></svg>
+              }
+            </span>
+          </button>
+        }
+        <!-- The colors chosen by hand, when no theme suits -->
         <button
           type="button"
           role="radio"
-          class="preset"
-          [class.is-selected]="draft().preset === preset.id"
-          [attr.aria-checked]="draft().preset === preset.id"
-          (click)="update('preset', preset.id)"
+          class="preset preset--custom"
+          [class.is-selected]="isCustom()"
+          [attr.aria-checked]="isCustom()"
+          (click)="chooseCustom()"
         >
           <span class="preset__swatches" aria-hidden="true">
-            @for (palette of [preset.light, preset.dark]; track $index) {
+            @for (palette of customPalettes(); track $index) {
               <span class="preset__scheme" [style.background-color]="palette.bg">
                 <span [style.background-color]="palette.surface"></span>
                 <span [style.background-color]="palette.accent"></span>
@@ -113,59 +156,113 @@
             }
           </span>
           <span class="preset__name">
-            {{ preset.label }}
-            @if (draft().preset === preset.id) {
+            <svg yonaIcon="palette" [size]="16"></svg>Personnalisé
+            @if (isCustom()) {
               <svg yonaIcon="check" [size]="16"></svg>
             }
           </span>
         </button>
+      </div>
+
+      @if (isCustom()) {
+        @if (draft().customColors; as colors) {
+          <div class="custom">
+            <p class="field__hint">
+              Quatre couleurs pour la version claire, quatre pour la sombre : les nuances (texte secondaire, survol des
+              boutons, décorations) en sont tirées. Le site entier les montre dès maintenant, pour vous seulement
+            </p>
+            <div class="custom__schemes">
+              @for (scheme of schemes; track scheme.id) {
+                <fieldset class="custom__scheme">
+                  <legend class="field__label">{{ scheme.label }}</legend>
+                  @for (role of colorRoles; track role.id) {
+                    <label class="custom__color">
+                      <input
+                        type="color"
+                        [value]="colors[scheme.id][role.id]"
+                        [attr.aria-label]="role.label + ' (' + scheme.label.toLowerCase() + ')'"
+                        (input)="setColor(scheme.id, role.id, $any($event.target).value)"
+                      />
+                      <span class="custom__role">
+                        {{ role.label }}
+                        <small class="field__hint">{{ role.hint }}</small>
+                      </span>
+                      <code class="custom__hex">{{ colors[scheme.id][role.id] }}</code>
+                    </label>
+                  }
+                  @for (problem of readability(colors[scheme.id]); track problem) {
+                    <p class="custom__problem"><svg yonaIcon="triangle-alert" [size]="16"></svg>{{ problem }}</p>
+                  }
+                </fieldset>
+              }
+            </div>
+            <div class="custom__start">
+              <span class="field__hint">Repartir des couleurs d'un thème :</span>
+              <yona-select label="Thème de départ" placeholder="Choisir un thème" pickOnly [options]="startOptions" (picked)="startFrom($event)" />
+            </div>
+          </div>
+        }
       }
     </div>
-  </fieldset>
+  </details>
 
-  <fieldset class="admin-panel appearance__group">
-    <legend class="field__label">Polices</legend>
-    <div class="appearance__fonts">
-      <div class="field">
-        <span class="field__label">Titres</span>
-        <yona-select label="Police des titres" [options]="displayFontOptions" [value]="draft().displayFont" (valueChange)="update('displayFont', $event)" />
+  <details class="admin-fold" [open]="folds.isOpen('fonts')" (toggle)="folds.onToggle('fonts', $event)">
+    <summary class="admin-fold__summary">
+      <svg yonaIcon="type" [size]="20" [strokeWidth]="1.75" class="admin-fold__icon"></svg>
+      <span class="admin-fold__title">Polices</span>
+      <span class="admin-fold__digest">{{ fontsDigest() }}</span>
+      <svg yonaIcon="chevron-down" [size]="18" class="admin-fold__chevron"></svg>
+    </summary>
+    <div class="admin-fold__body">
+      <div class="appearance__fonts">
+        <div class="field">
+          <span class="field__label">Titres</span>
+          <yona-select label="Police des titres" [options]="displayFontOptions" [value]="draft().displayFont" (valueChange)="update('displayFont', $event)" />
+        </div>
+        <div class="field">
+          <span class="field__label">Texte</span>
+          <yona-select label="Police du texte" [options]="bodyFontOptions" [value]="draft().bodyFont" (valueChange)="update('bodyFont', $event)" />
+        </div>
       </div>
-      <div class="field">
-        <span class="field__label">Texte</span>
-        <yona-select label="Police du texte" [options]="bodyFontOptions" [value]="draft().bodyFont" (valueChange)="update('bodyFont', $event)" />
+      <div class="sample" aria-hidden="true">
+        <p class="sample__title">Tarte fine aux pommes</p>
+        <p class="sample__text">Une pâte feuilletée bien croustillante, de fines lamelles de pommes et un caramel au beurre salé maison</p>
       </div>
     </div>
-    <div class="sample" aria-hidden="true">
-      <p class="sample__title">Tarte fine aux pommes</p>
-      <p class="sample__text">Une pâte feuilletée bien croustillante, de fines lamelles de pommes et un caramel au beurre salé maison</p>
-    </div>
-  </fieldset>
+  </details>
 
-  <fieldset class="admin-panel appearance__group">
-    <legend class="field__label">Arrondi des coins</legend>
-    <div class="appearance__radius">
-      <input
-        type="range"
-        class="radius__slider"
-        min="0"
-        [max]="sliderMax"
-        step="1"
-        aria-label="Arrondi des coins"
-        [value]="draft().radiusPx"
-        (input)="onRadiusInput($event)"
-      />
-      <label class="radius__value">
-        <input type="number" inputmode="numeric" class="input" min="0" [max]="maxRadius" step="1" [value]="draft().radiusPx" (change)="onRadiusInput($event)" />
-        <span>px</span>
-      </label>
+  <details class="admin-fold" [open]="folds.isOpen('radius')" (toggle)="folds.onToggle('radius', $event)">
+    <summary class="admin-fold__summary">
+      <svg yonaIcon="square" [size]="20" [strokeWidth]="1.75" class="admin-fold__icon"></svg>
+      <span class="admin-fold__title">Arrondi des coins</span>
+      <span class="admin-fold__digest">{{ draft().radiusPx }} px</span>
+      <svg yonaIcon="chevron-down" [size]="18" class="admin-fold__chevron"></svg>
+    </summary>
+    <div class="admin-fold__body">
+      <div class="appearance__radius">
+        <input
+          type="range"
+          class="radius__slider"
+          min="0"
+          [max]="sliderMax"
+          step="1"
+          aria-label="Arrondi des coins"
+          [value]="draft().radiusPx"
+          (input)="onRadiusInput($event)"
+        />
+        <label class="radius__value">
+          <input type="number" inputmode="numeric" class="input" min="0" [max]="maxRadius" step="1" [value]="draft().radiusPx" (change)="onRadiusInput($event)" />
+          <span>px</span>
+        </label>
+      </div>
+      <p class="field__hint">0 : coins carrés. 16 : arrondi d'origine. Jusqu'à {{ maxRadius }} : tout devient rond</p>
+      <div class="radius__preview" aria-hidden="true">
+        <span class="radius__card"></span>
+        <span class="button">Bouton</span>
+        <span class="chip">Catégorie</span>
+      </div>
     </div>
-    <p class="field__hint">0 : coins carrés. 16 : arrondi d'origine. Jusqu'à {{ maxRadius }} : tout devient rond</p>
-    <div class="radius__preview" aria-hidden="true">
-      <span class="radius__card"></span>
-      <span class="button">Bouton</span>
-      <span class="chip">Catégorie</span>
-    </div>
-  </fieldset>
+  </details>
 
   <div class="admin-toolbar">
     <button yonaButton type="submit" [disabled]="saving() || !unsaved()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>

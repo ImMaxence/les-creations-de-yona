@@ -7,11 +7,12 @@ import { formatEuros } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { InvoiceSettingsDialog } from './invoice-settings-dialog';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 /** The invoices issued in a year, latest first, and the seller's details they carry. */
 @Component({
   selector: 'yona-invoices-panel',
-  imports: [Button, Icon, InvoiceSettingsDialog, ParisDatePipe, RouterLink],
+  imports: [Button, Icon, InvoiceSettingsDialog, ParisDatePipe, RouterLink, Skeleton],
   template: `
     <div class="admin-panel">
       <div class="head">
@@ -36,7 +37,7 @@ import { InvoiceSettingsDialog } from './invoice-settings-dialog';
           <p class="admin-empty">Aucune facture en {{ year() }}. Elle se génère depuis une commande récupérée</p>
         }
       } @else if (invoices.isLoading()) {
-        <p class="admin-empty">Chargement…</p>
+        <yona-skeleton kind="rows" [count]="3" />
       }
     </div>
     <yona-invoice-settings-dialog [(open)]="settingsOpen" />

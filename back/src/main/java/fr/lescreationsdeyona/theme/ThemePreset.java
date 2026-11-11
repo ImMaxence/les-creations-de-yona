@@ -24,5 +24,7 @@ public enum ThemePreset {
 	ART_DECO,
 	LAGON,
 	BONBON,
-	AURORE
+	AURORE,
+	/** Colors chosen by hand: see {@link CustomColors}. */
+	PERSONNALISE
 }

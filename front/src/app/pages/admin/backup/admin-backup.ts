@@ -23,6 +23,7 @@ import { parisDateTime } from '../../../shared/format/paris-time';
 import { formatBytes } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 /** Same size as the server expects (RestoreService.CHUNK_BYTES): under Cloudflare's 100 MB per request. */
 const CHUNK_BYTES = 32 * 1024 * 1024;
@@ -62,11 +63,9 @@ const COUNT_ROWS: { key: keyof Counts; label: string }[] = [
  */
 @Component({
   selector: 'yona-admin-backup',
-  imports: [
-    Icon,
+  imports: [Icon,
     Button,
-    ParisDatePipe,
-  ],
+    ParisDatePipe, Skeleton],
   templateUrl: './admin-backup.html',
   styleUrl: './admin-backup.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

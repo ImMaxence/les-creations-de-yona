@@ -4,7 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.jspecify.annotations.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
-/** What to read: a pasted text, a photo, or both (multipart form). */
+/** What to read: a pasted text, a photo, or both (multipart form); and who reads it. */
 public record RecipeAiRequest(@Schema(description = "20,000 characters at most") @Nullable String text,
-		@Schema(description = "JPEG or PNG, 10 MB max") @Nullable MultipartFile image) {
+		@Schema(description = "JPEG or PNG, 10 MB max") @Nullable MultipartFile image,
+		@Schema(description = "GEMINI when absent") @Nullable AiEngine engine) {
 }

@@ -30,14 +30,67 @@ export const capArticleResolver: ResolveFn<CapArticle> = async (route) => {
 };
 
 /** Empty, it is not worth indexing. */
+/** What the articles are about, for search engines and assistants: the diploma, and pastry. */
+const CAP_ABOUT = [
+  { '@type': 'EducationalOccupationalCredential', name: 'CAP Pâtissier', credentialCategory: 'Certificat d’aptitude professionnelle' },
+  { '@type': 'Thing', name: 'Pâtisserie' },
+];
+
+/** The words the articles are found by. */
+const CAP_KEYWORDS = ['CAP Pâtissier', 'CAP Pâtisserie', 'formation pâtisserie', 'examen CAP', 'techniques de pâtisserie'];
+
+const CAP_DESCRIPTION =
+  'Le carnet de route de Yona vers son CAP Pâtisserie : les étapes, les épreuves et les avancées, article par article';
+
 export function capSeo(route: ActivatedRouteSnapshot): PageSeo {
   const entries = (route.data['entries'] as CapArticleCard[] | undefined) ?? [];
   return {
     title: 'Mon CAP',
-    description: 'Le carnet de route de Yona vers son CAP Pâtisserie : les étapes, les épreuves et les avancées, article par article',
+    description: CAP_DESCRIPTION,
     markdownPath: markdownPathOf(CAP_PATH),
     noIndex: entries.length === 0,
+    // The blog and each of its articles, so that an engine or an assistant knows them all from here
+    jsonLd: entries.length
+      ? [
+          {
+            '@type': 'Blog',
+            '@id': `${absoluteUrl(CAP_PATH)}#blog`,
+            name: 'Mon CAP',
+            description: CAP_DESCRIPTION,
+            url: absoluteUrl(CAP_PATH),
+            author: AUTHOR_REF,
+            isPartOf: { '@id': WEBSITE_ID },
+            about: CAP_ABOUT,
+            keywords: CAP_KEYWORDS.join(', '),
+            inLanguage: 'fr-FR',
+            blogPost: entries.map((entry) => {
+              const path = capArticleLink(entry).join('/');
+              return {
+                '@type': 'BlogPosting',
+                '@id': `${absoluteUrl(path)}#article`,
+                headline: entry.title,
+                url: absoluteUrl(path),
+                datePublished: entry.happenedOn,
+                ...(entry.excerpt ? { description: excerpt(entry.excerpt) } : {}),
+                ...(entry.imageId ? { image: absoluteUrl(`/api/images/${entry.imageId}/1600.webp`) } : {}),
+              };
+            }),
+          },
+          breadcrumb([{ name: 'Mon CAP', path: CAP_PATH }]),
+        ]
+      : undefined,
   };
+}
+
+/** The words of an article, its texts and captions, Markdown left out: its length for search engines. */
+export function wordCount(article: Pick<CapArticle, 'blocks'>): number {
+  const text = article.blocks
+    .flatMap((block) => [block.text, block.caption, ...(block.photos ?? []).map((photo) => photo.caption)])
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[#*_>-]/g, ' ');
+  return text.split(/\s+/).filter(Boolean).length;
 }
 
 /** An article of the blog for search engines: its title, its start, its photo, by Yona. */
@@ -62,6 +115,12 @@ export function capArticleSeo(route: ActivatedRouteSnapshot): PageSeo {
         datePublished: article.happenedOn,
         dateModified: article.updatedAt,
         author: AUTHOR_REF,
+        publisher: AUTHOR_REF,
+        articleSection: 'Mon CAP',
+        about: CAP_ABOUT,
+        keywords: CAP_KEYWORDS.join(', '),
+        wordCount: wordCount(article),
+        isAccessibleForFree: true,
         isPartOf: { '@id': WEBSITE_ID },
         mainEntityOfPage: absoluteUrl(path),
         ...(image ? { image: absoluteUrl(image) } : {}),

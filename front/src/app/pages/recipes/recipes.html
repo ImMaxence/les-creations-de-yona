@@ -233,7 +233,9 @@
         <svg yonaIcon="arrow-up"></svg>Recettes précédentes
       </a>
     }
-    @if (list.items().length) {
+    @if (filtering()) {
+      <yona-skeleton kind="cards" [count]="6" />
+    } @else if (list.items().length) {
       <ul role="list" class="recipe-grid">
         <!-- Cards appearing after a filter change or further down fade in; cards already shown stay put -->
         @for (recipe of list.items(); track recipe.slug; let i = $index) {
@@ -265,6 +267,6 @@
         }
       </div>
     }
-    <yona-infinite-scroll linked [list]="list" />
+    <yona-infinite-scroll linked skeleton="cards" [list]="list" />
   </div>
 </section>

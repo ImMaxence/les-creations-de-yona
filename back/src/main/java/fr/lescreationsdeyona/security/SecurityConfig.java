@@ -37,6 +37,9 @@ class SecurityConfig {
 	/** "Donner mon avis": sent by visitors, who have no CSRF token. */
 	static final String FEEDBACK = "/api/feedback";
 
+	/** An error of a visitor's browser, for the error log of the back-office (Journaux). */
+	static final String BROWSER_ERRORS = "/api/browser-errors";
+
 	/** An order of the shop: sent by visitors, who have no CSRF token. */
 	static final String SHOP_ORDERS = "/api/shop/orders";
 
@@ -56,7 +59,7 @@ class SecurityConfig {
 				.permitAll()
 				.requestMatchers(HttpMethod.POST, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.DELETE, NOTIFICATION_SUBSCRIPTIONS).permitAll()
-				.requestMatchers(HttpMethod.POST, RECIPE_VIEWS, AI_VISITS).permitAll()
+				.requestMatchers(HttpMethod.POST, RECIPE_VIEWS, AI_VISITS, BROWSER_ERRORS).permitAll()
 				.requestMatchers(HttpMethod.POST, FEEDBACK, SHOP_ORDERS).permitAll()
 				.requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll();
 			// Local runs only: in production the documentation is off and its URLs are denied like any other.
@@ -78,9 +81,9 @@ class SecurityConfig {
 			// XSRF-TOKEN cookie, sent back by Angular's HttpClient in the X-XSRF-TOKEN header. The token is
 			// deferred: only the back-office creates it (GET /api/admin/me), public visitors never get it.
 			// Visitors have no CSRF token. Forging a request could only subscribe a push service address or
-			// remove one, count a view or a visit, or send what the captcha stops, which grants nothing.
+			// remove one, count a view or a visit, report an error (limited), or send what the captcha stops, which grants nothing.
 			.csrf(csrf -> csrf
-				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS, RECIPE_VIEWS, AI_VISITS, FEEDBACK, SHOP_ORDERS)
+				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS, RECIPE_VIEWS, AI_VISITS, BROWSER_ERRORS, FEEDBACK, SHOP_ORDERS)
 				.csrfTokenRepository(csrfTokenRepository())
 				.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
 			// Login always lands on /admin: no need to remember the request, nor to open a session for it.

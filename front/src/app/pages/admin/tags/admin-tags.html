@@ -80,6 +80,6 @@
       <p class="admin-empty">Aucun tag pour le moment : ajoutez-en un, comme « Végétarien » ou « De saison »</p>
     }
   } @else if (tags.isLoading()) {
-    <p class="admin-empty">Chargement des tags…</p>
+    <yona-skeleton kind="rows" [count]="6" />
   }
 </section>

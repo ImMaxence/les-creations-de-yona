@@ -23,6 +23,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 const MAX_RECIPES = 12;
 /** Largest page of the API: the recipes to choose from are read page after page. */
@@ -46,7 +47,7 @@ interface MenuDraft {
  */
 @Component({
   selector: 'yona-admin-menus',
-  imports: [Button, Icon, ImageUpload, RouterLink, Select],
+  imports: [Button, Icon, ImageUpload, RouterLink, Select, Skeleton],
   templateUrl: './admin-menus.html',
   styleUrl: './admin-menus.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -177,8 +177,8 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly usesParts = linkedSignal(() => hasParts(this.recipe()?.parts ?? []));
 
   protected readonly statusOptions: SelectOption<'DRAFT' | 'PUBLISHED'>[] = [
-    { value: 'DRAFT', label: 'Brouillon (invisible sur le site)' },
-    { value: 'PUBLISHED', label: 'Publiée' },
+    { value: 'DRAFT', label: 'Brouillon (invisible sur le site)', badge: 'draft' },
+    { value: 'PUBLISHED', label: 'Publiée', badge: 'published' },
   ];
   protected readonly themeOptions: SelectOption<RecipeTheme>[] = THEMES.map(({ value, label }) => ({ value, label }));
   /** The time a failed publication was planned for: "samedi 31 octobre à 10:00". */

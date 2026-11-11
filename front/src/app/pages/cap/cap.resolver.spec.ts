@@ -2,7 +2,7 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 import { CapArticle } from '../../core/api/generated/models/cap-article';
 import { CapArticleCard } from '../../core/api/generated/models/cap-article-card';
 import { absoluteUrl } from '../../core/seo/page-seo';
-import { capArticleSeo, capSeo } from './cap.resolver';
+import { capArticleSeo, capSeo, wordCount } from './cap.resolver';
 
 function article(changes: Partial<CapArticle> = {}): CapArticle {
   return {
@@ -35,6 +35,32 @@ describe('capSeo', () => {
 
   it('has its Markdown version', () => {
     expect(capSeo(route({ entries: [] })).markdownPath).toBe('/mon-cap.md');
+  });
+
+  it('describes the blog and each of its articles for search engines and assistants', () => {
+    const card = { slug: 'mon-examen-blanc', title: 'Mon examen blanc', happenedOn: '2026-10-12', excerpt: 'Cinq heures' } as CapArticleCard;
+
+    const blog = node(capSeo(route({ entries: [card] })).jsonLd, 'Blog');
+
+    expect(blog['name']).toBe('Mon CAP');
+    expect(blog['keywords']).toContain('CAP Pâtissier');
+    expect(blog['blogPost']).toEqual([
+      expect.objectContaining({ headline: 'Mon examen blanc', url: absoluteUrl('/mon-cap/mon-examen-blanc'), datePublished: '2026-10-12' }),
+    ]);
+    expect(capSeo(route({ entries: [] })).jsonLd).toBeUndefined();
+  });
+});
+
+describe('wordCount', () => {
+  it('counts the words of the texts and captions, without the Markdown', () => {
+    expect(
+      wordCount({
+        blocks: [
+          { type: 'TEXT', text: '## Le matin\nUne **pâte** [feuilletée](/recettes/a/b)' },
+          { type: 'STEPS', photos: [{ caption: 'Abaisser la pâte' }] },
+        ],
+      }),
+    ).toBe(8);
   });
 });
 

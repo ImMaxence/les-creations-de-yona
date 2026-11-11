@@ -4,6 +4,11 @@
 export interface RecipeAiRequest {
 
   /**
+   * GEMINI when absent
+   */
+  engine?: 'GEMINI' | 'CLAUDE';
+
+  /**
    * JPEG or PNG, 10 MB max
    */
   image?: Blob;

@@ -2,6 +2,7 @@ import type { Request } from 'express';
 import type { CategoryResponse } from '../app/core/api/generated/models/category-response';
 import type { GlossaryTermResponse } from '../app/core/api/generated/models/glossary-term-response';
 import type { MenuDetail } from '../app/core/api/generated/models/menu-detail';
+import type { CapArticle } from '../app/core/api/generated/models/cap-article';
 import type { CapArticleCard } from '../app/core/api/generated/models/cap-article-card';
 import type { MenuSummary } from '../app/core/api/generated/models/menu-summary';
 import type { PageResponseRecipeCard } from '../app/core/api/generated/models/page-response-recipe-card';
@@ -98,6 +99,11 @@ export function fetchMenus(origin: string): Promise<MenuSummary[]> {
 /** Published articles of "Mon CAP", without their blocks; a failure only leaves them out. */
 export function fetchCapEntries(origin: string): Promise<CapArticleCard[]> {
   return get<CapArticleCard[]>(origin, '/api/cap/entries').catch(() => []);
+}
+
+/** An article of "Mon CAP" with its blocks, for llms-full.txt. */
+export function fetchCapArticle(origin: string, slug: string): Promise<CapArticle> {
+  return get<CapArticle>(origin, `/api/cap/entries/${encodeURIComponent(slug)}`);
 }
 
 /** Texts of the home page ("À propos"…), edited in the back-office. */

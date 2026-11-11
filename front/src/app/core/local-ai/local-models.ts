@@ -39,6 +39,25 @@ export const RECIPE_MODEL: LocalModel = {
   ],
 };
 
+/**
+ * Writes down what the admin says, in the windows of the AI (Whisper large-v3-turbo of OpenAI, MIT,
+ * about 570 MB): very good in French, and quick on a graphics card, its decoder being small.
+ */
+export const SPEECH_MODEL: LocalModel = {
+  name: 'Whisper large-v3-turbo d’OpenAI',
+  repo: 'onnx-community/whisper-large-v3-turbo',
+  revision: '360ebcde2559d60bb474678be3c1de9ef347d01a',
+  files: [
+    { path: 'config.json', bytes: 1332 },
+    { path: 'generation_config.json', bytes: 3897 },
+    { path: 'preprocessor_config.json', bytes: 340 },
+    { path: 'tokenizer.json', bytes: 2480617 },
+    { path: 'tokenizer_config.json', bytes: 282843 },
+    { path: 'onnx/encoder_model_q4f16.onnx', bytes: 369974078 },
+    { path: 'onnx/decoder_model_merged_q4f16.onnx', bytes: 193505017 },
+  ],
+};
+
 /** Draws the images (FLUX.2 klein 4B and its Qwen3 text encoder, Apache 2.0, about 6.5 GB). */
 export const IMAGE_MODEL: LocalModel = {
   name: 'FLUX.2 klein 4B de Black Forest Labs',

@@ -155,5 +155,7 @@
     } @else {
       <p class="admin-empty">Aucun produit dans la boutique pour le moment</p>
     }
+  } @else if (products.isLoading()) {
+    <yona-skeleton kind="rows" [count]="4" />
   }
 </section>

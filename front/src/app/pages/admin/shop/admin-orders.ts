@@ -11,6 +11,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
 import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 const PAGE_SIZE = 20;
 
@@ -19,7 +20,7 @@ type StatusFilter = OrderStatus | 'ALL';
 /** The orders sent from the shop, the latest first. */
 @Component({
   selector: 'yona-admin-orders',
-  imports: [Button, Icon, InfiniteScroll, ParisDatePipe, RouterLink, Select],
+  imports: [Button, Icon, InfiniteScroll, ParisDatePipe, RouterLink, Select, Skeleton],
   template: `
     <section class="admin-section" aria-labelledby="orders-title">
       <div class="admin-section__head">
@@ -87,9 +88,9 @@ type StatusFilter = OrderStatus | 'ALL';
       } @else if (orders.isEmpty()) {
         <p class="admin-empty">Aucune commande pour le moment</p>
       } @else if (orders.isLoading()) {
-        <p class="admin-empty">Chargement…</p>
+        <yona-skeleton kind="rows" [count]="5" />
       }
-      <yona-infinite-scroll [list]="orders" />
+      <yona-infinite-scroll skeleton="rows" [list]="orders" />
     </section>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -106,7 +107,11 @@ export default class AdminOrders {
   protected readonly formatEuros = formatEuros;
   protected readonly statusOptions: SelectOption<StatusFilter>[] = [
     { value: 'ALL', label: 'Tous les statuts' },
-    ...(Object.entries(ORDER_STATUS_LABELS) as [OrderStatus, string][]).map(([value, label]) => ({ value, label })),
+    ...(Object.entries(ORDER_STATUS_LABELS) as [OrderStatus, string][]).map(([value, label]) => ({
+      value,
+      label,
+      badge: orderStatusBadge(value).replace('badge--', ''),
+    })),
   ];
   protected readonly status = linkedSignal<StatusFilter>(() => this.statut() ?? 'ALL');
   protected readonly orders = new InfiniteList({

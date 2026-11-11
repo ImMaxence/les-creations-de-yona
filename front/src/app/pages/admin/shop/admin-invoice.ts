@@ -8,6 +8,7 @@ import { formatEuros } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { adjustment, formatSiret, invoiceTitle } from './invoice-format';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 /**
  * An invoice as issued: a sheet to print, or to save as PDF from the print dialog (under its
@@ -15,7 +16,7 @@ import { adjustment, formatSiret, invoiceTitle } from './invoice-format';
  */
 @Component({
   selector: 'yona-admin-invoice',
-  imports: [Button, Icon, ParisDatePipe, RouterLink],
+  imports: [Button, Icon, ParisDatePipe, RouterLink, Skeleton],
   template: `
     <section class="admin-section" aria-labelledby="invoice-title">
       @if (invoice.value(); as current) {
@@ -114,7 +115,7 @@ import { adjustment, formatSiret, invoiceTitle } from './invoice-format';
           </footer>
         </article>
       } @else if (invoice.isLoading()) {
-        <p class="admin-empty">Chargement…</p>
+        <yona-skeleton kind="form" [count]="3" />
       } @else {
         <p class="admin-empty">Cette facture n'existe pas</p>
       }

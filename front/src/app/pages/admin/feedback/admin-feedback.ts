@@ -13,6 +13,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
 import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
 import { UnreadFeedback } from './unread-feedback';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 const PAGE_SIZE = 20;
 
@@ -23,7 +24,7 @@ const PAGE_SIZE = 20;
  */
 @Component({
   selector: 'yona-admin-feedback',
-  imports: [Button, Icon, InfiniteScroll],
+  imports: [Button, Icon, InfiniteScroll, Skeleton],
   template: `
     <section class="admin-section" aria-labelledby="feedback-title">
       <div class="admin-section__head">
@@ -76,9 +77,9 @@ const PAGE_SIZE = 20;
       } @else if (messages.isEmpty()) {
         <p class="admin-empty">Aucun message pour le moment</p>
       } @else if (messages.isLoading()) {
-        <p class="admin-empty">Chargement…</p>
+        <yona-skeleton kind="rows" [count]="4" />
       }
-      <yona-infinite-scroll [list]="messages" />
+      <yona-infinite-scroll skeleton="rows" [list]="messages" />
     </section>
   `,
   styles: `

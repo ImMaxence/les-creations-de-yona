@@ -129,21 +129,30 @@
       gardées. Elles ne contiennent pas les abonnements aux notifications.
     </p>
     <p>
-      Pour saisir une recette plus vite, un administrateur peut faire lire par Gemini, le service
-      d'intelligence artificielle de Google, le texte ou la photo d'une recette qu'il fournit lui-même.
-      Ce contenu est envoyé à Google, qui peut le conserver et l'utiliser pour améliorer ses services
-      (offre gratuite). Aucune donnée des visiteurs du site n'est jamais transmise à ce service.
+      Pour saisir une recette ou écrire un article de « Mon CAP » plus vite, un administrateur peut faire
+      lire par Gemini, le service d'intelligence artificielle de Google, ou par Claude, celui d'Anthropic,
+      le texte, les notes ou la photo qu'il fournit lui-même. Ce contenu est envoyé à Google ou à
+      Anthropic. Google peut le conserver et l'utiliser pour améliorer ses services (offre gratuite) ;
+      Anthropic ne s'en sert pas pour entraîner ses modèles et le conserve au plus 30 jours (service
+      payant). Aucune donnée des visiteurs du site n'est jamais transmise à ces services.
     </p>
     <p>
-      Un administrateur peut aussi utiliser trois modèles d'intelligence artificielle qui tournent sur
-      son propre ordinateur, dans son navigateur : Gemma 4 de Google pour lire le texte d'une recette,
-      FLUX.2 klein de Black Forest Labs pour générer une image, et Qwen3 d'Alibaba, qui lit la
-      description de cette image. Le texte et la description fournis ne sont alors envoyés ni à ces
-      sociétés ni à aucun service d'intelligence artificielle. Une photo de recette, elle, n'est lue que
-      par Gemini (voir plus haut). Ces modèles sont téléchargés une fois directement depuis Hugging
+      Un administrateur peut aussi utiliser quatre modèles d'intelligence artificielle qui tournent sur
+      son propre ordinateur, dans son navigateur : Gemma 4 de Google pour lire le texte d'une recette ou
+      de notes, Whisper d'OpenAI pour écrire ce qu'il dicte au micro, FLUX.2 klein de Black Forest Labs
+      pour générer une image, et Qwen3 d'Alibaba, qui lit la description de cette image. Le texte, la
+      voix et la description fournis ne sont alors envoyés ni à ces sociétés ni à aucun service
+      d'intelligence artificielle ; l'enregistrement de la voix n'est pas gardé. Une photo, elle, n'est
+      lue que par Gemini ou Claude (voir plus haut). Ces modèles sont téléchargés une fois directement depuis Hugging
       Face, qui reçoit à cette occasion l'adresse IP de l'administrateur, et restent dans le cache de
       son navigateur, sur son ordinateur, jusqu'à ce qu'il les supprime ou efface les données du site. Les visiteurs du site ne sont pas concernés : rien de tout cela n'est chargé
       pour eux.
+    </p>
+    <p>
+      Quand une page du site rencontre une erreur technique dans votre navigateur, celui-ci envoie au site
+      le message de l'erreur, l'endroit du code où elle s'est produite et l'adresse de la page, sans ses
+      paramètres : rien qui vous concerne, ni adresse IP, ni identifiant. Ces informations servent
+      seulement à corriger le site et sont effacées au bout de 30 jours.
     </p>
 
     <h2>Cookies</h2>

@@ -64,7 +64,10 @@
   z-index: 20;
   display: grid;
   align-content: start;
+  // As wide as the longest option, at least as the button, within the screen
+  width: max-content;
   min-width: 100%;
+  max-width: min(26rem, calc(100vw - 2 * var(--space-4)));
   margin: 0;
   padding: var(--space-1);
   overflow: hidden;
@@ -73,6 +76,13 @@
   box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
   list-style: none;
   transform-origin: top center;
+}
+
+// Near the right edge of the screen: opens towards the left, under the button's end
+.list--end {
+  right: 0;
+  left: auto;
+  transform-origin: top right;
 }
 
 // Only the options scroll, without visible scroll bars: the filter field stays in place above them
@@ -159,6 +169,12 @@
 
 .option__check {
   flex: none;
+}
+
+// A font shown in itself: a little bigger, the names of some are small
+.option__font {
+  font-size: 1.1em;
+  font-weight: 400;
 }
 
 .option__text {

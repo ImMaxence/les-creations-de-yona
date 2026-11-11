@@ -1,5 +1,7 @@
 package fr.lescreationsdeyona.theme;
 
+import org.jspecify.annotations.Nullable;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
@@ -39,6 +41,9 @@ public class SiteTheme {
 
 	/** Corner radius of cards and fields; the other corners are derived from it in the front. */
 	private int radiusPx;
+
+	/** {@link CustomColors} as JSON; null until colors are chosen by hand. */
+	private @Nullable String customColors;
 
 	@LastModifiedDate
 	private Instant updatedAt;

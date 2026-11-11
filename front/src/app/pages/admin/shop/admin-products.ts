@@ -25,6 +25,7 @@ import { CoverImage } from '../../../shared/ui/cover-image/cover-image';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { ChosenRecipe, RecipeSearch } from '../recipe-search/recipe-search';
 
 type ShopMode = AdminShopSettings['mode'];
@@ -47,7 +48,7 @@ export const SHOP_MODES: readonly { value: ShopMode; label: string; hint: string
 /** What the shop says and sells: its position, its texts, and its products with their format and price. */
 @Component({
   selector: 'yona-admin-products',
-  imports: [Button, CoverImage, Icon, ImageUpload, RecipeSearch, RouterLink, Select],
+  imports: [Button, CoverImage, Icon, ImageUpload, RecipeSearch, RouterLink, Select, Skeleton],
   templateUrl: './admin-products.html',
   styles: `
     h3 {

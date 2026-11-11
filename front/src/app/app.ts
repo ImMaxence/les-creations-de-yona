@@ -4,6 +4,7 @@ import {
   Component,
   ElementRef,
   afterNextRender,
+  computed,
   inject,
   viewChild,
 } from '@angular/core';
@@ -17,13 +18,15 @@ import { AdminSession } from './core/auth/admin-session';
 import { Footer } from './core/layout/footer/footer';
 import { Header } from './core/layout/header/header';
 import { NavigationProgress } from './core/layout/navigation-progress/navigation-progress';
+import { SlowNavigation, skeletonOfPage } from './core/layout/page-skeleton/slow-navigation';
 import { Toasts } from './core/notifications/toasts';
 import { isBackOfficeUrl } from './shared/routing/links';
+import { Skeleton } from './shared/ui/skeleton/skeleton';
 import { TooltipLayer } from './shared/ui/tooltip/tooltip-layer';
 
 @Component({
   selector: 'yona-root',
-  imports: [RouterOutlet, Header, Footer, NavigationProgress, Toasts, CookieBanner, InstallBanner, TimersBar, TooltipLayer],
+  imports: [RouterOutlet, Header, Footer, NavigationProgress, Skeleton, Toasts, CookieBanner, InstallBanner, TimersBar, TooltipLayer],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,6 +34,14 @@ import { TooltipLayer } from './shared/ui/tooltip/tooltip-layer';
 export class App {
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
+  private readonly slowNavigation = inject(SlowNavigation);
+
+  /** Another page of the site, slow to come: its shape in grey (a recipe, a list, an article). */
+  protected readonly pageSkeleton = computed(() => {
+    const target = this.slowNavigation.target();
+    return target ? skeletonOfPage(target, this.router.url) : null;
+  });
 
   /** Known from the address on arrival: the site's header never shows before the back-office. */
   protected readonly backOffice = toSignal(

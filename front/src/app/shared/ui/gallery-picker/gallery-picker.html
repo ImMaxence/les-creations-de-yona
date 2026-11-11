@@ -25,7 +25,7 @@
   } @else if (images.isEmpty()) {
     <p class="empty">{{ onlyUnused() ? 'Aucune image inutilisée.' : 'La galerie est vide.' }}</p>
   } @else if (images.isLoading()) {
-    <p class="empty">Chargement…</p>
+    <yona-skeleton kind="tiles" [count]="8" />
   }
-  <yona-infinite-scroll [list]="images" />
+  <yona-infinite-scroll skeleton="tiles" [list]="images" />
 </yona-dialog>

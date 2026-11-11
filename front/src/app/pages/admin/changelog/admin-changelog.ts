@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject, signal } from '@angular/core';
 import { marked } from 'marked';
 // The CHANGELOG of the repository, bundled as text at build time (only in this lazy page)
 import changelog from '../../../../../../CHANGELOG.md';
@@ -6,6 +6,7 @@ import { FRONT_VERSION } from '../../../core/version';
 import { firstOfMonth } from '../../../shared/format/paris-time';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { AdminWatch } from '../layout/admin-watch';
 
 /** "### Ajouté", "### Modifié"… of the CHANGELOG (in English until 2.5.0); "other" for a heading it does not know. */
 export type ChangeKind = 'added' | 'changed' | 'fixed' | 'removed' | 'technical' | 'other';
@@ -179,6 +180,11 @@ export default class AdminChangelog {
   protected readonly latest = this.versions[0]?.version;
   /** The latest version open on arrival. */
   protected readonly opened = signal<ReadonlySet<string>>(new Set(this.latest ? [this.latest] : []));
+
+  constructor() {
+    // Read: the badge "Nouveau" of the menu goes until the next version
+    void inject(AdminWatch).changelogRead();
+  }
 
   protected onToggle(version: string, event: Event): void {
     const open = (event.target as HTMLDetailsElement).open;

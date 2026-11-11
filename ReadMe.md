@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.6.1 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.7.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -36,16 +36,26 @@ La boutique pour les proches et le carnet de route du CAP Pâtisserie :
 
 ## L'IA au service de Yona
 
-Le back-office écrit une recette à partir d'un texte collé et dessine ses photos. Trois IA tournent **directement dans le navigateur de l'admin**, sur son ordinateur, gratuites et sans rien envoyer à personne ; Gemini reste disponible en ligne, notamment pour lire une photo de recette.
+**Six intelligences artificielles travaillent pour Yona.** Elle colle une recette, dicte ses notes de CAP ou décrit une photo : l'IA remplit, écrit et dessine. Yona relit, ajoute sa touche, et publie.
+
+- ✨ **Une recette remplie en quelques secondes** : un texte collé ou dicté, ou la photo d'une recette écrite à la main, devient une recette complète : ingrédients et quantités, étapes minutées, temps, moule, catégories et tags du site.
+- 📝 **Un article de Mon CAP écrit à partir de notes en vrac** : « examen blanc, choux ratés, 14/20 » devient un récit, des étapes en photos et une astuce à retenir. Quatre exemples s'essaient d'un clic.
+- 🎙️ **La dictée plutôt que le clavier** : Whisper écrit ce que dit Yona, sur son ordinateur, et l'IA choisie s'en sert aussitôt.
+- 🎨 **Les photos qui manquent, dessinées** : une description suffit, l'image passe ensuite par l'éditeur de photos du site.
+- 🧭 **Trois IA au choix, chacune avec son logo** : Gemini (gratuit), Claude (rapide, payé à l'usage, un dixième de centime par recette) ou l'IA locale (rien ne quitte l'ordinateur).
 
 | IA | De | Où elle tourne | Ce qu'elle fait |
 | --- | --- | --- | --- |
-| **Gemma 4 E4B** | Google | Navigateur | Lit une recette collée et remplit le formulaire (4,8 Go) |
-| **FLUX.2 klein 4B** | Black Forest Labs | Navigateur | Dessine une image à partir d'une description (6,1 Go avec Qwen3) |
-| **Qwen3 4B** | Alibaba | Navigateur | Lit la description de l'image pour FLUX.2 |
-| **Gemini** | Google | En ligne | Lit un texte ou la photo d'une recette |
+| **Claude Haiku 5.5** | Anthropic | En ligne, payé à l'usage (un dixième de centime) | Lit une recette (texte ou photo), écrit un article de Mon CAP |
+| **Gemini Flash** | Google | En ligne, gratuit | Lit une recette (texte ou photo), écrit un article de Mon CAP |
+| **Gemma 4 E4B** | Google | Navigateur de l'admin | Les mêmes, à partir d'un texte, sans rien envoyer (4,8 Go) |
+| **Whisper large-v3-turbo** | OpenAI | Navigateur de l'admin | Écrit ce que l'admin dicte au micro (570 Mo) |
+| **FLUX.2 klein 4B** | Black Forest Labs | Navigateur de l'admin | Dessine une image à partir d'une description |
+| **Qwen3 4B** | Alibaba | Navigateur de l'admin | Lit la description de l'image pour FLUX.2 (6,1 Go avec lui) |
 
-Chaque modèle se télécharge une seule fois, directement depuis Hugging Face, et reste dans le cache du navigateur (sur le disque de l'ordinateur) : effacer les données du site le supprime. Il faut un ordinateur avec WebGPU, pas un téléphone ni une tablette. Détails : [docs/ia.md](docs/ia.md).
+Les modèles locaux se téléchargent une seule fois, directement depuis Hugging Face, et restent dans le cache du navigateur : effacer les données du site les supprime. Il leur faut un ordinateur avec WebGPU, pas un téléphone ni une tablette. Quoi que l'IA écrive, le backend le contrôle avant de remplir le formulaire : longueurs, nombres, catégories du site, rien n'est pris tel quel. Détails : [docs/ia.md](docs/ia.md).
+
+**Trouvé par les IA des visiteurs**, aussi : `llms.txt` et `llms-full.txt` (tout le site, recettes et articles de Mon CAP en entier), une version Markdown de chaque page, des données structurées (Recipe, FAQ, Blog, BlogPosting, fil d'Ariane), les robots des assistants IA bienvenus, et les visites venues de ChatGPT, Perplexity, Gemini, Claude… comptées dans les statistiques.
 
 | Remplir une recette | Générer une image | Image générée sur l'ordinateur |
 | --- | --- | --- |
@@ -71,13 +81,15 @@ Chaque modèle se télécharge une seule fois, directement depuis Hugging Face, 
 
 **Pour Yona (back-office, connexion Google)**
 
-- Éditeur de recettes (parties, étapes minutées, matériel, conseil, thème, publication programmée avec statut « Échec » et « Publier maintenant » si elle n'a pas pu se faire, mise à la une d'avance, brouillon gardé), « Remplir avec l'IA » (Gemini lit un texte collé ou la photo d'une recette ; un modèle qui tourne dans le navigateur lit le texte collé), « Générer avec l'IA » (images dessinées dans le navigateur), aperçu, liste triable (modification, création, titre, vues).
+- Éditeur de recettes (parties, étapes minutées, matériel, conseil, thème, publication programmée avec statut « Échec » et « Publier maintenant » si elle n'a pas pu se faire, mise à la une d'avance, brouillon gardé), « Remplir avec l'IA » (Gemini ou Claude lisent un texte collé ou dicté, ou la photo d'une recette ; un modèle qui tourne dans le navigateur lit le texte), « Générer avec l'IA » (images dessinées dans le navigateur), aperçu, liste triable (modification, création, titre, vues), statuts en couleur jusque dans les filtres.
 - Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients, mots du glossaire et articles de Mon CAP, qui reviennent à leur place une fois restaurés.
-- Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur), retours des visiteurs, titres de l'accueil modifiables.
+- Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur ; ce que les autres ont fait depuis la dernière visite marqué « Nouveau », avec un badge dans le menu), retours des visiteurs, titres de l'accueil modifiables.
+- Mon CAP : « Écrire avec l'IA » à partir de notes tapées, dictées ou photographiées (récit, pas à pas ou carnet), les photos déjà placées gardées.
+- Journaux : les erreurs et avertissements du serveur et des navigateurs des visiteurs, regroupés, comptés, avec un badge dans le menu pour les nouvelles erreurs.
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
-- Apparence (thèmes, polices), statistiques (dont le nombre de vues, les recettes les plus vues, la mémoire et le processeur), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés ».
+- Apparence (20 thèmes ou des couleurs personnalisées, 37 polices montrées dans leur style, arrondi ; chaque partie repliable), statistiques en accordéons (versions et santé du serveur, mémoire et processeur en direct et sur 7, 30 ou 90 jours, nombre de vues, recettes les plus vues), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés » avec un badge tant que la version n'est pas lue.
 - Boutique : fermée, réservée aux proches ou ouverte à tous ; commandes et statuts, notification sur le téléphone à chaque nouvelle commande, produits (formats, prix TTC, avec ou sans recette) ; comptabilité par mois, trimestre ou année (chiffres clés, graphique, où part l'argent, meilleures ventes, achats détaillés, coût de revient et marges, tickets de caisse, export CSV) ; factures des commandes récupérées, numérotées à la suite et à enregistrer en PDF.
-- Tableau de bord sans la barre du site : toutes les sections dans un panneau à gauche (Blog, Boutique, Site), ouvert d'un bouton sur téléphone ; page de connexion Google, photo du compte.
+- Tableau de bord sans la barre du site : toutes les sections dans un panneau à gauche (Blog, Boutique, Site), repliable en colonne d'icônes sur ordinateur, ouvert d'un bouton sur téléphone ; page de connexion Google, photo du compte ; skeletons pendant les chargements.
 - Mon CAP : articles écrits en blocs à partir d'un modèle (Récit, Pas à pas, Carnet, Vide), styles Classique ou Carnet, aperçu ordinateur et téléphone, brouillon gardé dans le navigateur jusqu'à l'enregistrement.
 - Glossaire sans quitter la recette : un mot sélectionné dans une étape s'ajoute d'un bouton, ou se garde pour plus tard ; les mots déjà connus soulignés.
 
