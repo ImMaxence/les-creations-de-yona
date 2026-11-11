@@ -51,7 +51,14 @@ public class CapEntry {
 	/** The blocks, in order, as a JSON array of {@link CapBlock}: written and read by {@link CapBlocks}. */
 	private String blocks;
 
-	private boolean published;
+	@Enumerated(EnumType.STRING)
+	private CapStatus status = CapStatus.DRAFT;
+
+	/** A draft published by the backend at that time (see ScheduledCapPublication); kept on a failed one. */
+	private Instant scheduledAt;
+
+	/** Why its scheduled publication did not happen, shown in the back-office; set for a failed article only. */
+	private String publicationFailure;
 
 	/** "Mettre en avant": on the home page in place of the latest article, one at most. */
 	private boolean featured;
@@ -65,5 +72,10 @@ public class CapEntry {
 
 	@LastModifiedBy
 	private String updatedBy;
+
+	/** On the site. */
+	public boolean isPublished() {
+		return status == CapStatus.PUBLISHED;
+	}
 
 }

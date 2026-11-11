@@ -282,69 +282,10 @@ yona-select {
   transition: transform var(--duration-base) var(--ease-out);
 }
 
-// Save bar, always at hand at the bottom of the screen
-.editor__bar {
-  position: sticky;
-  bottom: var(--space-3);
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-pill);
-  background-color: color-mix(in srgb, var(--color-bg) 90%, transparent);
-  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
-  backdrop-filter: blur(10px);
-}
-
 .editor__head-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-}
-
-// Pushes the save button to the right, next to it
-.editor__preview {
-  margin-left: auto;
-}
-
-// Phones: shorter labels, so that the three actions of the bar hold on one line
-.editor__wide {
-  @include m.below(sm) {
-    display: none;
-  }
-}
-
-.editor__narrow {
-  @include m.from(sm) {
-    display: none;
-  }
-}
-
-.editor__publish {
-  margin-inline-start: auto;
-}
-
-.editor__bar {
-  @include m.below(sm) {
-    gap: var(--space-2);
-    padding-inline: var(--space-2);
-
-    .editor__save-draft {
-      padding-inline: var(--space-3);
-    }
-
-    // Four actions do not hold on one line: "Aperçu" is also at the top of the page
-    .editor__preview:has(~ .editor__publish) {
-      display: none;
-    }
-
-    .editor__back,
-    .editor__preview {
-      padding-inline: var(--space-3);
-    }
-  }
 }
 
 // Servings and the three times: two by two on phones, in a row beyond
@@ -386,16 +327,6 @@ yona-select {
 
   @include m.from(md) {
     grid-column: auto;
-  }
-}
-
-.schedule {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-
-  .input {
-    max-width: 16rem;
   }
 }
 
@@ -451,27 +382,6 @@ yona-select {
 }
 
 // A scheduled publication that could not happen: the same panel, in the danger colour
-.failed {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--space-3);
-  align-items: start;
-  box-shadow: inset 0 0 0 2px var(--color-danger);
-
-  > svg {
-    color: var(--color-danger);
-  }
-
-  @include m.from(md) {
-    grid-template-columns: auto 1fr auto;
-  }
-}
-
-.failed__title {
-  font-weight: 700;
-  color: var(--color-danger);
-}
-
 // The theme given by the main category: shown, not chosen
 .theme-given {
   display: flex;

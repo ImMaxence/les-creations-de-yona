@@ -72,7 +72,8 @@ function readClosedGroups(): string[] {
   selector: 'yona-admin-nav',
   imports: [AdminAvatar, BrandLogo, ColorSchemeSwitch, Icon, RouterLink, RouterLinkActive],
   templateUrl: './admin-nav.html',
-  styleUrl: './admin-nav.scss',
+  // The folded column of icons apart: each sheet within the budget of a component's styles
+  styleUrls: ['./admin-nav.scss', './admin-nav-rail.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.is-drawer]': 'drawer()', '[class.is-toggled]': 'toggled()' },
 })
@@ -128,15 +129,16 @@ export class AdminNav {
       label: 'Site',
       icon: 'sliders-horizontal',
       links: [
+        { path: 'messages', label: 'Messages', icon: 'messages-square', count: this.watch.messagesCount, countLabel: 'messages non lus' },
         { path: 'statistiques', label: 'Statistiques', icon: 'chart-column' },
         { path: 'galerie', label: 'Galerie', icon: 'images' },
-        { path: 'retours', label: 'Retours', icon: 'message-square', count: inject(UnreadFeedback).count },
+        { path: 'retours', label: 'Retours', icon: 'message-square', count: inject(UnreadFeedback).count, countLabel: 'messages non lus' },
         { path: 'reseaux-sociaux', label: 'Réseaux sociaux', icon: 'share-2' },
         { path: 'apparence', label: 'Apparence', icon: 'palette' },
         { path: 'preferences', label: 'Préférences', icon: 'sliders-horizontal' },
         { path: 'sauvegarde', label: 'Sauvegarde', icon: 'database-backup' },
-        { path: 'corbeille', label: 'Corbeille', icon: 'trash' },
-        { path: 'historique', label: 'Historique', icon: 'history', count: this.watch.historyCount, countLabel: 'changements à voir' },
+        { path: 'corbeille', label: 'Corbeille', icon: 'trash', count: this.watch.trashCount, countLabel: 'nouveaux, mis par les autres' },
+        { path: 'historique', label: 'Historique', icon: 'history', count: this.watch.historyCount, countLabel: 'changements des autres à voir' },
         { path: 'journaux', label: 'Journaux', icon: 'scroll-text', count: this.watch.logsCount, countLabel: 'nouvelles erreurs' },
         {
           path: 'nouveautes',

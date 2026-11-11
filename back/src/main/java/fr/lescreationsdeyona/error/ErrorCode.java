@@ -83,12 +83,19 @@ public enum ErrorCode {
 	FEEDBACK_BUSY(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup de messages arrivent en ce moment : réessayez dans une heure"),
 	FEEDBACK_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les messages ne peuvent pas être reçus pour le moment : réessayez dans quelques jours"),
 	FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
+
+	// Messages between the admins
+	ADMIN_MESSAGE_EMPTY(HttpStatus.BAD_REQUEST, "Écrivez quelque chose avant d'envoyer"),
+	ADMIN_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
+	ADMIN_MESSAGE_NOT_YOURS(HttpStatus.FORBIDDEN, "Seule la personne qui l'a écrit peut supprimer ce message"),
 	FEEDBACK_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre message"),
 
 	// "Mon CAP"
 	CAP_ENTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "Cet article n'existe pas ou plus"),
 	CAP_BLOCKS_TOO_MANY(HttpStatus.BAD_REQUEST, "Un article compte 60 blocs au plus"),
 	CAP_TIP_TOO_LONG(HttpStatus.BAD_REQUEST, "Une astuce tient en 1000 caractères au plus"),
+	CAP_STATUS_FAILED_NOT_SETTABLE(HttpStatus.BAD_REQUEST, "Un article ne se met pas en échec : choisissez brouillon ou publié"),
+	SCHEDULED_CAP_ENTRY_MUST_BE_DRAFT(HttpStatus.BAD_REQUEST, "Seul un brouillon peut être programmé : l'article est déjà publié"),
 
 	// Shop
 	SHOP_CLOSED(HttpStatus.CONFLICT, "La boutique est fermée pour le moment"),

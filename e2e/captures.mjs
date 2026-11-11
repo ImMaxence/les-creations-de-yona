@@ -45,7 +45,7 @@ if (wanted('pc-accueil', 'pc-recettes', 'pc-recette')) {
 // Le back-office sans connexion Google : la page « Nouveautés », la seule sans données de l'API admin
 if (wanted('pc-administration')) {
   const admin = await newPage(browser, DESKTOP);
-  await fakeAdmin(admin, '2.7.4');
+  await fakeAdmin(admin, '2.8.0');
   await admin.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
   await admin.locator('details.changelog__version').first().waitFor();
   await shoot(admin, 'pc-administration');
@@ -56,7 +56,7 @@ if (wanted('pc-administration')) {
 if (wanted('pc-ia-recette', 'pc-ia-image')) {
   const admin = await newPage(browser, DESKTOP);
   await admin.route('**/api/admin/**', (route) => route.fulfill({ json: [] }));
-  await fakeAdmin(admin, '2.7.4');
+  await fakeAdmin(admin, '2.8.0');
   await admin.route('**/api/admin/recipe-ai', (route) => route.fulfill({ json: { available: true } }));
   const open = async () => {
     await admin.goto(BASE + '/admin/recettes/nouvelle', { waitUntil: 'load' });
@@ -262,7 +262,7 @@ if (wanted('pc-comptabilite', 'pc-facture')) {
     lines: [{ label: 'Tarte au citron meringuée', detail: 'la tarte, 8 parts', quantity: 1, unitPrice: 24, total: 24 }],
   };
   const admin = await newPage(browser, DESKTOP);
-  await fakeAdmin(admin, '2.7.4');
+  await fakeAdmin(admin, '2.8.0');
   await admin.route('**/api/admin/accounting?**', (route) => route.fulfill({ json: overview }));
   await admin.route('**/api/admin/accounting/costs', (route) => route.fulfill({ json: costs }));
   await admin.route('**/api/admin/invoices?**', (route) => route.fulfill({ json: [{ id: 3, number: '2026-0003', orderId: 21, issuedOn: '2026-11-09', customerName: 'Léa Martin', amount: 22 }] }));

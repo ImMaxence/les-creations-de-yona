@@ -179,39 +179,9 @@ const LOCAL_WORK = {
       border: 0;
     }
 
+    // Pills of styles/_segmented.scss; on two lines on a phone, the corners less round
     .segmented {
-      display: inline-flex;
-      flex-wrap: wrap;
-      justify-self: start;
-      padding: var(--space-1);
       border-radius: var(--radius-lg);
-      background-color: var(--color-bg);
-      box-shadow: inset 0 0 0 1px var(--color-line);
-    }
-
-    .segmented__option {
-      padding: var(--space-2) var(--space-4);
-      border-radius: var(--radius-pill);
-      font-size: var(--text-sm);
-      font-weight: 600;
-      cursor: pointer;
-
-      input {
-        @include m.visually-hidden;
-      }
-
-      &:has(input:focus-visible) {
-        @include m.focus-ring;
-      }
-
-      &:has(input:disabled) {
-        cursor: not-allowed;
-      }
-
-      &.is-chosen {
-        background-color: var(--color-accent);
-        color: var(--color-on-accent);
-      }
     }
 
     .ai__text {

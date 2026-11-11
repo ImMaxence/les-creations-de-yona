@@ -57,11 +57,8 @@
   }
 }
 
+// In the top layer (yonaFloating), placed under the button: no dialog nor accordion cuts it
 .list {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  left: 0;
-  z-index: 20;
   display: grid;
   align-content: start;
   // As wide as the longest option, at least as the button, within the screen
@@ -76,13 +73,6 @@
   box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
   list-style: none;
   transform-origin: top center;
-}
-
-// Near the right edge of the screen: opens towards the left, under the button's end
-.list--end {
-  right: 0;
-  left: auto;
-  transform-origin: top right;
 }
 
 // Only the options scroll, without visible scroll bars: the filter field stays in place above them

@@ -69,24 +69,8 @@
             <div class="admin-row__main">
               <a class="admin-row__title" [routerLink]="[recipe.id]">{{ recipe.title }}</a>
               <span class="admin-row__meta">
-                @let status = shownStatus(recipe);
-                <span class="badge" [class]="statuses[status].badge">
-                  @if (status === 'FAILED') {
-                    <svg yonaIcon="triangle-alert" [size]="12"></svg>
-                  } @else if (status === 'SCHEDULED') {
-                    <svg yonaIcon="calendar-clock" [size]="12"></svg>
-                  }
-                  {{ statuses[status].label }}
-                  @if (status === 'SCHEDULED' && recipe.scheduledAt) {
-                    · {{ parisDateTime(recipe.scheduledAt) }}
-                  }
-                </span>
+                <yona-publication-status feminine [status]="recipe.status" [scheduledAt]="recipe.scheduledAt" [failure]="recipe.publicationFailure" />
                 <span class="badge">{{ themeLabel(recipe.theme) }}</span>
-                @if (status === 'FAILED' && recipe.scheduledAt) {
-                  <span class="badge badge--failed-time" [title]="recipe.publicationFailure ?? ''">
-                    <svg yonaIcon="calendar-clock" [size]="12"></svg>Prévue {{ parisDateTime(recipe.scheduledAt) }}
-                  </span>
-                }
                 @if (recipe.featured) {
                   <span class="badge badge--featured"><svg yonaIcon="star" [size]="12"></svg>À la une</span>
                 }

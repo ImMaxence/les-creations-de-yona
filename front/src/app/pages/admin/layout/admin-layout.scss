@@ -163,6 +163,11 @@ textarea.input {
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  // A badge or a label before the title ("Nouveau", "Recette"): apart from it, the template keeping no space
+  > :is(.badge, .admin-label) {
+    margin-inline-end: var(--space-2);
+  }
 }
 
 .admin-row__meta {

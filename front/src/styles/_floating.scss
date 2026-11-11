@@ -1,0 +1,8 @@
+// Lists drawn in the top layer (the yonaFloating directive): the browser's own look of a popover
+// (centred, framed, in system colours) taken off, the component draws the rest. The directive places it.
+.floating {
+  inset: auto;
+  margin: 0;
+  border: 0;
+  color: inherit;
+}

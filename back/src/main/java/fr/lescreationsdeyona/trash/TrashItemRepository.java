@@ -14,6 +14,10 @@ interface TrashItemRepository extends JpaRepository<TrashItem, Long> {
 
 	List<TrashItem> findByKindAndDeletedAtBefore(TrashKind kind, Instant before);
 
+	/** Put there by the others (another admin, the site itself) since then, and still there. */
+	@Query("select count(t) from TrashItem t where t.deletedAt > :since and t.deletedBy <> :admin")
+	long countByOthersSince(Instant since, String admin);
+
 	@Modifying
 	@Query("delete from TrashItem t where t.deletedAt < :before")
 	int deleteDeletedBefore(Instant before);

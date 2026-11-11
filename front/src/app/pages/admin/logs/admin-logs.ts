@@ -15,6 +15,7 @@ import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
 import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { AdminLive } from '../layout/admin-live';
 import { AdminWatch } from '../layout/admin-watch';
 
 type Level = ErrorLogLine['level'];
@@ -269,6 +270,10 @@ export default class AdminLogs {
 
   constructor() {
     void this.loadSummary(true);
+    inject(AdminLive).on('LOGS', () => {
+      this.reload();
+      void this.watch.logsSeen();
+    });
   }
 
   /** The first time, read before being marked seen: the lines new at this visit stay so until the next one. */

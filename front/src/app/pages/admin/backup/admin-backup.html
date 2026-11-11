@@ -243,6 +243,9 @@
                 @if (found.missing.shopOrders) {
                   <li>{{ plural(found.missing.shopOrders, 'commande', 'commandes') }}</li>
                 }
+                @if (found.missing.messages) {
+                  <li>{{ plural(found.missing.messages, 'message entre les admins', 'messages entre les admins') }}</li>
+                }
                 @if (found.missing.invoices) {
                   <li>{{ plural(found.missing.invoices, 'facture', 'factures') }}</li>
                 }
@@ -337,7 +340,8 @@
               {{ plural(report.added.shopProducts, 'produit de la boutique', 'produits de la boutique') }},
               {{ plural(report.added.accountEntries, 'ligne de comptabilité', 'lignes de comptabilité') }},
               {{ plural(report.added.shopOrders, 'commande', 'commandes') }},
-              {{ plural(report.added.invoices, 'facture', 'factures') }}
+              {{ plural(report.added.invoices, 'facture', 'factures') }},
+              {{ plural(report.added.messages, 'message entre les admins', 'messages entre les admins') }}
             </p>
             @if (report.siteContent || report.siteTheme) {
               <p>

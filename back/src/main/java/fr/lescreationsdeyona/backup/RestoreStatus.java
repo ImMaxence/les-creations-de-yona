@@ -25,7 +25,8 @@ public record RestoreStatus(String id, State state,
 	/** Recipes, categories… of a database, by count. */
 	public record Counts(long recipes, long categories, long tags, long ingredients, long images, long socialLinks,
 			long appearancePresets, long glossaryTerms, long menus, long capEntries, long shopProducts,
-			long accountEntries, long shopOrders, long invoices) {
+			long accountEntries, long shopOrders, long invoices,
+			@Schema(description = "Messages between the admins (90 days)") long messages) {
 	}
 
 	/**
@@ -51,7 +52,7 @@ public record RestoreStatus(String id, State state,
 			List<String> socialPlatforms, long appearancePresets, List<String> appearancePresetNames,
 			long glossaryTerms, List<String> glossaryTermNames, long menus, List<String> menuTitles,
 			boolean siteContent, boolean siteTheme, long capEntries, long shopProducts, long accountEntries,
-			long shopOrders, long invoices) {
+			long shopOrders, long invoices, long messages) {
 	}
 
 	/**

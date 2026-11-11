@@ -27,7 +27,6 @@ import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
 import { categoryNames } from '../../../shared/format/categories';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
-import { parisDateTime } from '../../../shared/format/paris-time';
 import { keepScrollThroughNextNavigation } from '../../../shared/routing/kept-scroll';
 import { recipeLink } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
@@ -40,28 +39,18 @@ import { FilterChip } from '../filter-chip/filter-chip';
 import { Selection } from '../selection';
 import { ADMIN_RECIPES_QUERY } from './admin-recipes-query';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { PublicationStatus, PublicationStatusBadge, shownStatus } from '../publication-status/publication-status';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
-/**
- * As the list shows it: a draft with a publication time is "Programmée", a status of its own for
- * the admin, though still a draft for the API (DRAFT with a scheduledAt).
- */
-type Status = RecipeAdminSummary['status'] | 'SCHEDULED';
+/** As the list shows it (see PublicationStatusBadge): "Programmée" is a draft with a publication time. */
+type Status = PublicationStatus;
 type StatusFilter = 'ALL' | Status;
 type ThemeFilter = 'ALL' | Theme;
 
-/** The name and colour of each status (see .badge--…): grey draft, blue scheduled, green published, red failure. */
-const STATUSES: Record<Status, { label: string; badge: string }> = {
-  DRAFT: { label: 'Brouillon', badge: 'badge--draft' },
-  SCHEDULED: { label: 'Programmée', badge: 'badge--scheduled' },
-  PUBLISHED: { label: 'Publiée', badge: 'badge--published' },
-  FAILED: { label: 'Échec', badge: 'badge--failed' },
-};
+/** The statuses a link may filter on (?statut=…). */
+const STATUSES = new Set<string>(['DRAFT', 'SCHEDULED', 'PUBLISHED', 'FAILED']);
 
-/** The status shown for a recipe of the list. */
-export function shownStatus(recipe: Pick<RecipeAdminSummary, 'status' | 'scheduledAt'>): Status {
-  return recipe.status === 'DRAFT' && recipe.scheduledAt ? 'SCHEDULED' : recipe.status;
-}
+export { shownStatus };
 
 /** What the API is asked for each status filter: a draft "Brouillon" has no publication time. */
 export function statusQuery(status: StatusFilter): { status?: RecipeAdminSummary['status']; scheduled?: boolean } {
@@ -102,6 +91,7 @@ const ALL_TAGS = '';
 @Component({
   selector: 'yona-admin-recipes',
   imports: [Icon,
+    PublicationStatusBadge,
     RouterLink,
     BulkBar,
     FilterChip,
@@ -131,9 +121,6 @@ export default class AdminRecipes {
   private readonly toaster = inject(Toaster);
 
   protected readonly categoryNames = categoryNames;
-  protected readonly parisDateTime = parisDateTime;
-  protected readonly statuses = STATUSES;
-  protected readonly shownStatus = shownStatus;
   protected readonly themeLabel = themeLabel;
   protected readonly statusOptions: SelectOption<StatusFilter>[] = [
     { value: 'ALL', label: 'Tous les statuts' },
@@ -163,7 +150,7 @@ export default class AdminRecipes {
 
   protected readonly status = computed<StatusFilter>(() => {
     const status = this.statut();
-    return status && status in STATUSES ? (status as Status) : 'ALL';
+    return status && STATUSES.has(status) ? (status as Status) : 'ALL';
   });
   protected readonly themeFilter = computed<ThemeFilter>(() => themeOfSlug(this.theme()) ?? 'ALL');
   protected readonly sort = computed<SortOrder>(() => {

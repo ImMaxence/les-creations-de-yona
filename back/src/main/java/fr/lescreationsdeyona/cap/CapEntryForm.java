@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +20,8 @@ public record CapEntryForm(
 		@Nullable UUID imageId,
 		@NotNull CapStyle style,
 		@Schema(description = "In order; empty for none") @NotNull @Size(max = CapBlocks.MAX_BLOCKS) List<@Valid @NotNull CapBlock> blocks,
-		@NotNull Boolean published,
+		@Schema(description = "DRAFT or PUBLISHED: FAILED is set by the site only") @NotNull CapStatus status,
+		@Schema(description = "A draft only: published by the site at that time, then the article is on the site")
+		@Nullable Instant scheduledAt,
 		@Schema(description = "\"Mettre en avant\": on the home page in place of the latest article, until taken off") @NotNull Boolean featured) {
 }

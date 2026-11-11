@@ -4,6 +4,8 @@ import fr.lescreationsdeyona.audit.AuditAction;
 import fr.lescreationsdeyona.audit.AuditKind;
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.image.Image;
+import fr.lescreationsdeyona.monitoring.AdminSeen;
+import fr.lescreationsdeyona.monitoring.Unseen;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,8 @@ public class TrashBin {
 	private final JsonMapper jsonMapper;
 
 	private final AuditLog auditLog;
+
+	private final AdminSeen adminSeen;
 
 	/** What a trashed thing is, beside its content. */
 	public record Entry(TrashKind kind, String title, @Nullable String slug, @Nullable RecipeStatus status,
@@ -58,6 +62,18 @@ public class TrashBin {
 		item.setDeletedBy(auditor.getCurrentAuditor().orElse(""));
 		trashRepository.save(item);
 		auditLog.record(AuditAction.TRASHED, auditKind(entry.kind()), entry.title(), null);
+	}
+
+	/**
+	 * The badge of "Corbeille": what the others put there since this admin last opened it, still
+	 * there. Its own deletions are known to it.
+	 */
+	public Unseen unseen() {
+		Instant since = adminSeen.of(AdminSeen.Topic.TRASH)
+			.map(AdminSeen.Mark::at)
+			.orElseGet(() -> Instant.now().minus(Unseen.FIRST_TIME));
+		long count = adminSeen.admin().map(admin -> trashRepository.countByOthersSince(since, admin)).orElse(0L);
+		return new Unseen(count, since);
 	}
 
 	/** Same names on both sides. */

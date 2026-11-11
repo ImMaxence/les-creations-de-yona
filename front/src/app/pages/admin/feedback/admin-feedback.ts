@@ -12,6 +12,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
 import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
+import { AdminLive } from '../layout/admin-live';
 import { UnreadFeedback } from './unread-feedback';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
@@ -118,6 +119,11 @@ export default class AdminFeedback {
     load: (page) => this.api.invoke(listFeedback, { page, size: PAGE_SIZE }),
     key: (message) => message.id,
   });
+
+  constructor() {
+    // The badge itself is counted again by the frame (AdminLayout)
+    inject(AdminLive).on('FEEDBACK', () => this.messages.reload());
+  }
 
   protected async markRead(message: FeedbackResponse, read: boolean): Promise<void> {
     if ((await attempt(this.api.invoke(markFeedbackRead, { ids: [message.id], read }))).ok) {

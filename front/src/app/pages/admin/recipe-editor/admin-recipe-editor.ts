@@ -60,6 +60,8 @@ import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { SuggestInput, Suggestion } from '../../../shared/ui/suggest-input/suggest-input';
 import { hasParts } from '../../recipe/recipe-parts';
 import RecipePreview from '../recipe-preview/recipe-preview';
+import { EditorBar } from '../editor-bar/editor-bar';
+import { PreviewFrame } from '../preview-frame/preview-frame';
 import { parisDateTime } from '../../../shared/format/paris-time';
 import {
   MAX_QUESTIONS,
@@ -131,6 +133,8 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
   selector: 'yona-admin-recipe-editor',
   imports: [
     Icon,
+    EditorBar,
+    PreviewFrame,
     RecoveredDraft,
     NgTemplateOutlet,
     RouterLink,

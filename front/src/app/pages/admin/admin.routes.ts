@@ -56,6 +56,11 @@ export const adminRoutes: Routes = [
         title: 'Modifier une recette · Back-office',
       },
       {
+        path: 'messages',
+        loadComponent: () => import('./messages/admin-messages'),
+        title: 'Messages · Back-office',
+      },
+      {
         path: 'statistiques',
         loadComponent: () => import('./stats/admin-stats'),
         title: 'Statistiques · Back-office',

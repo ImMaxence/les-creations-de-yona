@@ -11,6 +11,7 @@ import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scro
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { AdminSession } from '../../../core/auth/admin-session';
+import { AdminLive } from '../layout/admin-live';
 import { AdminWatch } from '../layout/admin-watch';
 
 type Kind = AuditEventResponse['kind'];
@@ -226,6 +227,10 @@ export default class AdminHistory {
 
   constructor() {
     void this.markSeen();
+    inject(AdminLive).on('HISTORY', () => {
+      this.events.reload();
+      void this.watch.historySeen();
+    });
   }
 
   /** Read before being marked seen: the rows new at this visit stay so until the next one. */

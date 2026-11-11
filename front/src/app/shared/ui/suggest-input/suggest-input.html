@@ -1,4 +1,5 @@
 <input
+  #field
   class="input"
   role="combobox"
   autocomplete="off"
@@ -18,7 +19,7 @@
 />
 
 @if (expanded()) {
-  <ul [id]="listId" role="listbox" class="list" [attr.aria-label]="label()" animate.enter="list--enter">
+  <ul [id]="listId" role="listbox" class="list" [yonaFloating]="field" [floatingGap]="4" [attr.aria-label]="label()" animate.enter="list--enter">
     @for (suggestion of shown(); track suggestion.value; let i = $index) {
       <!-- pointerdown, not click: picks before the field loses the focus and closes the list -->
       <li

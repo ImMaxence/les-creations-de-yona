@@ -20,6 +20,8 @@ import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.trash.TrashBin;
 import fr.lescreationsdeyona.trash.TrashItem;
 import fr.lescreationsdeyona.trash.TrashKind;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -47,6 +49,19 @@ public class CapService {
 	/** The old address of "Mes observations", sent to /mon-cap: never an article's. */
 	static final String RESERVED_SLUG = "observations";
 
+	/** "… (copie)": the title of a duplicate, within the 150 characters of a title. */
+	static final String COPY_SUFFIX = " (copie)";
+
+	private static final int TITLE_MAX_LENGTH = 150;
+
+	/**
+	 * A scheduled publication later than this is not done: the site was down at that time. The article
+	 * goes to "Échec" rather than coming out hours late.
+	 */
+	static final Duration LATE_LIMIT = Duration.ofMinutes(30);
+
+	static final String LATE_FAILURE = "Le site était arrêté à l'heure prévue : plus de 30 minutes de retard, l'article n'a pas été publié";
+
 	private final CapEntryRepository entryRepository;
 
 	private final ImageService imageService;
@@ -61,12 +76,12 @@ public class CapService {
 
 	@Cacheable(PublicCache.CAP_ENTRIES)
 	public List<CapArticleCard> publishedEntries() {
-		return entryRepository.findByPublishedTrueOrderByHappenedOnDescIdDesc().stream().map(this::toCard).toList();
+		return entryRepository.findByStatusOrderByHappenedOnDescIdDesc(CapStatus.PUBLISHED).stream().map(this::toCard).toList();
 	}
 
 	@Cacheable(PublicCache.CAP_ENTRY)
 	public CapArticle publishedEntry(String slug) {
-		CapEntry entry = entryRepository.findBySlugAndPublishedTrue(slug)
+		CapEntry entry = entryRepository.findBySlugAndStatus(slug, CapStatus.PUBLISHED)
 			.orElseThrow(() -> new ApiException(ErrorCode.CAP_ENTRY_NOT_FOUND));
 		List<CapBlock> blocks = blocks(entry);
 		List<CapBlock> shown = CapBlocks.shown(blocks, known(CapBlocks.imageIds(blocks)));
@@ -77,9 +92,9 @@ public class CapService {
 	/** The article chosen with "Mettre en avant", otherwise the latest one; null before the first one. */
 	@Cacheable(PublicCache.CAP_HIGHLIGHT)
 	public @Nullable CapHighlight highlight() {
-		return entryRepository.findFirstByPublishedTrueAndFeaturedTrue()
+		return entryRepository.findFirstByStatusAndFeaturedTrue(CapStatus.PUBLISHED)
 			.map(entry -> new CapHighlight(toCard(entry), true))
-			.or(() -> entryRepository.findFirstByPublishedTrueOrderByHappenedOnDescIdDesc()
+			.or(() -> entryRepository.findFirstByStatusOrderByHappenedOnDescIdDesc(CapStatus.PUBLISHED)
 				.map(entry -> new CapHighlight(toCard(entry), false)))
 			.orElse(null);
 	}
@@ -89,8 +104,8 @@ public class CapService {
 	public List<AdminCapEntrySummary> allEntries() {
 		return entryRepository.findAllByOrderByHappenedOnDescIdDesc().stream()
 			.map(entry -> new AdminCapEntrySummary(entry.getId(), entry.getTitle(), entry.getSubtitle(), entry.getSlug(),
-					entry.getHappenedOn(), imageId(entry), entry.getStyle(), blocks(entry).size(), entry.isPublished(),
-					entry.isFeatured(), entry.getUpdatedAt()))
+					entry.getHappenedOn(), imageId(entry), entry.getStyle(), blocks(entry).size(), entry.getStatus(),
+					entry.getScheduledAt(), entry.getPublicationFailure(), entry.isFeatured(), entry.getUpdatedAt()))
 			.toList();
 	}
 
@@ -115,7 +130,8 @@ public class CapService {
 		LocalDate dateBefore = entry.getHappenedOn();
 		CapStyle styleBefore = entry.getStyle();
 		String blocksBefore = entry.getBlocks();
-		boolean publishedBefore = entry.isPublished();
+		CapStatus statusBefore = entry.getStatus();
+		Instant scheduledBefore = entry.getScheduledAt();
 		boolean featuredBefore = entry.isFeatured();
 		String blocksSummaryBefore = CapBlocks.summary(blocks(entry));
 		apply(form, entry);
@@ -126,9 +142,34 @@ public class CapService {
 			.add("Style", style(styleBefore), style(saved.getStyle()))
 			.add("Blocs", blocksSummaryBefore,
 					blocksBefore.equals(saved.getBlocks()) ? blocksSummaryBefore : CapBlocks.summary(blocks(saved)) + " (modifiés)")
-			.add("Publié", publishedBefore, saved.isPublished())
+			.add("Statut", status(statusBefore), status(saved.getStatus()))
+			.add("Publication programmée", scheduledBefore, saved.getScheduledAt())
 			.add("Mis en avant", featuredBefore, saved.isFeatured());
 		auditLog.record(AuditAction.UPDATED, AuditKind.CAP_ENTRY, saved.getTitle(), id, changes);
+		return toAdmin(saved);
+	}
+
+	/**
+	 * "Dupliquer": a new draft with the same date, style, photos and blocks, titled "… (copie)", never
+	 * put forward nor scheduled.
+	 */
+	@Transactional
+	public AdminCapEntry duplicateEntry(long id) {
+		CapEntry source = findEntry(id);
+		String title = source.getTitle().length() + COPY_SUFFIX.length() > TITLE_MAX_LENGTH
+				? source.getTitle().substring(0, TITLE_MAX_LENGTH - COPY_SUFFIX.length()) + COPY_SUFFIX
+				: source.getTitle() + COPY_SUFFIX;
+		CapEntry copy = new CapEntry();
+		copy.setTitle(title);
+		copy.setSlug(newSlug(title));
+		copy.setSubtitle(source.getSubtitle());
+		copy.setHappenedOn(source.getHappenedOn());
+		copy.setImage(source.getImage());
+		copy.setStyle(source.getStyle());
+		copy.setBlocks(source.getBlocks());
+		copy.setStatus(CapStatus.DRAFT);
+		CapEntry saved = entryRepository.saveAndFlush(copy);
+		auditLog.record(AuditAction.CREATED, AuditKind.CAP_ENTRY, saved.getTitle(), saved.getId());
 		return toAdmin(saved);
 	}
 
@@ -144,7 +185,7 @@ public class CapService {
 
 	/**
 	 * Created again from the trash, with its photo if still in the gallery, at its address if still
-	 * free. Never put forward again by surprise.
+	 * free. Never put forward nor scheduled again by surprise.
 	 */
 	@Transactional
 	public AdminCapEntry restoreEntryFromTrash(TrashItem trashed) {
@@ -157,16 +198,73 @@ public class CapService {
 		entry.setHappenedOn(kept.happenedOn());
 		entry.setStyle(kept.style() == null ? CapStyle.CLASSIC : kept.style());
 		entry.setBlocks(CapBlocks.write(jsonMapper, blocks));
-		entry.setPublished(kept.published());
+		entry.setStatus(kept.published() ? CapStatus.PUBLISHED : CapStatus.DRAFT);
 		entry.setImage(trashed.getImage());
 		return toAdmin(entryRepository.saveAndFlush(entry));
 	}
 
+	// Scheduled publication (see ScheduledCapPublication)
+
+	/** Drafts whose scheduled time has come, the earliest first. */
+	public List<Long> dueForPublication(Instant now) {
+		return entryRepository.findScheduledBefore(now);
+	}
+
 	/**
-	 * The address follows the title while the article is a draft: nobody has its link yet. Once
-	 * published, it stays, so that shared links keep working.
+	 * Publishes a draft at its scheduled time; does nothing if it was published or rescheduled
+	 * meanwhile. More than {@link #LATE_LIMIT} late, it fails instead: the site was down then.
+	 */
+	@Transactional
+	public void publishScheduled(long id, Instant now) {
+		CapEntry entry = entryRepository.findById(id).orElse(null);
+		if (entry == null || entry.getStatus() != CapStatus.DRAFT || entry.getScheduledAt() == null
+				|| entry.getScheduledAt().isAfter(now)) {
+			return;
+		}
+		if (entry.getScheduledAt().isBefore(now.minus(LATE_LIMIT))) {
+			fail(entry, LATE_FAILURE);
+			return;
+		}
+		entry.setStatus(CapStatus.PUBLISHED);
+		entry.setScheduledAt(null);
+		entry.setPublicationFailure(null);
+		entryRepository.saveAndFlush(entry);
+		auditLog.record(AuditAction.PUBLISHED, AuditKind.CAP_ENTRY, entry.getTitle(), id);
+	}
+
+	/** A scheduled publication that kept failing: the article stays unpublished, with the reason. */
+	@Transactional
+	public void failScheduled(long id, String reason) {
+		entryRepository.findById(id)
+			.filter(entry -> entry.getStatus() == CapStatus.DRAFT && entry.getScheduledAt() != null)
+			.ifPresent(entry -> fail(entry, reason));
+	}
+
+	private void fail(CapEntry entry, String reason) {
+		entry.setStatus(CapStatus.FAILED);
+		entry.setPublicationFailure(reason);
+		entryRepository.saveAndFlush(entry);
+		auditLog.record(AuditAction.PUBLICATION_FAILED, AuditKind.CAP_ENTRY, entry.getTitle(), entry.getId());
+	}
+
+	/**
+	 * The address follows the title while the article is not published: nobody has its link yet. Once
+	 * published, it stays, so that shared links keep working. A time of publication is for a draft
+	 * only, and in the future unless kept as it was (the site publishes it within a minute).
 	 */
 	private void apply(CapEntryForm form, CapEntry entry) {
+		if (form.status() == CapStatus.FAILED) {
+			throw new ApiException(ErrorCode.CAP_STATUS_FAILED_NOT_SETTABLE);
+		}
+		Instant scheduledAt = form.scheduledAt();
+		if (scheduledAt != null) {
+			if (form.status() != CapStatus.DRAFT) {
+				throw new ApiException(ErrorCode.SCHEDULED_CAP_ENTRY_MUST_BE_DRAFT);
+			}
+			if (scheduledAt.isBefore(Instant.now()) && !scheduledAt.equals(entry.getScheduledAt())) {
+				throw new ApiException(ErrorCode.SCHEDULED_AT_PAST);
+			}
+		}
 		Image image = form.imageId() == null ? null : imageService.getLandscape(form.imageId());
 		List<CapBlock> requested = form.blocks();
 		Set<UUID> known = imageService.landscapeIdsAmong(CapBlocks.imageIds(requested));
@@ -185,7 +283,9 @@ public class CapService {
 		entry.setImage(image);
 		entry.setStyle(form.style());
 		entry.setBlocks(CapBlocks.write(jsonMapper, blocks));
-		entry.setPublished(form.published());
+		entry.setStatus(form.status());
+		entry.setScheduledAt(scheduledAt);
+		entry.setPublicationFailure(null);
 		entry.setFeatured(form.featured());
 	}
 
@@ -228,6 +328,14 @@ public class CapService {
 		return style == CapStyle.NOTEBOOK ? "Carnet" : "Classique";
 	}
 
+	private static String status(CapStatus status) {
+		return switch (status) {
+			case DRAFT -> "Brouillon";
+			case PUBLISHED -> "Publié";
+			case FAILED -> "Échec";
+		};
+	}
+
 	private CapArticleCard toCard(CapEntry entry) {
 		return new CapArticleCard(entry.getId(), entry.getTitle(), entry.getSubtitle(), entry.getSlug(), entry.getHappenedOn(),
 				imageId(entry), entry.getStyle(), CapBlocks.excerpt(blocks(entry)));
@@ -237,7 +345,8 @@ public class CapService {
 		List<CapBlock> blocks = blocks(entry);
 		return new AdminCapEntry(entry.getId(), entry.getTitle(), entry.getSubtitle(), entry.getSlug(), entry.getHappenedOn(),
 				imageId(entry), entry.getStyle(), CapBlocks.withKnownImages(blocks, known(CapBlocks.imageIds(blocks))),
-				entry.isPublished(), entry.isFeatured(), entry.getUpdatedAt());
+				entry.getStatus(), entry.getScheduledAt(), entry.getPublicationFailure(), entry.isFeatured(),
+				entry.getUpdatedAt());
 	}
 
 }

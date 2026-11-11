@@ -7,6 +7,8 @@ import fr.lescreationsdeyona.common.PageResponse;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.live.LiveChange;
+import fr.lescreationsdeyona.live.LiveTopic;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -63,6 +66,8 @@ public class FeedbackService {
 	private final AuditLog auditLog;
 
 	private final Recaptcha captcha;
+
+	private final ApplicationEventPublisher events;
 
 	/** Times of the last messages, by address of the sender: forgotten after an hour. */
 	private final Map<String, Deque<Instant>> sentBy = new ConcurrentHashMap<>();
@@ -114,6 +119,7 @@ public class FeedbackService {
 			throw new ApiException(refused);
 		}
 		repository.save(new Feedback(now, form.message().strip(), blankToNull(form.email()), blankToNull(form.page())));
+		events.publishEvent(new LiveChange(LiveTopic.FEEDBACK));
 	}
 
 	public PageResponse<FeedbackResponse> list(Pageable pageable) {
@@ -132,6 +138,7 @@ public class FeedbackService {
 		List<Feedback> messages = find(ids);
 		messages.forEach(message -> message.setReadAt(read ? (message.getReadAt() == null ? Instant.now() : message.getReadAt())
 				: null));
+		events.publishEvent(new LiveChange(LiveTopic.FEEDBACK));
 	}
 
 	/** All or none, for good. */

@@ -75,6 +75,11 @@ class RestoredData {
 
 	private static final String INVOICE_KEY = "select number from invoice";
 
+	private static final String MESSAGE_KEY = "select lower(author_email) || '|' || sent_at::text || '|' || md5(body) from admin_message";
+
+	/** Messages are kept 90 days: older ones of a backup are not brought back. */
+	private static final String RECENT_MESSAGES = "sent_at >= now() - interval '90 days'";
+
 	/**
 	 * Every table a merge ("Fusionner") brings in. A test holds it against the migrations: a new table
 	 * is listed here (and merged), in {@link #NOT_MERGED} or in {@link BackupService#SITE_ONLY_TABLES},
@@ -84,7 +89,7 @@ class RestoredData {
 			"recipe_tag", "recipe_question", "recipe_part", "recipe_ingredient", "recipe_step", "social_link", "appearance_preset",
 			"glossary_term", "menu", "menu_recipe", "search_miss", "ai_visit", "cap_entry", "shop_product", "shop_order",
 			"shop_order_line", "account_entry", "account_purchase_line", "invoice", "invoice_line", "site_content", "site_theme",
-			"shop_settings");
+			"shop_settings", "admin_message");
 
 	/** Saved, and restored by "Tout remplacer", but left out of a merge: a thing deleted on the site stays deleted. */
 	static final Set<String> NOT_MERGED = Set.of("trash_item");
@@ -93,6 +98,8 @@ class RestoredData {
 	private static final String ORDER_LABEL = "Commande n° ";
 
 	static final String RESTORED_LATE_FAILURE = "Sauvegarde restaurée après l'heure prévue : la recette n'a pas été publiée";
+
+	static final String RESTORED_LATE_CAP_FAILURE = "Sauvegarde restaurée après l'heure prévue : l'article n'a pas été publié";
 
 	private final DataSource dataSource;
 
@@ -126,7 +133,8 @@ class RestoredData {
 		return new RestoreStatus.Counts(count(db, "recipe"), count(db, "category"), count(db, "tag"),
 				count(db, "ingredient"), count(db, "image"), count(db, "social_link"), count(db, "appearance_preset"),
 				count(db, "glossary_term"), count(db, "menu"), count(db, "cap_entry"),
-				count(db, "shop_product"), count(db, "account_entry"), count(db, "shop_order"), count(db, "invoice"));
+				count(db, "shop_product"), count(db, "account_entry"), count(db, "shop_order"), count(db, "invoice"),
+				count(db, "admin_message"));
 	}
 
 	RestoreStatus.Missing missing(JdbcClient scratch) {
@@ -173,7 +181,8 @@ class RestoredData {
 				first(terms), menus.size(), first(menus), settingsMissing(scratch, site, SITE_CONTENT),
 				settingsMissing(scratch, site, SITE_THEME), missingCount(scratch, site, CAP_ENTRY_KEY),
 				missingCount(scratch, site, SHOP_PRODUCT_KEY),
-				missingCount(scratch, site, ACCOUNT_ENTRY_KEY), missingCount(scratch, site, SHOP_ORDER_KEY), missingCount(scratch, site, INVOICE_KEY));
+				missingCount(scratch, site, ACCOUNT_ENTRY_KEY), missingCount(scratch, site, SHOP_ORDER_KEY), missingCount(scratch, site, INVOICE_KEY),
+				missingCount(scratch, site, MESSAGE_KEY + " where " + RECENT_MESSAGES));
 	}
 
 	/** How many keys of the backup the site lacks. */
@@ -213,13 +222,14 @@ class RestoredData {
 			long shopOrders = mergeOrders(scratch, site, orders, products);
 			long accountEntries = mergeAccountEntries(scratch, site, orders, ingredients);
 			long invoices = mergeInvoices(scratch, site, orders);
+			long messages = mergeMessages(scratch, site);
 			continueOrdersAfterAccounts(site);
 			boolean siteContent = mergeSettings(scratch, site, SITE_CONTENT);
 			boolean siteTheme = mergeSettings(scratch, site, SITE_THEME);
 			mergeSettings(scratch, site, SHOP_SETTINGS);
 			return new Merged(new RestoreStatus.Counts(added.recipes, added.categories, added.tags, added.ingredients,
 					added.images, added.socialLinks, added.presets, glossaryTerms, menus, capEntries, shopProducts,
-					accountEntries, shopOrders, invoices), siteContent, siteTheme);
+					accountEntries, shopOrders, invoices, messages), siteContent, siteTheme);
 		});
 	}
 
@@ -456,7 +466,29 @@ class RestoredData {
 			boolean featured = Boolean.TRUE.equals(values.get("featured")) && !featuredTaken;
 			featuredTaken |= featured;
 			values.put("featured", featured);
+			// As for the recipes: a publication scheduled in the backup is never done by surprise
+			values.put("scheduled_at", null);
 			insertReturningId(site, "cap_entry", values);
+			added++;
+		}
+		return added;
+	}
+
+	/**
+	 * The messages between the admins the site lacks, by author, time and text; those older than 90
+	 * days are left out, as the site erases them.
+	 */
+	private long mergeMessages(JdbcClient scratch, JdbcClient site) {
+		Set<String> existing = strings(site, MESSAGE_KEY);
+		long added = 0;
+		for (Map<String, Object> row : scratch.sql("select *, lower(author_email) || '|' || sent_at::text || '|' || md5(body) as merge_key "
+				+ "from admin_message where " + RECENT_MESSAGES + " order by id").query().listOfRows()) {
+			Map<String, Object> values = new LinkedHashMap<>(row);
+			if (existing.contains((String) values.remove("merge_key"))) {
+				continue;
+			}
+			values.remove("id");
+			insertReturningId(site, "admin_message", values);
 			added++;
 		}
 		return added;
@@ -864,6 +896,12 @@ class RestoredData {
 					where status = 'DRAFT' and scheduled_at < now()""")
 				.param("reason", RESTORED_LATE_FAILURE)
 				.update();
+			site.sql("""
+					update cap_entry set status = 'FAILED', publication_failure = :reason
+					where status = 'DRAFT' and scheduled_at < now()""")
+				.param("reason", RESTORED_LATE_CAP_FAILURE)
+				.update();
+			site.sql("delete from admin_message where not (" + RECENT_MESSAGES + ")").update();
 			for (Map<String, Object> identity : site.sql("""
 					select table_name, column_name from information_schema.columns
 					where table_schema = 'public' and is_identity = 'YES'""").query().listOfRows()) {

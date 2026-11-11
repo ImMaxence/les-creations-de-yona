@@ -1,5 +1,17 @@
 @use 'mixins' as m;
 
+// Laid out by its own width, not the screen's (md = 48rem): the same on a phone and in the phone of the
+// back-office preview
+:host {
+  display: block;
+  container: recipe / inline-size;
+  // The fluid sizes of _root.scss follow the screen (vw): here, the width of the recipe (cqi), the same on
+  // the site, where the recipe is as wide as the screen, and right in the phone of the preview
+  --text-xl: clamp(1.25rem, 1.15rem + 0.5cqi, 1.5rem);
+  --text-2xl: clamp(1.625rem, 1.35rem + 1.4cqi, 2.25rem);
+  --text-3xl: clamp(2.125rem, 1.6rem + 2.6cqi, 3.5rem);
+}
+
 // Header: full-width photo, title on a black gradient rising from the bottom.
 // Page transition from a recipe card (_motion.scss): the photo, with its gradient, grows from the
 // card; the texts and the facts card have their own view-transition-name, so they are drawn above
@@ -11,7 +23,7 @@
   overflow: hidden;
   color: var(--color-on-image);
 
-  @include m.from(md) {
+  @container recipe (width >= 48rem) {
     height: clamp(24rem, 64svh, 40rem);
   }
 }
@@ -179,7 +191,7 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-7);
 
-  @include m.from(md) {
+  @container recipe (width >= 48rem) {
     grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
     align-items: start;
     gap: var(--space-8);
@@ -188,7 +200,7 @@
 
 // Ingredients stay in sight while scrolling through the steps
 .layout__ingredients {
-  @include m.from(md) {
+  @container recipe (width >= 48rem) {
     position: sticky;
     top: calc(var(--header-height) + var(--space-4));
   }

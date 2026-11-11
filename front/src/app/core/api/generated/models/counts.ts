@@ -11,6 +11,11 @@ export interface Counts {
   ingredients: number;
   invoices: number;
   menus: number;
+
+  /**
+   * Messages between the admins (90 days)
+   */
+  messages: number;
   recipes: number;
   shopOrders: number;
   shopProducts: number;

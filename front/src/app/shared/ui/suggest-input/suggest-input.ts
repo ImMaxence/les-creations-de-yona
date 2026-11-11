@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
+import { Floating } from '../floating/floating';
 
 export interface Suggestion {
   readonly value: string;
@@ -20,6 +21,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'yona-suggest-input',
+  imports: [Floating],
   templateUrl: './suggest-input.html',
   styleUrl: './suggest-input.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

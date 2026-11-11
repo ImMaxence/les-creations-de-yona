@@ -1,0 +1,117 @@
+<section class="admin-section" aria-labelledby="messages-title">
+  <div class="admin-section__head">
+    <h2 id="messages-title">Messages</h2>
+  </div>
+  <p class="field__hint">Entre les admins : tout le monde lit tout. Les messages sont gardés 90 jours, et dans les sauvegardes</p>
+
+  @if (members.value(); as group) {
+    <ul role="list" class="members" aria-label="Le groupe">
+      @for (member of group; track member.email) {
+        <li class="member">
+          <yona-admin-avatar [name]="member.name || member.email" [picture]="member.picture" />
+          <span class="member__name">{{ member.name || member.email }}{{ isMine(member.email) ? ' (vous)' : '' }}</span>
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="admin-panel conversation">
+    <div #thread class="thread" role="log" aria-label="Messages du groupe">
+      @if (hasOlder()) {
+        <button type="button" class="link-button older" [disabled]="loadingOlder()" (click)="loadOlder()">
+          <svg yonaIcon="arrow-up" [size]="16"></svg>{{ loadingOlder() ? 'Chargement…' : 'Voir les messages plus anciens' }}
+        </button>
+      }
+      @if (loading()) {
+        <yona-skeleton kind="rows" [count]="3" />
+      } @else if (!days().length) {
+        <p class="admin-empty">Aucun message pour le moment : écrivez le premier ci-dessous</p>
+      }
+      @for (day of days(); track day.key) {
+        <h3 class="day"><span>{{ day.label }}</span></h3>
+        <ol role="list" class="day__messages">
+          @for (shown of day.messages; track shown.message.id) {
+            @if (shown.message.id === firstNew()) {
+              <li class="new-divider"><span>Nouveaux</span></li>
+            }
+            <li class="message" [class.is-mine]="shown.mine">
+              <yona-admin-avatar [name]="shown.message.authorName || shown.message.authorEmail" [picture]="shown.message.authorPicture" />
+              <div class="message__content">
+                <p class="message__head">
+                  <span class="message__author">{{ shown.author }}</span>
+                  <time class="message__time" [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
+                </p>
+                <p class="message__body">
+                  @for (part of shown.parts; track $index) {
+                    @if (part.mention; as mention) {
+                      <a class="mention" [routerLink]="kinds[mention.kind].link(mention.id)" [attr.data-tooltip]="kinds[mention.kind].name">
+                        <svg [yonaIcon]="kinds[mention.kind].icon" [size]="14"></svg>{{ mention.label }}
+                      </a>
+                    } @else {
+                      {{ part.text }}
+                    }
+                  }
+                </p>
+              </div>
+              @if (shown.mine) {
+                <button type="button" class="icon-button message__delete" aria-label="Supprimer ce message" data-tooltip="Supprimer" (click)="remove(shown.message)">
+                  <svg yonaIcon="trash" [size]="16"></svg>
+                </button>
+              }
+            </li>
+          }
+        </ol>
+      }
+    </div>
+
+    <div class="composer">
+      <label class="visually-hidden" for="message-text">Votre message</label>
+      <textarea
+        #field
+        id="message-text"
+        class="input composer__field"
+        rows="2"
+        placeholder="Écrire aux autres admins… @ pour citer une recette, un article, une commande"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="mention-list"
+        [attr.aria-expanded]="suggesting()"
+        [attr.aria-activedescendant]="suggesting() ? 'mention-' + active() : null"
+        [maxLength]="maxTyped"
+        [value]="text()"
+        (input)="onInput($event)"
+        (keydown)="onKeydown($event)"
+        (blur)="closeSuggestions()"
+      ></textarea>
+      @if (suggesting()) {
+        <ul id="mention-list" class="suggestions" role="listbox" aria-label="Citer" [yonaFloating]="field" animate.enter="suggestions--enter">
+          @for (mention of suggestions(); track mention.kind + mention.id; let i = $index) {
+            <!-- pointerdown, not click: chosen before the field loses the focus and closes the list -->
+            <li
+              role="option"
+              class="suggestion"
+              [id]="'mention-' + i"
+              [class.is-active]="i === active()"
+              [attr.aria-selected]="i === active()"
+              (pointerdown)="$event.preventDefault(); choose(mention)"
+              (pointerenter)="active.set(i)"
+            >
+              <svg [yonaIcon]="kinds[mention.kind].icon" [size]="16"></svg>
+              <span class="suggestion__label">{{ mention.label }}</span>
+              <span class="suggestion__kind">{{ kinds[mention.kind].name }}</span>
+            </li>
+          }
+        </ul>
+      }
+      <button yonaButton type="button" class="composer__send" [disabled]="sending() || !text().trim()" (click)="send()">
+        <svg yonaIcon="send"></svg>Envoyer
+      </button>
+    </div>
+    <p class="field__hint composer__hint">
+      Entrée pour envoyer, Maj + Entrée pour aller à la ligne
+      @if (text().length > maxTyped - 200) {
+        · {{ text().length }} / {{ maxTyped }} caractères
+      }
+    </p>
+  </div>
+</section>

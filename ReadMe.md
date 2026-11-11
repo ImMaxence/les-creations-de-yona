@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.7.4 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.8.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -85,12 +85,14 @@ Les modèles locaux se téléchargent une seule fois, directement depuis Hugging
 - Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients, mots du glossaire et articles de Mon CAP, qui reviennent à leur place une fois restaurés.
 - Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur ; ce que les autres ont fait depuis la dernière visite marqué « Nouveau », avec un badge dans le menu), retours des visiteurs, titres de l'accueil modifiables.
 - Mon CAP : « Écrire avec l'IA » à partir de notes tapées, dictées ou photographiées (récit, pas à pas ou carnet), les photos déjà placées gardées.
+- Messages entre admins, tous dans un même groupe : texte et « @ » pour citer une recette, un article, une commande… (un lien vers sa page), badge des non lus, en temps réel ; gardés 90 jours et dans les sauvegardes.
+- Temps réel : les badges du menu (messages, retours, commandes, historique, corbeille, journaux) changent dès qu'un autre admin, un visiteur ou le site agit.
 - Journaux : les erreurs et avertissements du serveur et des navigateurs des visiteurs, regroupés, comptés, avec un badge dans le menu pour les nouvelles erreurs.
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.
 - Apparence (20 thèmes ou des couleurs personnalisées, 37 polices montrées dans leur style, arrondi ; chaque partie repliable), statistiques en accordéons (versions et santé du serveur, mémoire et processeur en direct et sur 7, 30 ou 90 jours, nombre de vues, recettes les plus vues), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés » avec un badge tant que la version n'est pas lue.
 - Boutique : fermée, réservée aux proches ou ouverte à tous ; commandes et statuts, notification sur le téléphone à chaque nouvelle commande, produits (formats, prix TTC, avec ou sans recette) ; comptabilité par mois, trimestre ou année (chiffres clés, graphique, où part l'argent, meilleures ventes, achats détaillés, coût de revient et marges, tickets de caisse, export CSV) ; factures des commandes récupérées, numérotées à la suite et à enregistrer en PDF.
 - Tableau de bord sans la barre du site : toutes les sections dans un panneau à gauche (Blog, Boutique, Site), repliable en colonne d'icônes sur ordinateur, ouvert d'un bouton sur téléphone ; page de connexion Google, photo du compte ; skeletons pendant les chargements.
-- Mon CAP : articles écrits en blocs à partir d'un modèle (Récit, Pas à pas, Carnet, Vide), styles Classique ou Carnet, aperçu ordinateur et téléphone, brouillon gardé dans le navigateur jusqu'à l'enregistrement.
+- Mon CAP : articles écrits en blocs à partir d'un modèle (Récit, Pas à pas, Carnet, Vide), styles Classique ou Carnet, statuts en couleur et publication programmée, « Dupliquer », liens vers des recettes et d'autres articles, aperçu ordinateur et téléphone, brouillon gardé dans le navigateur jusqu'à l'enregistrement.
 - Glossaire sans quitter la recette : un mot sélectionné dans une étape s'ajoute d'un bouton, ou se garde pour plus tard ; les mots déjà connus soulignés.
 
 Le détail page par page : [docs/fonctionnalites.md](docs/fonctionnalites.md).

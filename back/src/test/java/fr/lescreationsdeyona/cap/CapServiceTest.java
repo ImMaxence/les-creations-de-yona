@@ -18,6 +18,8 @@ import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.trash.TrashBin;
 import fr.lescreationsdeyona.trash.TrashItem;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +57,12 @@ class CapServiceTest {
 	}
 
 	private static CapEntryForm form(String title, boolean published, boolean featured, List<CapBlock> blocks) {
-		return new CapEntryForm(title, " Un sous-titre ", LocalDate.parse("2026-10-12"), null, CapStyle.NOTEBOOK, blocks, published, featured);
+		return new CapEntryForm(title, " Un sous-titre ", LocalDate.parse("2026-10-12"), null, CapStyle.NOTEBOOK, blocks,
+				published ? CapStatus.PUBLISHED : CapStatus.DRAFT, null, featured);
+	}
+
+	private static CapEntryForm scheduled(CapStatus status, Instant at) {
+		return new CapEntryForm("Mon examen", null, LocalDate.parse("2026-10-12"), null, CapStyle.CLASSIC, List.of(), status, at, false);
 	}
 
 	private static CapBlock text(String text) {
@@ -70,7 +77,7 @@ class CapServiceTest {
 		entry.setHappenedOn(LocalDate.parse("2026-10-12"));
 		entry.setStyle(CapStyle.CLASSIC);
 		entry.setBlocks("[]");
-		entry.setPublished(published);
+		entry.setStatus(published ? CapStatus.PUBLISHED : CapStatus.DRAFT);
 		when(repository.findById(5L)).thenReturn(Optional.of(entry));
 		return entry;
 	}
@@ -150,7 +157,7 @@ class CapServiceTest {
 	void showsVisitorsAPublishedArticleWithoutItsEmptyBlocks() {
 		CapEntry entry = existing("Mon examen", "mon-examen", true);
 		entry.setBlocks(CapBlocks.write(json, List.of(text("Le matin"), new CapBlock(CapBlockType.IMAGE, null, null, null, null, null))));
-		when(repository.findBySlugAndPublishedTrue("mon-examen")).thenReturn(Optional.of(entry));
+		when(repository.findBySlugAndStatus("mon-examen", CapStatus.PUBLISHED)).thenReturn(Optional.of(entry));
 
 		CapArticle article = service.publishedEntry("mon-examen");
 
@@ -167,11 +174,11 @@ class CapServiceTest {
 	@Test
 	void putsForwardTheChosenArticleThenTheLatest() {
 		CapEntry latest = existing("Le dernier", "le-dernier", true);
-		when(repository.findFirstByPublishedTrueOrderByHappenedOnDescIdDesc()).thenReturn(Optional.of(latest));
+		when(repository.findFirstByStatusOrderByHappenedOnDescIdDesc(CapStatus.PUBLISHED)).thenReturn(Optional.of(latest));
 		assertThat(service.highlight().featured()).isFalse();
 
 		CapEntry chosen = existing("Coup de cœur", "coup-de-coeur", true);
-		when(repository.findFirstByPublishedTrueAndFeaturedTrue()).thenReturn(Optional.of(chosen));
+		when(repository.findFirstByStatusAndFeaturedTrue(CapStatus.PUBLISHED)).thenReturn(Optional.of(chosen));
 		assertThat(service.highlight().featured()).isTrue();
 		assertThat(service.highlight().article().slug()).isEqualTo("coup-de-coeur");
 	}
@@ -226,6 +233,87 @@ class CapServiceTest {
 
 		assertThatThrownBy(() -> service.createEntry(form("Trop", false, false, blocks))).extracting("code")
 			.isEqualTo(ErrorCode.CAP_BLOCKS_TOO_MANY);
+	}
+
+	@Test
+	void duplicatesAnArticleAsADraftCopy() {
+		CapEntry source = existing("Mon examen", "mon-examen", true);
+		source.setFeatured(true);
+		source.setBlocks(CapBlocks.write(json, List.of(text("Le matin"))));
+
+		AdminCapEntry copy = service.duplicateEntry(5);
+
+		assertThat(copy.title()).isEqualTo("Mon examen (copie)");
+		assertThat(copy.slug()).isEqualTo("mon-examen-copie");
+		assertThat(copy.status()).isEqualTo(CapStatus.DRAFT);
+		assertThat(copy.featured()).isFalse();
+		assertThat(copy.scheduledAt()).isNull();
+		assertThat(copy.blocks()).containsExactly(text("Le matin"));
+	}
+
+	@Test
+	void keepsTheTitleOfACopyWithinItsLength() {
+		existing("a".repeat(150), "long", false);
+
+		assertThat(service.duplicateEntry(5).title()).hasSize(150).endsWith(" (copie)");
+	}
+
+	@Test
+	void schedulesADraftOnly() {
+		Instant tomorrow = Instant.now().plus(Duration.ofDays(1));
+
+		assertThat(service.createEntry(scheduled(CapStatus.DRAFT, tomorrow)).scheduledAt()).isEqualTo(tomorrow);
+		assertThatThrownBy(() -> service.createEntry(scheduled(CapStatus.PUBLISHED, tomorrow))).extracting("code")
+			.isEqualTo(ErrorCode.SCHEDULED_CAP_ENTRY_MUST_BE_DRAFT);
+		assertThatThrownBy(() -> service.createEntry(scheduled(CapStatus.FAILED, null))).extracting("code")
+			.isEqualTo(ErrorCode.CAP_STATUS_FAILED_NOT_SETTABLE);
+	}
+
+	@Test
+	void refusesATimeAlreadyPastUnlessKept() {
+		Instant past = Instant.now().minus(Duration.ofMinutes(2));
+		assertThatThrownBy(() -> service.createEntry(scheduled(CapStatus.DRAFT, past))).extracting("code")
+			.isEqualTo(ErrorCode.SCHEDULED_AT_PAST);
+
+		// Saved again just after its time: the site publishes it within a minute
+		existing("Mon examen", "mon-examen", false).setScheduledAt(past);
+		assertThat(service.updateEntry(5, scheduled(CapStatus.DRAFT, past)).scheduledAt()).isEqualTo(past);
+	}
+
+	@Test
+	void publishesADraftAtItsTime() {
+		Instant now = Instant.now();
+		CapEntry entry = existing("Mon examen", "mon-examen", false);
+		entry.setScheduledAt(now.minus(Duration.ofMinutes(1)));
+
+		service.publishScheduled(5, now);
+
+		assertThat(entry.getStatus()).isEqualTo(CapStatus.PUBLISHED);
+		assertThat(entry.getScheduledAt()).isNull();
+	}
+
+	@Test
+	void failsAPublicationTooLate() {
+		Instant now = Instant.now();
+		CapEntry entry = existing("Mon examen", "mon-examen", false);
+		entry.setScheduledAt(now.minus(Duration.ofHours(2)));
+
+		service.publishScheduled(5, now);
+
+		assertThat(entry.getStatus()).isEqualTo(CapStatus.FAILED);
+		assertThat(entry.getPublicationFailure()).isEqualTo(CapService.LATE_FAILURE);
+		assertThat(entry.getScheduledAt()).isNotNull();
+	}
+
+	@Test
+	void leavesADraftRescheduledLater() {
+		Instant now = Instant.now();
+		CapEntry entry = existing("Mon examen", "mon-examen", false);
+		entry.setScheduledAt(now.plus(Duration.ofHours(1)));
+
+		service.publishScheduled(5, now);
+
+		assertThat(entry.getStatus()).isEqualTo(CapStatus.DRAFT);
 	}
 
 }

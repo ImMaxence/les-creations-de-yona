@@ -22,6 +22,7 @@ describe('isArticleDraft', () => {
   it('takes back an article as it was kept', () => {
     expect(isArticleDraft(DRAFT)).toBe(true);
     expect(isArticleDraft({ ...DRAFT, imageId: 'e1b4…', blocks: [] })).toBe(true);
+    expect(isArticleDraft({ ...DRAFT, scheduledAt: '2026-11-14T10:00' })).toBe(true);
   });
 
   it('refuses what is not one, or was kept by an older version', () => {
@@ -30,6 +31,7 @@ describe('isArticleDraft', () => {
     expect(isArticleDraft({ ...DRAFT, title: undefined })).toBe(false);
     expect(isArticleDraft({ ...DRAFT, style: 'MAGAZINE' })).toBe(false);
     expect(isArticleDraft({ ...DRAFT, published: 'oui' })).toBe(false);
+    expect(isArticleDraft({ ...DRAFT, scheduledAt: 1731578400 })).toBe(false);
     expect(isArticleDraft({ ...DRAFT, imageId: 3 })).toBe(false);
     expect(isArticleDraft({ ...DRAFT, blocks: 'texte' })).toBe(false);
     expect(isArticleDraft({ ...DRAFT, blocks: [{ type: 'VIDEO' }] })).toBe(false);

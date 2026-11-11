@@ -19,7 +19,16 @@ export interface CapEntryForm {
    * The main photo, a landscape photo of the gallery: at the top of the article and in the timeline
    */
   imageId?: string;
-  published: boolean;
+
+  /**
+   * A draft only: published by the site at that time, then the article is on the site
+   */
+  scheduledAt?: string;
+
+  /**
+   * DRAFT or PUBLISHED: FAILED is set by the site only
+   */
+  status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
   style: 'CLASSIC' | 'NOTEBOOK';
 
   /**

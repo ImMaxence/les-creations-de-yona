@@ -52,6 +52,7 @@ const COUNT_ROWS: { key: keyof Counts; label: string }[] = [
   { key: 'accountEntries', label: 'Lignes de comptabilité' },
   { key: 'shopOrders', label: 'Commandes' },
   { key: 'invoices', label: 'Factures' },
+  { key: 'messages', label: 'Messages entre les admins' },
 ];
 
 /**
@@ -107,7 +108,7 @@ export default class AdminBackup {
       !!missing &&
       missing.recipes + missing.categories + missing.tags + missing.ingredients + missing.images + missing.socialLinks +
         missing.appearancePresets + missing.glossaryTerms + missing.menus + missing.capEntries +
-        missing.shopProducts + missing.accountEntries + missing.shopOrders + missing.invoices ===
+        missing.shopProducts + missing.accountEntries + missing.shopOrders + missing.invoices + missing.messages ===
         0 &&
       !missing.siteContent &&
       !missing.siteTheme &&

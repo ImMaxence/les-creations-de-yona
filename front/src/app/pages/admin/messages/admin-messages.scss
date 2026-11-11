@@ -1,0 +1,268 @@
+@use 'mixins' as m;
+
+// The group: every admin, with their photo
+.members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.member {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+
+  yona-admin-avatar {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: var(--text-xs);
+  }
+}
+
+.member__name {
+  overflow: hidden;
+  max-width: 16rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// The conversation: the latest at the bottom, the field under it
+.conversation {
+  gap: var(--space-3);
+}
+
+.thread {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-height: 12rem;
+  // Phones: the field stays in sight under it
+  max-height: min(48dvh, 44rem);
+  margin: calc(-1 * var(--space-2));
+  padding: var(--space-2);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @include m.from(md) {
+    max-height: min(62dvh, 44rem);
+  }
+}
+
+.older {
+  justify-self: center;
+}
+
+// "Aujourd'hui", "Hier", "Lundi 9 novembre", across a line
+.day,
+.new-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block: var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-line);
+  }
+}
+
+.new-divider {
+  color: var(--color-accent);
+
+  &::before,
+  &::after {
+    background-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+  }
+}
+
+.day__messages {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.message {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-text) 4%, transparent);
+
+    .message__delete {
+      opacity: 1;
+    }
+  }
+
+  yona-admin-avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  &.is-mine .message__author {
+    color: var(--color-accent);
+  }
+}
+
+.message__content {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.message__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.message__author {
+  font-weight: 700;
+}
+
+.message__time {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.message__body {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+// Only on hover with a mouse; always there with a finger or the keyboard
+.message__delete {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    opacity: 1;
+  }
+}
+
+// A thing of the site, as a small link
+.mention {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline: 0.1rem;
+  padding: 0 0.45rem;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent-strong);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  vertical-align: baseline;
+  transition: background-color var(--duration-fast) var(--ease-out);
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-accent) 24%, transparent);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+// The field, the button beside it
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
+.composer__field {
+  flex: 1;
+  min-height: 2.75rem;
+  max-height: 10rem;
+  resize: none;
+  field-sizing: content;
+}
+
+.composer__send {
+  flex: none;
+}
+
+.composer__hint {
+  margin-top: calc(-1 * var(--space-2));
+}
+
+// What "@" offers, above or under the field (yonaFloating)
+.suggestions {
+  display: grid;
+  min-width: 18rem;
+  max-width: min(28rem, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+  list-style: none;
+}
+
+.suggestions--enter {
+  animation: suggestions-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes suggestions-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.suggestion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+
+  svg {
+    color: var(--color-text-muted);
+  }
+
+  &.is-active {
+    background-color: var(--color-surface);
+    color: var(--color-accent);
+
+    svg {
+      color: currentColor;
+    }
+  }
+}
+
+.suggestion__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion__kind {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

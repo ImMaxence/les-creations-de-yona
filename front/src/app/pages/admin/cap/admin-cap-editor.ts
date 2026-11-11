@@ -1,11 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { uploadImage } from '../../../core/api/generated/fn/admin-images/upload-image';
 import { createCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/create-cap-entry';
 import { deleteCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/delete-cap-entry';
+import { duplicateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/duplicate-cap-entry';
 import { getAdminCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/get-admin-cap-entry';
 import { updateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/update-cap-entry';
 import { getCapAiStatus } from '../../../core/api/generated/fn/admin-mon-cap-ai/get-cap-ai-status';
@@ -18,7 +20,7 @@ import { ImageUploads } from '../../../core/api/image-uploads';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
-import { parisDateTime } from '../../../shared/format/paris-time';
+import { fromParisInput, parisDateTime, toParisInput } from '../../../shared/format/paris-time';
 import { CAP_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
 import { CapArticleContent, CapArticleView } from '../../../shared/ui/cap-article/cap-article-view';
@@ -27,6 +29,10 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { Segmented } from '../../../shared/ui/segmented/segmented';
 import { IconName } from '../../../shared/ui/icon/icons';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
+import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { EditorBar } from '../editor-bar/editor-bar';
+import { PreviewFrame } from '../preview-frame/preview-frame';
+import { ArticleSearch, ChosenArticle } from './article-search';
 import { DraftKeeper, KeptDraft, readKeptDraft } from '../kept-draft';
 import { RecoveredDraft } from '../recovered-draft';
 import { UnsavedChanges } from '../recipe-editor/unsaved-changes.guard';
@@ -63,6 +69,9 @@ interface EditorBlock extends Omit<CapBlock, 'photos'> {
 
 type Markup = 'title' | 'bold' | 'list';
 
+/** "Recette" or "Article" in the tools of a text: what its link leads to. */
+type LinkKind = 'recipe' | 'article';
+
 const MAX_TEXT_LENGTH = 20000;
 
 /** Today in Paris, as the date field wants it. */
@@ -79,7 +88,24 @@ let nextKey = 1;
  */
 @Component({
   selector: 'yona-admin-cap-editor',
-  imports: [Button, CapAiDialog, CapArticleView, Dialog, Icon, ImageUpload, NgTemplateOutlet, RecipeSearch, RecoveredDraft, RouterLink, Segmented, Skeleton],
+  imports: [
+    ArticleSearch,
+    Button,
+    CapAiDialog,
+    CapArticleView,
+    Dialog,
+    EditorBar,
+    Icon,
+    ImageUpload,
+    NgTemplateOutlet,
+    PreviewFrame,
+    RecipeSearch,
+    RecoveredDraft,
+    RouterLink,
+    Segmented,
+    Select,
+    Skeleton,
+  ],
   templateUrl: './admin-cap-editor.html',
   styleUrl: './admin-cap-editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -112,8 +138,23 @@ export default class AdminCapEditor implements UnsavedChanges {
   protected readonly date = signal(today());
   protected readonly imageId = signal<string | null>(null);
   protected readonly style = signal<'CLASSIC' | 'NOTEBOOK'>('CLASSIC');
-  protected readonly published = signal(false);
+  /** A failed article is shown as a draft: saved, it is one again. */
+  protected readonly status = signal<'DRAFT' | 'PUBLISHED'>('DRAFT');
+  /** Drafts only: Paris time, as the datetime-local field shows it ("2026-10-31T10:00"); "" for none. */
+  protected readonly scheduledAt = signal('');
+  /** Its scheduled publication did not happen: when it was planned, and why. */
+  protected readonly failure = signal<{ at: string | null; reason: string } | null>(null);
   protected readonly featured = signal(false);
+  protected readonly statusOptions: SelectOption<'DRAFT' | 'PUBLISHED'>[] = [
+    { value: 'DRAFT', label: 'Brouillon (invisible sur le site)', badge: 'draft' },
+    { value: 'PUBLISHED', label: 'Publié', badge: 'published' },
+  ];
+  /** "samedi 31 octobre à 10:00", the time typed being valid. */
+  protected readonly scheduledLabel = computed(() => {
+    const at = this.status() === 'DRAFT' ? fromParisInput(this.scheduledAt()) : null;
+    return at ? parisDateTime(at) : null;
+  });
+  protected readonly duplicating = signal(false);
   protected readonly blocks = signal<EditorBlock[]>([]);
   protected readonly saving = signal(false);
   /** Share sent of each photo uploading, by slot ("main", "12", "12-3"). */
@@ -121,10 +162,11 @@ export default class AdminCapEditor implements UnsavedChanges {
   /** Where the "+" menu is open: the index the new block takes; null when closed. */
   protected readonly adding = signal<number | null>(null);
   protected readonly previewOpen = signal(false);
-  protected readonly previewDevice = signal<'desktop' | 'phone'>('desktop');
-  /** "Lien vers une recette": the text block it goes in, and where in its text. */
-  protected readonly linking = signal<{ key: number; start: number; end: number } | null>(null);
+  /** "Lien vers une recette" or "vers un article": the text block it goes in, and where in its text. */
+  protected readonly linking = signal<{ kind: LinkKind; key: number; start: number; end: number } | null>(null);
   protected readonly linkedRecipe = signal<ChosenRecipe | null>(null);
+  protected readonly linkedArticle = signal<ChosenArticle | null>(null);
+  protected readonly linkReady = computed(() => (this.linking()?.kind === 'article' ? !!this.linkedArticle() : !!this.linkedRecipe()));
   /** "Écrire avec l'IA": Gemini greyed out, with the reason, when it cannot work (no key, quota used…). */
   protected readonly aiStatus = resource({ loader: () => this.api.invoke(getCapAiStatus) });
   /** Opened at once when coming from "Écrire avec l'IA" of "Nouvel article". */
@@ -168,14 +210,18 @@ export default class AdminCapEditor implements UnsavedChanges {
   private readonly draftSnapshot = computed(() => JSON.stringify(this.draft()));
 
   constructor() {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (id) {
-      void this.load(id);
-    } else {
+    if (!Number(this.route.snapshot.paramMap.get('id'))) {
       this.blocks.set(templateOf(this.route.snapshot.queryParamMap.get('modele')).blocks().map(toEditor));
       this.saved.set(this.snapshot());
       this.offerKept();
     }
+    // Another article in the same page ("Dupliquer" opens the copy): it is loaded in place of this one
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const id = Number(params.get('id'));
+      if (id && id !== this.id()) {
+        void this.load(id);
+      }
+    });
     // Each change kept in this browser shortly after typing, until saved
     effect(() => {
       this.draftSnapshot();
@@ -188,6 +234,8 @@ export default class AdminCapEditor implements UnsavedChanges {
   }
 
   private async load(id: number): Promise<void> {
+    this.recovered.set(null);
+    this.aiWritten.set(false);
     this.loading.set(true);
     const loaded = await attempt(this.api.invoke(getAdminCapEntry, { id }));
     this.loading.set(false);
@@ -202,13 +250,19 @@ export default class AdminCapEditor implements UnsavedChanges {
   private fill(entry: AdminCapEntry): void {
     this.id.set(entry.id);
     this.savedSlug.set(entry.slug);
-    this.wasPublished.set(entry.published);
+    this.wasPublished.set(entry.status === 'PUBLISHED');
     this.title.set(entry.title);
     this.subtitle.set(entry.subtitle ?? '');
     this.date.set(entry.happenedOn);
     this.imageId.set(entry.imageId ?? null);
     this.style.set(entry.style);
-    this.published.set(entry.published);
+    this.status.set(entry.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT');
+    this.scheduledAt.set(entry.status === 'DRAFT' && entry.scheduledAt ? toParisInput(entry.scheduledAt) : '');
+    this.failure.set(
+      entry.status === 'FAILED'
+        ? { at: entry.scheduledAt ? parisDateTime(entry.scheduledAt) : null, reason: entry.publicationFailure ?? 'La publication programmée n’a pas eu lieu' }
+        : null,
+    );
     this.featured.set(entry.featured);
     this.blocks.set(entry.blocks.map(toEditor));
     this.basedOn.set(entry.updatedAt);
@@ -239,7 +293,8 @@ export default class AdminCapEditor implements UnsavedChanges {
     this.date.set(draft.date);
     this.imageId.set(draft.imageId);
     this.style.set(draft.style);
-    this.published.set(draft.published);
+    this.status.set(draft.published ? 'PUBLISHED' : 'DRAFT');
+    this.scheduledAt.set(draft.published ? '' : (draft.scheduledAt ?? ''));
     this.featured.set(draft.featured);
     this.blocks.set(draft.blocks.map(toEditor));
     this.recovered.set(null);
@@ -259,7 +314,8 @@ export default class AdminCapEditor implements UnsavedChanges {
       date: this.date(),
       imageId: this.imageId(),
       style: this.style(),
-      published: this.published(),
+      published: this.status() === 'PUBLISHED',
+      scheduledAt: this.scheduledAt(),
       featured: this.featured(),
       blocks: this.formBlocks(),
     };
@@ -411,25 +467,38 @@ export default class AdminCapEditor implements UnsavedChanges {
     });
   }
 
-  protected openRecipeLink(textarea: HTMLTextAreaElement, block: EditorBlock): void {
+  protected openLink(textarea: HTMLTextAreaElement, block: EditorBlock, kind: LinkKind): void {
     this.linkedRecipe.set(null);
-    this.linking.set({ key: block.key, start: textarea.selectionStart, end: textarea.selectionEnd });
+    this.linkedArticle.set(null);
+    this.linking.set({ kind, key: block.key, start: textarea.selectionStart, end: textarea.selectionEnd });
   }
 
-  /** "[Tarte au citron](/recettes/tartes/tarte-au-citron)": the words selected link to the recipe chosen. */
-  protected insertRecipeLink(): void {
+  /**
+   * "[Tarte au citron](/recettes/tartes/tarte-au-citron)", "[Mon examen blanc](/mon-cap/mon-examen-blanc)":
+   * the words selected link to the recipe or the article chosen; none selected, its title does.
+   */
+  protected insertLink(): void {
     const target = this.linking();
-    const recipe = this.linkedRecipe();
     const block = this.blocks().find((other) => other.key === target?.key);
-    if (!target || !recipe?.slug || !recipe.categorySlug || !block) {
+    if (!target || !block) {
+      return;
+    }
+    const recipe = this.linkedRecipe();
+    const article = this.linkedArticle();
+    const chosen =
+      target.kind === 'article'
+        ? article && { title: article.title, path: `${CAP_PATH}/${article.slug}` }
+        : recipe?.slug && recipe.categorySlug ? { title: recipe.title, path: `/recettes/${recipe.categorySlug}/${recipe.slug}` } : null;
+    if (!chosen) {
       return;
     }
     const text = block.text ?? '';
-    const words = text.slice(target.start, target.end).trim() || recipe.title;
-    const link = `[${words}](/recettes/${recipe.categorySlug}/${recipe.slug})`;
-    this.patch(block.key, { text: text.slice(0, target.start) + link + text.slice(target.end) });
-    if (!recipe.published) {
+    const words = text.slice(target.start, target.end).trim() || chosen.title;
+    this.patch(block.key, { text: `${text.slice(0, target.start)}[${words}](${chosen.path})${text.slice(target.end)}` });
+    if (target.kind === 'recipe' && recipe && !recipe.published) {
       this.toaster.info('Cette recette n’est pas encore publiée : le lien mènera à une page introuvable d’ici là');
+    } else if (target.kind === 'article' && article && !article.published) {
+      this.toaster.info('Cet article n’est pas encore publié : le lien mènera à une page introuvable d’ici là, et son adresse suit son titre jusqu’à sa publication');
     }
     this.linking.set(null);
   }
@@ -459,14 +528,19 @@ export default class AdminCapEditor implements UnsavedChanges {
 
   // Article
 
-  protected async save(): Promise<void> {
+  /** False when nothing was saved: a field missing, or the API refused. */
+  protected async save(publishing = false): Promise<boolean> {
     if (!this.title().trim() || !this.date()) {
       this.toaster.error('Donnez un titre et une date à cet article');
-      return;
+      return false;
     }
     if (this.blocks().some((block) => block.type === 'STEPS' && (block.photos ?? []).filter((photo) => photo.imageId).length === 1)) {
       this.toaster.error(`Un bloc « Étapes en photos » compte ${MIN_STEP_PHOTOS} photos au moins`);
-      return;
+      return false;
+    }
+    if (this.status() === 'DRAFT' && this.scheduledAt() && !fromParisInput(this.scheduledAt())) {
+      this.toaster.error('Indiquez le jour et l’heure de la publication programmée, ou retirez-la');
+      return false;
     }
     const body = this.form();
     const id = this.id();
@@ -475,17 +549,74 @@ export default class AdminCapEditor implements UnsavedChanges {
     const saved = await attempt(id ? this.api.invoke(updateCapEntry, { id, body }) : this.api.invoke(createCapEntry, { body }));
     this.saving.set(false);
     if (!saved.ok) {
-      return;
+      return false;
     }
     this.fill(saved.value);
     // A new article was kept as "nouveau": saved, it has its id
     this.keeper.forget(keptKey);
     this.recovered.set(null);
     this.aiWritten.set(false);
-    this.toaster.success(saved.value.published ? 'Article enregistré, en ligne' : 'Brouillon enregistré');
+    const scheduled = saved.value.status === 'DRAFT' && saved.value.scheduledAt;
+    this.toaster.success(
+      publishing
+        ? 'Article publié'
+        : saved.value.status === 'PUBLISHED'
+          ? 'Article enregistré, en ligne'
+          : scheduled
+            ? `Article programmé : ${parisDateTime(scheduled)}`
+            : 'Brouillon enregistré',
+    );
     void this.siteData.load();
     if (!id) {
       void this.router.navigate(['/admin/mon-cap', saved.value.id], { replaceUrl: true });
+    }
+    return true;
+  }
+
+  /** "Publier": on the site at once, its scheduled time dropped. */
+  protected async publish(): Promise<void> {
+    const confirmed = await this.confirm.ask({
+      title: 'Publier cet article ?',
+      message: 'Il sera visible sur le site, dans Mon CAP',
+      confirmLabel: 'Publier',
+    });
+    if (!confirmed) {
+      return;
+    }
+    const scheduledAt = this.scheduledAt();
+    this.status.set('PUBLISHED');
+    this.scheduledAt.set('');
+    if (!(await this.save(true))) {
+      this.status.set('DRAFT');
+      this.scheduledAt.set(scheduledAt);
+    }
+  }
+
+  /** A new draft with the same content as the version saved, opened in its place. */
+  protected async duplicateArticle(): Promise<void> {
+    const id = this.id();
+    if (!id) {
+      return;
+    }
+    if (
+      this.hasUnsavedChanges() &&
+      !(await this.confirm.ask({
+        title: 'Dupliquer la version enregistrée ?',
+        message: 'Les modifications pas encore enregistrées ne seront pas dans la copie',
+        confirmLabel: 'Dupliquer',
+      }))
+    ) {
+      return;
+    }
+    this.duplicating.set(true);
+    const copy = await attempt(this.api.invoke(duplicateCapEntry, { id }));
+    this.duplicating.set(false);
+    if (copy.ok) {
+      // Already asked: leaving does not ask again
+      this.saved.set(this.snapshot());
+      this.keeper.forget();
+      this.toaster.success(`Copie créée en brouillon : « ${copy.value.title} »`);
+      await this.router.navigate(['/admin/mon-cap', copy.value.id]);
     }
   }
 
@@ -516,7 +647,8 @@ export default class AdminCapEditor implements UnsavedChanges {
       imageId: this.imageId() ?? undefined,
       style: this.style(),
       blocks: this.formBlocks(),
-      published: this.published(),
+      status: this.status(),
+      scheduledAt: this.status() === 'DRAFT' ? (fromParisInput(this.scheduledAt()) ?? undefined) : undefined,
       featured: this.featured(),
     };
   }

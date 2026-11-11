@@ -3,13 +3,9 @@
   display: block;
 }
 
+// In the top layer (yonaFloating), placed under the field: no dialog nor accordion cuts it
 .list {
-  position: absolute;
-  top: calc(100% + var(--space-1));
-  left: 0;
-  z-index: 20;
   display: grid;
-  min-width: 100%;
   max-height: 18rem;
   margin: 0;
   padding: var(--space-1);

@@ -32,13 +32,16 @@ public final class CapResponses {
 	}
 
 	public record AdminCapEntrySummary(Long id, String title, @Nullable String subtitle, String slug, LocalDate happenedOn,
-			@Nullable UUID imageId, CapStyle style, int blockCount, boolean published, boolean featured, Instant updatedAt) {
+			@Nullable UUID imageId, CapStyle style, int blockCount, CapStatus status,
+			@Schema(description = "A draft: published by the site then (\"Programmé\"); a failed one: when it should have been") @Nullable Instant scheduledAt,
+			@Schema(description = "Why a failed article was not published") @Nullable String publicationFailure, boolean featured,
+			Instant updatedAt) {
 	}
 
 	/** In the editor: every block, half-filled ones too. */
 	public record AdminCapEntry(Long id, String title, @Nullable String subtitle, String slug, LocalDate happenedOn,
-			@Nullable UUID imageId, CapStyle style, List<CapBlock> blocks, boolean published, boolean featured,
-			Instant updatedAt) {
+			@Nullable UUID imageId, CapStyle style, List<CapBlock> blocks, CapStatus status, @Nullable Instant scheduledAt,
+			@Nullable String publicationFailure, boolean featured, Instant updatedAt) {
 	}
 
 	/**

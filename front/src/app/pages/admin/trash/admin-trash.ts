@@ -22,6 +22,8 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { Selection } from '../selection';
+import { AdminLive } from '../layout/admin-live';
+import { AdminWatch } from '../layout/admin-watch';
 
 type Kind = TrashedItem['kind'];
 type KindFilter = Kind | 'ALL';
@@ -68,6 +70,16 @@ export default class AdminTrash {
   /** Kept when the type shown changes: "Tout sélectionner" adds those shown. */
   protected readonly selection = new Selection<number>();
   protected readonly bulkBusy = signal(false);
+
+  constructor() {
+    const watch = inject(AdminWatch);
+    void watch.trashSeen();
+    // Another admin trashed, restored or erased something: the list follows, and stays seen
+    inject(AdminLive).on('TRASH', () => {
+      this.items.reload();
+      void watch.trashSeen();
+    });
+  }
 
   /** Only the kinds the trash holds, with their number. */
   protected readonly kindOptions = computed<SelectOption<KindFilter>[]>(() => {

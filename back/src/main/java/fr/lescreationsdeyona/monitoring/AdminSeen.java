@@ -18,7 +18,7 @@ public class AdminSeen {
 
 	/** The pages followed. */
 	public enum Topic {
-		HISTORY, CHANGELOG, LOGS
+		HISTORY, CHANGELOG, LOGS, TRASH, MESSAGES
 	}
 
 	/** When, and for the changelog which version. */

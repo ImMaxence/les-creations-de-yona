@@ -2,6 +2,38 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.8.0 - 2026-11-12
+
+Front et backend 2.8.0. Migration de la base : V25 et V26
+
+### Ajouté
+
+- **Messages** : une page pour s'écrire entre admins, tous dans le même groupe, avec « @ » pour citer une recette, un article, un menu, une catégorie, un ingrédient, un mot du glossaire, un produit ou une commande (un lien vers sa page) ; un badge des messages non lus, en temps réel ; gardés 90 jours
+- **Sauvegarde** : les messages entre admins y sont, et reviennent avec « Ajouter ce qui manque » comme avec « Tout remplacer »
+- **Back-office en temps réel** : les badges du menu changent aussitôt, sans changer de page, quand un autre admin, un visiteur ou le site agit ; Historique, Corbeille, Retours et Journaux se mettent à jour d'eux-mêmes quand ils sont ouverts
+- **Corbeille** : un badge compte ce que les autres admins y ont mis depuis votre dernière visite (comme Historique, vos propres actions ne comptent pas)
+- **Mon CAP** : des statuts en couleur comme pour les recettes (Brouillon, Programmé, Publié, Échec) et une publication programmée, faite par le site à l'heure dite ; une sauvegarde restaurée ne publie jamais un article par surprise (sans sa date, ou en échec si l'heure est passée)
+- **Mon CAP** : « Dupliquer » un article, depuis la liste ou l'éditeur (un brouillon « … (copie) » avec le même contenu et les mêmes photos)
+- **Mon CAP** : un lien vers un autre article dans le texte, avec le bouton « Article » à côté de « Recette »
+- **Aperçu d'une recette** : sur ordinateur ou dans un téléphone, comme pour les articles ; l'écran choisi est retenu pour le prochain aperçu
+
+### Modifié
+
+- **Éditeur de Mon CAP** : la même barre du bas que pour les recettes (Retour, Aperçu, Enregistrer le brouillon, Publier), sans l'ombre qui bavait ; le statut et la programmation rejoignent le haut de l'article
+- **Aperçus** : les boutons Ordinateur et Téléphone s'éloignent du haut de la fenêtre, en pilule qui glisse
+
+### Corrigé
+
+- **Listes déroulantes et suggestions** : elles passent au-dessus des fenêtres et des encarts au lieu d'être coupées (lien vers une recette, par exemple)
+- **Mon CAP** : les boutons de mise en forme (Intertitre, Gras, Liste, Recette) gardent leur taille à côté d'une photo
+- **Historique** : l'étiquette du type (« Recette ») ne colle plus au titre
+
+### Technique
+
+- **WebSocket** `/api/admin/live`, réservé aux admins et au site lui-même : il ne dit que le nom du badge qui a changé, chaque admin redemande ses propres nombres
+- **Composants partagés** : barre d'éditeur, cadre d'aperçu, statut de publication, recherche par titre, listes flottantes (`yonaFloating`), style des pilules (`styles/_segmented.scss`)
+- **Parcours e2e** : le back-office simulé répond aussi pour l'IA de Mon CAP, la Corbeille et le temps réel ; trois vérifications remises à jour (21 sections dans le menu depuis Journaux, voile de la page en cours du menu téléphone qui déborde exprès dans les marges depuis la 2.5.2)
+
 ## 2.7.4 - 2026-11-11
 
 Front et backend 2.7.4. Pas de migration de la base

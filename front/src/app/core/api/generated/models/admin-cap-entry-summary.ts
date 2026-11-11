@@ -7,8 +7,18 @@ export interface AdminCapEntrySummary {
   happenedOn: string;
   id: number;
   imageId?: string;
-  published: boolean;
+
+  /**
+   * Why a failed article was not published
+   */
+  publicationFailure?: string;
+
+  /**
+   * A draft: published by the site then ("Programmé"); a failed one: when it should have been
+   */
+  scheduledAt?: string;
   slug: string;
+  status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
   style: 'CLASSIC' | 'NOTEBOOK';
   subtitle?: string;
   title: string;

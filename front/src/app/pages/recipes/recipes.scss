@@ -110,24 +110,16 @@
   display: block;
 }
 
-// Tout, Sucré, Salé: one control, the choice filled in
+// Tout, Sucré, Salé: the pills of styles/_segmented.scss, as tall as the search field beside
 .segmented {
-  display: inline-flex;
+  flex-wrap: nowrap;
   gap: 0.25rem;
-  padding: 0.25rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-bg);
 }
 
 .segmented__option {
   min-height: 2.5rem;
   padding: 0 var(--space-4);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
-  font-weight: 600;
   color: var(--color-text-muted);
-  -webkit-tap-highlight-color: transparent;
   transition:
     background-color var(--duration-base) var(--ease-out),
     color var(--duration-base) var(--ease-out);
@@ -137,12 +129,7 @@
   }
 
   &[aria-pressed='true'] {
-    background-color: var(--color-accent);
     color: var(--color-on-accent);
-  }
-
-  &:focus-visible {
-    @include m.focus-ring;
   }
 }
 

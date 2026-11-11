@@ -62,9 +62,13 @@ export async function fakeAdmin(page, version = 'locale') {
   await page.route('**/api/admin/feedback/unread', (route) => route.fulfill({ json: { count: 0 } }));
   // De même pour les nouvelles commandes
   await page.route('**/api/admin/shop/orders/new-count', (route) => route.fulfill({ json: { count: 0 } }));
-  // Les badges Historique, Journaux et Nouveautés : rien de nouveau, version lue
+  // Les badges Historique, Corbeille, Journaux et Nouveautés : rien de nouveau, version lue
   const now = new Date().toISOString();
   await page.route('**/api/admin/history/unseen', (route) => route.fulfill({ json: { count: 0, since: now } }));
+  await page.route('**/api/admin/trash/unseen', (route) => route.fulfill({ json: { count: 0, since: now } }));
+  await page.route('**/api/admin/messages/unseen', (route) => route.fulfill({ json: { count: 0, since: now } }));
+  // Le temps réel (2.8) : une connexion ouverte dans le navigateur seulement, que le backend refuserait sans session
+  await page.routeWebSocket('**/api/admin/live', () => {});
   await page.route('**/api/admin/logs/summary', (route) =>
     route.fulfill({ json: { errorsLast24Hours: 0, warningsLast24Hours: 0, lines: 0, unseenErrors: 0, since: now } }),
   );
@@ -72,6 +76,10 @@ export async function fakeAdmin(page, version = 'locale') {
     route.request().method() === 'GET' ? route.fulfill({ json: { version } }) : route.fulfill({ status: 204 }),
   );
   await page.route('**/api/admin/claude', (route) => route.fulfill({ json: { available: true, model: 'claude-haiku-5-5' } }));
+  // L'IA des articles de Mon CAP, demandée par leur éditeur
+  await page.route('**/api/admin/cap-ai', (route) =>
+    route.request().method() === 'GET' ? route.fulfill({ json: { available: true } }) : route.fallback(),
+  );
 }
 
 /** La recette la plus utile au parcours : des ingrédients et une étape minutée, sinon la première. */

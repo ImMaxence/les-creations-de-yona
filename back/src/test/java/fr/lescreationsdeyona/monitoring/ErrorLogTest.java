@@ -5,11 +5,13 @@ import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 class ErrorLogTest {
 
-	private final ErrorLog errorLog = new ErrorLog(mock(JdbcClient.class), mock(AdminSeen.class));
+	private final ErrorLog errorLog = new ErrorLog(mock(JdbcClient.class), mock(AdminSeen.class),
+			mock(ApplicationEventPublisher.class));
 
 	@AfterEach
 	void detach() {

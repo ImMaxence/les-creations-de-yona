@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
+import { duplicateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/duplicate-cap-entry';
 import { listAdminCapEntries } from '../../../core/api/generated/fn/admin-mon-cap/list-admin-cap-entries';
+import { AdminCapEntrySummary } from '../../../core/api/generated/models/admin-cap-entry-summary';
+import { Toaster } from '../../../core/notifications/toaster';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { CAP_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
@@ -10,11 +14,12 @@ import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { BLOCK_TYPES, CAP_TEMPLATES, CapTemplate } from './cap-templates';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { PublicationStatusBadge } from '../publication-status/publication-status';
 
 /** "Mon CAP": the articles, the latest first; "Nouvel article" starts from a model. */
 @Component({
   selector: 'yona-admin-cap',
-  imports: [Button, CoverImage, Dialog, Icon, ParisDatePipe, RouterLink, Skeleton],
+  imports: [Button, CoverImage, Dialog, Icon, ParisDatePipe, PublicationStatusBadge, RouterLink, Skeleton],
   template: `
     <section class="admin-section" aria-labelledby="cap-title">
       <div class="admin-section__head">
@@ -37,23 +42,22 @@ import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
                   <span class="admin-row__meta">
                     {{ entry.happenedOn | parisDate }} · {{ entry.blockCount }} bloc{{ entry.blockCount > 1 ? 's' : '' }} ·
                     {{ entry.style === 'NOTEBOOK' ? 'Carnet' : 'Classique' }}
-                    @if (entry.published) {
-                      <span class="badge badge--published">Publié</span>
-                    } @else {
-                      <span class="badge badge--draft">Brouillon</span>
-                    }
+                    <yona-publication-status [status]="entry.status" [scheduledAt]="entry.scheduledAt" [failure]="entry.publicationFailure" />
                     @if (entry.featured) {
                       <span class="badge badge--featured">Coup de cœur</span>
                     }
                   </span>
                 </a>
                 <div class="admin-row__actions">
-                  @if (entry.published) {
-                    <a class="icon-button" target="_blank" [routerLink]="[capPath, entry.slug]" [attr.aria-label]="'Voir ' + entry.title + ' sur le site'">
+                  @if (entry.status === 'PUBLISHED') {
+                    <a class="icon-button" target="_blank" [routerLink]="[capPath, entry.slug]" [attr.aria-label]="'Voir ' + entry.title + ' sur le site'" data-tooltip="Voir sur le site">
                       <svg yonaIcon="external-link" [size]="18"></svg>
                     </a>
                   }
-                  <a class="icon-button" [routerLink]="[entry.id]" [attr.aria-label]="'Modifier ' + entry.title"><svg yonaIcon="pencil" [size]="18"></svg></a>
+                  <button type="button" class="icon-button" [attr.aria-label]="'Dupliquer « ' + entry.title + ' »'" data-tooltip="Dupliquer" [disabled]="duplicating() === entry.id" (click)="duplicate(entry)">
+                    <svg yonaIcon="copy-plus" [size]="18"></svg>
+                  </button>
+                  <a class="icon-button" [routerLink]="[entry.id]" [attr.aria-label]="'Modifier ' + entry.title" data-tooltip="Modifier"><svg yonaIcon="pencil" [size]="18"></svg></a>
                 </div>
               </li>
             }
@@ -178,11 +182,14 @@ import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 export default class AdminCap {
   private readonly api = inject(Api);
   private readonly router = inject(Router);
+  private readonly toaster = inject(Toaster);
 
   protected readonly capPath = CAP_PATH;
   protected readonly templates = CAP_TEMPLATES;
   protected readonly entries = resource({ loader: () => this.api.invoke(listAdminCapEntries) });
   protected readonly choosing = signal(false);
+  /** The article being copied: its button waits. */
+  protected readonly duplicating = signal<number | null>(null);
 
   protected blockTypes(template: CapTemplate) {
     return template.blocks().map((block) => BLOCK_TYPES.find((type) => type.type === block.type)!);
@@ -191,6 +198,17 @@ export default class AdminCap {
   protected start(template: CapTemplate): void {
     this.choosing.set(false);
     void this.router.navigate(['/admin/mon-cap/nouveau'], { queryParams: { modele: template.id } });
+  }
+
+  /** A new draft with the same date, style, photos and blocks, opened in the editor. */
+  protected async duplicate(entry: AdminCapEntrySummary): Promise<void> {
+    this.duplicating.set(entry.id);
+    const copy = await attempt(this.api.invoke(duplicateCapEntry, { id: entry.id }));
+    this.duplicating.set(null);
+    if (copy.ok) {
+      this.toaster.success(`Copie créée en brouillon : « ${copy.value.title} »`);
+      await this.router.navigate(['/admin/mon-cap', copy.value.id]);
+    }
   }
 
   /** An empty article, the window of the AI open: it lays the blocks down itself. */

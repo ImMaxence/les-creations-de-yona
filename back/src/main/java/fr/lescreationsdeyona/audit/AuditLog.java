@@ -1,6 +1,8 @@
 package fr.lescreationsdeyona.audit;
 
 import fr.lescreationsdeyona.common.PageResponse;
+import fr.lescreationsdeyona.live.LiveChange;
+import fr.lescreationsdeyona.live.LiveTopic;
 import fr.lescreationsdeyona.monitoring.AdminSeen;
 import fr.lescreationsdeyona.monitoring.Unseen;
 import java.time.Duration;
@@ -10,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +49,8 @@ public class AuditLog {
 
 	private final AdminSeen adminSeen;
 
+	private final ApplicationEventPublisher events;
+
 	@Transactional
 	public void record(AuditAction action, AuditKind kind, String label, @Nullable Long targetId) {
 		save(action, kind, label, targetId, null);
@@ -60,6 +65,21 @@ public class AuditLog {
 	private void save(AuditAction action, AuditKind kind, String label, @Nullable Long targetId, @Nullable String changes) {
 		repository.save(new AuditEvent(Instant.now(), auditor.getCurrentAuditor().orElse(SITE), action, kind, label,
 				targetId, changes));
+		announce(action, kind);
+	}
+
+	/** The badges of the back-office menu, told once the change is committed: "Historique", and the one of its kind. */
+	private void announce(AuditAction action, AuditKind kind) {
+		events.publishEvent(new LiveChange(LiveTopic.HISTORY));
+		if (action == AuditAction.TRASHED || action == AuditAction.RESTORED || action == AuditAction.ERASED) {
+			events.publishEvent(new LiveChange(LiveTopic.TRASH));
+		}
+		if (kind == AuditKind.SHOP_ORDER) {
+			events.publishEvent(new LiveChange(LiveTopic.ORDERS));
+		}
+		else if (kind == AuditKind.FEEDBACK) {
+			events.publishEvent(new LiveChange(LiveTopic.FEEDBACK));
+		}
 	}
 
 	/** Always the latest first: a sort asked for is ignored. */

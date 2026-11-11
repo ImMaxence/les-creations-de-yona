@@ -9,6 +9,11 @@
         <svg yonaIcon="sparkles"></svg>Écrire avec l'IA
       </button>
       <button yonaButton variant="secondary" type="button" (click)="previewOpen.set(true)"><svg yonaIcon="eye"></svg>Aperçu</button>
+      @if (id()) {
+        <button yonaButton variant="ghost" type="button" title="Un brouillon avec le même contenu, titré « … (copie) »" [disabled]="duplicating()" (click)="duplicateArticle()">
+          <svg yonaIcon="copy-plus"></svg>Dupliquer
+        </button>
+      }
       @if (wasPublished() && savedSlug()) {
         <a yonaButton variant="ghost" target="_blank" [routerLink]="[capPath, savedSlug()]"><svg yonaIcon="external-link"></svg>Voir sur le site</a>
       }
@@ -46,6 +51,20 @@
         (discard)="discardKept()"
       />
     }
+    @if (failure(); as failed) {
+      <div class="admin-panel admin-failed" role="alert">
+        <svg yonaIcon="triangle-alert" [size]="22" [strokeWidth]="1.75"></svg>
+        <div>
+          <p class="admin-failed__title">
+            Publication en échec
+            @if (failed.at) {
+              (prévue le {{ failed.at }})
+            }
+          </p>
+          <p class="field__hint">{{ failed.reason }}. Programmez-le de nouveau ou publiez-le : il reste invisible sur le site d'ici là</p>
+        </div>
+      </div>
+    }
     <div class="admin-panel">
       <div class="top-fields">
         <div class="field">
@@ -75,6 +94,33 @@
           </div>
           <span class="field__hint">{{ style() === 'NOTEBOOK' ? 'Un look « cahier de cours », la date mise en avant' : 'Sobre, comme le reste du site' }}</span>
         </fieldset>
+      </div>
+      <div class="publication">
+        <div class="field">
+          <span class="field__label">Statut</span>
+          <yona-select label="Statut" [options]="statusOptions" [(value)]="status" />
+        </div>
+        @if (status() === 'DRAFT') {
+          <div class="field">
+            <label class="field__label" for="article-scheduled-at">Publication programmée (facultatif)</label>
+            <div class="admin-schedule">
+              <input id="article-scheduled-at" type="datetime-local" class="input" [value]="scheduledAt()" (input)="scheduledAt.set($any($event.target).value)" />
+              @if (scheduledAt()) {
+                <button type="button" class="icon-button" aria-label="Ne plus programmer" (click)="scheduledAt.set('')"><svg yonaIcon="x" [size]="18"></svg></button>
+              }
+            </div>
+            <span class="field__hint">
+              Heure de Paris : le brouillon est publié tout seul à ce moment-là, à la minute près
+              @if (scheduledLabel(); as label) {
+                · <strong>Programmé : {{ label }}</strong>
+              }
+            </span>
+          </div>
+        }
+        <label class="checkbox-field" title="Sinon, l'accueil montre le dernier article publié">
+          <input type="checkbox" [checked]="featured()" (change)="featured.set($any($event.target).checked)" />
+          Coup de cœur de l'accueil
+        </label>
       </div>
       <div class="field">
         <span class="field__label">Photo principale</span>
@@ -198,25 +244,21 @@
       <p class="admin-empty">Aucun bloc : « + » pour ajouter un texte, une photo, des étapes…</p>
     }
 
-    <div class="save-bar">
-      <label class="checkbox-field">
-        <input type="checkbox" [checked]="published()" (change)="published.set($any($event.target).checked)" />
-        Publié
-      </label>
-      <label class="checkbox-field" title="Sinon, l'accueil montre le dernier article publié">
-        <input type="checkbox" [checked]="featured()" (change)="featured.set($any($event.target).checked)" />
-        Coup de cœur de l'accueil
-      </label>
-      <div class="save-bar__actions">
-        @if (id()) {
-          <button type="button" class="icon-button icon-button--danger" aria-label="Mettre l'article à la corbeille" title="Mettre à la corbeille" (click)="trash()">
-            <svg yonaIcon="trash" [size]="18"></svg>
-          </button>
-        }
-        <button yonaButton variant="secondary" type="button" (click)="previewOpen.set(true)"><svg yonaIcon="eye"></svg>Aperçu</button>
-        <button yonaButton type="button" [disabled]="saving()" (click)="save()"><svg yonaIcon="save"></svg>{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
-      </div>
-    </div>
+    <yona-editor-bar
+      back="/admin/mon-cap"
+      [draft]="status() === 'DRAFT'"
+      [saving]="saving()"
+      [saveLabel]="id() ? 'Enregistrer' : 'Créer l’article'"
+      (preview)="previewOpen.set(true)"
+      (save)="save()"
+      (publish)="publish()"
+    >
+      @if (id()) {
+        <button type="button" class="icon-button icon-button--danger" aria-label="Mettre l'article à la corbeille" data-tooltip="Mettre à la corbeille" (click)="trash()">
+          <svg yonaIcon="trash" [size]="18"></svg>
+        </button>
+      }
+    </yona-editor-bar>
   }
 </section>
 
@@ -245,7 +287,8 @@
       <button type="button" class="text-tools__button" title="Intertitre" (click)="markup(textarea, block, 'title')">Intertitre</button>
       <button type="button" class="text-tools__button" title="Gras" (click)="markup(textarea, block, 'bold')"><strong>G</strong></button>
       <button type="button" class="text-tools__button" title="Liste" (click)="markup(textarea, block, 'list')"><svg yonaIcon="list" [size]="16"></svg>Liste</button>
-      <button type="button" class="text-tools__button" title="Lien vers une recette" (click)="openRecipeLink(textarea, block)"><svg yonaIcon="book-open" [size]="16"></svg>Recette</button>
+      <button type="button" class="text-tools__button" title="Lien vers une recette" (click)="openLink(textarea, block, 'recipe')"><svg yonaIcon="book-open" [size]="16"></svg>Recette</button>
+      <button type="button" class="text-tools__button" title="Lien vers un autre article de Mon CAP" (click)="openLink(textarea, block, 'article')"><svg yonaIcon="graduation-cap" [size]="16"></svg>Article</button>
     </div>
     <textarea
       #textarea
@@ -257,7 +300,7 @@
       [value]="block.text ?? ''"
       (input)="patch(block.key, { text: $any($event.target).value })"
     ></textarea>
-    <span class="field__hint">Une ligne vide sépare deux paragraphes. Sélectionnez des mots avant « Gras » ou « Recette »</span>
+    <span class="field__hint">Une ligne vide sépare deux paragraphes. Sélectionnez des mots avant « Gras », « Recette » ou « Article »</span>
   </div>
 </ng-template>
 
@@ -266,30 +309,33 @@
 </ng-template>
 
 <yona-dialog title="Aperçu" subtitle="L'article tel qu'il sera en ligne" size="full" [(open)]="previewOpen">
-  <div class="preview-tools" role="radiogroup" aria-label="Écran">
-    <button type="button" class="preview-tools__option" role="radio" [attr.aria-checked]="previewDevice() === 'desktop'" (click)="previewDevice.set('desktop')">
-      <svg yonaIcon="monitor" [size]="18"></svg>Ordinateur
-    </button>
-    <button type="button" class="preview-tools__option" role="radio" [attr.aria-checked]="previewDevice() === 'phone'" (click)="previewDevice.set('phone')">
-      <svg yonaIcon="smartphone" [size]="18"></svg>Téléphone
-    </button>
-  </div>
   @if (previewOpen()) {
-    <div class="preview" [class.is-phone]="previewDevice() === 'phone'">
-      <yona-cap-article-view [article]="previewArticle()" backLinks preview />
-    </div>
+    <yona-preview-frame>
+      <div class="preview">
+        <yona-cap-article-view [article]="previewArticle()" backLinks preview />
+      </div>
+    </yona-preview-frame>
   }
 </yona-dialog>
 
 <yona-cap-ai-dialog [(open)]="aiOpen" [initialForm]="aiForm" [geminiUnavailable]="geminiUnavailable()" (written)="writeWithAi($event)" (unavailable)="aiStatus.reload()" />
 
-<yona-dialog title="Lien vers une recette" size="md" [open]="linking() !== null" (closed)="linking.set(null)">
-  <div class="field">
-    <span class="field__label">Recette</span>
-    <yona-recipe-search hint="Les mots sélectionnés dans le texte mèneront à cette recette" [(chosen)]="linkedRecipe" />
-  </div>
+<yona-dialog [title]="linking()?.kind === 'article' ? 'Lien vers un article' : 'Lien vers une recette'" size="md" [open]="linking() !== null" (closed)="linking.set(null)">
+  @if (linking()?.kind === 'article') {
+    <div class="field">
+      <span class="field__label">Article</span>
+      <yona-article-search hint="Les mots sélectionnés dans le texte mèneront à cet article" [current]="id()" [(chosen)]="linkedArticle" />
+    </div>
+  } @else {
+    <div class="field">
+      <span class="field__label">Recette</span>
+      <yona-recipe-search hint="Les mots sélectionnés dans le texte mèneront à cette recette" [(chosen)]="linkedRecipe" />
+    </div>
+  }
   <ng-container dialogActions>
     <button yonaButton variant="ghost" type="button" (click)="linking.set(null)">Annuler</button>
-    <button yonaButton type="button" [disabled]="!linkedRecipe()" (click)="insertRecipeLink()"><svg yonaIcon="book-open"></svg>Ajouter le lien</button>
+    <button yonaButton type="button" [disabled]="!linkReady()" (click)="insertLink()">
+      <svg [yonaIcon]="linking()?.kind === 'article' ? 'graduation-cap' : 'book-open'"></svg>Ajouter le lien
+    </button>
   </ng-container>
 </yona-dialog>

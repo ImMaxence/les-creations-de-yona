@@ -13,6 +13,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { Floating } from '../floating/floating';
 import { Icon } from '../icon/icon';
 
 export interface SelectOption<T> {
@@ -37,7 +38,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'yona-select',
-  imports: [Icon],
+  imports: [Floating, Icon],
   templateUrl: './select.html',
   styleUrl: './select.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,8 +85,6 @@ export class Select<T> {
   );
   /** The option shown on the button, with its badge or its font; none for a list to pick from. */
   protected readonly selectedOption = computed(() => (this.pickOnly() ? undefined : this.options()[this.selectedIndex()]));
-  /** Too close to the right edge of the screen: the list opens towards the left. */
-  protected readonly alignEnd = signal(false);
 
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
@@ -160,19 +159,8 @@ export class Select<T> {
 
   private show(index: number): void {
     this.filter.set('');
-    this.alignEnd.set(false);
     this.open.set(true);
     this.activeIndex.set(Math.max(0, index));
-    // As wide as its longest option: it may go past the button, but never off the screen
-    afterNextRender(
-      () => {
-        const list = this.host.querySelector<HTMLElement>('.list');
-        if (list && list.getBoundingClientRect().right > document.documentElement.clientWidth - 8) {
-          this.alignEnd.set(true);
-        }
-      },
-      { injector: this.injector },
-    );
     if (this.searchable()) {
       afterNextRender(() => this.filterInput()?.nativeElement.focus(), { injector: this.injector });
     }

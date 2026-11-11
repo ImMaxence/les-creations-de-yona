@@ -15,6 +15,7 @@ export interface Missing {
   invoices: number;
   menuTitles: Array<string>;
   menus: number;
+  messages: number;
   recipeTitles: Array<string>;
   recipes: number;
   shopOrders: number;

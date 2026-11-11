@@ -13,6 +13,7 @@ import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.time.Duration;
 import java.time.Instant;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -23,7 +24,8 @@ class FeedbackServiceTest {
 
 	private final Recaptcha captcha = mock(Recaptcha.class);
 
-	private final FeedbackService service = new FeedbackService(repository, mock(AuditLog.class), captcha);
+	private final FeedbackService service = new FeedbackService(repository, mock(AuditLog.class), captcha,
+			mock(ApplicationEventPublisher.class));
 
 	@BeforeEach
 	void passTheCaptcha() {

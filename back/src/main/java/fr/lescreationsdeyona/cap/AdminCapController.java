@@ -51,6 +51,13 @@ class AdminCapController {
 		return capService.updateEntry(id, form);
 	}
 
+	@Operation(summary = "Duplicate an article of \"Mon CAP\": a draft titled \"… (copie)\", same date, style, photos and blocks")
+	@PostMapping("/entries/{id}/duplicate")
+	@ResponseStatus(HttpStatus.CREATED)
+	AdminCapEntry duplicateCapEntry(@PathVariable long id) {
+		return capService.duplicateEntry(id);
+	}
+
 	@Operation(summary = "Move an article of \"Mon CAP\" to the trash, kept 30 days")
 	@DeleteMapping("/entries/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)

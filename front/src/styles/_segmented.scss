@@ -1,5 +1,52 @@
+@use 'mixins' as m;
+
 // A row of choices in one pill: the background of the chosen one slides (shared/ui/segmented/segmented.ts).
 // Global: the thumb is added by the directive, outside the styles of the component that holds the row.
+
+// Its look, shared: <div class="segmented" yonaSegmented> holding .segmented__option, buttons
+// (aria-pressed, aria-checked) or labels around a radio (.is-chosen). A component adjusts it after.
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-self: start;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-bg);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+.segmented__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  input {
+    @include m.visually-hidden;
+  }
+
+  &:focus-visible,
+  &:has(input:focus-visible) {
+    @include m.focus-ring;
+  }
+
+  &:has(input:disabled) {
+    cursor: not-allowed;
+  }
+
+  &[aria-pressed='true'],
+  &[aria-checked='true'],
+  &.is-chosen {
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+}
 
 .segmented-slide {
   position: relative;

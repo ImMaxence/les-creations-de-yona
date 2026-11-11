@@ -177,10 +177,10 @@
       </div>
     </div>
     @if (recipe()?.status === 'FAILED') {
-      <div class="admin-panel failed" role="alert">
+      <div class="admin-panel admin-failed" role="alert">
         <svg yonaIcon="triangle-alert" [size]="22" [strokeWidth]="1.75"></svg>
         <div>
-          <p class="failed__title">
+          <p class="admin-failed__title">
             Publication en échec
             @if (failedAt(); as planned) {
               (prévue le {{ planned }})
@@ -198,7 +198,7 @@
     @if (draft().status === 'DRAFT') {
       <div class="field">
         <label class="field__label" for="scheduled-at">Publication programmée (facultatif)</label>
-        <div class="schedule">
+        <div class="admin-schedule">
           <input id="scheduled-at" type="datetime-local" class="input" [formField]="recipeForm.scheduledAt" [attr.aria-invalid]="isInvalid(recipeForm.scheduledAt)" />
           @if (draft().scheduledAt) {
             <button type="button" class="icon-button" aria-label="Ne plus programmer" (click)="clearSchedule()"><svg yonaIcon="x" [size]="18"></svg></button>
@@ -454,31 +454,16 @@
     <yona-field-error [field]="recipeForm.questions" />
   </section>
 
-  <div class="editor__bar">
-    <!-- Phones: "Retour" and the preview's icon, so that the three actions hold on one line -->
-    <a yonaButton variant="ghost" class="editor__back" routerLink="/admin/recettes">
-      <svg yonaIcon="arrow-left"></svg><span class="editor__narrow">Retour</span><span class="editor__wide">Retour à la liste</span>
-    </a>
-    <button yonaButton variant="secondary" type="button" class="editor__preview" aria-label="Aperçu" [disabled]="previewing()" (click)="openPreview()">
-      <svg yonaIcon="eye"></svg><span class="editor__wide">Aperçu</span>
-    </button>
-    @if (draft().status === 'DRAFT') {
-      <button yonaButton variant="secondary" type="submit" class="editor__save-draft" [disabled]="saving()">
-        @if (saving()) {
-          Enregistrement…
-        } @else {
-          <span class="editor__narrow">Enregistrer</span><span class="editor__wide">Enregistrer le brouillon</span>
-        }
-      </button>
-      <button yonaButton type="button" class="editor__publish" [disabled]="saving()" (click)="publish()">
-        <svg yonaIcon="send"></svg>Publier
-      </button>
-    } @else {
-      <button yonaButton type="submit" [disabled]="saving()">
-        {{ saving() ? 'Enregistrement…' : isNew() ? 'Créer la recette' : 'Enregistrer' }}
-      </button>
-    }
-  </div>
+  <yona-editor-bar
+    back="/admin/recettes"
+    submits
+    [draft]="draft().status === 'DRAFT'"
+    [saving]="saving()"
+    [previewing]="previewing()"
+    [saveLabel]="isNew() ? 'Créer la recette' : 'Enregistrer'"
+    (preview)="openPreview()"
+    (publish)="publish()"
+  />
 </form>
 
 <yona-recipe-ai-dialog [(open)]="aiOpen" [geminiUnavailable]="geminiUnavailable()" (filled)="fillWithAi($event)" (unavailable)="aiStatus.reload()" />
@@ -487,7 +472,9 @@
 
 <yona-dialog size="full" title="Aperçu" [subtitle]="previewStatus()" [(open)]="previewOpen">
   @if (preview(); as recipe) {
-    <yona-recipe-preview embedded [recipe]="recipe" />
+    <yona-preview-frame>
+      <yona-recipe-preview embedded [recipe]="recipe" />
+    </yona-preview-frame>
   }
 </yona-dialog>
 

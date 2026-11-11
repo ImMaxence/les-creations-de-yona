@@ -9,6 +9,8 @@ export interface ArticleDraft {
   imageId: string | null;
   style: 'CLASSIC' | 'NOTEBOOK';
   published: boolean;
+  /** A draft's time of publication, Paris time ("2026-10-31T10:00"); absent from those kept before 2.8. */
+  scheduledAt?: string;
   featured: boolean;
   blocks: CapBlock[];
 }
@@ -34,6 +36,7 @@ export function isArticleDraft(value: unknown): value is ArticleDraft {
     (draft.imageId === null || typeof draft.imageId === 'string') &&
     (draft.style === 'CLASSIC' || draft.style === 'NOTEBOOK') &&
     typeof draft.published === 'boolean' &&
+    (draft.scheduledAt === undefined || typeof draft.scheduledAt === 'string') &&
     typeof draft.featured === 'boolean' &&
     Array.isArray(draft.blocks) &&
     draft.blocks.every((block: unknown) => !!block && typeof block === 'object' && TYPES.has((block as CapBlock).type))

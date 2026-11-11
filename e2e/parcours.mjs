@@ -269,7 +269,8 @@ await part('Menu (téléphone)', async () => {
   check('Menu : la page en cours sur un voile, pas du blanc du champ de recherche', currentGround !== searchGround, `${currentGround} / ${searchGround}`);
   const currentBox = await current.boundingBox();
   const listBox = await menu.locator('nav ul').first().boundingBox();
-  check('Menu : la page en cours dans les marges du menu', currentBox.x >= listBox.x - 0.5 && currentBox.x + currentBox.width <= listBox.x + listBox.width + 0.5, `${Math.round(currentBox.x)} / ${Math.round(listBox.x)}`);
+  // Its veil spills into the margins of the menu by --current-bleed (8 px, 2.5.2), its label in line with the other rows: no further
+  check('Menu : la page en cours déborde à peine dans les marges du menu', currentBox.x >= listBox.x - 8.5 && currentBox.x + currentBox.width <= listBox.x + listBox.width + 8.5, `${Math.round(currentBox.x)} / ${Math.round(listBox.x)}`);
   // Once the rows have finished rising into place
   await menu.evaluate((dialog) => Promise.all(dialog.getAnimations({ subtree: true }).map((animation) => animation.finished)));
   const gap = await menu.evaluate((dialog) => dialog.querySelector('.menu__sections').getBoundingClientRect().top - [...dialog.querySelectorAll('nav > ul:first-child > li')].at(-1).getBoundingClientRect().bottom);
@@ -823,7 +824,7 @@ await part('Connexion et cadre du back-office', async () => {
   await side.waitFor();
   await answerCookies(desktop);
   check('Ordinateur : ni barre ni pied du site', (await desktop.locator('yona-header, yona-footer').count()) === 0);
-  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 20 && (await side.boundingBox()).x === 0);
+  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 22 && (await side.boundingBox()).x === 0);
   check('Ordinateur : section courante marquée', (await side.locator('a.link.is-active').innerText()).includes('Nouveautés'));
   await side.locator('.account__email').hover();
   await desktop.locator('.tooltip.is-open').waitFor();

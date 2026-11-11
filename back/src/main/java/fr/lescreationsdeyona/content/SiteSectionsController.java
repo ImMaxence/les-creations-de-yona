@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.content;
 
 import fr.lescreationsdeyona.cap.CapEntryRepository;
+import fr.lescreationsdeyona.cap.CapStatus;
 import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.shop.ShopMode;
 import fr.lescreationsdeyona.shop.ShopSettingsRepository;
@@ -42,7 +43,7 @@ class SiteSectionsController {
 
 		@Cacheable(PublicCache.SITE_SECTIONS)
 		public SiteSections read() {
-			return new SiteSections(entryRepository.existsByPublishedTrue(),
+			return new SiteSections(entryRepository.existsByStatus(CapStatus.PUBLISHED),
 					shopSettingsRepository.findAll().stream().anyMatch(settings -> settings.getMode() == ShopMode.OPEN));
 		}
 

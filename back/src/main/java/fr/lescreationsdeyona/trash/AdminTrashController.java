@@ -1,6 +1,8 @@
 package fr.lescreationsdeyona.trash;
 
 import fr.lescreationsdeyona.image.ImageStorage;
+import fr.lescreationsdeyona.monitoring.AdminSeen;
+import fr.lescreationsdeyona.monitoring.Unseen;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -36,10 +39,27 @@ class AdminTrashController {
 
 	private final TrashBatchService trashBatchService;
 
+	private final TrashBin trashBin;
+
+	private final AdminSeen adminSeen;
+
 	@Operation(summary = "Deleted recipes, categories, menus and photos, kept 30 days; the last deleted first")
 	@GetMapping
 	List<TrashedItem> listTrash() {
 		return trashService.list();
+	}
+
+	@Operation(summary = "What the others put in the trash since this admin last opened it: the badge of \"Corbeille\"")
+	@GetMapping("/unseen")
+	Unseen countUnseenTrash() {
+		return trashBin.unseen();
+	}
+
+	@Operation(summary = "The trash is seen now: its badge goes")
+	@PutMapping("/seen")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void markTrashSeen() {
+		adminSeen.mark(AdminSeen.Topic.TRASH, null);
 	}
 
 	@Operation(summary = "Restore something deleted",

@@ -13,7 +13,7 @@
 	<groupId>fr.lescreationsdeyona</groupId>
 	<artifactId>back</artifactId>
 	<!-- Semantic version, shown in the back-office: bump it with front/package.json at each release. -->
-	<version>2.7.4</version>
+	<version>2.8.0</version>
 	<name>back</name>
 	<description>API of the Les créations de Yona cooking blog</description>
 	<licenses>
@@ -51,6 +51,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
+		<!-- The back-office in real time: badges of the menu (AdminLive) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

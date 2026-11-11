@@ -22,7 +22,7 @@
 </button>
 
 @if (open()) {
-  <div class="list" [class.list--end]="alignEnd()" animate.enter="list--enter" animate.leave="list--leave">
+  <div class="list" [yonaFloating]="trigger" animate.enter="list--enter" animate.leave="list--leave">
     @if (searchable()) {
       <input
         #filterInput

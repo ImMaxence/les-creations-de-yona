@@ -79,6 +79,8 @@ export const ICONS = {
   'mail': [['rect',{width:'20',height:'16',x:'2',y:'4',rx:'2'}],['path',{d:'m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'}]],
   'menu': [['path',{d:'M4 5h16'}],['path',{d:'M4 12h16'}],['path',{d:'M4 19h16'}]],
   'message-square': [['path',{d:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'}]],
+  'messages-square': [['path',{d:'M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z'}],['path',{d:'M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1'}]],
+  'at-sign': [['circle',{cx:'12',cy:'12',r:'4'}],['path',{d:'M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8'}]],
   'mic': [['path',{d:'M12 19v3'}],['path',{d:'M19 10v2a7 7 0 0 1-14 0v-2'}],['rect',{x:'9',y:'2',width:'6',height:'13',rx:'3'}]],
   'minus': [['path',{d:'M5 12h14'}]],
   'monitor': [['rect',{width:'20',height:'14',x:'2',y:'3',rx:'2'}],['path',{d:'M8 21h8'}],['path',{d:'M12 17v4'}]],

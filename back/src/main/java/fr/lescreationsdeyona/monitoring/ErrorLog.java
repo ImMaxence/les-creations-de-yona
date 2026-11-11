@@ -2,6 +2,8 @@ package fr.lescreationsdeyona.monitoring;
 
 import ch.qos.logback.classic.LoggerContext;
 import fr.lescreationsdeyona.common.PageResponse;
+import fr.lescreationsdeyona.live.LiveChange;
+import fr.lescreationsdeyona.live.LiveTopic;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
@@ -21,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -64,6 +67,8 @@ public class ErrorLog {
 
 	private final AdminSeen adminSeen;
 
+	private final ApplicationEventPublisher events;
+
 	private final Queue<LoggedProblem> waiting = new ConcurrentLinkedQueue<>();
 
 	private final AtomicInteger waitingCount = new AtomicInteger();
@@ -74,9 +79,10 @@ public class ErrorLog {
 
 	private final @Nullable ProblemAppender appender;
 
-	ErrorLog(JdbcClient jdbc, AdminSeen adminSeen) {
+	ErrorLog(JdbcClient jdbc, AdminSeen adminSeen, ApplicationEventPublisher events) {
 		this.jdbc = jdbc;
 		this.adminSeen = adminSeen;
+		this.events = events;
 		this.appender = attach();
 	}
 
@@ -148,6 +154,10 @@ public class ErrorLog {
 		}
 		if (!groups.isEmpty()) {
 			write(groups.values());
+			// The badge counts errors only: a warning is news for nobody
+			if (groups.values().stream().anyMatch(group -> group.last != null && group.last.level() == LoggedProblem.Level.ERROR)) {
+				events.publishEvent(new LiveChange(LiveTopic.LOGS));
+			}
 		}
 	}
 
@@ -232,6 +242,7 @@ public class ErrorLog {
 		} else if (!ids.isEmpty()) {
 			jdbc.sql("delete from app_log where id in (:ids)").param("ids", ids).update();
 		}
+		events.publishEvent(new LiveChange(LiveTopic.LOGS));
 	}
 
 	/** Every night: older than 30 days, and beyond 2,000 lines the oldest. */
