@@ -2,6 +2,15 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.7.2 - 2026-11-11
+
+Front et backend 2.7.2. Pas de migration de la base
+
+### Ajouté
+
+- **Dicter** : un spectre audio en direct pendant l'enregistrement, qui bouge avec la voix, pour voir que le micro entend bien
+- **Dicter** : un message si le micro ne capte rien pendant 3 secondes (débranché, coupé ou mauvais micro choisi)
+
 ## 2.7.1 - 2026-11-11
 
 Front et backend 2.7.1. Pas de migration de la base

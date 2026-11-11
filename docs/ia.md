@@ -33,7 +33,7 @@ Troisième choix des deux fenêtres, avec son logo : **Claude Haiku 5.5** d'Anth
 
 ## Dictée (2.7)
 
-**« Dicter »** sous le champ de texte des deux fenêtres : le navigateur demande le micro, Whisper large-v3-turbo d'OpenAI (licence MIT, 570 Mo en `q4f16`) écrit ce qui a été dit, en français, dans un worker, sur l'ordinateur : rien n'est envoyé, l'enregistrement n'est pas gardé. Le texte s'ajoute au champ ; l'IA choisie le lit au clic sur le bouton principal. 5 minutes au plus par dictée. Sur téléphone, le bouton n'apparaît pas : le micro du clavier fait la même chose. Front : `core/local-ai/speech.worker.ts`, `transcribe-locally.ts` (enregistrement en 16 kHz mono), `shared/ui/dictation`.
+**« Dicter »** sous le champ de texte des deux fenêtres : le navigateur demande le micro, Whisper large-v3-turbo d'OpenAI (licence MIT, 570 Mo en `q4f16`) écrit ce qui a été dit, en français, dans un worker, sur l'ordinateur : rien n'est envoyé, l'enregistrement n'est pas gardé. Le texte s'ajoute au champ ; l'IA choisie le lit au clic sur le bouton principal. 5 minutes au plus par dictée. Pendant l'enregistrement, un spectre en direct montre ce que le micro entend (2.7.2) ; rien pendant 3 secondes, un message dit de vérifier le micro. Sur téléphone, le bouton n'apparaît pas : le micro du clavier fait la même chose. Front : `core/local-ai/speech.worker.ts`, `transcribe-locally.ts` (enregistrement en 16 kHz mono), `shared/ui/dictation`.
 
 ## Quand le bouton est grisé ou qu'une erreur s'affiche
 

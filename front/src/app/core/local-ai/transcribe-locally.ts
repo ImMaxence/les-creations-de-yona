@@ -27,9 +27,18 @@ export function transcribeLocally(audio: Float32Array, onProgress: (progress: Sp
   }).finally(() => worker.terminate());
 }
 
-/** The microphone, until stop() is called: the recording, as Whisper wants it. */
+/** Bands of the spectrum: 256 samples give 128, about 190 Hz each; the voice lives in the first ones. */
+const FFT_SIZE = 256;
+
+/**
+ * The microphone, until stop() is called: the recording, as Whisper wants it; and, meanwhile, what
+ * it hears, band by band, for the spectrum drawn under "Dicter".
+ */
 export class Recording {
   private readonly chunks: Blob[] = [];
+  /** Listens to the microphone alongside the recorder, plays nothing back. */
+  private readonly listening = new AudioContext();
+  private readonly analyser = this.listening.createAnalyser();
 
   private constructor(
     private readonly stream: MediaStream,
@@ -41,6 +50,20 @@ export class Recording {
       }
     };
     recorder.start();
+    this.analyser.fftSize = FFT_SIZE;
+    // Smoothed a little: the bars move with the voice without flickering
+    this.analyser.smoothingTimeConstant = 0.75;
+    this.listening.createMediaStreamSource(stream).connect(this.analyser);
+  }
+
+  /** How many bands frequencies() fills. */
+  get bands(): number {
+    return this.analyser.frequencyBinCount;
+  }
+
+  /** The loudness of each band now, from 0 to 255, the lowest first. */
+  frequencies(into: Uint8Array<ArrayBuffer>): void {
+    this.analyser.getByteFrequencyData(into);
   }
 
   /** Asks for the microphone; refused, the promise fails with the browser's NotAllowedError. */
@@ -70,5 +93,8 @@ export class Recording {
       this.recorder.stop();
     }
     this.stream.getTracks().forEach((track) => track.stop());
+    if (this.listening.state !== 'closed') {
+      void this.listening.close();
+    }
   }
 }
