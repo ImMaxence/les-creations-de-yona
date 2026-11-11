@@ -57,8 +57,9 @@ const STATIC_HEADERS: Record<string, string> = {
   // Legacy equivalent of frame-ancestors 'none'.
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  // Screen wake lock (recipe page) stays allowed, it is not listed here.
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  // Screen wake lock (recipe page) stays allowed, it is not listed here. The microphone, for the site
+  // itself only: "Dicter" in the windows of the AI (back-office); the browser still asks first.
+  'Permissions-Policy': 'camera=(), microphone=(self), geolocation=(), payment=(), usb=()',
   'Cross-Origin-Opener-Policy': 'same-origin',
 };
 

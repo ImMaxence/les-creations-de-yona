@@ -8,7 +8,8 @@ Front et backend 2.7.1. Pas de migration de la base
 
 ### Corrigé
 
-- **Fenêtres** : la page ne s'élargit plus puis ne se resserre plus à l'ouverture et à la fermeture d'une fenêtre (sur ordinateur Windows) : la place de la barre de défilement reste réservée
+- **Fenêtres** : la page ne s'élargit plus puis ne se resserre plus à l'ouverture et à la fermeture d'une fenêtre (sur ordinateur Windows) : la place de la barre de défilement reste réservée, assombrie comme la page tant que la fenêtre est ouverte
+- **Dicter** : le micro n'est plus refusé d'office ; le site avait interdit son usage à toutes les pages, il l'autorise maintenant pour lui-même (le navigateur demande toujours la permission)
 
 ## 2.7.0 - 2026-11-11
 

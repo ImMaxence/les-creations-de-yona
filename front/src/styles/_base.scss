@@ -12,13 +12,35 @@ html {
   // Linux; phones and macOS draw their scroll bar over the page, nothing changes there)
   scrollbar-gutter: stable;
 
-  // A fixed modal (mobile menu) must not let the page scroll behind it
+  // A fixed modal (mobile menu) must not let the page scroll behind it. The room of the scroll bar,
+  // which the dimmed backdrop does not cover, takes its shade (html paints it; the page has its own
+  // background, on body): no light strip beside the dimmed page
   &:has(dialog[open]) {
     overflow: hidden;
+    background-color: color-mix(in srgb, var(--color-shadow) 40%, var(--color-bg));
+  }
+
+  // The windows with a backdrop of their own (shared/ui/dialog has the one above)
+  &:has(dialog.viewer[open]) {
+    background-color: color-mix(in srgb, rgb(10 6 4) 92%, var(--color-bg));
+  }
+
+  &:has(dialog.panel[open]) {
+    background-color: color-mix(in srgb, rgb(20 12 8) 45%, var(--color-bg));
+  }
+
+  &:has(dialog.admin__drawer[open]) {
+    background-color: color-mix(in srgb, rgb(0 0 0) 45%, var(--color-bg));
+  }
+
+  // Its backdrop is transparent: the page stays as it is
+  &:has(dialog.menu[open]) {
+    background-color: var(--color-bg);
   }
 }
 
 body {
+  background-color: var(--color-bg);
   font-size: var(--text-base);
   line-height: 1.6;
 }
