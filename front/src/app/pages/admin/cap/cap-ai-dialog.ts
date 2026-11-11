@@ -15,6 +15,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Dictation } from '../../../shared/ui/dictation/dictation';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { Segmented } from '../../../shared/ui/segmented/segmented';
 import { PHOTO_ACCEPT, photoFileError } from '../../../shared/ui/image-upload/photo-file';
 import { LocalAiProgress } from '../../../shared/ui/local-ai-progress/local-ai-progress';
 import { LocalModelSetup } from '../../../shared/ui/local-model-setup/local-model-setup';
@@ -40,7 +41,7 @@ const LOCAL_WORK = {
  */
 @Component({
   selector: 'yona-cap-ai-dialog',
-  imports: [AiEngines, Button, Dialog, Dictation, Icon, LocalAiProgress, LocalModelSetup],
+  imports: [AiEngines, Button, Dialog, Dictation, Icon, LocalAiProgress, LocalModelSetup, Segmented],
   template: `
     <yona-dialog title="Écrire avec l'IA" [subtitle]="subtitle()" [closeOnBackdrop]="!writing()" [(open)]="open">
       <div class="ai">
@@ -79,7 +80,7 @@ const LOCAL_WORK = {
 
         <fieldset class="field forms">
           <legend class="field__label">Forme de l'article</legend>
-          <div class="segmented" role="radiogroup" aria-label="Forme de l'article">
+          <div class="segmented" yonaSegmented role="radiogroup" aria-label="Forme de l'article">
             @for (option of forms; track option.form) {
               <label class="segmented__option" [class.is-chosen]="form() === option.form">
                 <input type="radio" name="cap-ai-form" [value]="option.form" [checked]="form() === option.form" [disabled]="writing()" (change)="form.set(option.form)" />

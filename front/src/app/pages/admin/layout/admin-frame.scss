@@ -2,7 +2,8 @@
 
 // The frame: the side panel on computers; on phones and tablets a bar, the panel opening over the page
 :root:has(.admin) {
-  --admin-side: 18rem;
+  --admin-side-open: 18rem;
+  --admin-side: var(--admin-side-open);
   // What sat under the site's header now sits under the bar of the back-office
   --header-height: 3.5rem;
 
@@ -123,7 +124,9 @@
   outline: none;
 
   @include m.from(lg) {
-    max-width: calc(84rem + var(--admin-side));
+    // 102rem at most beside the open panel; folded, the page also takes the room the panel gives up
+    // (tied to the panel's width, the cap used to shrink as it folded, and the page with it)
+    max-width: calc(84rem + 2 * var(--admin-side-open) - var(--admin-side));
     margin-left: var(--admin-side);
     padding: var(--space-7) var(--space-7) var(--space-9);
     // Follows the side panel as it folds, at the same pace

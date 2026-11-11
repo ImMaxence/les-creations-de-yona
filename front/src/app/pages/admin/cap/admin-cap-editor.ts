@@ -24,6 +24,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { CapArticleContent, CapArticleView } from '../../../shared/ui/cap-article/cap-article-view';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { Segmented } from '../../../shared/ui/segmented/segmented';
 import { IconName } from '../../../shared/ui/icon/icons';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { DraftKeeper, KeptDraft, readKeptDraft } from '../kept-draft';
@@ -78,7 +79,7 @@ let nextKey = 1;
  */
 @Component({
   selector: 'yona-admin-cap-editor',
-  imports: [Button, CapAiDialog, CapArticleView, Dialog, Icon, ImageUpload, NgTemplateOutlet, RecipeSearch, RecoveredDraft, RouterLink, Skeleton],
+  imports: [Button, CapAiDialog, CapArticleView, Dialog, Icon, ImageUpload, NgTemplateOutlet, RecipeSearch, RecoveredDraft, RouterLink, Segmented, Skeleton],
   templateUrl: './admin-cap-editor.html',
   styleUrl: './admin-cap-editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

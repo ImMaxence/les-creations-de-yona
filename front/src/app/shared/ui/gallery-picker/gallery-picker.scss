@@ -1,6 +1,9 @@
 @use 'mixins' as m;
 
 .filter {
+  --segmented-thumb: var(--color-bg);
+  --segmented-thumb-shadow: var(--shadow-sm);
+
   display: inline-flex;
   gap: var(--space-1);
   margin-bottom: var(--space-4);

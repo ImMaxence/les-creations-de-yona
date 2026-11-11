@@ -63,7 +63,7 @@
         </div>
         <fieldset class="field style-choice">
           <legend class="field__label">Style</legend>
-          <div class="segmented" role="radiogroup" aria-label="Style">
+          <div class="segmented" yonaSegmented role="radiogroup" aria-label="Style">
             <label class="segmented__option" [class.is-chosen]="style() === 'CLASSIC'">
               <input type="radio" name="article-style" value="CLASSIC" [checked]="style() === 'CLASSIC'" (change)="style.set('CLASSIC')" />
               Classique

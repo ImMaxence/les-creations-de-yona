@@ -8,6 +8,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  max-width: 100%;
   min-height: 2.75rem;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
@@ -31,11 +32,17 @@
   transition: transform var(--duration-slow) var(--ease-out);
 }
 
+// Smaller where room is short (--brand-name-size, the back-office panel); cut with an ellipsis rather than overflow
 .brand__name {
+  min-width: 0;
+  overflow: hidden;
+  // The italic "de Yona" leans past its box: room for it inside the clip
+  padding-inline-end: 0.15em;
   font-family: var(--font-display);
-  font-size: var(--text-lg);
+  font-size: var(--brand-name-size, var(--text-lg));
   font-weight: 600;
   letter-spacing: -0.01em;
+  text-overflow: ellipsis;
   white-space: nowrap;
 
   em {

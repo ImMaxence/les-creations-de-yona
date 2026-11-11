@@ -16,6 +16,7 @@ import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { formatEuros } from '../../../shared/format/units';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { Segmented } from '../../../shared/ui/segmented/segmented';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { AccountEntryDialog } from './account-entry-dialog';
 import { CATEGORY_LABELS, MONTHS, MonthGroup, PRICE_UNITS, Period, change, filterEntries, groupByMonth, periodLabel, quarterLabel, share } from './accounting-format';
@@ -36,7 +37,7 @@ const SIGNED_PERCENT = new Intl.NumberFormat('fr-FR', { style: 'percent', maximu
  */
 @Component({
   selector: 'yona-admin-accounting',
-  imports: [AccountEntryDialog, AccountingChart, Button, Icon, InvoicesPanel, NgTemplateOutlet, ParisDatePipe, RouterLink, Select, Skeleton],
+  imports: [AccountEntryDialog, AccountingChart, Button, Icon, InvoicesPanel, NgTemplateOutlet, ParisDatePipe, RouterLink, Segmented, Select, Skeleton],
   templateUrl: './admin-accounting.html',
   styleUrl: './admin-accounting.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

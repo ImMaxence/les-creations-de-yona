@@ -6,6 +6,7 @@ import { Toaster } from '../../notifications/toaster';
 import { RouterLink } from '@angular/router';
 import { ACCESSIBILITY_PATH } from '../../../shared/routing/links';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { Segmented } from '../../../shared/ui/segmented/segmented';
 
 interface SchemeOption {
   readonly value: ColorSchemePreference;
@@ -24,7 +25,7 @@ const OPTIONS: SchemeOption[] = [
  */
 @Component({
   selector: 'yona-color-scheme-switch',
-  imports: [Icon, NgTemplateOutlet, RouterLink],
+  imports: [Icon, NgTemplateOutlet, RouterLink, Segmented],
   templateUrl: './color-scheme-switch.html',
   styleUrl: './color-scheme-switch.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -15,6 +15,7 @@ import { prefersReducedMotion } from '../../core/theme/display-preferences';
 import { Button } from '../../shared/ui/button/button';
 import { NotifyButton } from '../../shared/ui/notify-button/notify-button';
 import { Icon } from '../../shared/ui/icon/icon';
+import { Segmented } from '../../shared/ui/segmented/segmented';
 
 interface PlatformTab {
   id: DevicePlatform;
@@ -23,7 +24,7 @@ interface PlatformTab {
 
 @Component({
   selector: 'yona-install',
-  imports: [Icon, Button, NotifyButton],
+  imports: [Icon, Button, NotifyButton, Segmented],
   templateUrl: './install.html',
   styleUrl: './install.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, signal } from '@angular/core';
 import { MonthTotals } from '../../../core/api/generated/models/month-totals';
 import { formatEuros } from '../../../shared/format/units';
 import { barPath, roundScale } from './accounting-format';
@@ -6,19 +6,24 @@ import { barPath, roundScale } from './accounting-format';
 const MONTHS = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
 const FULL_MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
+/** Until the real width is measured. */
 const WIDTH = 720;
-const HEIGHT = 200;
+const HEIGHT = 220;
 const TOP = 12;
 const BOTTOM = 24;
-const LEFT = 48;
+const LEFT = 56;
+/** The widest a bar gets; narrower when the months are close (phones). */
 const BAR = 14;
+/** Under this room a month, its initial only: "J", "F"… */
+const SHORT_MONTH_STEP = 36;
 /** Between the two bars of a month: the surface shows through. */
 const GAP = 2;
 
 /**
  * Money in and out, month by month: two bars a month (blue in, orange out, validated for colour
  * blindness in light and dark), a legend, and the detail of a month on hover or focus. The same
- * figures are in the table under it.
+ * figures are in the table under it. Drawn at its true size, one unit a pixel: text and bars keep their
+ * size on every screen (stretched from 720 units, the text grew with the page).
  */
 @Component({
   selector: 'yona-accounting-chart',
@@ -28,15 +33,15 @@ const GAP = 2;
         <li><span class="legend__key legend__key--in"></span>Entrées</li>
         <li><span class="legend__key legend__key--out"></span>Dépenses</li>
       </ul>
-      <svg class="plot" [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img" aria-label="Entrées et dépenses par mois, détaillées dans le tableau ci-dessous">
+      <svg class="plot" [attr.viewBox]="'0 0 ' + width() + ' ' + height" role="img" aria-label="Entrées et dépenses par mois, détaillées dans le tableau ci-dessous">
         @for (tick of ticks(); track tick.value) {
-          <line class="grid" [attr.x1]="left" [attr.x2]="width" [attr.y1]="tick.y" [attr.y2]="tick.y" />
+          <line class="grid" [attr.x1]="left" [attr.x2]="width()" [attr.y1]="tick.y" [attr.y2]="tick.y" />
           <text class="axis" [attr.x]="left - 8" [attr.y]="tick.y + 4" text-anchor="end">{{ tick.label }}</text>
         }
         @for (column of columns(); track column.month; let i = $index) {
           <g class="column" [class.is-hovered]="hovered() === i">
             @if (column.incomeHeight > 0) {
-              <path class="bar bar--in" [attr.d]="bar(column.x - BAR - GAP / 2, column.incomeHeight)" />
+              <path class="bar bar--in" [attr.d]="bar(column.x - barWidth() - GAP / 2, column.incomeHeight)" />
             }
             @if (column.expenseHeight > 0) {
               <path class="bar bar--out" [attr.d]="bar(column.x + GAP / 2, column.expenseHeight)" />
@@ -58,10 +63,10 @@ const GAP = 2;
             />
           </g>
         }
-        <line class="baseline" [attr.x1]="left" [attr.x2]="width" [attr.y1]="top + plotHeight" [attr.y2]="top + plotHeight" />
+        <line class="baseline" [attr.x1]="left" [attr.x2]="width()" [attr.y1]="top + plotHeight" [attr.y2]="top + plotHeight" />
       </svg>
       @if (hoveredColumn(); as column) {
-        <div class="tooltip" [style.left.%]="(column.x / width) * 100" role="status">
+        <div class="tooltip" [style.left.%]="(column.x / width()) * 100" role="status">
           <p class="tooltip__title">{{ column.fullLabel }}</p>
           <p class="tooltip__row"><span class="tooltip__key tooltip__key--in"></span><strong>{{ euros(column.income) }}</strong> entrées</p>
           <p class="tooltip__row"><span class="tooltip__key tooltip__key--out"></span><strong>{{ euros(column.expense) }}</strong> dépenses</p>
@@ -133,7 +138,7 @@ const GAP = 2;
 
     .axis {
       fill: var(--color-text-muted);
-      font-size: 11px;
+      font-size: var(--text-xs);
       font-variant-numeric: tabular-nums;
     }
 
@@ -208,30 +213,33 @@ const GAP = 2;
 export class AccountingChart {
   readonly months = input.required<MonthTotals[]>();
 
-  protected readonly width = WIDTH;
+  /** Its width on screen, in pixels: the units of the drawing. */
+  protected readonly width = signal(WIDTH);
   protected readonly height = HEIGHT;
   protected readonly top = TOP;
   protected readonly left = LEFT;
   protected readonly plotHeight = HEIGHT - TOP - BOTTOM;
-  protected readonly BAR = BAR;
   protected readonly GAP = GAP;
   protected readonly hovered = signal<number | null>(null);
   protected readonly euros = formatEuros;
 
-  protected readonly step = computed(() => (WIDTH - LEFT) / Math.max(1, this.months().length));
+  protected readonly step = computed(() => (this.width() - LEFT) / Math.max(1, this.months().length));
+  /** Two bars and their gap within a month, with some air on each side. */
+  protected readonly barWidth = computed(() => Math.max(2, Math.min(BAR, (this.step() * 0.7 - GAP) / 2)));
   /** A round top for the scale: 100, 200, 500, 1 000… */
   private readonly max = computed(() => roundScale(Math.max(0, ...this.months().flatMap((month) => [month.totals.income, month.totals.expense]))));
   protected readonly ticks = computed(() =>
     [0, 0.5, 1].map((share) => ({
       value: share,
       y: TOP + this.plotHeight * (1 - share),
-      label: `${Math.round(this.max() * share).toLocaleString('fr-FR')} €`,
+      // 0,5 € on a scale of 1 € (nothing recorded yet), not "1 €" twice
+      label: `${(Math.round(this.max() * share * 100) / 100).toLocaleString('fr-FR')} €`,
     })),
   );
   protected readonly columns = computed(() =>
     this.months().map((month, index) => ({
       month: month.month,
-      label: MONTHS[month.month - 1] ?? String(month.month),
+      label: this.step() < SHORT_MONTH_STEP ? (FULL_MONTHS[month.month - 1]?.[0] ?? String(month.month)) : (MONTHS[month.month - 1] ?? String(month.month)),
       fullLabel: FULL_MONTHS[month.month - 1] ?? String(month.month),
       x: LEFT + this.step() * (index + 0.5),
       income: month.totals.income,
@@ -246,8 +254,26 @@ export class AccountingChart {
     return index === null ? null : (this.columns()[index] ?? null);
   });
 
+  constructor() {
+    const host: HTMLElement = inject(ElementRef).nativeElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      const observer = new ResizeObserver(([entry]) => {
+        const width = Math.round(entry?.contentRect.width ?? 0);
+        if (width > 0) {
+          this.width.set(width);
+        }
+      });
+      observer.observe(host);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
+
   /** A bar standing on the baseline, its top corners rounded (4 px). */
   protected bar(x: number, height: number): string {
-    return barPath(x, height, BAR, TOP + this.plotHeight);
+    return barPath(x, height, this.barWidth(), TOP + this.plotHeight);
   }
 }

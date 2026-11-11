@@ -2,7 +2,7 @@
   <div class="admin-section__head">
     <h2 id="accounting-title">Comptabilité</h2>
     <div class="admin-section__actions period">
-      <div class="segmented" role="radiogroup" aria-label="Période">
+      <div class="segmented" yonaSegmented role="radiogroup" aria-label="Période">
         @for (option of periods; track option.value) {
           <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="period() === option.value" (click)="choosePeriod(option.value)">
             {{ option.label }}
@@ -188,7 +188,7 @@
     <div class="admin-panel">
       <div class="lines-toolbar">
         <h3>Lignes</h3>
-        <div class="segmented" role="radiogroup" aria-label="Type">
+        <div class="segmented" yonaSegmented role="radiogroup" aria-label="Type">
           <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="kindFilter() === 'ALL'" (click)="kindFilter.set('ALL')">Tout</button>
           <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="kindFilter() === 'INCOME'" (click)="kindFilter.set('INCOME')">Entrées</button>
           <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="kindFilter() === 'EXPENSE'" (click)="kindFilter.set('EXPENSE')">Dépenses</button>

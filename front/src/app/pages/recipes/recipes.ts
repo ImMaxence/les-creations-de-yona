@@ -25,6 +25,7 @@ import {
   sameName,
 } from './recipes.resolver';
 import { Icon } from '../../shared/ui/icon/icon';
+import { Segmented } from '../../shared/ui/segmented/segmented';
 import { Skeleton } from '../../shared/ui/skeleton/skeleton';
 import { SlowNavigation, pathOf } from '../../core/layout/page-skeleton/slow-navigation';
 
@@ -44,6 +45,7 @@ const SERVINGS_DELAY_MS = 500;
     RecipeCard,
     Reveal,
     SearchBox,
+    Segmented,
     Select,
     Skeleton,
     VirtualItem,

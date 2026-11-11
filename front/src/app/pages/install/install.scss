@@ -182,6 +182,9 @@
 }
 
 .tabs {
+  --segmented-thumb: var(--color-bg);
+  --segmented-thumb-shadow: var(--shadow-sm);
+
   display: flex;
   gap: var(--space-1);
   padding: var(--space-1);

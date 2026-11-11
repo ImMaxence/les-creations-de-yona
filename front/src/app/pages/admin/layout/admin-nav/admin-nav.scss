@@ -26,6 +26,16 @@
   justify-content: space-between;
   gap: var(--space-2);
   min-height: 2.75rem;
+
+  yona-brand-logo {
+    min-width: 0;
+  }
+}
+
+// Side panel: the name a little smaller and the button in the margin, for its hover circle to stay whole inside the panel
+:host(:not(.is-drawer)) .top:has(yona-brand-logo) {
+  --brand-name-size: var(--text-base);
+  margin-right: calc(-1 * var(--space-2));
 }
 
 .round {

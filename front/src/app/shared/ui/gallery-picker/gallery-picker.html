@@ -5,7 +5,7 @@
   [subtitle]="images.totalElements() ? images.totalElements() + ' photo' + (images.totalElements() > 1 ? 's' : '') + ', les plus récentes en premier' : undefined"
   [(open)]="isOpen"
 >
-  <div class="filter" role="group" aria-label="Images affichées">
+  <div class="filter" yonaSegmented role="group" aria-label="Images affichées">
     <button type="button" class="filter__tab" [attr.aria-pressed]="onlyUnused()" (click)="onlyUnused.set(true)">Non utilisées</button>
     <button type="button" class="filter__tab" [attr.aria-pressed]="!onlyUnused()" (click)="onlyUnused.set(false)">Toutes</button>
   </div>

@@ -51,7 +51,7 @@
     <div id="recipe-filters" class="filters" [class.is-open]="filtersOpen()">
       <div class="filter">
         <span class="filter__label" id="theme-label">Type</span>
-        <div class="segmented" role="group" aria-labelledby="theme-label">
+        <div class="segmented" yonaSegmented role="group" aria-labelledby="theme-label">
           <button type="button" class="segmented__option" [attr.aria-pressed]="filters().theme === null" (click)="changeTheme(null)">
             Tout
           </button>

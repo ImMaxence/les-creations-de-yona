@@ -103,6 +103,9 @@
 // Full: three choices side by side ---------------------------------------------
 
 .segments {
+  --segmented-thumb: var(--color-bg);
+  --segmented-thumb-shadow: var(--shadow-sm);
+
   container-type: inline-size;
   display: flex;
   gap: var(--space-1);

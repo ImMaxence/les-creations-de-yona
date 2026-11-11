@@ -2,6 +2,21 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.7.4 - 2026-11-11
+
+Front et backend 2.7.4. Pas de migration de la base
+
+### Modifié
+
+- **Choix en pilule** : la pastille du choix glisse d'une option à l'autre (Tout, Sucré, Salé ; Clair, Auto, Sombre ; période et lignes de la comptabilité ; style et forme des articles de Mon CAP ; photos de la galerie ; appareil de la page d'installation)
+
+### Corrigé
+
+- **Menu du back-office replié** : la page prend la place libérée par le menu au lieu de rétrécir sur un grand écran
+- **Menu du back-office** : le survol du bouton pour le replier n'est plus coupé par le bord du menu
+- **Comptabilité** : le graphique garde des chiffres et des mois à leur taille sur un grand écran (ils grossissaient avec la page) ; les mois en initiales sur téléphone, les barres sans se chevaucher
+- **Comptabilité** : « 1 € » n'apparaît plus deux fois sur l'échelle d'une année encore vide (0 €, 0,5 €, 1 €)
+
 ## 2.7.3 - 2026-11-11
 
 Front et backend 2.7.3. Pas de migration de la base

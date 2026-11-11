@@ -1,0 +1,38 @@
+// A row of choices in one pill: the background of the chosen one slides (shared/ui/segmented/segmented.ts).
+// Global: the thumb is added by the directive, outside the styles of the component that holds the row.
+
+.segmented-slide {
+  position: relative;
+  isolation: isolate;
+
+  // Above the thumb, which comes first
+  > :not(.segmented-thumb) {
+    position: relative;
+  }
+}
+
+.segmented-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--radius-pill);
+  background-color: var(--segmented-thumb, var(--color-accent));
+  box-shadow: var(--segmented-thumb-shadow, none);
+  pointer-events: none;
+  transition:
+    transform var(--duration-slow) var(--ease-out),
+    width var(--duration-slow) var(--ease-out),
+    height var(--duration-slow) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+
+// The thumb in place, the chosen option leaves it its background; its text changes colour as the thumb arrives.
+// !important: each component styles its chosen option itself, after the global styles.
+.segmented-slide.is-sliding > :not(.segmented-thumb) {
+  transition: color var(--duration-slow) var(--ease-out);
+}
+
+.segmented-slide.is-sliding > :is([aria-pressed='true'], [aria-checked='true'], [aria-selected='true'], .is-chosen) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
