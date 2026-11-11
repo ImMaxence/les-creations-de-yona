@@ -11,8 +11,10 @@ import { isNewerThanFront } from '../version';
 const CHECK_INTERVAL_MS = 30_000;
 
 /**
- * New versions of the site. Pages open at once from the service worker's copy, even offline, so a
- * new version is downloaded in the background, then:
+ * New versions of the site. A browser tab has no service worker since 2.6 (ServiceWorkerGate): its
+ * pages come from the server, always the version online; only a tab left open during a deployment
+ * is told (backendVersion). Where there is one (installed app, notifications), pages open at once
+ * from the service worker's copy, even offline, so a new version is downloaded in the background, then:
  * - offered at once ("Mettre à jour" in a toast, which stays until used or closed);
  * - taken anyway at the next change of page: a full load instead of a navigation in the app.
  * The back-office is not served by the service worker (ngsw-config.json): always the version on
@@ -80,6 +82,10 @@ export class AppUpdates {
   }
 
   private check(): void {
+    // A browser tab has no service worker (ServiceWorkerGate): SwUpdate would wait for one forever
+    if (!this.document.defaultView?.navigator.serviceWorker?.controller) {
+      return;
+    }
     this.lastCheck = Date.now();
     this.swUpdate.checkForUpdate().catch(() => undefined);
   }

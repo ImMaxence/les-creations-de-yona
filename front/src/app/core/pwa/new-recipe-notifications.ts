@@ -9,6 +9,7 @@ import { subscribeToNotifications } from '../api/generated/fn/notifications/subs
 import { unsubscribeFromNotifications } from '../api/generated/fn/notifications/unsubscribe-from-notifications';
 import { PushSubscriptionForm } from '../api/generated/models/push-subscription-form';
 import { Toaster } from '../notifications/toaster';
+import { ServiceWorkerGate } from './service-worker-gate';
 
 /** Where the browser stands: decided after the first render, the server knowing nothing of it. */
 export type NotificationsState =
@@ -34,6 +35,7 @@ export class NewRecipeNotifications {
   private readonly swPush = inject(SwPush);
   private readonly api = inject(Api);
   private readonly toaster = inject(Toaster);
+  private readonly serviceWorker = inject(ServiceWorkerGate);
 
   readonly state = signal<NotificationsState>('unknown');
   readonly busy = signal(false);
@@ -47,22 +49,36 @@ export class NewRecipeNotifications {
         this.state.set(isAppleMobile() && !isStandalone() ? 'install-first' : 'unsupported');
         return;
       }
-      this.swPush.subscription.subscribe((subscription) => {
-        if (subscription) {
-          this.state.set('on');
-        } else {
-          this.state.set(Notification.permission === 'denied' ? 'blocked' : 'off');
-        }
-      });
+      void this.readState();
+    });
+  }
+
+  private async readState(): Promise<void> {
+    // A browser tab without the app nor notifications has no service worker (ServiceWorkerGate): nothing to read
+    if (!(await this.serviceWorker.kept())) {
+      this.state.set(Notification.permission === 'denied' ? 'blocked' : 'off');
+      return;
+    }
+    this.swPush.subscription.subscribe((subscription) => {
+      if (subscription) {
+        this.state.set('on');
+      } else {
+        this.state.set(Notification.permission === 'denied' ? 'blocked' : 'off');
+      }
     });
   }
 
   async subscribe(): Promise<void> {
     this.busy.set(true);
     try {
+      // Asked on the tap itself: installing the service worker can take a few seconds, and the
+      // browser only shows its question right after a tap
+      await askPermission();
+      await this.serviceWorker.register();
       const { publicKey } = await this.api.invoke(getPushPublicKey);
       const subscription = await this.swPush.requestSubscription({ serverPublicKey: publicKey });
       await this.api.invoke(subscribeToNotifications, { body: subscriptionForm(subscription) });
+      this.state.set('on');
       this.toaster.success("C'est noté : vous serez prévenu·e de chaque nouvelle recette");
     } catch (error) {
       if (Notification.permission === 'denied') {
@@ -73,7 +89,11 @@ export class NewRecipeNotifications {
         const detail = error instanceof HttpErrorResponse ? (error.error as { detail?: string } | null)?.detail : null;
         this.toaster.error(detail ?? "Impossible d'activer les notifications sur cet appareil pour le moment");
       }
-      await this.swPush.unsubscribe().catch(() => undefined);
+      // Without a worker serving the page (permission refused before it was registered), there is no
+      // subscription, and SwPush would wait for one forever
+      if (navigator.serviceWorker?.controller) {
+        await this.swPush.unsubscribe().catch(() => undefined);
+      }
     } finally {
       this.busy.set(false);
     }
@@ -88,6 +108,7 @@ export class NewRecipeNotifications {
         await this.api.invoke(unsubscribeFromNotifications, { endpoint: subscription.endpoint }).catch(() => undefined);
         await this.swPush.unsubscribe();
       }
+      this.state.set('off');
       this.toaster.success('Vous ne recevrez plus de notification');
     } catch {
       this.toaster.error('Impossible de désactiver les notifications pour le moment');
@@ -101,6 +122,15 @@ export class NewRecipeNotifications {
 export function subscriptionForm(subscription: PushSubscription): PushSubscriptionForm {
   const { endpoint, keys } = subscription.toJSON();
   return { endpoint: endpoint ?? subscription.endpoint, keys: { p256dh: keys?.['p256dh'] ?? '', auth: keys?.['auth'] ?? '' } };
+}
+
+/** The browser's question about notifications: refused or dismissed, nothing more is tried. */
+export async function askPermission(): Promise<void> {
+  // Old Safari answers through a callback only: the promise then gives nothing
+  const permission = (await Notification.requestPermission()) || Notification.permission;
+  if (permission !== 'granted') {
+    throw new Error(`Notifications: ${permission}`);
+  }
 }
 
 export function isAppleMobile(): boolean {

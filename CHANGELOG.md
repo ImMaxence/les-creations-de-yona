@@ -2,6 +2,26 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.6.0 - 2026-11-11
+
+Front et backend 2.6.0. Pas de migration de la base
+
+### Modifié
+
+- **Site dans le navigateur** : plus rien n'est gardé sur l'appareil, chaque page vient du serveur et est toujours à jour, sans « Une nouvelle version du site est prête » à chaque mise en ligne
+- **Hors connexion** : réservé à l'application installée (et aux appareils qui reçoivent les notifications) ; l'installation se propose toujours depuis le navigateur
+- **Notifications** : depuis le navigateur, la demande d'autorisation arrive dès l'appui sur « Me prévenir »
+- **Politique de confidentialité** : la copie des pages sur l'appareil concerne l'application installée et les notifications, plus le simple navigateur
+
+### Corrigé
+
+- **Menu téléphone** : la fermeture de Catégories est fluide, sans lignes coupées qui traînent ni saut du menu
+- **Installer l'application** : l'icône de « L'application est déjà installée » garde sa taille sur téléphone
+
+### Technique
+
+- **Service worker** : enregistré seulement pour l'application installée et les notifications ; celui déjà installé dans un onglet est retiré, avec ses copies
+
 ## 2.5.2 - 2026-11-11
 
 Front et backend 2.5.2. Pas de migration de la base

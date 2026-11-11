@@ -198,10 +198,12 @@
 
     <h2>Application installée</h2>
     <p>
-      Si vous <a [routerLink]="installPath">installez l'application</a>, votre appareil garde en mémoire
-      les pages et recettes déjà consultées, pour les afficher plus vite et hors connexion. Ces
-      fichiers restent sur votre appareil, ne contiennent aucune donnée personnelle et disparaissent
-      si vous désinstallez l'application ou videz les données du site. Si vous répondez « Plus tard » à
+      Si vous <a [routerLink]="installPath">installez l'application</a>, ou si vous activez les
+      notifications des nouvelles recettes (elles en ont besoin), votre appareil garde en mémoire les
+      pages et recettes déjà consultées, pour les afficher plus vite et hors connexion. Sinon, le site
+      consulté dans le navigateur n'en garde aucune copie. Ces fichiers restent sur votre appareil, ne
+      contiennent aucune donnée personnelle et disparaissent si vous désinstallez l'application,
+      désactivez les notifications ou videz les données du site. Si vous répondez « Plus tard » à
       la proposition d'installer l'application, la date de ce choix est gardée dans votre navigateur
       (stockage local, clé <strong>yona-install-banner-dismissed</strong>) pour ne pas la reproposer
       avant un mois. Une fois l'application installée ou ouverte sur votre appareil, le site le note

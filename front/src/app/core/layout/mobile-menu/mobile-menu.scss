@@ -231,17 +231,27 @@ yona-navigation-progress {
   scroll-margin-block: var(--space-4);
   interpolate-size: allow-keywords;
 
-  // Clipped in height only: the veil of the page shown spills sideways (see current)
+  // Clipped in height only: the veil of the page shown spills sideways (see current).
+  // Folding up: the rows fade out first, then the height goes evenly. With the ease-out of the
+  // unfolding, a long section (Catégories) lost most of its height at once, then dragged its last
+  // cut-off rows along for a while, and the menu, scrolled down, jumped back up with it.
   &::details-content {
     block-size: 0;
+    opacity: 0;
     overflow: visible clip;
     transition:
-      block-size var(--duration-slow) var(--ease-out),
-      content-visibility var(--duration-slow) allow-discrete;
+      block-size var(--duration-base) var(--ease-in-out),
+      opacity var(--duration-fast) var(--ease-out),
+      content-visibility var(--duration-base) allow-discrete;
   }
 
   &[open]::details-content {
     block-size: auto;
+    opacity: 1;
+    transition:
+      block-size var(--duration-slow) var(--ease-out),
+      opacity var(--duration-slow) var(--ease-out),
+      content-visibility var(--duration-slow) allow-discrete;
   }
 
   // The + turns into ×, at once and in place

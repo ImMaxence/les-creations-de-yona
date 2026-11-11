@@ -35,6 +35,7 @@ import { versionCheckInterceptor } from './core/pwa/version-check';
 import { InstallPrompt } from './core/pwa/install-prompt';
 import { offlineWarmupInterceptor } from './core/pwa/offline-warmup';
 import { serviceWorkerBypassInterceptor } from './core/pwa/service-worker-bypass';
+import { ServiceWorkerGate } from './core/pwa/service-worker-gate';
 import { SeoStrategy } from './core/seo/seo-strategy';
 import { SiteData } from './core/site/site-data';
 import { SiteTheme } from './core/theme/site-theme';
@@ -101,12 +102,13 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(AppUpdates).listen()),
     provideAppInitializer(() => inject(ConnectionStatus).listen()),
     provideAppInitializer(() => inject(AiVisits).count()),
-    // Offline reading and installation as an app (PWA). Off in development, where it would cache stale code.
+    // Offline reading of the installed app (PWA) and notifications. Off in development, where it would cache stale code.
     // "v": a browser reinstalls the worker only when its file or address changes, and an installed
     // worker keeps its Content-Security-Policy. To raise after a change of connect-src (security-headers.ts).
     provideServiceWorker('ngsw-worker.js?v=3', {
       enabled: !isDevMode(),
-      registrationStrategy: 'registerWhenStable:30000',
+      // Not in a browser tab (2.6): only for the installed app and the notifications (ServiceWorkerGate)
+      registrationStrategy: () => inject(ServiceWorkerGate).registrationStrategy(),
     }),
   ],
 };

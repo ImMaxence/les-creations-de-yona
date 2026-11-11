@@ -92,7 +92,9 @@
   background-color: color-mix(in srgb, var(--color-decor) 18%, transparent);
   font-weight: 600;
 
+  // Its full size even when the sentence runs over several lines on a phone
   svg {
+    flex: none;
     color: var(--color-decor);
   }
 }

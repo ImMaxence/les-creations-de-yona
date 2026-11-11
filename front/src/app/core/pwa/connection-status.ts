@@ -4,7 +4,8 @@ import { Toaster } from '../notifications/toaster';
 
 /**
  * Says when the connection is lost, and when it comes back. Lost: a toast that stays, the pages
- * already opened remaining readable; back: it goes, and a short "Connexion retrouvée" follows.
+ * already opened remaining readable in the installed app, the page shown in a browser tab; back: it
+ * goes, and a short "Connexion retrouvée" follows.
  * The browser only knows the device is off the network, not a Wi-Fi without Internet.
  */
 @Injectable({ providedIn: 'root' })
@@ -31,7 +32,10 @@ export class ConnectionStatus {
     if (this.offlineToast !== null) {
       return;
     }
-    this.offlineToast = this.toaster.info('Hors connexion : les recettes déjà ouvertes restent lisibles', {
+    // Kept offline only where a service worker serves the page (installed app: ServiceWorkerGate)
+    const offlineCopies = !!this.document.defaultView?.navigator.serviceWorker?.controller;
+    const message = offlineCopies ? 'Hors connexion : les recettes déjà ouvertes restent lisibles' : 'Hors connexion : la page affichée reste lisible';
+    this.offlineToast = this.toaster.info(message, {
       icon: 'wifi-off',
       persistent: true,
     });

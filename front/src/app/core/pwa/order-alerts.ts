@@ -9,7 +9,8 @@ import { enableOrderAlert } from '../api/generated/fn/admin-order-alerts/enable-
 import { getOrderAlert } from '../api/generated/fn/admin-order-alerts/get-order-alert';
 import { getPushPublicKey } from '../api/generated/fn/notifications/get-push-public-key';
 import { Toaster } from '../notifications/toaster';
-import { NotificationsState, isAppleMobile, isStandalone, subscriptionForm } from './new-recipe-notifications';
+import { NotificationsState, askPermission, isAppleMobile, isStandalone, subscriptionForm } from './new-recipe-notifications';
+import { ServiceWorkerGate } from './service-worker-gate';
 
 /**
  * "Alerte des nouvelles commandes" on this device of an admin. Same Web Push subscription as
@@ -21,6 +22,7 @@ export class OrderAlerts {
   private readonly swPush = inject(SwPush);
   private readonly api = inject(Api);
   private readonly toaster = inject(Toaster);
+  private readonly serviceWorker = inject(ServiceWorkerGate);
 
   readonly state = signal<NotificationsState>('unknown');
   readonly busy = signal(false);
@@ -39,6 +41,11 @@ export class OrderAlerts {
   }
 
   private async readState(): Promise<void> {
+    // A browser tab without the app nor notifications has no service worker (ServiceWorkerGate): nothing to read
+    if (!(await this.serviceWorker.kept())) {
+      this.state.set(Notification.permission === 'denied' ? 'blocked' : 'off');
+      return;
+    }
     const subscription = await firstValueFrom(this.swPush.subscription);
     if (!subscription) {
       this.state.set(Notification.permission === 'denied' ? 'blocked' : 'off');
@@ -51,6 +58,9 @@ export class OrderAlerts {
   async enable(): Promise<void> {
     this.busy.set(true);
     try {
+      // Asked on the tap itself, before the service worker that can take a few seconds (see NewRecipeNotifications)
+      await askPermission();
+      await this.serviceWorker.register();
       const { publicKey } = await this.api.invoke(getPushPublicKey);
       const subscription = await this.swPush.requestSubscription({ serverPublicKey: publicKey });
       await this.api.invoke(enableOrderAlert, { body: subscriptionForm(subscription) });

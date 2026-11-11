@@ -18,6 +18,8 @@ const PUBLIC_API =
  * installing a new version, it made each answer wait for seconds. The page asks the API directly,
  * as the back-office does; each answer is copied in the cache storage; when the network does not
  * answer within 3 seconds, fails, or a proxy refuses (403, 5xx), the copy is read instead.
+ * Only where a service worker serves the page (installed app, notifications: ServiceWorkerGate):
+ * a browser tab keeps nothing, and its copies are removed.
  */
 export const apiCacheInterceptor: HttpInterceptorFn = (request, next) => {
   const path = request.urlWithParams.replace(/^https?:\/\/[^/]+/, '');
@@ -25,7 +27,8 @@ export const apiCacheInterceptor: HttpInterceptorFn = (request, next) => {
     !isPlatformBrowser(inject(PLATFORM_ID)) ||
     request.method !== 'GET' ||
     !PUBLIC_API.test(path) ||
-    typeof caches === 'undefined'
+    typeof caches === 'undefined' ||
+    !navigator.serviceWorker?.controller
   ) {
     return next(request);
   }
