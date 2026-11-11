@@ -7,6 +7,10 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-padding-top: calc(var(--header-height) + var(--space-4));
+  // The room of the scroll bar kept even while a window is open (overflow hidden below): the page
+  // does not widen by its width, then narrow again, at each window opened and closed (Windows,
+  // Linux; phones and macOS draw their scroll bar over the page, nothing changes there)
+  scrollbar-gutter: stable;
 
   // A fixed modal (mobile menu) must not let the page scroll behind it
   &:has(dialog[open]) {
