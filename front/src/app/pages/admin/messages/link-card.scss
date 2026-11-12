@@ -11,15 +11,16 @@
   display: grid;
   width: 100%;
   overflow: hidden;
+  // A border, inside the card: a shadow around it would be cut at the edges of its message
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
   background-color: var(--color-bg);
-  box-shadow: 0 0 0 1px var(--color-line);
   color: var(--color-text);
   text-decoration: none;
-  transition: box-shadow var(--duration-fast) var(--ease-out);
+  transition: border-color var(--duration-fast) var(--ease-out);
 
   @include m.hover {
-    box-shadow: 0 0 0 1px var(--color-accent);
+    border-color: var(--color-accent);
   }
 
   &:focus-visible {

@@ -131,6 +131,8 @@ export type { LeaveMessageGroup$Params as LeaveMessageGroup$Params } from './fn/
 export { leaveMessageGroup as leaveMessageGroup } from './fn/admin-messages/leave-message-group';
 export type { CountUnseenMessages$Params as CountUnseenMessages$Params } from './fn/admin-messages/count-unseen-messages';
 export { countUnseenMessages as countUnseenMessages } from './fn/admin-messages/count-unseen-messages';
+export type { ListOnlineAdmins$Params as ListOnlineAdmins$Params } from './fn/admin-messages/list-online-admins';
+export { listOnlineAdmins as listOnlineAdmins } from './fn/admin-messages/list-online-admins';
 export type { SearchMentions$Params as SearchMentions$Params } from './fn/admin-messages/search-mentions';
 export { searchMentions as searchMentions } from './fn/admin-messages/search-mentions';
 export type { ListMessageMembers$Params as ListMessageMembers$Params } from './fn/admin-messages/list-message-members';

@@ -75,14 +75,17 @@ class AdminMessageController {
 
 	private final ImageService imageService;
 
+	private final AdminPresence presence;
+
 	AdminMessageController(AdminMessages messages, AdminGroups groups, Mentions mentions, LinkPreviews linkPreviews,
-			ImageProcessor imageProcessor, ImageService imageService) {
+			ImageProcessor imageProcessor, ImageService imageService, AdminPresence presence) {
 		this.messages = messages;
 		this.groups = groups;
 		this.mentions = mentions;
 		this.linkPreviews = linkPreviews;
 		this.imageProcessor = imageProcessor;
 		this.imageService = imageService;
+		this.presence = presence;
 	}
 
 	// Messages
@@ -177,7 +180,16 @@ class AdminMessageController {
 	@Operation(summary = "The messages of the others in the groups of this admin since they last read each: the badge of \"Messages\"")
 	@GetMapping("/unseen")
 	Unseen countUnseenMessages() {
+		// Asked by every page of the back-office, every few seconds when its WebSocket is cut: there, then
+		presence.seen(groups.me());
 		return groups.unseen();
+	}
+
+	@Operation(summary = "The admins in the back-office now: the green dot of \"Messages\"",
+			description = "A page of the back-office open (WebSocket), or one without WebSocket that asked for news in the last minute. Asked again on the topic PRESENCE.")
+	@GetMapping("/presence")
+	List<String> listOnlineAdmins() {
+		return presence.online();
 	}
 
 	@Operation(summary = "The messages of a group are read now: its badge goes")

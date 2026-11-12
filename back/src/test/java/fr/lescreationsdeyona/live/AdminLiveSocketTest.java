@@ -115,11 +115,14 @@ class AdminLiveSocketTest {
 
 		final BlockingQueue<String> told = new LinkedBlockingQueue<>();
 
+		/** Kept apart: an admin came or left (each page opened says so to the others). */
+		final BlockingQueue<String> presence = new LinkedBlockingQueue<>();
+
 		WebSocketSession session;
 
 		@Override
 		protected void handleTextMessage(WebSocketSession session, TextMessage message) {
-			told.add(message.getPayload());
+			(message.getPayload().contains("PRESENCE") ? presence : told).add(message.getPayload());
 		}
 
 	}
@@ -208,6 +211,25 @@ class AdminLiveSocketTest {
 
 		assertThat(lea.told.poll(2, TimeUnit.SECONDS)).isEqualTo("{\"topic\":\"TYPING\",\"group\":12,\"email\":\"yona@site.fr\",\"name\":\"yona\"}");
 		assertThat(yona.told.poll(300, TimeUnit.MILLISECONDS)).isNull();
+	}
+
+	@Test
+	void tellsTheOthersWhenAnAdminComesAndGoes() throws Exception {
+		Page yona = open("yona@site.fr");
+		awaitConnections(1);
+		yona.presence.poll(2, TimeUnit.SECONDS);
+
+		Page lea = open("lea@site.fr");
+		awaitConnections(2);
+		assertThat(yona.presence.poll(2, TimeUnit.SECONDS)).isEqualTo("{\"topic\":\"PRESENCE\"}");
+		assertThat(live.online()).containsExactlyInAnyOrder("yona@site.fr", "lea@site.fr");
+
+		lea.session.close();
+		for (int i = 0; i < 50 && live.connections() > 1; i++) {
+			Thread.sleep(20);
+		}
+		assertThat(yona.presence.poll(2, TimeUnit.SECONDS)).isEqualTo("{\"topic\":\"PRESENCE\"}");
+		assertThat(live.online()).containsExactly("yona@site.fr");
 	}
 
 }

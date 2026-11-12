@@ -2,9 +2,11 @@ package fr.lescreationsdeyona.live;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +30,13 @@ class AdminLiveTest {
 			: Set.of();
 
 	private final AdminLive live = new AdminLive(provider(GROUPS));
+
+	/** Every page is told when an admin comes or leaves: left aside where it is not what is checked. */
+	private static final TextMessage PRESENCE = new TextMessage("{\"topic\":\"PRESENCE\"}");
+
+	private static TextMessage notPresence() {
+		return argThat(message -> !PRESENCE.equals(message));
+	}
 
 	@SuppressWarnings("unchecked")
 	private static ObjectProvider<TypingRelay> provider(TypingRelay relay) {
@@ -65,7 +74,7 @@ class AdminLiveTest {
 		live.onChange(new LiveChange(LiveTopic.MESSAGES, Set.of("yona@site.fr", "maxence@site.fr")));
 
 		verify(yona).sendMessage(new TextMessage("{\"topic\":\"MESSAGES\"}"));
-		verify(lea, never()).sendMessage(any());
+		verify(lea, never()).sendMessage(notPresence());
 	}
 
 	@Test
@@ -81,8 +90,8 @@ class AdminLiveTest {
 
 		verify(maxence).sendMessage(
 				new TextMessage("{\"topic\":\"TYPING\",\"group\":12,\"email\":\"yona@site.fr\",\"name\":\"Yona \\\"la cheffe\\\"\"}"));
-		verify(yona, never()).sendMessage(any());
-		verify(lea, never()).sendMessage(any());
+		verify(yona, never()).sendMessage(notPresence());
+		verify(lea, never()).sendMessage(notPresence());
 	}
 
 	@Test
@@ -100,8 +109,8 @@ class AdminLiveTest {
 		live.handleTextMessage(maxence, new TextMessage("{\"typing\":99}"));
 		live.handleTextMessage(maxence, new TextMessage("n'importe quoi"));
 
-		verify(maxence).sendMessage(any());
-		verify(yona, never()).sendMessage(any());
+		verify(maxence).sendMessage(notPresence());
+		verify(yona, never()).sendMessage(notPresence());
 	}
 
 	@Test
@@ -114,7 +123,7 @@ class AdminLiveTest {
 		live.handleTextMessage(anonymous, new TextMessage("{\"typing\":12}"));
 		live.onChange(new LiveChange(LiveTopic.MESSAGES, Set.of("maxence@site.fr")));
 
-		verify(anonymous, never()).sendMessage(any());
+		verify(anonymous, never()).sendMessage(notPresence());
 		verify(maxence).sendMessage(new TextMessage("{\"topic\":\"MESSAGES\"}"));
 	}
 
@@ -170,6 +179,39 @@ class AdminLiveTest {
 
 		assertThat(live.connections()).isEqualTo(1);
 		verify(awake).sendMessage(new TextMessage("{\"topic\":\"LOGS\"}"));
+	}
+
+	@Test
+	void tellsEveryoneWhenAnAdminComesOrLeavesNotEachOfTheirPages() throws IOException {
+		WebSocketSession yona = openFor("1", "yona@site.fr", "Yona");
+		WebSocketSession lea = openFor("2", "Lea@site.fr", "Léa");
+		WebSocketSession leaAgain = openFor("3", "lea@site.fr", "Léa");
+		live.afterConnectionEstablished(yona);
+		live.afterConnectionEstablished(lea);
+		live.afterConnectionEstablished(leaAgain);
+		assertThat(live.online()).containsExactlyInAnyOrder("yona@site.fr", "lea@site.fr");
+
+		live.afterConnectionClosed(lea, CloseStatus.NORMAL);
+		assertThat(live.online()).containsExactlyInAnyOrder("yona@site.fr", "lea@site.fr");
+		live.afterConnectionClosed(leaAgain, CloseStatus.NORMAL);
+		assertThat(live.online()).containsExactly("yona@site.fr");
+
+		// Yona's own coming, Léa's (her second page says nothing), then her going with her last page
+		verify(yona, times(3)).sendMessage(PRESENCE);
+	}
+
+	@Test
+	void anAdminWhosePageWentSilentlyHasLeft() throws IOException {
+		WebSocketSession yona = openFor("1", "yona@site.fr", "Yona");
+		WebSocketSession asleep = openFor("2", "lea@site.fr", "Léa");
+		live.afterConnectionEstablished(yona);
+		live.afterConnectionEstablished(asleep);
+		doThrow(new IOException("Broken pipe")).when(asleep).sendMessage(any());
+
+		live.onChange(new LiveChange(LiveTopic.LOGS));
+
+		assertThat(live.online()).containsExactly("yona@site.fr");
+		verify(yona, times(3)).sendMessage(PRESENCE);
 	}
 
 	@Test

@@ -24,6 +24,7 @@ import { listAdminMessages } from '../../../core/api/generated/fn/admin-messages
 import { listMessageGroups } from '../../../core/api/generated/fn/admin-messages/list-message-groups';
 import { listMessageMembers } from '../../../core/api/generated/fn/admin-messages/list-message-members';
 import { listMessageTypists } from '../../../core/api/generated/fn/admin-messages/list-message-typists';
+import { listOnlineAdmins } from '../../../core/api/generated/fn/admin-messages/list-online-admins';
 import { AdminMessage } from '../../../core/api/generated/models/admin-message';
 import { GroupMember } from '../../../core/api/generated/models/group-member';
 import { MessageGroup } from '../../../core/api/generated/models/message-group';
@@ -54,6 +55,8 @@ const KEPT_AFTER_TRIM = 150;
 
 /** The older messages are read before the top of the conversation is reached. */
 const OLDER_AHEAD = '600px 0px 0px 0px';
+/** Who is there, asked again: a page without WebSocket leaves without saying so (AdminPresence). */
+const PRESENCE_EVERY_MS = 30_000;
 
 /** "est en train d'écrire…" stays this long after the last word of it. */
 const TYPING_SHOWN_MS = 5000;
@@ -213,6 +216,10 @@ export default class AdminMessages {
   });
   /** Sent or come since the conversation was opened: they pop up as they appear (not the ones read with it, nor the older ones). */
   protected readonly arrived = signal<ReadonlySet<number>>(new Set());
+  /** The admins in the back-office now (emails in small letters). */
+  private readonly online = signal<ReadonlySet<string>>(new Set());
+  /** One's own message tapped on a phone: its bin shown. */
+  protected readonly picked = signal<number | null>(null);
   /** The first message of the others since the last visit: "Nouveaux" above it. */
   protected readonly firstNew = computed(() => {
     const since = this.since();
@@ -240,6 +247,16 @@ export default class AdminMessages {
       }
     });
     this.live.onTyping((typing) => this.onTyping(typing));
+    // Who is there: told when an admin comes or leaves, asked again every half-minute (a page without
+    // WebSocket leaves without saying so)
+    void this.loadPresence();
+    this.live.on('PRESENCE', () => void this.loadPresence());
+    const presenceTimer = setInterval(() => {
+      if (this.document.visibilityState === 'visible') {
+        void this.loadPresence();
+      }
+    }, PRESENCE_EVERY_MS);
+    inject(DestroyRef).onDestroy(() => clearInterval(presenceTimer));
     // Scrolled up near the top: the older messages read, the place kept
     effect((onCleanup) => {
       const older = this.older()?.nativeElement;
@@ -281,6 +298,46 @@ export default class AdminMessages {
     return email.toLowerCase() === this.me();
   }
 
+  private async loadPresence(): Promise<void> {
+    const online = await attempt(this.api.invoke(listOnlineAdmins));
+    if (online.ok) {
+      this.online.set(new Set(online.value.map((email) => email.toLowerCase())));
+    }
+  }
+
+  /** In the back-office now: the green dot, as in a team's chat. */
+  protected isOnline(email: string): boolean {
+    return this.online().has(email.toLowerCase());
+  }
+
+  /** The others of the group, first names, the ones there first: their dot in the head of the conversation. */
+  protected others(group: MessageGroup): { email: string; name: string; online: boolean }[] {
+    return group.members
+      .filter((email) => !this.isMine(email))
+      .map((email) => ({ email, name: this.nameOf(email).split(' ')[0]!, online: this.isOnline(email) }))
+      .sort((a, b) => Number(b.online) - Number(a.online));
+  }
+
+  /** A group of two: the other one, whose dot goes on its photo in the list. */
+  protected onlyOther(group: MessageGroup): string | null {
+    const others = group.members.filter((email) => !this.isMine(email));
+    return !group.everyone && others.length === 1 ? others[0]! : null;
+  }
+
+  /**
+   * A tap on one of one's own messages shows its bin (a phone has no hover), a tap elsewhere hides it;
+   * a link, a photo or a button of the message do their own thing.
+   */
+  protected onThreadClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('a, button')) {
+      return;
+    }
+    const message = target?.closest<HTMLElement>('li.message.is-mine');
+    const id = message ? Number(message.dataset['id']) : null;
+    this.picked.update((picked) => (id !== null && picked !== id ? id : null));
+  }
+
   /** Their Google name as known, or their email. */
   protected nameOf(email: string, name?: string | null): string {
     return name || this.adminsByEmail().get(email.toLowerCase())?.name || email;
@@ -320,14 +377,6 @@ export default class AdminMessages {
 
   protected isTypingIn(group: MessageGroup): boolean {
     return this.typists().some((typist) => typist.group === group.id);
-  }
-
-  /** "Yona, Maxence et vous", the group of all saying so. */
-  protected membersLine(group: MessageGroup): string {
-    const others = group.members.filter((email) => email !== this.me()).map((email) => this.nameOf(email).split(' ')[0]!);
-    const names = [...others, 'vous'];
-    const line = names.length > 1 ? `${names.slice(0, -1).join(', ')} et ${names.at(-1)}` : names[0]!;
-    return group.everyone ? `Tous les admins : ${line}` : line.charAt(0).toUpperCase() + line.slice(1);
   }
 
   protected groupPhoto(group: MessageGroup): string | null {

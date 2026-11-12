@@ -30,7 +30,14 @@
                 [attr.aria-current]="group.id === selected()?.id ? 'true' : null"
                 (click)="choose(group)"
               >
-                <yona-admin-avatar [name]="group.name" [picture]="groupPhoto(group)" />
+                <span class="group-item__photo">
+                  <yona-admin-avatar [name]="group.name" [picture]="groupPhoto(group)" />
+                  @if (onlyOther(group); as other) {
+                    @if (isOnline(other)) {
+                      <span class="presence" aria-hidden="true"></span>
+                    }
+                  }
+                </span>
                 <span class="group-item__text">
                   <span class="group-item__name">{{ group.name }}</span>
                   <span class="group-item__last" [class.is-typing]="isTypingIn(group)">{{ lastLine(group) }}</span>
@@ -69,14 +76,26 @@
           <yona-admin-avatar [name]="group.name" [picture]="groupPhoto(group)" />
           <div class="conversation__title">
             <h3>{{ group.name }}</h3>
-            <p class="conversation__members">{{ membersLine(group) }}</p>
+            <!-- As in a team's chat: a green dot for the ones in the back-office now, the ones there first -->
+            <p class="conversation__members">
+              @if (group.everyone) {
+                <span>Tous les admins :</span>
+              }
+              @for (other of others(group); track other.email) {
+                <span class="member" [class.is-online]="other.online">
+                  <span class="member__dot" aria-hidden="true"></span>{{ other.name }}<span class="visually-hidden">{{ other.online ? ' (en ligne)' : ' (hors ligne)' }}</span>
+                </span>
+              }
+              <span>{{ others(group).length ? 'et vous' : 'Vous seul' }}</span>
+            </p>
           </div>
           <button type="button" class="icon-button" aria-label="Modifier le groupe" (click)="editGroup(group)">
             <svg yonaIcon="pencil" [size]="18"></svg>
           </button>
         </header>
 
-        <div #thread class="thread" role="log" [attr.aria-label]="'Messages de ' + group.name" (scroll)="onThreadScroll()">
+        <!-- A tap on one's own message shows its bin (a phone has no hover) -->
+        <div #thread class="thread" role="log" [attr.aria-label]="'Messages de ' + group.name" (scroll)="onThreadScroll()" (click)="onThreadClick($event)">
           <!-- Watched: what grows at the bottom (a photo, a preview) keeps the conversation at its end -->
           <div #threadContent class="thread__content">
             @if (hasOlder()) {
@@ -103,11 +122,16 @@
                     [class.is-first]="shown.first"
                     [class.is-last]="shown.last"
                     [class.is-arrived]="arrived().has(shown.message.id)"
+                    [class.is-picked]="picked() === shown.message.id"
+                    [attr.data-id]="shown.message.id"
                   >
                     @if (!shown.mine) {
                       <span class="message__face">
                         @if (shown.last) {
                           <yona-admin-avatar [name]="nameOf(shown.message.authorEmail, shown.message.authorName)" [picture]="shown.message.authorPicture" />
+                          @if (isOnline(shown.message.authorEmail)) {
+                            <span class="presence" aria-hidden="true"></span>
+                          }
                         }
                       </span>
                     }

@@ -2,6 +2,28 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.11.1 - 2026-11-12
+
+Front et backend 2.11.1. Pas de migration de la base
+
+### Ajouté
+
+- **Messages** : un point vert sur la photo des admins présents dans le back-office, comme dans Teams ; en haut de la conversation, chaque membre avec son point, vert s'il est là
+
+### Modifié
+
+- **Messages** : la corbeille d'un de ses messages n'apparaît qu'en le survolant, ou d'un appui dessus sur téléphone
+- **Messages** : bulles arrondies partout, même au milieu d'une suite de messages
+
+### Corrigé
+
+- **Messages** : la bordure de la carte d'un lien n'est plus coupée, au survol comme au repos
+- **Messages** : une longue mention ne fait plus déborder sa bulle hors de l'écran, son nom est coupé
+
+### Technique
+
+- **Messages** : `GET /api/admin/messages/presence` (qui est là) et le sujet temps réel `PRESENCE` (quelqu'un arrive ou part)
+
 ## 2.11.0 - 2026-11-12
 
 Front et backend 2.11.0. Migration de la base : V28

@@ -3,6 +3,9 @@
 // The whole height of the screen under the bar of the back-office (its padding reduced in admin-frame.scss):
 // the groups and the conversation scroll inside, the page does not. A minimum for a phone held sideways.
 :host {
+  // The green of someone there, readable on the panel in both themes
+  --color-presence: light-dark(#178a30, #3fc23a);
+
   display: block;
   height: calc(100dvh - var(--header-height) - 2 * var(--space-4));
   min-height: 26rem;
@@ -103,6 +106,13 @@
     width: 2.75rem;
     height: 2.75rem;
   }
+}
+
+// The list is on the page, not on the panel: its dot ringed with the page's colour
+.group-item__photo {
+  --presence-ring: var(--color-bg);
+
+  position: relative;
 }
 
 .group-item__text {
@@ -214,6 +224,29 @@
   color: var(--color-text-muted);
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  > * + * {
+    margin-inline-start: 0.5rem;
+  }
+}
+
+// A member and their dot: green there, a ring away
+.member {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.member__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--color-text-muted);
+
+  .is-online & {
+    background-color: var(--color-presence);
+    box-shadow: none;
+  }
 }
 
 // The messages take what the head and the field leave, and scroll
@@ -272,38 +305,35 @@ yona-message-composer {
 
 .day__messages {
   display: grid;
-  gap: 0.2rem;
-
-  // A long conversation: the messages out of sight are not drawn, their height remembered.
-  // Not the ones that just came: it would cut their entrance at their edges.
-  > li:not(.is-arrived) {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 2.75rem;
-  }
 }
 
-// As in a chat: the others' messages on the left, their face beside the last one of a run; one's own on the right
+// As in a chat: the others' messages on the left, their face beside the last one of a run; one's own on the right.
+// A long conversation: the messages out of sight are not drawn, their height remembered (not the ones that just
+// came: their entrance would be cut). Drawn, a message is cut at its edges: room left around it for an outline
+// or a border, given back between two messages.
 .message {
   display: flex;
   align-items: flex-end;
   gap: var(--space-2);
+  margin-block: -3px;
+  padding: 5px;
+
+  &:not(.is-arrived) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 3rem;
+  }
 
   &.is-first {
-    margin-top: var(--space-2);
+    margin-top: calc(var(--space-2) - 3px);
   }
 
   &.is-mine {
     flex-direction: row-reverse;
   }
-
-  @include m.hover {
-    .message__delete {
-      opacity: 1;
-    }
-  }
 }
 
 .message__face {
+  position: relative;
   flex: none;
   width: 2rem;
 
@@ -315,6 +345,8 @@ yona-message-composer {
 
 .message__content {
   display: grid;
+  // A column that does not grow with what cannot wrap (a long mention): that is cut instead
+  grid-template-columns: minmax(0, 1fr);
   justify-items: start;
   gap: 0.2rem;
   min-width: 0;
@@ -341,10 +373,9 @@ yona-message-composer {
   color: var(--color-text-muted);
 }
 
-// The bubble, joined to the others of its run on its author's side, as on a phone
+// The bubble, never wider than its column (a long mention is cut instead)
 .message__body {
-  --bubble-joined: 0.35rem;
-
+  max-width: 100%;
   padding: 0.45rem 0.85rem;
   border-radius: 1.15rem;
   // The panel's colour, a little darker (lighter in the dark theme): the others' bubbles stand out from it
@@ -353,25 +384,9 @@ yona-message-composer {
   white-space: pre-line;
   overflow-wrap: anywhere;
 
-  .message:not(.is-mine, .is-first) & {
-    border-top-left-radius: var(--bubble-joined);
-  }
-
-  .message:not(.is-mine, .is-last) & {
-    border-bottom-left-radius: var(--bubble-joined);
-  }
-
   .is-mine & {
     background-color: var(--color-accent);
     color: var(--color-on-accent);
-  }
-
-  .is-mine:not(.is-first) & {
-    border-top-right-radius: var(--bubble-joined);
-  }
-
-  .is-mine:not(.is-last) & {
-    border-bottom-right-radius: var(--bubble-joined);
   }
 }
 
@@ -386,18 +401,49 @@ yona-message-composer {
   }
 }
 
-// Faint beside its own messages, clear on hover; always clear with a finger or the keyboard
+// The bin of one's own message, out of sight until the message is hovered (or tapped, on a phone) or reached
+// with the keyboard
 .message__delete {
   align-self: center;
-  opacity: 0.45;
+  // Taller than a bubble of one line: without its height in the row, the bubbles of a run stay close
+  margin-block: -0.5rem;
+  opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-out);
 
-  &:focus-visible {
+  .message:focus-within &,
+  .is-picked & {
     opacity: 1;
   }
 
+  @media (hover: hover) and (pointer: fine) {
+    .message:hover & {
+      opacity: 1;
+    }
+  }
+
   @media (hover: none) {
-    opacity: 1;
+    visibility: hidden;
+
+    .is-picked & {
+      visibility: visible;
+    }
+  }
+}
+
+// In the back-office now, as in a team's chat: a green dot at the bottom of the photo, ringed with what is behind
+.presence {
+  position: absolute;
+  right: -0.1rem;
+  bottom: -0.1rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid var(--presence-ring, var(--color-surface));
+  border-radius: 50%;
+  background-color: var(--color-presence);
+
+  .message__face & {
+    width: 0.7rem;
+    height: 0.7rem;
   }
 }
 
@@ -458,6 +504,7 @@ yona-message-composer {
   }
 
   > span {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
   }

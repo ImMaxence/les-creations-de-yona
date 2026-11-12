@@ -5,10 +5,12 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,20 +74,47 @@ public class AdminLive extends TextWebSocketHandler {
 		}
 		// In the logs of the server: opened here while the browser says it never connects, a proxy breaks it on the way
 		log.info("Live connection opened ({} open)", open.size() + 1);
+		@Nullable String email = user == null || user.getEmail() == null ? null : user.getEmail().toLowerCase(Locale.ROOT);
+		boolean arrives = email != null && !online().contains(email);
 		// Several threads may send at once: one at a time per connection, a stuck one dropped
 		open.put(session.getId(), new Open(new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, BUFFER_SIZE_LIMIT),
-				user == null || user.getEmail() == null ? null : user.getEmail().toLowerCase(Locale.ROOT),
-				user == null ? null : user.getFullName(), new long[1]));
+				email, user == null ? null : user.getFullName(), new long[1]));
+		if (arrives) {
+			tellPresence();
+		}
 	}
 
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-		open.remove(session.getId());
+		if (drop(session.getId())) {
+			tellPresence();
+		}
 	}
 
 	@Override
 	public void handleTransportError(WebSocketSession session, Throwable exception) {
-		open.remove(session.getId());
+		if (drop(session.getId())) {
+			tellPresence();
+		}
+	}
+
+	/** The admins with a page of the back-office open now (several pages count once). */
+	public Set<String> online() {
+		return open.values().stream()
+			.map(Open::email)
+			.filter(Objects::nonNull)
+			.collect(Collectors.toUnmodifiableSet());
+	}
+
+	/** An admin came or left: every page asks again who is there (the green dots of "Messages"). */
+	public void tellPresence() {
+		send("{\"topic\":\"" + LiveTopic.PRESENCE.name() + "\"}", null, null);
+	}
+
+	/** A page gone; true when it was the last of its admin, who is no longer there. */
+	private boolean drop(String sessionId) {
+		@Nullable Open page = open.remove(sessionId);
+		return page != null && page.email() != null && !online().contains(page.email());
 	}
 
 	/** "est en train d'écrire…" from a page: told to the other members of the group, at most every 1.5 s. */
@@ -145,6 +174,7 @@ public class AdminLive extends TextWebSocketHandler {
 	/** {@code audience}: those told, null for all; {@code except}: an admin left out (the one writing). */
 	private void send(String text, @Nullable Set<String> audience, @Nullable String except) {
 		TextMessage message = new TextMessage(text);
+		boolean someoneLeft = false;
 		for (Open page : open.values()) {
 			boolean outside = audience != null && (page.email() == null || !audience.contains(page.email()));
 			if (outside || (except != null && except.equals(page.email()))) {
@@ -152,7 +182,7 @@ public class AdminLive extends TextWebSocketHandler {
 			}
 			WebSocketSession session = page.session();
 			if (!session.isOpen()) {
-				open.remove(session.getId());
+				someoneLeft |= drop(session.getId());
 				continue;
 			}
 			try {
@@ -160,9 +190,13 @@ public class AdminLive extends TextWebSocketHandler {
 			}
 			catch (IOException | RuntimeException ex) {
 				// Gone without saying so (a phone asleep): it connects again on its own
-				open.remove(session.getId());
+				someoneLeft |= drop(session.getId());
 				log.debug("Live connection {} dropped: {}", session.getId(), ex.toString());
 			}
+		}
+		// Not again for the news of a departure itself: the pages ask anyway every half-minute
+		if (someoneLeft && !text.contains(LiveTopic.PRESENCE.name())) {
+			tellPresence();
 		}
 	}
 
