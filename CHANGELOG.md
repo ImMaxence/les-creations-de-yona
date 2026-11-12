@@ -2,6 +2,19 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.12.0 - 2026-11-12
+
+Front et backend 2.12.0. Pas de migration de la base
+
+### Ajouté
+
+- **Messages** : qui a vu quoi, comme sur Instagram ; sous son dernier message « Envoyé », puis « Vu » à deux, « Vu par Léa et Sam » ou « Vu par tout le monde » dans un groupe
+- **Messages** : la petite photo de chaque membre sous le dernier message qu'il a vu ; elle glisse au suivant dès qu'il le lit
+
+### Technique
+
+- **Messages** : `GET /api/admin/messages/seen?group=` (jusqu'où chacun a lu) et le sujet temps réel `SEEN`, envoyé aux membres quand l'un d'eux lit un nouveau message
+
 ## 2.11.1 - 2026-11-12
 
 Front et backend 2.11.1. Pas de migration de la base

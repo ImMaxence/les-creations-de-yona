@@ -103,6 +103,8 @@ export type { EnableOrderAlert$Params as EnableOrderAlert$Params } from './fn/ad
 export { enableOrderAlert as enableOrderAlert } from './fn/admin-order-alerts/enable-order-alert';
 export type { DisableOrderAlert$Params as DisableOrderAlert$Params } from './fn/admin-order-alerts/disable-order-alert';
 export { disableOrderAlert as disableOrderAlert } from './fn/admin-order-alerts/disable-order-alert';
+export type { ListGroupSeen$Params as ListGroupSeen$Params } from './fn/admin-messages/list-group-seen';
+export { listGroupSeen as listGroupSeen } from './fn/admin-messages/list-group-seen';
 export type { MarkMessagesSeen$Params as MarkMessagesSeen$Params } from './fn/admin-messages/mark-messages-seen';
 export { markMessagesSeen as markMessagesSeen } from './fn/admin-messages/mark-messages-seen';
 export type { UpdateMessageGroup$Params as UpdateMessageGroup$Params } from './fn/admin-messages/update-message-group';

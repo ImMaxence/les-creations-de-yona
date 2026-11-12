@@ -7,6 +7,7 @@ import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.live.LiveChange;
 import fr.lescreationsdeyona.live.LiveTopic;
 import fr.lescreationsdeyona.message.MessageResponses.GroupForm;
+import fr.lescreationsdeyona.message.MessageResponses.GroupSeen;
 import fr.lescreationsdeyona.message.MessageResponses.LastMessage;
 import fr.lescreationsdeyona.message.MessageResponses.MessageGroup;
 import fr.lescreationsdeyona.monitoring.AdminSeen;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -231,7 +233,17 @@ public class AdminGroups {
 	/** Read now by the admin asking: its badge goes. */
 	public void markSeen(long id) {
 		String me = me();
-		require(id, me);
+		Group group = require(id, me);
+		// Something of the others read for the first time: their "Vu" moves on, told to the members (only then)
+		boolean news = jdbc.sql("""
+				select exists (select 1 from admin_message m
+					left join admin_group_seen s on s.group_id = m.group_id and s.admin_email = :me
+					where m.group_id = :id and lower(m.author_email) <> :me
+					and m.sent_at > coalesce(s.seen_at, '-infinity'::timestamptz))""")
+			.param("id", id)
+			.param("me", me)
+			.query(Boolean.class)
+			.single();
 		jdbc.sql("""
 				insert into admin_group_seen (group_id, admin_email, seen_at) values (:id, :me, :at)
 				on conflict (group_id, admin_email) do update set seen_at = excluded.seen_at""")
@@ -239,6 +251,27 @@ public class AdminGroups {
 			.param("me", me)
 			.param("at", utc(Instant.now()))
 			.update();
+		if (news) {
+			events.publishEvent(new LiveChange(LiveTopic.SEEN, members(group)));
+		}
+	}
+
+	/**
+	 * Up to when each other member read the group, as on Instagram: the "Vu" under the messages. A member
+	 * who never opened it is left out; so is the admin asking.
+	 */
+	public List<GroupSeen> seen(long id) {
+		String me = me();
+		Group group = require(id, me);
+		Set<String> members = members(group).stream().map(email -> email.toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
+		return jdbc.sql("select admin_email, seen_at from admin_group_seen where group_id = :id order by admin_email")
+			.param("id", id)
+			.query((row, number) -> new GroupSeen(row.getString("admin_email").toLowerCase(Locale.ROOT),
+					row.getObject("seen_at", OffsetDateTime.class).toInstant()))
+			.list()
+			.stream()
+			.filter(seen -> members.contains(seen.email()) && !seen.email().equals(me))
+			.toList();
 	}
 
 	/** The badge of "Messages": what the others wrote in the groups of the admin asking since they last read each. */

@@ -8,6 +8,7 @@ import fr.lescreationsdeyona.image.ImageStorage;
 import fr.lescreationsdeyona.message.MessageResponses.AdminMessage;
 import fr.lescreationsdeyona.message.MessageResponses.GroupForm;
 import fr.lescreationsdeyona.message.MessageResponses.GroupMember;
+import fr.lescreationsdeyona.message.MessageResponses.GroupSeen;
 import fr.lescreationsdeyona.message.MessageResponses.LinkPage;
 import fr.lescreationsdeyona.message.MessageResponses.Mention;
 import fr.lescreationsdeyona.message.MessageResponses.MessageForm;
@@ -190,6 +191,13 @@ class AdminMessageController {
 	@GetMapping("/presence")
 	List<String> listOnlineAdmins() {
 		return presence.online();
+	}
+
+	@Operation(summary = "Up to when each other member read a group: the \"Vu\" under the messages, as on Instagram",
+			description = "Asked again on the topic SEEN, told to the members when one of them reads something new.")
+	@GetMapping("/seen")
+	List<GroupSeen> listGroupSeen(@RequestParam long group) {
+		return groups.seen(group);
 	}
 
 	@Operation(summary = "The messages of a group are read now: its badge goes")

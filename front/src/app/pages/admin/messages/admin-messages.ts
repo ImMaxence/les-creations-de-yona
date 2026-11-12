@@ -24,9 +24,11 @@ import { listAdminMessages } from '../../../core/api/generated/fn/admin-messages
 import { listMessageGroups } from '../../../core/api/generated/fn/admin-messages/list-message-groups';
 import { listMessageMembers } from '../../../core/api/generated/fn/admin-messages/list-message-members';
 import { listMessageTypists } from '../../../core/api/generated/fn/admin-messages/list-message-typists';
+import { listGroupSeen } from '../../../core/api/generated/fn/admin-messages/list-group-seen';
 import { listOnlineAdmins } from '../../../core/api/generated/fn/admin-messages/list-online-admins';
 import { AdminMessage } from '../../../core/api/generated/models/admin-message';
 import { GroupMember } from '../../../core/api/generated/models/group-member';
+import { GroupSeen } from '../../../core/api/generated/models/group-seen';
 import { MessageGroup } from '../../../core/api/generated/models/message-group';
 import { AdminSession } from '../../../core/auth/admin-session';
 import { Confirm } from '../../../core/dialog/confirm';
@@ -42,6 +44,7 @@ import { LinkCard } from './link-card';
 import { MessageComposer } from './message-composer';
 import { MENTION_KINDS, MessagePart, parseMessage, shownLink } from './message-format';
 import { imageFiles, messagePhoto } from './message-photos';
+import { seenBy, seenLabel, seenPlaces } from './message-seen';
 import { MessageSound } from './message-sound';
 
 const PAGE_SIZE = 50;
@@ -220,6 +223,23 @@ export default class AdminMessages {
   private readonly online = signal<ReadonlySet<string>>(new Set());
   /** One's own message tapped on a phone: its bin shown. */
   protected readonly picked = signal<number | null>(null);
+  /** Up to when each other member read the group open. */
+  private readonly seenUpTo = signal<GroupSeen[]>([]);
+  /** As on Instagram: under which message each other member's face goes (the last they have seen). */
+  protected readonly seenRows = computed(() => {
+    const group = this.selected();
+    return group ? seenPlaces(this.messages(), group.members.filter((email) => !this.isMine(email)), this.seenUpTo()) : new Map<number, string[]>();
+  });
+  /** The last message of the conversation, when it is one's own: "Envoyé", "Vu" or "Vu par…" under it. */
+  protected readonly lastMine = computed(() => {
+    const last = this.messages().at(-1);
+    const others = this.selected()?.members.filter((email) => !this.isMine(email)).length ?? 0;
+    if (!last || !this.isMine(last.authorEmail) || !others) {
+      return null;
+    }
+    const readers = (this.seenRows().get(last.id) ?? []).map((email) => this.firstName(email));
+    return { id: last.id, label: seenLabel(readers, others) };
+  });
   /** The first message of the others since the last visit: "Nouveaux" above it. */
   protected readonly firstNew = computed(() => {
     const since = this.since();
@@ -244,8 +264,11 @@ export default class AdminMessages {
       void this.refresh();
       if (!this.live.connected()) {
         void this.askTypists();
+        void this.loadSeen();
       }
     });
+    // A member read something new: the "Vu" move on
+    this.live.on('SEEN', () => void this.loadSeen());
     this.live.onTyping((typing) => this.onTyping(typing));
     // Who is there: told when an admin comes or leaves, asked again every half-minute (a page without
     // WebSocket leaves without saying so)
@@ -296,6 +319,27 @@ export default class AdminMessages {
 
   protected isMine(email: string): boolean {
     return email.toLowerCase() === this.me();
+  }
+
+  /** Up to when the others read the group open: where their "Vu" go. */
+  private async loadSeen(): Promise<void> {
+    const group = this.openGroup;
+    if (group === null) {
+      return;
+    }
+    const seen = await attempt(this.api.invoke(listGroupSeen, { group }));
+    if (seen.ok && this.openGroup === group) {
+      this.seenUpTo.set(seen.value ?? []);
+    }
+  }
+
+  protected firstName(email: string): string {
+    return this.nameOf(email).split(' ')[0]!;
+  }
+
+  /** "Vu par Léa et Sam", read out for the faces under a message. */
+  protected seenByLine(emails: string[]): string {
+    return seenBy(emails.map((email) => this.firstName(email)));
   }
 
   private async loadPresence(): Promise<void> {
@@ -429,6 +473,7 @@ export default class AdminMessages {
     this.openGroup = group.id;
     this.since.set(group.since);
     this.arrived.set(new Set());
+    this.seenUpTo.set([]);
     this.messages.set([]);
     this.hasOlder.set(false);
     this.loading.set(true);
@@ -441,6 +486,7 @@ export default class AdminMessages {
       this.messages.set([...page.value.messages].reverse());
       this.hasOlder.set(page.value.hasOlder);
       this.scrollToEnd();
+      void this.loadSeen();
     }
     this.markSeen();
   }

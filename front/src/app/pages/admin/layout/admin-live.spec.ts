@@ -152,7 +152,7 @@ describe('AdminLive', () => {
     vi.advanceTimersByTime(4_300);
     expect(heard).toEqual(['MESSAGES']);
     vi.advanceTimersByTime(28_000);
-    expect(new Set(heard)).toEqual(new Set(['MESSAGES', 'FEEDBACK', 'ORDERS', 'HISTORY', 'TRASH', 'LOGS', 'PRESENCE']));
+    expect(new Set(heard)).toEqual(new Set(['MESSAGES', 'FEEDBACK', 'ORDERS', 'HISTORY', 'TRASH', 'LOGS', 'PRESENCE', 'SEEN']));
 
     FakeSocket.opened.at(-1)!.onopen?.();
     expect(live.connected()).toBe(true);

@@ -69,6 +69,10 @@ export async function fakeAdmin(page, version = 'locale') {
   await page.route('**/api/admin/messages/unseen', (route) => route.fulfill({ json: { count: 0, since: now } }));
   // Qui est dans le back-office (2.11) : la page Messages le demande
   await page.route('**/api/admin/messages/presence', (route) => route.fulfill({ json: [] }));
+  // Qui a lu le groupe, et jusqu'où (2.12) ; le PUT marque le groupe lu
+  await page.route('**/api/admin/messages/seen?**', (route) =>
+    route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.fulfill({ status: 204 }),
+  );
   // Le temps réel (2.8) : une connexion ouverte dans le navigateur seulement, que le backend refuserait sans session
   await page.routeWebSocket('**/api/admin/live', () => {});
   await page.route('**/api/admin/logs/summary', (route) =>

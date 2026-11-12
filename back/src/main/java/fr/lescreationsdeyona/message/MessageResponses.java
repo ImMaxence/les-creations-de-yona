@@ -58,6 +58,10 @@ public final class MessageResponses {
 	public record Typist(String email, @Nullable String name) {
 	}
 
+	/** Up to when a member read the group: the messages sent until then are seen by them ("Vu"). */
+	public record GroupSeen(String email, Instant seenAt) {
+	}
+
 	/** A thing of the site a message may mention. */
 	public record Mention(MentionKind kind, long id, String label) {
 	}

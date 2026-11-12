@@ -181,6 +181,17 @@
                       </button>
                     }
                   </li>
+                  <!-- As on Instagram: "Vu" under one's own last message, elsewhere the faces of the ones who read up to there -->
+                  @if (lastMine()?.id === shown.message.id) {
+                    <li class="seen" animate.enter="seen--enter">{{ lastMine()?.label }}</li>
+                  } @else if (seenRows().get(shown.message.id); as readers) {
+                    <li class="seen" animate.enter="seen--enter">
+                      <span class="visually-hidden">{{ seenByLine(readers) }}</span>
+                      @for (email of readers; track email) {
+                        <yona-admin-avatar aria-hidden="true" [name]="nameOf(email)" [picture]="admin(email)?.picture" [attr.data-tooltip]="'Vu par ' + firstName(email)" />
+                      }
+                    </li>
+                  }
                 }
               </ol>
             }

@@ -58,6 +58,7 @@ export type { GlossaryTermForm } from './models/glossary-term-form';
 export type { GlossaryTermResponse } from './models/glossary-term-response';
 export type { GroupForm } from './models/group-form';
 export type { GroupMember } from './models/group-member';
+export type { GroupSeen } from './models/group-seen';
 export type { ImageChoice } from './models/image-choice';
 export type { Images } from './models/images';
 export type { IncompleteRecipe } from './models/incomplete-recipe';

@@ -3,9 +3,9 @@ import { Api } from '../../../core/api/generated/api';
 import { sayMessageTyping } from '../../../core/api/generated/fn/admin-messages/say-message-typing';
 
 /** What changed, as the backend says it (fr.lescreationsdeyona.live.LiveTopic). */
-export type LiveTopic = 'FEEDBACK' | 'ORDERS' | 'HISTORY' | 'TRASH' | 'LOGS' | 'MESSAGES' | 'PRESENCE';
+export type LiveTopic = 'FEEDBACK' | 'ORDERS' | 'HISTORY' | 'TRASH' | 'LOGS' | 'MESSAGES' | 'PRESENCE' | 'SEEN';
 
-const TOPICS = new Set<string>(['FEEDBACK', 'ORDERS', 'HISTORY', 'TRASH', 'LOGS', 'MESSAGES', 'PRESENCE']);
+const TOPICS = new Set<string>(['FEEDBACK', 'ORDERS', 'HISTORY', 'TRASH', 'LOGS', 'MESSAGES', 'PRESENCE', 'SEEN']);
 
 /** Waits before connecting again, longer each time the backend is out of reach. */
 const RETRY_MS = [1_000, 2_000, 5_000, 10_000, 30_000];

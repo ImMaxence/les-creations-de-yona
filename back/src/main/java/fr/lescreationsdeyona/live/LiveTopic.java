@@ -15,5 +15,7 @@ public enum LiveTopic {
 	/** "Messages": an admin wrote to the others, or deleted a message. */
 	MESSAGES,
 	/** "Messages": an admin opened the back-office, or left it: the green dot of the others. */
-	PRESENCE
+	PRESENCE,
+	/** "Messages": a member read a group (told to its members): the "Vu" under the messages. */
+	SEEN
 }
