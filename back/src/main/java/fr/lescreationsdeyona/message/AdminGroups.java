@@ -6,7 +6,6 @@ import fr.lescreationsdeyona.image.ImageProcessor;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.live.LiveChange;
 import fr.lescreationsdeyona.live.LiveTopic;
-import fr.lescreationsdeyona.live.TypingAudience;
 import fr.lescreationsdeyona.message.MessageResponses.GroupForm;
 import fr.lescreationsdeyona.message.MessageResponses.LastMessage;
 import fr.lescreationsdeyona.message.MessageResponses.MessageGroup;
@@ -41,7 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
  * their messages, their photos, who writes in them. Not in "Historique": they change nothing of the site.
  */
 @Service
-public class AdminGroups implements TypingAudience {
+public class AdminGroups {
 
 	static final int MAX_NAME = 60;
 
@@ -277,8 +276,7 @@ public class AdminGroups implements TypingAudience {
 	}
 
 	/** The members of the group, if {@code writer} is one of them: told "est en train d'écrire…". */
-	@Override
-	public Set<String> of(long groupId, String writer) {
+	Set<String> audience(long groupId, String writer) {
 		return find(groupId, writer).map(this::members).orElse(Set.of());
 	}
 

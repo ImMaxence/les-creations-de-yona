@@ -27,9 +27,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.Cacheable;
@@ -84,9 +86,17 @@ public class CapService {
 		CapEntry entry = entryRepository.findBySlugAndStatus(slug, CapStatus.PUBLISHED)
 			.orElseThrow(() -> new ApiException(ErrorCode.CAP_ENTRY_NOT_FOUND));
 		List<CapBlock> blocks = blocks(entry);
-		List<CapBlock> shown = CapBlocks.shown(blocks, known(CapBlocks.imageIds(blocks)));
+		// The links to other articles at their address of today; a draft's, words alone until it is published
+		List<CapBlock> shown = CapBlocks.withArticleLinks(CapBlocks.shown(blocks, known(CapBlocks.imageIds(blocks))), publishedSlugs());
 		return new CapArticle(entry.getId(), entry.getTitle(), entry.getSubtitle(), entry.getSlug(), entry.getHappenedOn(),
 				imageId(entry), entry.getStyle(), shown, CapBlocks.excerpt(shown), entry.getUpdatedAt());
+	}
+
+	/** The address of each published article, by id. */
+	private Map<Long, String> publishedSlugs() {
+		return entryRepository.findByStatusOrderByHappenedOnDescIdDesc(CapStatus.PUBLISHED)
+			.stream()
+			.collect(Collectors.toMap(CapEntry::getId, CapEntry::getSlug));
 	}
 
 	/** The article chosen with "Mettre en avant", otherwise the latest one; null before the first one. */

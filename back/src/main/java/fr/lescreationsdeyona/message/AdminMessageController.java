@@ -14,6 +14,7 @@ import fr.lescreationsdeyona.message.MessageResponses.MessageForm;
 import fr.lescreationsdeyona.message.MessageResponses.MessageGroup;
 import fr.lescreationsdeyona.message.MessageResponses.MessagePage;
 import fr.lescreationsdeyona.message.MessageResponses.MessagePhoto;
+import fr.lescreationsdeyona.message.MessageResponses.Typist;
 import fr.lescreationsdeyona.monitoring.Unseen;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -150,6 +151,20 @@ class AdminMessageController {
 			.contentType(MediaType.parseMediaType(WEBP))
 			.contentLength(webp.length)
 			.body(new InputStreamResource(new ByteArrayInputStream(webp)));
+	}
+
+	@Operation(summary = "This admin writes in a group: \"est en train d'écrire\" told to the other members",
+			description = "For a page whose WebSocket is cut; the others are told through theirs.")
+	@PostMapping("/typing")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void sayMessageTyping(@RequestParam long group) {
+		messages.typing(group);
+	}
+
+	@Operation(summary = "Who writes in a group now, this admin left out", description = "Asked every few seconds by a page whose WebSocket is cut.")
+	@GetMapping("/typing")
+	List<Typist> listMessageTypists(@RequestParam long group) {
+		return messages.typists(group);
 	}
 
 	@Operation(summary = "The messages of the others in the groups of this admin since they last read each: the badge of \"Messages\"")

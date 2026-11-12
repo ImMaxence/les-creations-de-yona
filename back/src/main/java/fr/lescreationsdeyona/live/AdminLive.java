@@ -57,15 +57,19 @@ public class AdminLive extends TextWebSocketHandler {
 
 	private final Map<String, Open> open = new ConcurrentHashMap<>();
 
-	private final ObjectProvider<TypingAudience> typingAudience;
+	private final ObjectProvider<TypingRelay> typingRelay;
 
-	public AdminLive(ObjectProvider<TypingAudience> typingAudience) {
-		this.typingAudience = typingAudience;
+	public AdminLive(ObjectProvider<TypingRelay> typingRelay) {
+		this.typingRelay = typingRelay;
 	}
 
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) {
 		@Nullable OidcUser user = userOf(session.getPrincipal());
+		if (user == null || user.getEmail() == null) {
+			// Told nothing of the groups, nor who writes: seen in "Journaux" if it ever happens
+			log.warn("Live connection {} opened without a Google account: no group news nor typing for it", session.getId());
+		}
 		// Several threads may send at once: one at a time per connection, a stuck one dropped
 		open.put(session.getId(), new Open(new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, BUFFER_SIZE_LIMIT),
 				user == null || user.getEmail() == null ? null : user.getEmail().toLowerCase(Locale.ROOT),
@@ -98,14 +102,19 @@ public class AdminLive extends TextWebSocketHandler {
 			page.lastTyping()[0] = now;
 		}
 		long group = Long.parseLong(typing.group(1));
-		TypingAudience audience = typingAudience.getIfAvailable();
-		Set<String> members = audience == null ? Set.of() : audience.of(group, page.email());
+		TypingRelay relay = typingRelay.getIfAvailable();
+		tellTyping(group, page.email(), page.name(), relay == null ? Set.of() : relay.writing(group, page.email(), page.name()));
+	}
+
+	/** "est en train d'écrire…" told to the members of the group but the writer; also when a page says it over HTTP (its WebSocket cut). */
+	public void tellTyping(long group, String email, @Nullable String name, Set<String> members) {
 		if (members.isEmpty()) {
 			return;
 		}
-		String told = "{\"topic\":\"TYPING\",\"group\":" + group + ",\"email\":" + json(page.email()) + ",\"name\":"
-				+ (page.name() == null ? "null" : json(page.name())) + "}";
-		send(told, members, page.email());
+		String writer = email.toLowerCase(Locale.ROOT);
+		String told = "{\"topic\":\"TYPING\",\"group\":" + group + ",\"email\":" + json(writer) + ",\"name\":"
+				+ (name == null ? "null" : json(name)) + "}";
+		send(told, members, writer);
 	}
 
 	/** The pages of the back-office open now. */

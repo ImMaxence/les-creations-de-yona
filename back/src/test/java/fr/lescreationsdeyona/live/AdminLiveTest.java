@@ -23,16 +23,16 @@ import org.springframework.web.socket.WebSocketSession;
 class AdminLiveTest {
 
 	/** Group 12 holds Yona and Maxence; Léa is in no group. */
-	private static final TypingAudience GROUPS = (group, writer) -> group == 12 && !writer.equals("lea@site.fr")
+	private static final TypingRelay GROUPS = (group, writer, name) -> group == 12 && !writer.equals("lea@site.fr")
 			? Set.of("yona@site.fr", "maxence@site.fr")
 			: Set.of();
 
 	private final AdminLive live = new AdminLive(provider(GROUPS));
 
 	@SuppressWarnings("unchecked")
-	private static ObjectProvider<TypingAudience> provider(TypingAudience audience) {
-		ObjectProvider<TypingAudience> provider = mock(ObjectProvider.class);
-		when(provider.getIfAvailable()).thenReturn(audience);
+	private static ObjectProvider<TypingRelay> provider(TypingRelay relay) {
+		ObjectProvider<TypingRelay> provider = mock(ObjectProvider.class);
+		when(provider.getIfAvailable()).thenReturn(relay);
 		return provider;
 	}
 

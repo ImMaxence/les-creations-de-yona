@@ -23,6 +23,7 @@ import { deleteAdminMessage } from '../../../core/api/generated/fn/admin-message
 import { listAdminMessages } from '../../../core/api/generated/fn/admin-messages/list-admin-messages';
 import { listMessageGroups } from '../../../core/api/generated/fn/admin-messages/list-message-groups';
 import { listMessageMembers } from '../../../core/api/generated/fn/admin-messages/list-message-members';
+import { listMessageTypists } from '../../../core/api/generated/fn/admin-messages/list-message-typists';
 import { AdminMessage } from '../../../core/api/generated/models/admin-message';
 import { GroupMember } from '../../../core/api/generated/models/group-member';
 import { MessageGroup } from '../../../core/api/generated/models/message-group';
@@ -38,8 +39,9 @@ import { AdminLive, Typing } from '../layout/admin-live';
 import { AdminWatch } from '../layout/admin-watch';
 import { GroupDialog } from './group-dialog';
 import { MessageComposer } from './message-composer';
-import { MENTION_KINDS, MessagePart, parseMessage, shownLink } from './message-format';
+import { MENTION_KINDS, MessagePart, linkHost, parseMessage, shownLink } from './message-format';
 import { imageFiles, messagePhoto } from './message-photos';
+import { MessageSound } from './message-sound';
 
 const PAGE_SIZE = 50;
 
@@ -98,6 +100,9 @@ export default class AdminMessages {
   protected readonly kinds = MENTION_KINDS;
   protected readonly messagePhoto = messagePhoto;
   protected readonly shownLink = shownLink;
+  protected readonly linkHost = linkHost;
+  private readonly live = inject(AdminLive);
+  protected readonly sound = inject(MessageSound);
   protected readonly bigPhoto = (imageId: string) => messagePhoto(imageId, 1600);
 
   protected readonly admins = resource({ loader: () => this.api.invoke(listMessageMembers) });
@@ -132,6 +137,9 @@ export default class AdminMessages {
   protected readonly dropping = signal(false);
 
   private readonly thread = viewChild<ElementRef<HTMLElement>>('thread');
+  private readonly threadContent = viewChild<ElementRef<HTMLElement>>('threadContent');
+  /** At the end of the conversation: kept there as it grows. */
+  private stickToEnd = true;
   private readonly composer = viewChild(MessageComposer);
   private readonly viewer = viewChild(PhotoViewer);
 
@@ -170,13 +178,31 @@ export default class AdminMessages {
         untracked(() => void this.open(group));
       }
     });
-    const live = inject(AdminLive);
-    // A member wrote, deleted a message, or changed a group: the groups and the conversation read again
-    live.on('MESSAGES', () => {
+    // A member wrote, deleted a message, or changed a group: the groups and the conversation read again.
+    // The WebSocket cut, told every few seconds anyway: who writes is asked then too
+    this.live.on('MESSAGES', () => {
       void this.loadGroups();
       void this.refresh();
+      if (!this.live.connected()) {
+        void this.askTypists();
+      }
     });
-    live.onTyping((typing) => this.onTyping(typing));
+    this.live.onTyping((typing) => this.onTyping(typing));
+    // A photo, a preview or a font loaded after the scroll to the end: still at the end
+    effect((onCleanup) => {
+      const content = this.threadContent()?.nativeElement;
+      if (!content || typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      const observer = new ResizeObserver(() => {
+        const box = this.thread()?.nativeElement;
+        if (box && this.stickToEnd) {
+          box.scrollTop = box.scrollHeight;
+        }
+      });
+      observer.observe(content);
+      onCleanup(() => observer.disconnect());
+    });
     inject(DestroyRef).onDestroy(() => this.typists().forEach((typist) => clearTimeout(typist.timer)));
   }
 
@@ -324,13 +350,32 @@ export default class AdminMessages {
     const latest = [...page.value.messages].reverse();
     const known = new Set(this.messages().map((message) => message.id));
     // Who just wrote is no longer writing
-    latest.filter((message) => !known.has(message.id)).forEach((message) => this.stopTyping(group, message.authorEmail.toLowerCase()));
+    const arrived = latest.filter((message) => !known.has(message.id));
+    arrived.forEach((message) => this.stopTyping(group, message.authorEmail.toLowerCase()));
+    // In the conversation open too, read at once (its badge never grows): its little sound
+    if (known.size && arrived.some((message) => !this.isMine(message.authorEmail))) {
+      this.sound.play();
+    }
     const oldestLatest = latest[0]?.id ?? Number.MAX_SAFE_INTEGER;
     this.messages.update((shown) => (latest.length ? [...shown.filter((message) => message.id < oldestLatest), ...latest] : []));
     if (atEnd) {
       this.scrollToEnd();
     }
-    this.markSeen();
+    if (arrived.length || this.selected()?.unseen) {
+      this.markSeen();
+    }
+  }
+
+  /** The WebSocket cut: who writes in the group open, asked with the messages. */
+  private async askTypists(): Promise<void> {
+    const group = this.openGroup;
+    if (group === null) {
+      return;
+    }
+    const typists = await attempt(this.api.invoke(listMessageTypists, { group }));
+    if (typists.ok && this.openGroup === group) {
+      typists.value.forEach((typist) => this.onTyping({ group, email: typist.email, name: typist.name ?? null }));
+    }
   }
 
   protected async loadOlder(): Promise<void> {
@@ -414,7 +459,16 @@ export default class AdminMessages {
     }
   }
 
+  /** Read back to the earlier messages: no longer kept at the end. */
+  protected onThreadScroll(): void {
+    const box = this.thread()?.nativeElement;
+    if (box) {
+      this.stickToEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    }
+  }
+
   private scrollToEnd(): void {
+    this.stickToEnd = true;
     afterNextRender(
       () => {
         const box = this.thread()?.nativeElement;

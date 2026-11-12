@@ -54,6 +54,10 @@ public final class MessageResponses {
 	public record PhotoForm(@NotNull UUID id, @Min(1) @Max(20000) int width, @Min(1) @Max(20000) int height) {
 	}
 
+	/** An admin writing in a group now: "est en train d'écrire…". */
+	public record Typist(String email, @Nullable String name) {
+	}
+
 	/** A thing of the site a message may mention. */
 	public record Mention(MentionKind kind, long id, String label) {
 	}

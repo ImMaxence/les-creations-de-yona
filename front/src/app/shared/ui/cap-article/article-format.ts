@@ -35,3 +35,22 @@ export function isSitePath(href: string | null | undefined): href is string {
   // "/\site.fr" is read by browsers as "//site.fr"
   return !!href && href.startsWith('/') && !href.startsWith('//') && !href.startsWith('/\\');
 }
+
+/** [mots](article:12): a link to another article by its id (2.10.0), as the editor writes it (fr.lescreationsdeyona.cap.CapBlocks). */
+const ARTICLE_LINK = /\[([^[\]\n]*)\]\(article:(\d{1,18})\)/g;
+
+/** The link the editor writes for another article: by its id, its address read when the page is served. */
+export function articleLink(id: number): string {
+  return `article:${id}`;
+}
+
+/**
+ * The links to other articles made addresses, as the site serves them: the page of a published one; for
+ * one not published yet, the words alone, until it is.
+ */
+export function resolveArticleLinks(text: string, publishedSlugs: ReadonlyMap<number, string>): string {
+  return text.replace(ARTICLE_LINK, (_, words: string, id: string) => {
+    const slug = publishedSlugs.get(Number(id));
+    return slug ? `[${words}](/mon-cap/${slug})` : words;
+  });
+}

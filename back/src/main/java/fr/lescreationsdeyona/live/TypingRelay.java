@@ -1,14 +1,16 @@
 package fr.lescreationsdeyona.live;
 
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /**
- * Who may read that an admin is writing in a group: its members, the writer included; empty when the
- * writer is not one of them (or the group is gone). Given by the messages (AdminGroups).
+ * An admin writes in a group: kept a few seconds for the pages that ask (their WebSocket cut), and
+ * the members to tell, the writer included; none when the writer is not one of them (or the group is
+ * gone). Given by the messages (MessageTyping).
  */
 @FunctionalInterface
-public interface TypingAudience {
+public interface TypingRelay {
 
-	Set<String> of(long groupId, String writerEmail);
+	Set<String> writing(long groupId, String writerEmail, @Nullable String writerName);
 
 }

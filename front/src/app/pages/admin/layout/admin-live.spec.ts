@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, ErrorHandler, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AdminLive, LiveTopic, Typing, readTopic, readTyping } from './admin-live';
+import { Api } from '../../../core/api/generated/api';
+import { AdminLive, LiveTopic, LiveUnreachable, Typing, readTopic, readTyping } from './admin-live';
 
 /** A WebSocket the test opens, sends through and cuts. */
 class FakeSocket {
@@ -134,6 +135,59 @@ describe('AdminLive', () => {
     vi.advanceTimersByTime(1_000);
 
     expect(refusals).toBe(2);
+  });
+
+  it('cut, tells the messages every few seconds and everything every half-minute, then stops once connected', () => {
+    const heard: LiveTopic[] = [];
+    @Component({ template: '' })
+    class Polled {
+      constructor() {
+        inject(AdminLive).on('*', (topic) => heard.push(topic));
+      }
+    }
+    const live = TestBed.inject(AdminLive);
+    TestBed.createComponent(Polled);
+    live.start();
+
+    vi.advanceTimersByTime(4_300);
+    expect(heard).toEqual(['MESSAGES']);
+    vi.advanceTimersByTime(28_000);
+    expect(new Set(heard)).toEqual(new Set(['MESSAGES', 'FEEDBACK', 'ORDERS', 'HISTORY', 'TRASH', 'LOGS']));
+
+    FakeSocket.opened.at(-1)!.onopen?.();
+    expect(live.connected()).toBe(true);
+    vi.advanceTimersByTime(1_000);
+    heard.length = 0;
+    vi.advanceTimersByTime(12_000);
+    expect(heard).toEqual([]);
+  });
+
+  it('says it is writing over HTTP while cut', () => {
+    const invoke = vi.fn().mockResolvedValue(undefined);
+    TestBed.configureTestingModule({ providers: [{ provide: Api, useValue: { invoke } }] });
+    const live = TestBed.inject(AdminLive);
+    live.start();
+    FakeSocket.opened[0]!.readyState = 0;
+
+    live.typing(12);
+
+    expect(invoke).toHaveBeenCalledWith(expect.any(Function), { group: 12 });
+    expect(FakeSocket.opened[0]!.sent).toEqual([]);
+  });
+
+  it('says in "Journaux", once, that it never connects', () => {
+    const reported: unknown[] = [];
+    TestBed.configureTestingModule({ providers: [{ provide: ErrorHandler, useValue: { handleError: (error: unknown) => reported.push(error) } }] });
+    const live = TestBed.inject(AdminLive);
+    live.start();
+
+    for (let cut = 0; cut < 5; cut++) {
+      FakeSocket.opened.at(-1)!.onclose?.();
+      vi.advanceTimersByTime(30_000);
+    }
+
+    expect(reported).toHaveLength(1);
+    expect(reported[0]).toBeInstanceOf(LiveUnreachable);
   });
 
   it('stays closed once stopped', () => {

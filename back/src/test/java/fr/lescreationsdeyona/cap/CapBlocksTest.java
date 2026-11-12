@@ -26,6 +26,19 @@ class CapBlocksTest {
 	}
 
 	@Test
+	void linksToAnotherArticleAtItsAddressOnceItIsPublished() {
+		List<CapBlock> blocks = List.of(text("Lire [mon examen](article:7), puis [la suite](article:8) et [la tarte](/recettes/tartes/citron)"),
+				new CapBlock(CapBlockType.IMAGE, null, UUID.randomUUID(), "Sans texte", null, null));
+
+		List<CapBlock> shown = CapBlocks.withArticleLinks(blocks, java.util.Map.of(7L, "mon-examen-blanc"));
+
+		assertThat(shown.getFirst().text())
+			.isEqualTo("Lire [mon examen](/mon-cap/mon-examen-blanc), puis la suite et [la tarte](/recettes/tartes/citron)");
+		assertThat(shown.get(1)).isSameAs(blocks.get(1));
+		assertThat(CapBlocks.plain("Voir [la suite](article:8)")).isEqualTo("Voir la suite");
+	}
+
+	@Test
 	void keepsTheFieldsOfEachTypeOnly() {
 		List<CapBlock> tidied = CapBlocks.tidy(List.of(
 				new CapBlock(CapBlockType.TEXT, "  Le matin  ", KEPT, "Légende", CapBlockSide.RIGHT, List.of()),

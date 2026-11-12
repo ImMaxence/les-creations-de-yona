@@ -4,6 +4,7 @@ import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageProcessor;
 import fr.lescreationsdeyona.image.ImageService;
+import fr.lescreationsdeyona.live.AdminLive;
 import fr.lescreationsdeyona.live.LiveChange;
 import fr.lescreationsdeyona.live.LiveTopic;
 import fr.lescreationsdeyona.message.MessageResponses.AdminMessage;
@@ -13,6 +14,7 @@ import fr.lescreationsdeyona.message.MessageResponses.MessageForm;
 import fr.lescreationsdeyona.message.MessageResponses.MessagePage;
 import fr.lescreationsdeyona.message.MessageResponses.MessagePhoto;
 import fr.lescreationsdeyona.message.MessageResponses.PhotoForm;
+import fr.lescreationsdeyona.message.MessageResponses.Typist;
 import fr.lescreationsdeyona.monitoring.AdminSeen;
 import fr.lescreationsdeyona.security.AdminProperties;
 import java.time.Duration;
@@ -84,8 +86,13 @@ public class AdminMessages {
 
 	private final ApplicationEventPublisher events;
 
+	private final MessageTyping typing;
+
+	private final AdminLive live;
+
 	AdminMessages(JdbcClient jdbc, AdminSeen adminSeen, AdminProperties admins, AdminGroups groups, ImageService imageService,
-			LinkPreviews linkPreviews, TransactionTemplate transactions, ApplicationEventPublisher events) {
+			LinkPreviews linkPreviews, TransactionTemplate transactions, ApplicationEventPublisher events, MessageTyping typing,
+			AdminLive live) {
 		this.jdbc = jdbc;
 		this.adminSeen = adminSeen;
 		this.admins = admins;
@@ -94,6 +101,25 @@ public class AdminMessages {
 		this.linkPreviews = linkPreviews;
 		this.transactions = transactions;
 		this.events = events;
+		this.typing = typing;
+		this.live = live;
+	}
+
+	/** The admin signed in writes in a group, said over HTTP by a page whose WebSocket is cut: the others are told as from a WebSocket. */
+	public void typing(long groupId) {
+		Author author = author();
+		Set<String> members = typing.writing(groupId, author.email(), author.name());
+		if (members.isEmpty()) {
+			throw new ApiException(ErrorCode.ADMIN_GROUP_NOT_FOUND);
+		}
+		live.tellTyping(groupId, author.email(), author.name(), members);
+	}
+
+	/** Who writes in a group now, the admin asking left out. */
+	public List<Typist> typists(long groupId) {
+		String me = groups.me();
+		groups.require(groupId, me);
+		return typing.writers(groupId, me);
 	}
 
 	/** The latest first; {@code before}: the id of the oldest one shown, for those written before it. */
@@ -181,14 +207,23 @@ public class AdminMessages {
 				.param("height", photo.height())
 				.update();
 		}
+		typing.sent(group.id(), author.email());
 		Set<String> members = groups.members(group);
 		events.publishEvent(new LiveChange(LiveTopic.MESSAGES, members));
 		String link = form.withoutPreview() ? null : MessageTexts.firstLink(body);
+		LinkPreview preview = null;
 		if (link != null) {
-			afterCommit(() -> Thread.ofVirtual().name("link-preview-" + id).start(() -> attachPreview(id, link, members)));
+			// Read while it was written (shown under the field): kept with the message at once; otherwise read once sent
+			Optional<LinkPreviews.Page> read = linkPreviews.cached(link);
+			if (read.isPresent()) {
+				preview = writePreview(id, read.get());
+			}
+			else {
+				afterCommit(() -> Thread.ofVirtual().name("link-preview-" + id).start(() -> attachPreview(id, link, members)));
+			}
 		}
 		return new AdminMessage(id, group.id(), author.email(), author.name(), author.picture(), body, now,
-				photos.stream().map(photo -> new MessagePhoto(photo.id(), photo.width(), photo.height())).toList(), null);
+				photos.stream().map(photo -> new MessagePhoto(photo.id(), photo.width(), photo.height())).toList(), preview);
 	}
 
 	/** Photos sent for a message, each once, held by no message nor group yet. */
@@ -214,7 +249,7 @@ public class AdminMessages {
 	void attachPreview(long id, String url, Set<String> members) {
 		try {
 			Optional<LinkPreviews.Page> page = linkPreviews.preview(url);
-			if (page.isPresent() && Boolean.TRUE.equals(transactions.execute(status -> writePreview(id, page.get())))) {
+			if (page.isPresent() && transactions.execute(status -> writePreview(id, page.get())) != null) {
 				events.publishEvent(new LiveChange(LiveTopic.MESSAGES, members));
 			}
 		}
@@ -223,7 +258,8 @@ public class AdminMessages {
 		}
 	}
 
-	private boolean writePreview(long id, LinkPreviews.Page page) {
+	/** The preview kept with the message, with its image; null when the message is gone meanwhile. */
+	private @Nullable LinkPreview writePreview(long id, LinkPreviews.Page page) {
 		ImageProcessor.Sized image = page.image();
 		UUID imageId = image == null ? null : imageService.createMessageImage(image.processed()).getId();
 		int updated = jdbc.sql("""
@@ -239,11 +275,15 @@ public class AdminMessages {
 			.param("height", image == null ? null : image.height())
 			.param("id", id)
 			.update();
-		if (updated == 0 && imageId != null) {
+		if (updated == 0) {
 			// Deleted meanwhile
-			imageService.deleteMessageImages(List.of(imageId));
+			if (imageId != null) {
+				imageService.deleteMessageImages(List.of(imageId));
+			}
+			return null;
 		}
-		return updated > 0;
+		return new LinkPreview(page.url(), page.title(), page.description(), page.siteName(), imageId,
+				image == null ? null : image.width(), image == null ? null : image.height());
 	}
 
 	/** Its own message only, its photos with it. */

@@ -1,5 +1,5 @@
 import { CapBlock } from '../../../core/api/generated/models/cap-block';
-import { articlePhotos, frenchDay, isSitePath } from './article-format';
+import { articleLink, articlePhotos, frenchDay, isSitePath, resolveArticleLinks } from './article-format';
 
 describe('frenchDay', () => {
   it('writes the first of the month "1er"', () => {
@@ -52,5 +52,15 @@ describe('isSitePath', () => {
     expect(isSitePath('mailto:yona@example.fr')).toBe(false);
     expect(isSitePath('')).toBe(false);
     expect(isSitePath(null)).toBe(false);
+  });
+});
+
+describe('resolveArticleLinks', () => {
+  it('links to a published article at its address, and leaves the words of a draft plain', () => {
+    const text = `Lire [mon examen](${articleLink(7)}), puis [la suite](${articleLink(8)}) et [la tarte](/recettes/tartes/citron)`;
+
+    expect(resolveArticleLinks(text, new Map([[7, 'mon-examen-blanc']]))).toBe(
+      'Lire [mon examen](/mon-cap/mon-examen-blanc), puis la suite et [la tarte](/recettes/tartes/citron)',
+    );
   });
 });

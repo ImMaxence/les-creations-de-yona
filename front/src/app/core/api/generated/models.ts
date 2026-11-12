@@ -164,6 +164,7 @@ export type { TrackedLine } from './models/tracked-line';
 export type { TrashBatchRestored } from './models/trash-batch-restored';
 export type { TrashedItem } from './models/trashed-item';
 export type { TrashRestored } from './models/trash-restored';
+export type { Typist } from './models/typist';
 export type { UnreadCount } from './models/unread-count';
 export type { Unseen } from './models/unseen';
 export type { UsingCategory } from './models/using-category';

@@ -117,6 +117,10 @@ export type { ListAdminMessages$Params as ListAdminMessages$Params } from './fn/
 export { listAdminMessages as listAdminMessages } from './fn/admin-messages/list-admin-messages';
 export type { SendAdminMessage$Params as SendAdminMessage$Params } from './fn/admin-messages/send-admin-message';
 export { sendAdminMessage as sendAdminMessage } from './fn/admin-messages/send-admin-message';
+export type { ListMessageTypists$Params as ListMessageTypists$Params } from './fn/admin-messages/list-message-typists';
+export { listMessageTypists as listMessageTypists } from './fn/admin-messages/list-message-typists';
+export type { SayMessageTyping$Params as SayMessageTyping$Params } from './fn/admin-messages/say-message-typing';
+export { sayMessageTyping as sayMessageTyping } from './fn/admin-messages/say-message-typing';
 export type { UploadMessagePhoto$Params as UploadMessagePhoto$Params } from './fn/admin-messages/upload-message-photo';
 export { uploadMessagePhoto as uploadMessagePhoto } from './fn/admin-messages/upload-message-photo';
 export type { ListMessageGroups$Params as ListMessageGroups$Params } from './fn/admin-messages/list-message-groups';

@@ -135,3 +135,9 @@
       max-width var(--duration-slow) var(--ease-in-out);
   }
 }
+
+// "Messages" takes the whole height of the screen, as a messaging app: a narrow margin around it
+// (its height counts it: admin-messages.scss)
+.admin__content:has(yona-admin-messages) {
+  padding-block: var(--space-4);
+}

@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.9.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.10.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -85,7 +85,7 @@ Les modèles locaux se téléchargent une seule fois, directement depuis Hugging
 - Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients, mots du glossaire et articles de Mon CAP, qui reviennent à leur place une fois restaurés.
 - Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur ; ce que les autres ont fait depuis la dernière visite marqué « Nouveau », avec un badge dans le menu), retours des visiteurs, titres de l'accueil modifiables.
 - Mon CAP : « Écrire avec l'IA » à partir de notes tapées, dictées ou photographiées (récit, pas à pas ou carnet), les photos déjà placées gardées.
-- Messages entre admins, en groupes (nom, photo et membres que chaque membre peut changer ; le groupe de tous les admins) : texte, photos, aperçu des liens comme sur un téléphone, « @ » pour citer une recette, un article, une commande… (un lien vers sa page), « est en train d'écrire… », badge des non lus, en temps réel ; gardés 90 jours et dans les sauvegardes.
+- Messages entre admins, en groupes (nom, photo et membres que chaque membre peut changer ; le groupe de tous les admins) : texte, photos, aperçu des liens comme sur un téléphone, « @ » pour citer une recette, un article, une commande… (un lien vers sa page), « est en train d'écrire… », un petit son à chaque message (à couper), badge des non lus, en temps réel ; gardés 90 jours et dans les sauvegardes.
 - Temps réel : les badges du menu (messages, retours, commandes, historique, corbeille, journaux) changent dès qu'un autre admin, un visiteur ou le site agit.
 - Journaux : les erreurs et avertissements du serveur et des navigateurs des visiteurs, regroupés, comptés, avec un badge dans le menu pour les nouvelles erreurs.
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons), glossaire.

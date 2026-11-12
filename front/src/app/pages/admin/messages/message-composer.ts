@@ -28,7 +28,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { Floating } from '../../../shared/ui/floating/floating';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { AdminLive } from '../layout/admin-live';
-import { MENTION_KINDS, MessageMention, firstLink, mentionLabel, mentionQuery, shownLink, withMentions } from './message-format';
+import { MENTION_KINDS, MessageMention, firstLink, linkHost, mentionLabel, mentionQuery, shownLink, withMentions } from './message-format';
 import { imageFiles, linkDraftImage, sendablePhoto } from './message-photos';
 
 /** Characters typed in a message (its mentions written in, the backend takes 3,000). */
@@ -84,6 +84,7 @@ export class MessageComposer {
   protected readonly kinds = MENTION_KINDS;
   protected readonly maxTyped = MAX_TYPED;
   protected readonly shownLink = shownLink;
+  protected readonly linkHost = linkHost;
   protected readonly linkDraftImage = linkDraftImage;
 
   protected readonly text = signal('');

@@ -2,6 +2,30 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.10.0 - 2026-11-12
+
+Front et backend 2.10.0. Pas de migration de la base
+
+### Ajouté
+
+- **Messages** : un petit son à chaque message d'un autre admin, sur toutes les pages du back-office, même dans un autre onglet ; la cloche en haut des groupes le coupe ou le remet, retenu dans le navigateur
+
+### Modifié
+
+- **Messages** : la page prend toute la hauteur de l'écran, comme une messagerie ; seule la conversation défile, le champ reste en bas, sans faire défiler la page ; le titre et le « + » du nouveau groupe au-dessus des groupes
+- **Messages** : l'aperçu d'un lien comme sur un iPhone, la grande image de la page, son titre et son site, sous le champ comme dans la conversation ; lu pendant l'écriture, il part avec le message au lieu d'arriver un moment après
+- **Mon CAP** : un lien vers un article pas encore publié est permis ; sur le site, ses mots restent du texte jusqu'à sa publication, puis deviennent un lien d'eux-mêmes, même si son titre (et donc son adresse) a changé entre-temps
+
+### Corrigé
+
+- **Messages** : les nouveaux messages et « est en train d'écrire… » arrivent sans recharger la page même quand le temps réel ne se connecte pas (un proxy qui refuse les WebSockets) : la page se met alors à jour toutes les 4 secondes, et « Journaux » le signale une fois
+- **Messages** : la conversation reste sur le dernier message quand une photo ou un aperçu finit de se charger
+- **Messages** : les sites qui refusent un lecteur inconnu donnent plus souvent leur aperçu ; un aperçu impossible est expliqué dans « Journaux » (site qui refuse, qui ne répond pas)
+
+### Technique
+
+- **Temps réel** : test d'intégration avec un vrai serveur et Spring Security (chaque connexion connue par le compte Google de l'admin) ; `POST` et `GET /api/admin/messages/typing?group=` pour une page sans WebSocket ; `AdminLive.connected`
+
 ## 2.9.0 - 2026-11-12
 
 Front et backend 2.9.0. Migration de la base : V27

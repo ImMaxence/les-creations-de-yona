@@ -92,6 +92,15 @@ export function trimLink(link: string): string {
   }
 }
 
+/** "mbonnici.fr": the site of a web address, as the preview of a link names it. */
+export function linkHost(link: string): string {
+  try {
+    return new URL(link).hostname.replace(/^www\./, '');
+  } catch {
+    return shownLink(link);
+  }
+}
+
 /** "marmiton.org/recettes/tarte…": a web address as a message shows it, shorter. */
 export function shownLink(link: string): string {
   const shown = link.replace(/^https?:\/\/(www\.)?/i, '');

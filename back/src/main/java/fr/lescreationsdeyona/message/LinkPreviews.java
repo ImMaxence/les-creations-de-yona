@@ -55,6 +55,13 @@ class LinkPreviews {
 		return uri == null ? Optional.empty() : pages.get(uri.toString(), key -> read(uri));
 	}
 
+	/** The page already read for this address (while the message was written), without reading it now. */
+	Optional<Page> cached(String url) {
+		URI uri = uriOf(url);
+		Optional<Page> read = uri == null ? null : pages.getIfPresent(uri.toString());
+		return read == null ? Optional.empty() : read;
+	}
+
 	/** An address of the web as typed, or null. */
 	static @Nullable URI uriOf(String url) {
 		if (url.length() > MAX_URL) {
@@ -88,7 +95,8 @@ class LinkPreviews {
 			return Optional.empty();
 		}
 		catch (IOException | RuntimeException ex) {
-			log.debug("No preview for {}: {}", uri.getHost(), ex.toString());
+			// In "Journaux": a site that refuses the server (a protection against robots), or that does not answer
+			log.warn("No preview for a link to {}: {}", uri.getHost(), ex.getMessage() == null ? ex.toString() : ex.getMessage());
 			return Optional.empty();
 		}
 	}

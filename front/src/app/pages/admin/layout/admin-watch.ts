@@ -13,6 +13,7 @@ import { markTrashSeen } from '../../../core/api/generated/fn/admin-trash/mark-t
 import { ErrorLogSummary } from '../../../core/api/generated/models/error-log-summary';
 import { Unseen } from '../../../core/api/generated/models/unseen';
 import { FRONT_VERSION } from '../../../core/version';
+import { MessageSound } from '../messages/message-sound';
 
 /**
  * What the admin logged in has not looked at yet, beside the entries of the menu: what the others
@@ -23,6 +24,7 @@ import { FRONT_VERSION } from '../../../core/version';
 @Injectable({ providedIn: 'root' })
 export class AdminWatch {
   private readonly api = inject(Api);
+  private readonly sound = inject(MessageSound);
 
   readonly history = signal<Unseen | null>(null);
   readonly logs = signal<ErrorLogSummary | null>(null);
@@ -51,8 +53,18 @@ export class AdminWatch {
     ]);
   }
 
+  /** A message of the others more than before (not at the first count): its little sound, on any page. */
   refreshMessages(): Promise<void> {
-    return this.load(() => this.api.invoke(countUnseenMessages), (value) => this.messages.set(value));
+    return this.load(
+      () => this.api.invoke(countUnseenMessages),
+      (value) => {
+        const before = this.messages();
+        this.messages.set(value);
+        if (before && value.count > before.count) {
+          this.sound.play();
+        }
+      },
+    );
   }
 
   refreshHistory(): Promise<void> {

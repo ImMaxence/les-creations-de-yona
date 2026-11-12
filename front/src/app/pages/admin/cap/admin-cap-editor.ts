@@ -8,6 +8,7 @@ import { uploadImage } from '../../../core/api/generated/fn/admin-images/upload-
 import { createCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/create-cap-entry';
 import { deleteCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/delete-cap-entry';
 import { duplicateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/duplicate-cap-entry';
+import { listAdminCapEntries } from '../../../core/api/generated/fn/admin-mon-cap/list-admin-cap-entries';
 import { getAdminCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/get-admin-cap-entry';
 import { updateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/update-cap-entry';
 import { getCapAiStatus } from '../../../core/api/generated/fn/admin-mon-cap-ai/get-cap-ai-status';
@@ -23,6 +24,7 @@ import { SiteData } from '../../../core/site/site-data';
 import { fromParisInput, parisDateTime, toParisInput } from '../../../shared/format/paris-time';
 import { CAP_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
+import { articleLink, resolveArticleLinks } from '../../../shared/ui/cap-article/article-format';
 import { CapArticleContent, CapArticleView } from '../../../shared/ui/cap-article/cap-article-view';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -201,13 +203,20 @@ export default class AdminCapEditor implements UnsavedChanges {
   protected readonly address = computed(() =>
     `${CAP_PATH}/${this.wasPublished() && this.savedSlug() ? this.savedSlug() : slugOf(this.title())}`,
   );
+  /** The articles of the site, for the links to them in the preview: as online, a draft's words stay plain. */
+  private readonly articles = resource({ loader: () => this.api.invoke(listAdminCapEntries) });
+  private readonly publishedSlugs = computed(
+    () => new Map((this.articles.value() ?? []).filter((article) => article.status === 'PUBLISHED').map((article) => [article.id, article.slug])),
+  );
   protected readonly previewArticle = computed<CapArticleContent>(() => ({
     title: this.title().trim(),
     subtitle: this.subtitle().trim() || null,
     happenedOn: this.date() || today(),
     imageId: this.imageId(),
     style: this.style(),
-    blocks: this.formBlocks(),
+    blocks: this.formBlocks().map((block) =>
+      block.text ? { ...block, text: resolveArticleLinks(block.text, this.publishedSlugs()) } : block,
+    ),
   }));
   private readonly snapshot = computed(() => JSON.stringify(this.form()));
   /** Ctrl+Z and Ctrl+Y: every field of the article and its blocks, their keys kept for the page to keep its fields. */
@@ -489,8 +498,10 @@ export default class AdminCapEditor implements UnsavedChanges {
   }
 
   /**
-   * "[Tarte au citron](/recettes/tartes/tarte-au-citron)", "[Mon examen blanc](/mon-cap/mon-examen-blanc)":
-   * the words selected link to the recipe or the article chosen; none selected, its title does.
+   * "[Tarte au citron](/recettes/tartes/tarte-au-citron)", "[Mon examen blanc](article:12)": the words
+   * selected link to the recipe or the article chosen; none selected, its title does. An article is
+   * linked by its id (2.10.0): its address is read when the page is served, a draft's words staying
+   * plain until it is published (resolveArticleLinks), whatever its title becomes meanwhile.
    */
   protected insertLink(): void {
     const target = this.linking();
@@ -502,7 +513,7 @@ export default class AdminCapEditor implements UnsavedChanges {
     const article = this.linkedArticle();
     const chosen =
       target.kind === 'article'
-        ? article && { title: article.title, path: `${CAP_PATH}/${article.slug}` }
+        ? article && { title: article.title, path: articleLink(article.id) }
         : recipe?.slug && recipe.categorySlug ? { title: recipe.title, path: `/recettes/${recipe.categorySlug}/${recipe.slug}` } : null;
     if (!chosen) {
       return;
@@ -513,7 +524,7 @@ export default class AdminCapEditor implements UnsavedChanges {
     if (target.kind === 'recipe' && recipe && !recipe.published) {
       this.toaster.info('Cette recette n’est pas encore publiée : le lien mènera à une page introuvable d’ici là');
     } else if (target.kind === 'article' && article && !article.published) {
-      this.toaster.info('Cet article n’est pas encore publié : le lien mènera à une page introuvable d’ici là, et son adresse suit son titre jusqu’à sa publication');
+      this.toaster.info('Cet article n’est pas encore publié : sur le site, ces mots deviendront un lien dès sa publication');
     }
     this.linking.set(null);
   }

@@ -1,12 +1,23 @@
-<section class="admin-section" aria-labelledby="messages-title">
-  <div class="admin-section__head">
-    <h2 id="messages-title">Messages</h2>
-    <button yonaButton variant="secondary" type="button" (click)="newGroup()"><svg yonaIcon="plus"></svg>Nouveau groupe</button>
-  </div>
-  <p class="field__hint">Entre les admins, en groupes : chacun lit les groupes dont il fait partie. Les messages sont gardés 90 jours, et dans les sauvegardes</p>
-
-  <div class="messenger" [class.is-reading]="reading()">
-    <nav class="group-list" aria-label="Groupes">
+<!-- The whole height of the screen: the groups and the conversation scroll, the page does not -->
+<section class="messenger" [class.is-reading]="reading()" aria-labelledby="messages-title">
+  <div class="group-list">
+    <div class="group-list__head">
+      <h2 id="messages-title" class="group-list__title">Messages</h2>
+      <span class="group-list__actions">
+        <button
+          type="button"
+          class="icon-button"
+          [attr.aria-label]="sound.enabled() ? 'Couper le son des nouveaux messages' : 'Remettre le son des nouveaux messages'"
+          (click)="sound.toggle()"
+        >
+          <svg [yonaIcon]="sound.enabled() ? 'bell' : 'bell-off'" [size]="20"></svg>
+        </button>
+        <button type="button" class="icon-button" aria-label="Nouveau groupe" (click)="newGroup()">
+          <svg yonaIcon="plus" [size]="20"></svg>
+        </button>
+      </span>
+    </div>
+    <nav class="group-list__nav" aria-label="Groupes">
       @if (groups(); as list) {
         <ul role="list" class="group-list__items">
           @for (group of list; track group.id) {
@@ -40,6 +51,8 @@
         <yona-skeleton kind="rows" [count]="3" />
       }
     </nav>
+    <p class="field__hint group-list__hint">Chacun lit les groupes dont il fait partie. Messages gardés 90 jours, et dans les sauvegardes</p>
+  </div>
 
     <div
       class="admin-panel conversation"
@@ -63,92 +76,96 @@
           </button>
         </header>
 
-        <div #thread class="thread" role="log" [attr.aria-label]="'Messages de ' + group.name">
-          @if (hasOlder()) {
-            <button type="button" class="link-button older" [disabled]="loadingOlder()" (click)="loadOlder()">
-              <svg yonaIcon="arrow-up" [size]="16"></svg>{{ loadingOlder() ? 'Chargement…' : 'Voir les messages plus anciens' }}
-            </button>
-          }
-          @if (loading()) {
-            <yona-skeleton kind="rows" [count]="3" />
-          } @else if (!days().length) {
-            <p class="admin-empty">Aucun message pour le moment : écrivez le premier ci-dessous</p>
-          }
-          @for (day of days(); track day.key) {
-            <h4 class="day"><span>{{ day.label }}</span></h4>
-            <ol role="list" class="day__messages">
-              @for (shown of day.messages; track shown.message.id) {
-                @if (shown.message.id === firstNew()) {
-                  <li class="new-divider"><span>Nouveaux</span></li>
-                }
-                <li class="message" [class.is-mine]="shown.mine">
-                  <yona-admin-avatar [name]="nameOf(shown.message.authorEmail, shown.message.authorName)" [picture]="shown.message.authorPicture" />
-                  <div class="message__content">
-                    <p class="message__head">
-                      <span class="message__author">{{ shown.author }}</span>
-                      <time class="message__time" [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
-                    </p>
-                    @if (shown.parts.length) {
-                      <p class="message__body">
-                        @for (part of shown.parts; track $index) {
-                          @if (part.mention; as mention) {
-                            <a class="mention" [routerLink]="kinds[mention.kind].link(mention.id)" [attr.data-tooltip]="kinds[mention.kind].name">
-                              <svg [yonaIcon]="kinds[mention.kind].icon" [size]="14"></svg>{{ mention.label }}
-                            </a>
-                          } @else if (part.link; as link) {
-                            <a class="message__link" [href]="link" target="_blank" rel="noopener noreferrer">{{ shownLink(link) }}</a>
-                          } @else {
-                            {{ part.text }}
-                          }
-                        }
-                      </p>
-                    }
-                    @if (shown.message.photos.length) {
-                      <div class="photos" [class.photos--one]="shown.message.photos.length === 1">
-                        @for (photo of shown.message.photos; track photo.id; let i = $index) {
-                          <button
-                            type="button"
-                            class="photo"
-                            [style.aspect-ratio]="shown.message.photos.length === 1 ? photo.width + ' / ' + photo.height : null"
-                            [attr.aria-label]="shown.message.photos.length > 1 ? 'Voir la photo ' + (i + 1) + ' en grand' : 'Voir la photo en grand'"
-                            (click)="openPhoto(shown.message, i)"
-                          >
-                            <img [src]="messagePhoto(photo.id)" alt="" loading="lazy" [width]="photo.width" [height]="photo.height" />
-                          </button>
-                        }
-                      </div>
-                    }
-                    @if (shown.message.link; as link) {
-                      <a class="link-card" [class.has-image]="!!link.imageId" [href]="link.url" target="_blank" rel="noopener noreferrer">
-                        @if (link.imageId) {
-                          <img
-                            class="link-card__image"
-                            [src]="messagePhoto(link.imageId)"
-                            alt=""
-                            loading="lazy"
-                            [width]="link.imageWidth ?? 800"
-                            [height]="link.imageHeight ?? 420"
-                          />
-                        }
-                        <span class="link-card__text">
-                          <span class="link-card__site">{{ link.siteName || shownLink(link.url) }}</span>
-                          <strong class="link-card__title">{{ link.title || shownLink(link.url) }}</strong>
-                          @if (link.description) {
-                            <span class="link-card__description">{{ link.description }}</span>
-                          }
-                        </span>
-                      </a>
-                    }
-                  </div>
-                  @if (shown.mine) {
-                    <button type="button" class="icon-button message__delete" aria-label="Supprimer ce message" data-tooltip="Supprimer" (click)="remove(shown.message)">
-                      <svg yonaIcon="trash" [size]="16"></svg>
-                    </button>
+        <div #thread class="thread" role="log" [attr.aria-label]="'Messages de ' + group.name" (scroll)="onThreadScroll()">
+          <!-- Watched: what grows at the bottom (a photo, a preview) keeps the conversation at its end -->
+          <div #threadContent class="thread__content">
+            @if (hasOlder()) {
+              <button type="button" class="link-button older" [disabled]="loadingOlder()" (click)="loadOlder()">
+                <svg yonaIcon="arrow-up" [size]="16"></svg>{{ loadingOlder() ? 'Chargement…' : 'Voir les messages plus anciens' }}
+              </button>
+            }
+            @if (loading()) {
+              <yona-skeleton kind="rows" [count]="3" />
+            } @else if (!days().length) {
+              <p class="admin-empty">Aucun message pour le moment : écrivez le premier ci-dessous</p>
+            }
+            @for (day of days(); track day.key) {
+              <h4 class="day"><span>{{ day.label }}</span></h4>
+              <ol role="list" class="day__messages">
+                @for (shown of day.messages; track shown.message.id) {
+                  @if (shown.message.id === firstNew()) {
+                    <li class="new-divider"><span>Nouveaux</span></li>
                   }
-                </li>
-              }
-            </ol>
-          }
+                  <li class="message" [class.is-mine]="shown.mine">
+                    <yona-admin-avatar [name]="nameOf(shown.message.authorEmail, shown.message.authorName)" [picture]="shown.message.authorPicture" />
+                    <div class="message__content">
+                      <p class="message__head">
+                        <span class="message__author">{{ shown.author }}</span>
+                        <time class="message__time" [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
+                      </p>
+                      @if (shown.parts.length) {
+                        <p class="message__body">
+                          @for (part of shown.parts; track $index) {
+                            @if (part.mention; as mention) {
+                              <a class="mention" [routerLink]="kinds[mention.kind].link(mention.id)" [attr.data-tooltip]="kinds[mention.kind].name">
+                                <svg [yonaIcon]="kinds[mention.kind].icon" [size]="14"></svg>{{ mention.label }}
+                              </a>
+                            } @else if (part.link; as link) {
+                              <a class="message__link" [href]="link" target="_blank" rel="noopener noreferrer">{{ shownLink(link) }}</a>
+                            } @else {
+                              {{ part.text }}
+                            }
+                          }
+                        </p>
+                      }
+                      @if (shown.message.photos.length) {
+                        <div class="photos" [class.photos--one]="shown.message.photos.length === 1">
+                          @for (photo of shown.message.photos; track photo.id; let i = $index) {
+                            <button
+                              type="button"
+                              class="photo"
+                              [style.aspect-ratio]="shown.message.photos.length === 1 ? photo.width + ' / ' + photo.height : null"
+                              [attr.aria-label]="shown.message.photos.length > 1 ? 'Voir la photo ' + (i + 1) + ' en grand' : 'Voir la photo en grand'"
+                              (click)="openPhoto(shown.message, i)"
+                            >
+                              <img [src]="messagePhoto(photo.id)" alt="" loading="lazy" [width]="photo.width" [height]="photo.height" />
+                            </button>
+                          }
+                        </div>
+                      }
+                      @if (shown.message.link; as link) {
+                        <a class="link-card" [class.has-image]="!!link.imageId" [href]="link.url" target="_blank" rel="noopener noreferrer">
+                          @if (link.imageId) {
+                            <img
+                              class="link-card__image"
+                              [src]="messagePhoto(link.imageId)"
+                              alt=""
+                              loading="lazy"
+                              [width]="link.imageWidth ?? 800"
+                              [height]="link.imageHeight ?? 420"
+                            />
+                          }
+                          <!-- As on a phone: the title, then the site; the page's text when it has no image -->
+                          <span class="link-card__text">
+                            <strong class="link-card__title">{{ link.title || link.siteName || shownLink(link.url) }}</strong>
+                            @if (link.description && !link.imageId) {
+                              <span class="link-card__description">{{ link.description }}</span>
+                            }
+                            <span class="link-card__site">{{ linkHost(link.url) }}</span>
+                          </span>
+                        </a>
+                      }
+                    </div>
+                    @if (shown.mine) {
+                      <button type="button" class="icon-button message__delete" aria-label="Supprimer ce message" data-tooltip="Supprimer" (click)="remove(shown.message)">
+                        <svg yonaIcon="trash" [size]="16"></svg>
+                      </button>
+                    }
+                  </li>
+                }
+              </ol>
+            }
+          </div>
         </div>
 
         <p class="typing" aria-live="polite">
@@ -159,9 +176,8 @@
 
         <yona-message-composer [group]="group.id" (sent)="onSent($event)" />
       } @else if (groups()) {
-        <p class="admin-empty">Aucun groupe : créez-en un avec « Nouveau groupe »</p>
+        <p class="admin-empty">Aucun groupe : créez-en un avec le « + »</p>
       }
-    </div>
   </div>
 </section>
 

@@ -38,8 +38,11 @@ class LinkFetcher {
 
 	private static final int MAX_REDIRECTS = 4;
 
-	/** Neutral: the server reads the page on its own, for nobody to recognize. */
-	private static final String USER_AGENT = "Mozilla/5.0 (compatible; LinkPreview/1.0)";
+	/**
+	 * As a browser, with its own name at the end: some sites refuse an agent they do not know, or give
+	 * their tags only to a browser. Nothing of the site nor of the admin is in it.
+	 */
+	private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15 LinkPreview/1.0";
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(CONNECT).followRedirects(HttpClient.Redirect.NEVER).build();
 

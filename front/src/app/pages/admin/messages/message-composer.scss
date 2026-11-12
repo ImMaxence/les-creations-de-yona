@@ -77,15 +77,15 @@
   }
 }
 
-// The preview of the first link, before sending
+// The preview of the first link, before sending, as on a phone
 .link-draft {
+  position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface);
+  width: min(100%, 20rem);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+  box-shadow: 0 0 0 1px var(--color-line);
 }
 
 .link-draft--enter {
@@ -100,38 +100,68 @@
 }
 
 .link-draft__image {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: var(--radius-sm);
+  width: 100%;
+  height: auto;
+  max-height: 11rem;
   object-fit: cover;
-}
-
-.link-draft__image--none {
-  display: grid;
-  place-items: center;
-  background-color: var(--color-bg);
-  color: var(--color-text-muted);
+  background-color: var(--color-surface);
 }
 
 .link-draft__text {
   display: grid;
-  min-width: 0;
+  gap: 0.15rem;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  // Without an image, the cross sits beside the text
+  padding-right: var(--space-7);
+
+  .has-image & {
+    padding-right: var(--space-3);
+  }
 }
 
-.link-draft__site {
+.link-draft__title,
+.link-draft__description {
+  display: -webkit-box;
   overflow: hidden;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
 }
 
 .link-draft__title {
-  display: -webkit-box;
-  overflow: hidden;
   font-size: var(--text-sm);
-  -webkit-box-orient: vertical;
+  line-height: 1.3;
   -webkit-line-clamp: 2;
+}
+
+.link-draft__description {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  -webkit-line-clamp: 2;
+}
+
+.link-draft__site {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.link-draft__close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background-color: rgb(10 6 4 / 60%);
+  color: #fff;
+
+  @include m.hover {
+    background-color: rgb(10 6 4 / 85%);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
 }
 
 // The field, the paperclip and the button beside it
@@ -169,8 +199,13 @@ textarea.composer__field {
   }
 }
 
+// Phones: no keys to describe, the room goes to the conversation
 .composer__hint {
   margin-top: calc(-1 * var(--space-1));
+
+  @include m.below(sm) {
+    display: none;
+  }
 }
 
 // What "@" offers, above or under the field (yonaFloating)

@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.StringUtils;
@@ -39,6 +41,31 @@ final class CapBlocks {
 	private static final Pattern EMPHASIS = Pattern.compile("(\\*\\*|__|\\*|_|~~|`)");
 
 	private static final Pattern SPACES = Pattern.compile("\\s+");
+
+	/**
+	 * [mots](article:12), as the editor writes a link to another article (2.10.0): by its id, its address
+	 * read when the page is served (it follows the title until the article is published).
+	 */
+	private static final Pattern ARTICLE_LINK = Pattern.compile("\\[([^\\[\\]\\n]*)]\\(article:(\\d{1,18})\\)");
+
+	/**
+	 * The links to other articles made addresses: the page of a published one; for one not published
+	 * yet (or gone), the words alone, until it is. Nothing to change in the article once it is published.
+	 */
+	static List<CapBlock> withArticleLinks(List<CapBlock> blocks, Map<Long, String> publishedSlugs) {
+		return blocks.stream()
+			.map(block -> block.text() == null || !block.text().contains("](article:") ? block
+					: new CapBlock(block.type(), articleLinks(block.text(), publishedSlugs), block.imageId(), block.caption(), block.side(),
+							block.photos()))
+			.toList();
+	}
+
+	static String articleLinks(String text, Map<Long, String> publishedSlugs) {
+		return ARTICLE_LINK.matcher(text).replaceAll(match -> {
+			String slug = publishedSlugs.get(Long.parseLong(match.group(2)));
+			return Matcher.quoteReplacement(slug == null ? match.group(1) : "[" + match.group(1) + "](/mon-cap/" + slug + ")");
+		});
+	}
 
 	private CapBlocks() {
 	}
