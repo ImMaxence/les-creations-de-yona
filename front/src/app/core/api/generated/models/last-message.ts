@@ -4,6 +4,12 @@
 export interface LastMessage {
   authorEmail: string;
   authorName?: string;
+
+  /**
+   * A line of the group (2.13), told as such in the list
+   */
+  event?: 'CREATED' | 'RENAMED' | 'PHOTO_CHANGED' | 'PHOTO_REMOVED' | 'ADDED' | 'REMOVED' | 'LEFT';
+  eventValue?: string;
   photos: number;
   sentAt: string;
 

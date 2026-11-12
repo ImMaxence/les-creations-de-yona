@@ -2,6 +2,23 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.13.0 - 2026-11-12
+
+Front et backend 2.13.0. Migration de la base : V29 et V30
+
+### Ajouté
+
+- **Messages** : une notification sur le téléphone ou l'ordinateur pour chaque message pas lu dans les 10 secondes, comme dans une messagerie ; idéal avec l'application installée, à activer appareil par appareil avec la cloche en haut des groupes ; une seule notification pour plusieurs messages d'affilée, un appui ouvre la conversation
+
+- **Messages** : ce qui change dans un groupe s'écrit dans sa conversation, au milieu comme dans un chat : création, nouveau nom, photo changée ou retirée, membre ajouté ou retiré, départ (« Léa a ajouté Sam », « Vous avez renommé le groupe « Atelier » », « Léa vous a ajouté »)
+- **Messages** : la dernière de ces lignes s'affiche aussi dans la liste des groupes
+
+### Modifié
+
+- **Messages** : ces lignes ne font ni badge ni son, ne comptent pas dans l'anti-spam et ne se suppriment pas
+- **Messages** : le son se coupe désormais avec un haut-parleur, la cloche servant aux notifications
+- **Politique de confidentialité** : les notifications des messages entre administrateurs (abonnement associé à l'administrateur, contenu chiffré pour son appareil)
+
 ## 2.12.0 - 2026-11-12
 
 Front et backend 2.12.0. Pas de migration de la base

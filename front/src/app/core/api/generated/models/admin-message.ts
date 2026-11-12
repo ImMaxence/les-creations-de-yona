@@ -12,6 +12,16 @@ export interface AdminMessage {
    * The text, empty for photos alone; a mention is written in it: @[Tarte au citron](RECIPE:12)
    */
   body: string;
+
+  /**
+   * A line of the group (2.13): what its author changed in it, the body then a sentence of it in French
+   */
+  event?: 'CREATED' | 'RENAMED' | 'PHOTO_CHANGED' | 'PHOTO_REMOVED' | 'ADDED' | 'REMOVED' | 'LEFT';
+
+  /**
+   * The name given (CREATED, RENAMED) or the email of the member concerned (ADDED, REMOVED)
+   */
+  eventValue?: string;
   groupId: number;
   id: number;
 

@@ -147,6 +147,12 @@ export type { GetMessageImage$Params as GetMessageImage$Params } from './fn/admi
 export { getMessageImage as getMessageImage } from './fn/admin-messages/get-message-image';
 export type { DeleteAdminMessage$Params as DeleteAdminMessage$Params } from './fn/admin-messages/delete-admin-message';
 export { deleteAdminMessage as deleteAdminMessage } from './fn/admin-messages/delete-admin-message';
+export type { GetMessageAlert$Params as GetMessageAlert$Params } from './fn/admin-message-alerts/get-message-alert';
+export { getMessageAlert as getMessageAlert } from './fn/admin-message-alerts/get-message-alert';
+export type { EnableMessageAlert$Params as EnableMessageAlert$Params } from './fn/admin-message-alerts/enable-message-alert';
+export { enableMessageAlert as enableMessageAlert } from './fn/admin-message-alerts/enable-message-alert';
+export type { DisableMessageAlert$Params as DisableMessageAlert$Params } from './fn/admin-message-alerts/disable-message-alert';
+export { disableMessageAlert as disableMessageAlert } from './fn/admin-message-alerts/disable-message-alert';
 export type { GetAdminMenu$Params as GetAdminMenu$Params } from './fn/admin-menus/get-admin-menu';
 export { getAdminMenu as getAdminMenu } from './fn/admin-menus/get-admin-menu';
 export type { UpdateMenu$Params as UpdateMenu$Params } from './fn/admin-menus/update-menu';

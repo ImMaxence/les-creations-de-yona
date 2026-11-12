@@ -44,8 +44,11 @@ import { LinkCard } from './link-card';
 import { MessageComposer } from './message-composer';
 import { MENTION_KINDS, MessagePart, parseMessage, shownLink } from './message-format';
 import { imageFiles, messagePhoto } from './message-photos';
-import { seenBy, seenLabel, seenPlaces } from './message-seen';
+import { readUpTo, seenBy, seenLabel, seenPlaces } from './message-seen';
+import { systemLine } from './message-system';
 import { MessageSound } from './message-sound';
+import { MessageAlerts } from '../../../core/pwa/message-alerts';
+import { Toaster } from '../../../core/notifications/toaster';
 
 const PAGE_SIZE = 50;
 
@@ -82,6 +85,8 @@ interface ShownMessage {
   first: boolean;
   /** Ends it: the face beside it. */
   last: boolean;
+  /** A line of the group (2.13), as the one reading says it: "Léa a ajouté Sam"; null for a message. */
+  system: string | null;
 }
 
 /** A few minutes between two messages of the same author: still one run. */
@@ -95,6 +100,8 @@ export function sameRun(before: AdminMessage | undefined, after: AdminMessage | 
   return (
     !!before &&
     !!after &&
+    !before.event &&
+    !after.event &&
     after.id !== firstNew &&
     before.authorEmail.toLowerCase() === after.authorEmail.toLowerCase() &&
     Date.parse(after.sentAt) - Date.parse(before.sentAt) < RUN_GAP_MS
@@ -141,6 +148,8 @@ export default class AdminMessages {
   protected readonly shownLink = shownLink;
   private readonly live = inject(AdminLive);
   protected readonly sound = inject(MessageSound);
+  protected readonly alerts = inject(MessageAlerts);
+  private readonly toaster = inject(Toaster);
   protected readonly bigPhoto = (imageId: string) => messagePhoto(imageId, 1600);
 
   protected readonly admins = resource({ loader: () => this.api.invoke(listMessageMembers) });
@@ -213,6 +222,7 @@ export default class AdminMessages {
         onlyLink,
         first: !day.messages.length || !sameRun(messages[i - 1], message, firstNew),
         last: !sameRun(message, nextSameDay, firstNew),
+        system: this.systemOf(message),
       });
     });
     return days;
@@ -232,18 +242,23 @@ export default class AdminMessages {
   });
   /** The last message of the conversation, when it is one's own: "Envoyé", "Vu" or "Vu par…" under it. */
   protected readonly lastMine = computed(() => {
-    const last = this.messages().at(-1);
-    const others = this.selected()?.members.filter((email) => !this.isMine(email)).length ?? 0;
-    if (!last || !this.isMine(last.authorEmail) || !others) {
+    // The lines of the group are not messages: the last one written, if nothing was written after it
+    const messages = this.messages();
+    const last = [...messages].reverse().find((message) => !message.event);
+    const others = this.selected()?.members.filter((email) => !this.isMine(email)) ?? [];
+    if (!last || !this.isMine(last.authorEmail) || !others.length) {
       return null;
     }
-    const readers = (this.seenRows().get(last.id) ?? []).map((email) => this.firstName(email));
-    return { id: last.id, label: seenLabel(readers, others) };
+    const sent = Date.parse(last.sentAt);
+    const readers = others.filter((email) => readUpTo(messages, email, this.seenUpTo()) >= sent).map((email) => this.firstName(email));
+    return { id: last.id, label: seenLabel(readers, others.length) };
   });
   /** The first message of the others since the last visit: "Nouveaux" above it. */
   protected readonly firstNew = computed(() => {
     const since = this.since();
-    return since ? this.messages().find((message) => !this.isMine(message.authorEmail) && Date.parse(message.sentAt) > Date.parse(since))?.id : undefined;
+    return since
+      ? this.messages().find((message) => !message.event && !this.isMine(message.authorEmail) && Date.parse(message.sentAt) > Date.parse(since))?.id
+      : undefined;
   });
   /** "Yona est en train d'écrire…" in the group open. */
   protected readonly typingLabel = computed(() => typingLabel(this.typists().filter((typist) => typist.group === this.selected()?.id)));
@@ -321,6 +336,23 @@ export default class AdminMessages {
     return email.toLowerCase() === this.me();
   }
 
+  /** The bell: the notifications of the messages on this device, on or off, or why not. */
+  protected toggleAlerts(): void {
+    switch (this.alerts.state()) {
+      case 'on':
+        void this.alerts.disable();
+        break;
+      case 'blocked':
+        this.toaster.error('Les notifications sont bloquées pour ce site : autorisez-les dans les réglages du navigateur');
+        break;
+      case 'install-first':
+        this.toaster.info('Sur iPhone et iPad, installez d’abord le site sur l’écran d’accueil (Partager, puis « Sur l’écran d’accueil ») et ouvrez-le depuis son icône');
+        break;
+      default:
+        void this.alerts.enable();
+    }
+  }
+
   /** Up to when the others read the group open: where their "Vu" go. */
   private async loadSeen(): Promise<void> {
     const group = this.openGroup;
@@ -331,6 +363,16 @@ export default class AdminMessages {
     if (seen.ok && this.openGroup === group) {
       this.seenUpTo.set(seen.value ?? []);
     }
+  }
+
+  /** A line of the group as the one reading says it ("Léa a ajouté Sam"), null for a message. */
+  protected systemOf(message: Pick<AdminMessage, 'authorEmail' | 'authorName' | 'event' | 'eventValue'>): string | null {
+    if (!message.event) {
+      return null;
+    }
+    const actor = { name: this.nameOf(message.authorEmail, message.authorName).split(' ')[0]!, me: this.isMine(message.authorEmail) };
+    const member = message.event === 'ADDED' || message.event === 'REMOVED' ? message.eventValue : null;
+    return systemLine(message.event, actor, message.eventValue, member ? { name: this.firstName(member), me: this.isMine(member) } : null);
   }
 
   protected firstName(email: string): string {
@@ -413,6 +455,10 @@ export default class AdminMessages {
     const last = group.last;
     if (!last) {
       return 'Aucun message pour le moment';
+    }
+    const system = this.systemOf(last);
+    if (system) {
+      return system;
     }
     const author = this.isMine(last.authorEmail) ? 'Vous' : this.nameOf(last.authorEmail, last.authorName).split(' ')[0];
     const text = last.text || (last.photos > 1 ? `${last.photos} photos` : 'Une photo');
@@ -518,9 +564,10 @@ export default class AdminMessages {
     const known = new Set(this.messages().map((message) => message.id));
     // Who just wrote is no longer writing
     const arrived = latest.filter((message) => !known.has(message.id));
-    arrived.forEach((message) => this.stopTyping(group, message.authorEmail.toLowerCase()));
+    arrived.filter((message) => !message.event).forEach((message) => this.stopTyping(group, message.authorEmail.toLowerCase()));
     // In the conversation open too, read at once (its badge never grows): its little sound
-    if (known.size && arrived.some((message) => !this.isMine(message.authorEmail))) {
+    // The lines of the group make no sound (nor badge)
+    if (known.size && arrived.some((message) => !message.event && !this.isMine(message.authorEmail))) {
       this.sound.play();
     }
     if (known.size && arrived.length) {

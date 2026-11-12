@@ -69,6 +69,10 @@ export async function fakeAdmin(page, version = 'locale') {
   await page.route('**/api/admin/messages/unseen', (route) => route.fulfill({ json: { count: 0, since: now } }));
   // Qui est dans le back-office (2.11) : la page Messages le demande
   await page.route('**/api/admin/messages/presence', (route) => route.fulfill({ json: [] }));
+  // Les notifications des messages sur cet appareil (2.13) : pas activées
+  await page.route('**/api/admin/message-alerts?**', (route) =>
+    route.request().method() === 'GET' ? route.fulfill({ json: { enabled: false } }) : route.fulfill({ status: 204 }),
+  );
   // Qui a lu le groupe, et jusqu'où (2.12) ; le PUT marque le groupe lu
   await page.route('**/api/admin/messages/seen?**', (route) =>
     route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.fulfill({ status: 204 }),

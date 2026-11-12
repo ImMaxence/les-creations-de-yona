@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -37,9 +36,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -122,7 +118,7 @@ public class AdminMessages {
 
 	/** The admin signed in writes in a group, said over HTTP by a page whose WebSocket is cut: the others are told as from a WebSocket. */
 	public void typing(long groupId) {
-		Author author = author();
+		MessageAuthor author = author();
 		Set<String> members = typing.writing(groupId, author.email(), author.name());
 		if (members.isEmpty()) {
 			throw new ApiException(ErrorCode.ADMIN_GROUP_NOT_FOUND);
@@ -155,7 +151,8 @@ public class AdminMessages {
 								linkImage, linkImage == null ? null : row.getObject("link_image_width", Integer.class),
 								linkImage == null ? null : row.getObject("link_image_height", Integer.class));
 				return new Row(row.getLong("id"), row.getLong("group_id"), row.getString("author_email"), row.getString("author_name"),
-						row.getString("author_picture"), row.getString("body"), row.getObject("sent_at", OffsetDateTime.class).toInstant(), link);
+						row.getString("author_picture"), row.getString("body"), row.getObject("sent_at", OffsetDateTime.class).toInstant(), link,
+						row.getString("event") == null ? null : GroupEvent.valueOf(row.getString("event")), row.getString("event_value"));
 			})
 			.list();
 		List<Row> shown = found.size() > limit ? found.subList(0, limit) : found;
@@ -164,10 +161,10 @@ public class AdminMessages {
 	}
 
 	private record Row(long id, long groupId, String authorEmail, @Nullable String authorName, @Nullable String authorPicture, String body,
-			Instant sentAt, @Nullable LinkPreview link) {
+			Instant sentAt, @Nullable LinkPreview link, @Nullable GroupEvent event, @Nullable String eventValue) {
 
 		AdminMessage message(List<MessagePhoto> photos) {
-			return new AdminMessage(id, groupId, authorEmail, authorName, authorPicture, body, sentAt, photos, link);
+			return new AdminMessage(id, groupId, authorEmail, authorName, authorPicture, body, sentAt, photos, link, event, eventValue);
 		}
 
 	}
@@ -207,7 +204,7 @@ public class AdminMessages {
 	/** Written by the admin signed in, in a group they are in, with their name and photo as Google gives them. */
 	@Transactional
 	public AdminMessage send(MessageForm form) {
-		Author author = author();
+		MessageAuthor author = author();
 		AdminGroups.Group group = groups.require(form.groupId(), author.email());
 		List<PhotoForm> photos = form.photos() == null ? List.of() : form.photos();
 		String body = clean(form.body(), !photos.isEmpty());
@@ -238,6 +235,8 @@ public class AdminMessages {
 		typing.sent(group.id(), author.email());
 		Set<String> members = groups.members(group);
 		events.publishEvent(new LiveChange(LiveTopic.MESSAGES, members));
+		// On the devices of the members who will not have read it in a few seconds (MessagePush)
+		events.publishEvent(new MessageSent(id, group.id(), group.name(), author.email(), author.name(), body, photos.size(), now, members));
 		String link = form.withoutPreview() ? null : MessageTexts.firstLink(body);
 		LinkPreview preview = null;
 		if (link != null) {
@@ -251,13 +250,13 @@ public class AdminMessages {
 			}
 		}
 		return new AdminMessage(id, group.id(), author.email(), author.name(), author.picture(), body, now,
-				photos.stream().map(photo -> new MessagePhoto(photo.id(), photo.width(), photo.height())).toList(), preview);
+				photos.stream().map(photo -> new MessagePhoto(photo.id(), photo.width(), photo.height())).toList(), preview, null, null);
 	}
 
 	/** Not too many at once, nor in an hour, nor the same text again at once (sent twice by a key held down). */
 	private void checkPace(String email, long groupId, String body, boolean withPhotos) {
 		Instant now = Instant.now();
-		long burst = jdbc.sql("select count(*) from admin_message where lower(author_email) = :me and sent_at > :since")
+		long burst = jdbc.sql("select count(*) from admin_message where lower(author_email) = :me and event is null and sent_at > :since")
 			.param("me", email)
 			.param("since", utc(now.minus(BURST_WINDOW)))
 			.query(Long.class)
@@ -265,7 +264,7 @@ public class AdminMessages {
 		if (burst >= BURST) {
 			throw new ApiException(ErrorCode.ADMIN_MESSAGE_TOO_FAST);
 		}
-		long hour = jdbc.sql("select count(*) from admin_message where lower(author_email) = :me and sent_at > :since")
+		long hour = jdbc.sql("select count(*) from admin_message where lower(author_email) = :me and event is null and sent_at > :since")
 			.param("me", email)
 			.param("since", utc(now.minus(Duration.ofHours(1))))
 			.query(Long.class)
@@ -354,7 +353,7 @@ public class AdminMessages {
 	@Transactional
 	public void delete(long id) {
 		String me = groups.me();
-		Optional<Map<String, Object>> message = jdbc.sql("select group_id, author_email, link_image_id from admin_message where id = :id")
+		Optional<Map<String, Object>> message = jdbc.sql("select group_id, author_email, link_image_id from admin_message where id = :id and event is null")
 			.param("id", id)
 			.query()
 			.listOfRows()
@@ -396,7 +395,7 @@ public class AdminMessages {
 			.list()
 			.forEach(member -> known.put(member.email(), member));
 		// The admin asking is named by their Google account, even before their first message
-		Author me = authorOrNull();
+		MessageAuthor me = authorOrNull();
 		if (me != null && me.name() != null) {
 			known.put(me.email(), new GroupMember(me.email(), me.name(), me.picture()));
 		}
@@ -448,24 +447,17 @@ public class AdminMessages {
 		return body;
 	}
 
-	private record Author(String email, @Nullable String name, @Nullable String picture) {
-	}
-
 	/** The admin signed in: their Google account, or only their email outside a Google login (tests). */
-	private Author author() {
-		Author author = authorOrNull();
+	private MessageAuthor author() {
+		MessageAuthor author = authorOrNull();
 		if (author == null) {
 			throw new ApiException(ErrorCode.UNAUTHENTICATED);
 		}
 		return author;
 	}
 
-	private @Nullable Author authorOrNull() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (authentication != null && authentication.getPrincipal() instanceof OidcUser user && user.getEmail() != null) {
-			return new Author(user.getEmail().toLowerCase(Locale.ROOT), user.getFullName(), user.getPicture());
-		}
-		return adminSeen.admin().map(email -> new Author(email.toLowerCase(Locale.ROOT), null, null)).orElse(null);
+	private @Nullable MessageAuthor authorOrNull() {
+		return MessageAuthor.current(adminSeen);
 	}
 
 	private static void afterCommit(Runnable action) {

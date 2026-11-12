@@ -4,13 +4,27 @@
     <div class="group-list__head">
       <h2 id="messages-title" class="group-list__title">Messages</h2>
       <span class="group-list__actions">
+        <!-- The messages not read at once in a notification on this device, the installed app's especially -->
+        @if (alerts.state() !== 'unsupported') {
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Notifications des messages sur cet appareil"
+            [attr.aria-pressed]="alerts.state() === 'on'"
+            [attr.data-tooltip]="alerts.state() === 'on' ? 'Notifications activées sur cet appareil' : 'Recevoir les messages en notification sur cet appareil'"
+            [disabled]="alerts.busy()"
+            (click)="toggleAlerts()"
+          >
+            <svg [yonaIcon]="alerts.state() === 'on' ? 'bell-ring' : 'bell'" [size]="20"></svg>
+          </button>
+        }
         <button
           type="button"
           class="icon-button"
           [attr.aria-label]="sound.enabled() ? 'Couper le son des nouveaux messages' : 'Remettre le son des nouveaux messages'"
           (click)="sound.toggle()"
         >
-          <svg [yonaIcon]="sound.enabled() ? 'bell' : 'bell-off'" [size]="20"></svg>
+          <svg [yonaIcon]="sound.enabled() ? 'volume-2' : 'volume-x'" [size]="20"></svg>
         </button>
         <button type="button" class="icon-button" aria-label="Nouveau groupe" (click)="newGroup()">
           <svg yonaIcon="plus" [size]="20"></svg>
@@ -115,72 +129,79 @@
                   @if (shown.message.id === firstNew()) {
                     <li class="new-divider"><span>Nouveaux</span></li>
                   }
-                  <!-- As in a chat: the others on the left, their face beside the last message of a run; one's own on the right -->
-                  <li
-                    class="message"
-                    [class.is-mine]="shown.mine"
-                    [class.is-first]="shown.first"
-                    [class.is-last]="shown.last"
-                    [class.is-arrived]="arrived().has(shown.message.id)"
-                    [class.is-picked]="picked() === shown.message.id"
-                    [attr.data-id]="shown.message.id"
-                  >
-                    @if (!shown.mine) {
-                      <span class="message__face">
-                        @if (shown.last) {
-                          <yona-admin-avatar [name]="nameOf(shown.message.authorEmail, shown.message.authorName)" [picture]="shown.message.authorPicture" />
-                          @if (isOnline(shown.message.authorEmail)) {
-                            <span class="presence" aria-hidden="true"></span>
-                          }
-                        }
-                      </span>
-                    }
-                    <div class="message__content">
-                      <!-- The name and the time once a run, still read out for each message -->
-                      <p class="message__head" [class.visually-hidden]="!shown.first">
-                        <span class="message__author" [class.visually-hidden]="shown.mine">{{ shown.author }}</span>
-                        <time class="message__time" [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
-                      </p>
-                      @if (shown.parts.length && !shown.onlyLink) {
-                        <p class="message__body">
-                          @for (part of shown.parts; track $index) {
-                            @if (part.mention; as mention) {
-                              <a class="mention" [routerLink]="kinds[mention.kind].link(mention.id)" [attr.data-tooltip]="kinds[mention.kind].name">
-                                <svg [yonaIcon]="kinds[mention.kind].icon" [size]="14"></svg><span>{{ mention.label }}</span>
-                              </a>
-                            } @else if (part.link; as link) {
-                              <a class="message__link" [href]="link" target="_blank" rel="noopener noreferrer">{{ shownLink(link) }}</a>
-                            } @else {
-                              {{ part.text }}
+                  @if (shown.system; as line) {
+                    <!-- A line of the group, in the middle: "Léa a ajouté Sam" -->
+                    <li class="system" [class.is-arrived]="arrived().has(shown.message.id)">
+                      <span>{{ line }}</span><time [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
+                    </li>
+                  } @else {
+                    <!-- As in a chat: the others on the left, their face beside the last message of a run; one's own on the right -->
+                    <li
+                      class="message"
+                      [class.is-mine]="shown.mine"
+                      [class.is-first]="shown.first"
+                      [class.is-last]="shown.last"
+                      [class.is-arrived]="arrived().has(shown.message.id)"
+                      [class.is-picked]="picked() === shown.message.id"
+                      [attr.data-id]="shown.message.id"
+                    >
+                      @if (!shown.mine) {
+                        <span class="message__face">
+                          @if (shown.last) {
+                            <yona-admin-avatar [name]="nameOf(shown.message.authorEmail, shown.message.authorName)" [picture]="shown.message.authorPicture" />
+                            @if (isOnline(shown.message.authorEmail)) {
+                              <span class="presence" aria-hidden="true"></span>
                             }
                           }
+                        </span>
+                      }
+                      <div class="message__content">
+                        <!-- The name and the time once a run, still read out for each message -->
+                        <p class="message__head" [class.visually-hidden]="!shown.first">
+                          <span class="message__author" [class.visually-hidden]="shown.mine">{{ shown.author }}</span>
+                          <time class="message__time" [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
                         </p>
+                        @if (shown.parts.length && !shown.onlyLink) {
+                          <p class="message__body">
+                            @for (part of shown.parts; track $index) {
+                              @if (part.mention; as mention) {
+                                <a class="mention" [routerLink]="kinds[mention.kind].link(mention.id)" [attr.data-tooltip]="kinds[mention.kind].name">
+                                  <svg [yonaIcon]="kinds[mention.kind].icon" [size]="14"></svg><span>{{ mention.label }}</span>
+                                </a>
+                              } @else if (part.link; as link) {
+                                <a class="message__link" [href]="link" target="_blank" rel="noopener noreferrer">{{ shownLink(link) }}</a>
+                              } @else {
+                                {{ part.text }}
+                              }
+                            }
+                          </p>
+                        }
+                        @if (shown.message.photos.length) {
+                          <div class="photos" [class.photos--one]="shown.message.photos.length === 1">
+                            @for (photo of shown.message.photos; track photo.id; let i = $index) {
+                              <button
+                                type="button"
+                                class="photo"
+                                [style.aspect-ratio]="shown.message.photos.length === 1 ? photo.width + ' / ' + photo.height : null"
+                                [attr.aria-label]="shown.message.photos.length > 1 ? 'Voir la photo ' + (i + 1) + ' en grand' : 'Voir la photo en grand'"
+                                (click)="openPhoto(shown.message, i)"
+                              >
+                                <img [src]="messagePhoto(photo.id)" alt="" loading="lazy" [width]="photo.width" [height]="photo.height" />
+                              </button>
+                            }
+                          </div>
+                        }
+                        @if (shown.message.link; as link) {
+                          <yona-link-card [link]="link" />
+                        }
+                      </div>
+                      @if (shown.mine) {
+                        <button type="button" class="icon-button message__delete" aria-label="Supprimer ce message" data-tooltip="Supprimer" (click)="remove(shown.message)">
+                          <svg yonaIcon="trash" [size]="16"></svg>
+                        </button>
                       }
-                      @if (shown.message.photos.length) {
-                        <div class="photos" [class.photos--one]="shown.message.photos.length === 1">
-                          @for (photo of shown.message.photos; track photo.id; let i = $index) {
-                            <button
-                              type="button"
-                              class="photo"
-                              [style.aspect-ratio]="shown.message.photos.length === 1 ? photo.width + ' / ' + photo.height : null"
-                              [attr.aria-label]="shown.message.photos.length > 1 ? 'Voir la photo ' + (i + 1) + ' en grand' : 'Voir la photo en grand'"
-                              (click)="openPhoto(shown.message, i)"
-                            >
-                              <img [src]="messagePhoto(photo.id)" alt="" loading="lazy" [width]="photo.width" [height]="photo.height" />
-                            </button>
-                          }
-                        </div>
-                      }
-                      @if (shown.message.link; as link) {
-                        <yona-link-card [link]="link" />
-                      }
-                    </div>
-                    @if (shown.mine) {
-                      <button type="button" class="icon-button message__delete" aria-label="Supprimer ce message" data-tooltip="Supprimer" (click)="remove(shown.message)">
-                        <svg yonaIcon="trash" [size]="16"></svg>
-                      </button>
-                    }
-                  </li>
+                    </li>
+                  }
                   <!-- As on Instagram: "Vu" under one's own last message, elsewhere the faces of the ones who read up to there -->
                   @if (lastMine()?.id === shown.message.id) {
                     <li class="seen" animate.enter="seen--enter">{{ lastMine()?.label }}</li>

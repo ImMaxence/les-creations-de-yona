@@ -447,6 +447,23 @@ yona-message-composer {
   }
 }
 
+// A line of the group, in the middle as in a chat: "Léa a ajouté Sam · 14:02"
+.system {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.4rem;
+  margin-block: var(--space-2);
+  padding-inline: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+
+  &.is-arrived {
+    animation: seen-in 300ms var(--ease-out) both;
+  }
+}
+
 // "Vu", as on Instagram: under one's own last message, or the faces of the ones who read up to a message,
 // on the right; they slide to the next message they read
 .seen {

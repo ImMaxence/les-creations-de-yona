@@ -90,6 +90,7 @@ export type { MenuDetail } from './models/menu-detail';
 export type { MenuForm } from './models/menu-form';
 export type { MenuRecipe } from './models/menu-recipe';
 export type { MenuSummary } from './models/menu-summary';
+export type { MessageAlertStatus } from './models/message-alert-status';
 export type { MessageForm } from './models/message-form';
 export type { MessageGroup } from './models/message-group';
 export type { MessagePage } from './models/message-page';

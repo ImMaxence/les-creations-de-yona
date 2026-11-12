@@ -77,13 +77,13 @@ public class AdminGroups {
 		Instant fallback = firstVisit();
 		List<MessageGroup> groups = jdbc.sql("""
 				select g.id, g.name, g.image_id, g.everyone, g.created_at, s.seen_at,
-					last.author_email, last.author_name, last.body, last.sent_at, last.photos,
-					(select count(*) from admin_message m where m.group_id = g.id and lower(m.author_email) <> :me
+					last.author_email, last.author_name, last.body, last.sent_at, last.photos, last.event, last.event_value,
+					(select count(*) from admin_message m where m.group_id = g.id and lower(m.author_email) <> :me and m.event is null
 						and m.sent_at > coalesce(s.seen_at, :fallback)) as unseen
 				from admin_group g
 				left join admin_group_seen s on s.group_id = g.id and s.admin_email = :me
 				left join lateral (
-					select m.author_email, m.author_name, m.body, m.sent_at,
+					select m.author_email, m.author_name, m.body, m.sent_at, m.event, m.event_value,
 						(select count(*) from admin_message_image i where i.message_id = m.id) as photos
 					from admin_message m where m.group_id = g.id order by m.id desc limit 1) last on true
 				where """ + VISIBLE + """
@@ -95,7 +95,8 @@ public class AdminGroups {
 				OffsetDateTime sent = row.getObject("sent_at", OffsetDateTime.class);
 				LastMessage last = sent == null ? null
 						: new LastMessage(row.getString("author_email"), row.getString("author_name"),
-								MessageTexts.excerpt(row.getString("body"), EXCERPT), row.getInt("photos"), sent.toInstant());
+								MessageTexts.excerpt(row.getString("body"), EXCERPT), row.getInt("photos"), sent.toInstant(),
+								row.getString("event") == null ? null : GroupEvent.valueOf(row.getString("event")), row.getString("event_value"));
 				return new MessageGroup(row.getLong("id"), row.getString("name"), row.getObject("image_id", UUID.class),
 						row.getBoolean("everyone"), List.of(), row.getLong("unseen"), seen == null ? fallback : seen.toInstant(), last,
 						row.getObject("created_at", OffsetDateTime.class).toInstant());
@@ -130,6 +131,7 @@ public class AdminGroups {
 			.query(Long.class)
 			.single();
 		writeMembers(id, members);
+		tell(id, GroupEvent.CREATED, name(form.name()));
 		events.publishEvent(new LiveChange(LiveTopic.MESSAGES, members));
 		return get(id);
 	}
@@ -139,18 +141,25 @@ public class AdminGroups {
 	public MessageGroup update(long id, GroupForm form) {
 		String me = me();
 		Group group = require(id, me);
-		Set<String> told = new HashSet<>(members(group));
+		Set<String> before = members(group);
+		Set<String> told = new HashSet<>(before);
+		String name = name(form.name());
 		jdbc.sql("update admin_group set name = :name, updated_by = :me, updated_at = :at where id = :id")
-			.param("name", name(form.name()))
+			.param("name", name)
 			.param("me", me)
 			.param("at", utc(Instant.now()))
 			.param("id", id)
 			.update();
+		if (!name.equals(group.name())) {
+			tell(id, GroupEvent.RENAMED, name);
+		}
 		if (!group.everyone()) {
 			Set<String> members = chosen(form.members(), me);
 			jdbc.sql("delete from admin_group_member where group_id = :id").param("id", id).update();
 			writeMembers(id, members);
 			told.addAll(members);
+			members.stream().filter(member -> !before.contains(member)).sorted().forEach(added -> tell(id, GroupEvent.ADDED, added));
+			before.stream().filter(member -> !members.contains(member)).sorted().forEach(removed -> tell(id, GroupEvent.REMOVED, removed));
 		}
 		events.publishEvent(new LiveChange(LiveTopic.MESSAGES, told));
 		return get(id);
@@ -174,6 +183,9 @@ public class AdminGroups {
 	}
 
 	private void changePhoto(Group group, @Nullable UUID imageId, String me) {
+		if (imageId == null && group.imageId() == null) {
+			return;
+		}
 		jdbc.sql("update admin_group set image_id = :image, updated_by = :me, updated_at = :at where id = :id")
 			.param("image", imageId)
 			.param("me", me)
@@ -183,7 +195,44 @@ public class AdminGroups {
 		if (group.imageId() != null) {
 			imageService.deleteMessageImages(List.of(group.imageId()));
 		}
+		tell(group.id(), imageId == null ? GroupEvent.PHOTO_REMOVED : GroupEvent.PHOTO_CHANGED, null);
 		events.publishEvent(new LiveChange(LiveTopic.MESSAGES, members(group)));
+	}
+
+	/**
+	 * A line of the conversation saying what a member changed in the group, as a chat does: no badge, no sound,
+	 * not counted against the pace of the messages, not deleted by its author. Its body: the same in French, for
+	 * the list of the groups and the backups (where it tells two lines of the same moment apart).
+	 */
+	private void tell(long groupId, GroupEvent event, @Nullable String value) {
+		MessageAuthor actor = MessageAuthor.current(adminSeen);
+		String email = actor == null ? me() : actor.email();
+		@Nullable String name = actor == null ? null : actor.name();
+		jdbc.sql("""
+				insert into admin_message (group_id, author_email, author_name, author_picture, body, sent_at, event, event_value)
+				values (:group, :email, :name, :picture, :body, :at, :event, :value)""")
+			.param("group", groupId)
+			.param("email", email)
+			.param("name", name)
+			.param("picture", actor == null ? null : actor.picture())
+			.param("body", sentence(name == null || name.isBlank() ? email : name, event, value))
+			.param("at", utc(Instant.now()))
+			.param("event", event.name())
+			.param("value", value)
+			.update();
+	}
+
+	/** "Léa Martin a ajouté sam@site.fr": a line of the group in French, its member by their email. */
+	static String sentence(String actor, GroupEvent event, @Nullable String value) {
+		return actor + switch (event) {
+			case CREATED -> " a créé le groupe « " + value + " »";
+			case RENAMED -> " a renommé le groupe « " + value + " »";
+			case PHOTO_CHANGED -> " a changé la photo du groupe";
+			case PHOTO_REMOVED -> " a retiré la photo du groupe";
+			case ADDED -> " a ajouté " + value;
+			case REMOVED -> " a retiré " + value;
+			case LEFT -> " a quitté le groupe";
+		};
 	}
 
 	/** For every member: its messages and their photos go with it. */
@@ -212,6 +261,9 @@ public class AdminGroups {
 		if (jdbc.sql("select count(*) from admin_group_member where group_id = :id").param("id", id).query(Long.class).single() == 0) {
 			erase(group);
 		}
+		else {
+			tell(id, GroupEvent.LEFT, null);
+		}
 		events.publishEvent(new LiveChange(LiveTopic.MESSAGES, told));
 	}
 
@@ -238,7 +290,7 @@ public class AdminGroups {
 		boolean news = jdbc.sql("""
 				select exists (select 1 from admin_message m
 					left join admin_group_seen s on s.group_id = m.group_id and s.admin_email = :me
-					where m.group_id = :id and lower(m.author_email) <> :me
+					where m.group_id = :id and lower(m.author_email) <> :me and m.event is null
 					and m.sent_at > coalesce(s.seen_at, '-infinity'::timestamptz))""")
 			.param("id", id)
 			.param("me", me)
@@ -281,7 +333,7 @@ public class AdminGroups {
 				select count(*) from admin_message m join admin_group g on g.id = m.group_id
 				left join admin_group_seen s on s.group_id = g.id and s.admin_email = :me
 				where""" + " " + VISIBLE + """
-				and lower(m.author_email) <> :me and m.sent_at > coalesce(s.seen_at, :fallback)""")
+				and lower(m.author_email) <> :me and m.event is null and m.sent_at > coalesce(s.seen_at, :fallback)""")
 			.param("me", admin.toLowerCase(Locale.ROOT))
 			.param("fallback", utc(fallback))
 			.query(Long.class)

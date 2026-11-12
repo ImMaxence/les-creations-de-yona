@@ -17,9 +17,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -144,7 +146,9 @@ public class PushService {
 	 * the orders on stays subscribed to those.
 	 */
 	public void unsubscribe(String endpoint) {
-		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not admin_orders").param("endpoint", endpoint).update();
+		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not admin_orders and messages_for is null")
+			.param("endpoint", endpoint)
+			.update();
 		jdbc.sql("update push_subscription set new_recipes = false where endpoint = :endpoint").param("endpoint", endpoint).update();
 	}
 
@@ -164,7 +168,9 @@ public class PushService {
 	}
 
 	public void unsubscribeFromOrders(String endpoint) {
-		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not new_recipes").param("endpoint", endpoint).update();
+		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not new_recipes and messages_for is null")
+			.param("endpoint", endpoint)
+			.update();
 		jdbc.sql("update push_subscription set admin_orders = false where endpoint = :endpoint").param("endpoint", endpoint).update();
 	}
 
@@ -173,6 +179,54 @@ public class PushService {
 			.param("endpoint", endpoint)
 			.query(Long.class)
 			.single() > 0;
+	}
+
+	/**
+	 * This device is told of the messages of {@code admin} (2.13): the one signed in when it was turned on
+	 * there; another admin turning it on on the same device takes it over.
+	 */
+	public void subscribeToMessages(PushSubscriptionForm form, String admin) {
+		checkSubscription(form);
+		jdbc.sql("""
+				insert into push_subscription (endpoint, p256dh, auth, created_at, new_recipes, admin_orders, messages_for)
+				values (:endpoint, :p256dh, :auth, :now, false, false, :admin)
+				on conflict (endpoint) do update
+				set p256dh = excluded.p256dh, auth = excluded.auth, failures = 0, messages_for = excluded.messages_for""")
+			.param("endpoint", form.endpoint())
+			.param("p256dh", form.keys().p256dh())
+			.param("auth", form.keys().auth())
+			.param("now", Timestamp.from(Instant.now()))
+			.param("admin", admin.toLowerCase(Locale.ROOT))
+			.update();
+	}
+
+	public void unsubscribeFromMessages(String endpoint) {
+		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not new_recipes and not admin_orders")
+			.param("endpoint", endpoint)
+			.update();
+		jdbc.sql("update push_subscription set messages_for = null where endpoint = :endpoint").param("endpoint", endpoint).update();
+	}
+
+	/** Whether this device is told of the messages of {@code admin}. */
+	public boolean receivesMessages(String endpoint, String admin) {
+		return jdbc.sql("select count(*) from push_subscription where endpoint = :endpoint and messages_for = :admin")
+			.param("endpoint", endpoint)
+			.param("admin", admin.toLowerCase(Locale.ROOT))
+			.query(Long.class)
+			.single() > 0;
+	}
+
+	/**
+	 * A notification to the devices of these admins (a message between them), in the background. Ciphered
+	 * for each device (Web Push): the push services of the browsers carry it without reading it.
+	 */
+	public void notifyAdmins(Collection<String> admins, Map<String, Object> notification, String what) {
+		if (admins.isEmpty()) {
+			return;
+		}
+		List<String> emails = admins.stream().map(email -> email.toLowerCase(Locale.ROOT)).toList();
+		sender.execute(() -> deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification)), "messages_for in (:admins)",
+				Map.of("admins", emails), what));
 	}
 
 	/** Visitors subscribed to new recipes. */
@@ -198,18 +252,19 @@ public class PushService {
 	}
 
 	private void notifyRecipe(RecipePublished recipe) {
-		deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification(recipe))), "new_recipes",
+		deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification(recipe))), "new_recipes", Map.of(),
 				"New recipe \"" + recipe.title() + "\"");
 	}
 
 	private void notifyOrder(OrderReceived order) {
-		deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification(order))), "admin_orders",
+		deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification(order))), "admin_orders", Map.of(),
 				"Order " + order.number());
 	}
 
-	/** {@code audience}: the boolean column saying who receives it. */
-	private void deliver(byte[] payload, String audience, String what) {
+	/** {@code audience}: the condition saying who receives it (a boolean column, the admins of a message), with its parameters. */
+	private void deliver(byte[] payload, String audience, Map<String, ?> parameters, String what) {
 		List<Subscription> subscriptions = jdbc.sql("select id, endpoint, p256dh, auth, failures from push_subscription where " + audience)
+			.params(parameters)
 			.query(Subscription.class)
 			.list();
 		int delivered = 0;

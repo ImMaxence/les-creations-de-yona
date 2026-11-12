@@ -14,15 +14,9 @@ export interface SeenUpTo {
  */
 export function seenPlaces(messages: readonly AdminMessage[], others: readonly string[], seen: readonly SeenUpTo[]): Map<number, string[]> {
   const places = new Map<number, string[]>();
-  const seenAt = new Map(seen.map((one) => [one.email.toLowerCase(), Date.parse(one.seenAt)]));
   for (const member of others) {
     const email = member.toLowerCase();
-    let upTo = seenAt.get(email) ?? Number.NEGATIVE_INFINITY;
-    for (const message of messages) {
-      if (message.authorEmail.toLowerCase() === email) {
-        upTo = Math.max(upTo, Date.parse(message.sentAt));
-      }
-    }
+    const upTo = readUpTo(messages, email, seen);
     // The oldest first: the last one sent before then
     let place: AdminMessage | undefined;
     for (const message of messages) {
@@ -36,6 +30,19 @@ export function seenPlaces(messages: readonly AdminMessage[], others: readonly s
     }
   }
   return places;
+}
+
+/** Until when a member has read the group (ms): their last visit, or their own last message if later. */
+export function readUpTo(messages: readonly AdminMessage[], member: string, seen: readonly SeenUpTo[]): number {
+  const email = member.toLowerCase();
+  const visit = seen.find((one) => one.email.toLowerCase() === email);
+  let upTo = visit ? Date.parse(visit.seenAt) : Number.NEGATIVE_INFINITY;
+  for (const message of messages) {
+    if (message.authorEmail.toLowerCase() === email) {
+      upTo = Math.max(upTo, Date.parse(message.sentAt));
+    }
+  }
+  return upTo;
 }
 
 /** Under one's own last message: "Envoyé", then "Vu" (a group of two), "Vu par Léa et Sam", "Vu par tout le monde". */

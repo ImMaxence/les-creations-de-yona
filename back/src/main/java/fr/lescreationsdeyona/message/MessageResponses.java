@@ -22,7 +22,9 @@ public final class MessageResponses {
 	public record AdminMessage(long id, long groupId, String authorEmail, @Nullable String authorName, @Nullable String authorPicture,
 			@Schema(description = "The text, empty for photos alone; a mention is written in it: @[Tarte au citron](RECIPE:12)") String body,
 			Instant sentAt, @Schema(description = "Its photos, in order: /api/admin/messages/images/{id}/800.webp") List<MessagePhoto> photos,
-			@Schema(description = "The preview of its first link, once read on its page") @Nullable LinkPreview link) {
+			@Schema(description = "The preview of its first link, once read on its page") @Nullable LinkPreview link,
+			@Schema(description = "A line of the group (2.13): what its author changed in it, the body then a sentence of it in French") @Nullable GroupEvent event,
+			@Schema(description = "The name given (CREATED, RENAMED) or the email of the member concerned (ADDED, REMOVED)") @Nullable String eventValue) {
 	}
 
 	/** A photo of a message, its size to lay it out before it loads. */
@@ -84,7 +86,8 @@ public final class MessageResponses {
 	/** The last message of a group, as the list of the groups shows it. */
 	public record LastMessage(String authorEmail, @Nullable String authorName,
 			@Schema(description = "The start of its text, mentions as \"@Tarte au citron\"; empty for photos alone") String text,
-			int photos, Instant sentAt) {
+			int photos, Instant sentAt, @Schema(description = "A line of the group (2.13), told as such in the list") @Nullable GroupEvent event,
+			@Nullable String eventValue) {
 	}
 
 	public record GroupForm(@NotBlank @Size(max = AdminGroups.MAX_NAME) String name,
