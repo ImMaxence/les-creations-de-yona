@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
@@ -30,7 +31,9 @@ import org.springframework.web.multipart.MultipartFile;
  * <li>JPEG or PNG only, recognised from the file content, never from its name.</li>
  * <li>Landscape or square, at least 800 × 450 (1.12; 1200 × 800 and 4:3 before); or portrait for
  * Pinterest, at least 600 × 800 and 3:4. The same for a photo of the site retouched in the back-office,
- * made from its 1600 px file. Checked once the EXIF orientation is applied.</li>
+ * made from its 1600 px file. Checked once the EXIF orientation is applied. A photo of the messages
+ * between the admins: any shape, at least 50 × 50; the image of a page linked in one may also be WebP or
+ * GIF, read by the server itself.</li>
  * <li>Re-encoded from the pixels alone: EXIF metadata, GPS position included, is dropped.</li>
  * <li>Shrunk to 800 and 1600 px wide, never enlarged. The original is not kept.</li>
  * </ul>
@@ -59,6 +62,17 @@ public class ImageProcessor {
 
 	private static final byte[] PNG_SIGNATURE = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n' };
 
+	private static final byte[] RIFF_SIGNATURE = { 'R', 'I', 'F', 'F' };
+
+	private static final byte[] WEBP_SIGNATURE = { 'W', 'E', 'B', 'P' };
+
+	private static final byte[] GIF_SIGNATURE = { 'G', 'I', 'F', '8' };
+
+	private static final int MESSAGE_MIN_SIDE = 50;
+
+	/** The image of a link's preview: a card, not a photo to open big. */
+	private static final int PREVIEW_WIDTH = 800;
+
 	ImageProcessor() {
 		// Registers the TwelveMonkeys JPEG and WebP plugins found on the application class path, and
 		// keeps Image I/O buffers in memory rather than in temporary files.
@@ -81,8 +95,46 @@ public class ImageProcessor {
 		return process(file, Shape.ANY);
 	}
 
+	/** A photo and its size once upright: a page lays it out before it loads. */
+	public record Sized(ProcessedImage processed, int width, int height) {
+	}
+
+	/** A photo sent in a message, or the photo of a group: any shape, at least 50 × 50 (a screenshot, a long one). */
+	public Sized processMessage(MultipartFile file) {
+		if (file.isEmpty()) {
+			throw new ApiException(ErrorCode.IMAGE_REQUIRED);
+		}
+		byte[] content = readBytes(file);
+		String format = detectFormat(content);
+		ExifOrientation orientation = ExifOrientation.of(content);
+		BufferedImage upright = orientation.applyTo(toRgb(decode(content, format, orientation, Shape.MESSAGE)));
+		ProcessedImage processed = new ProcessedImage(WIDTHS.stream()
+			.map(width -> new ProcessedImage.Variant(width, encodeWebp(shrinkToWidth(upright, width))))
+			.toList());
+		return new Sized(processed, upright.getWidth(), upright.getHeight());
+	}
+
+	/**
+	 * The image of a page a message links to (its og:image): JPEG, PNG, WebP or GIF (its first frame),
+	 * 800 px wide at most, the same file for both widths. Empty when it cannot be read or is a mere icon.
+	 */
+	public Optional<Sized> processPreview(byte[] content) {
+		try {
+			String format = detectPreviewFormat(content);
+			ExifOrientation orientation = format.equals("jpeg") ? ExifOrientation.of(content) : ExifOrientation.NORMAL;
+			BufferedImage shrunk = shrinkToWidth(orientation.applyTo(toRgb(decode(content, format, orientation, Shape.MESSAGE))),
+					PREVIEW_WIDTH);
+			byte[] webp = encodeWebp(shrunk);
+			ProcessedImage processed = new ProcessedImage(WIDTHS.stream().map(width -> new ProcessedImage.Variant(width, webp)).toList());
+			return Optional.of(new Sized(processed, shrunk.getWidth(), shrunk.getHeight()));
+		}
+		catch (ApiException | UncheckedIOException ex) {
+			return Optional.empty();
+		}
+	}
+
 	private enum Shape {
-		LANDSCAPE, PORTRAIT, ANY
+		LANDSCAPE, PORTRAIT, ANY, MESSAGE
 	}
 
 	private ProcessedImage process(MultipartFile file, Shape shape) {
@@ -123,6 +175,18 @@ public class ImageProcessor {
 		throw new ApiException(ErrorCode.IMAGE_FORMAT_UNSUPPORTED);
 	}
 
+	/** Image I/O format name of an image found on the web: also WebP ("RIFF", size, "WEBP") and GIF. */
+	private static String detectPreviewFormat(byte[] content) {
+		if (startsWith(content, RIFF_SIGNATURE) && content.length >= 12
+				&& Arrays.equals(content, 8, 12, WEBP_SIGNATURE, 0, WEBP_SIGNATURE.length)) {
+			return "webp";
+		}
+		if (startsWith(content, GIF_SIGNATURE)) {
+			return "gif";
+		}
+		return detectFormat(content);
+	}
+
 	private static boolean startsWith(byte[] content, byte[] signature) {
 		return content.length >= signature.length
 				&& Arrays.equals(content, 0, signature.length, signature, 0, signature.length);
@@ -145,6 +209,11 @@ public class ImageProcessor {
 				case PORTRAIT -> checkPortraitDimensions(width, height);
 				case LANDSCAPE -> checkDimensions(width, height);
 				case ANY -> checkReceiptDimensions(width, height);
+				case MESSAGE -> {
+					if (width < MESSAGE_MIN_SIDE || height < MESSAGE_MIN_SIDE) {
+						throw new ApiException(ErrorCode.MESSAGE_IMAGE_TOO_SMALL);
+					}
+				}
 			}
 
 			// Reading one pixel in n keeps memory low on large photos. Staying above twice the largest

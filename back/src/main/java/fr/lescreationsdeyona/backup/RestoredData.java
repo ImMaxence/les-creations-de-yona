@@ -89,7 +89,7 @@ class RestoredData {
 			"recipe_tag", "recipe_question", "recipe_part", "recipe_ingredient", "recipe_step", "social_link", "appearance_preset",
 			"glossary_term", "menu", "menu_recipe", "search_miss", "ai_visit", "cap_entry", "shop_product", "shop_order",
 			"shop_order_line", "account_entry", "account_purchase_line", "invoice", "invoice_line", "site_content", "site_theme",
-			"shop_settings", "admin_message");
+			"shop_settings", "admin_message", "admin_group", "admin_group_member", "admin_message_image");
 
 	/** Saved, and restored by "Tout remplacer", but left out of a merge: a thing deleted on the site stays deleted. */
 	static final Set<String> NOT_MERGED = Set.of("trash_item");
@@ -475,23 +475,84 @@ class RestoredData {
 	}
 
 	/**
-	 * The messages between the admins the site lacks, by author, time and text; those older than 90
-	 * days are left out, as the site erases them.
+	 * The messages between the admins the site lacks, by author, time and text, in the group they were
+	 * written in, with their photos (those the site has); those older than 90 days are left out, as the
+	 * site erases them.
 	 */
 	private long mergeMessages(JdbcClient scratch, JdbcClient site) {
+		Map<Long, Long> groups = mergeGroups(scratch, site);
+		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
 		Set<String> existing = strings(site, MESSAGE_KEY);
 		long added = 0;
 		for (Map<String, Object> row : scratch.sql("select *, lower(author_email) || '|' || sent_at::text || '|' || md5(body) as merge_key "
 				+ "from admin_message where " + RECENT_MESSAGES + " order by id").query().listOfRows()) {
 			Map<String, Object> values = new LinkedHashMap<>(row);
-			if (existing.contains((String) values.remove("merge_key"))) {
+			Long group = groups.get(((Number) values.get("group_id")).longValue());
+			if (existing.contains((String) values.remove("merge_key")) || group == null) {
 				continue;
 			}
-			values.remove("id");
-			insertReturningId(site, "admin_message", values);
+			long backupId = ((Number) values.remove("id")).longValue();
+			values.put("group_id", group);
+			if (values.get("link_image_id") instanceof UUID linkImage && !images.contains(linkImage)) {
+				values.put("link_image_id", null);
+				values.put("link_image_width", null);
+				values.put("link_image_height", null);
+			}
+			long id = insertReturningId(site, "admin_message", values);
+			for (Map<String, Object> photo : scratch.sql("select * from admin_message_image where message_id = :id order by position")
+				.param("id", backupId)
+				.query()
+				.listOfRows()) {
+				if (images.contains((UUID) photo.get("image_id"))) {
+					Map<String, Object> photoValues = new LinkedHashMap<>(photo);
+					photoValues.put("message_id", id);
+					site.sql("insert into admin_message_image (" + columns(photoValues) + ") values (" + parameters(photoValues) + ")")
+						.params(photoValues)
+						.update();
+				}
+			}
 			added++;
 		}
 		return added;
+	}
+
+	/**
+	 * The groups of "Messages": the group of all the admins is the site's own; another one is found by
+	 * its name and the time it was made, or added with its members (and its photo, if the site has it).
+	 * Gives the site's id of each group of the backup.
+	 */
+	private Map<Long, Long> mergeGroups(JdbcClient scratch, JdbcClient site) {
+		Map<Long, Long> ids = new HashMap<>();
+		Long everyone = site.sql("select id from admin_group where everyone").query(Long.class).optional().orElse(null);
+		Map<String, Long> byKey = idsBy(site, "select id, name || '|' || created_at::text as key from admin_group where not everyone");
+		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
+		for (Map<String, Object> row : scratch.sql("select *, name || '|' || created_at::text as merge_key from admin_group order by id")
+			.query()
+			.listOfRows()) {
+			Map<String, Object> values = new LinkedHashMap<>(row);
+			long backupId = ((Number) values.remove("id")).longValue();
+			String key = (String) values.remove("merge_key");
+			if (Boolean.TRUE.equals(values.get("everyone"))) {
+				if (everyone != null) {
+					ids.put(backupId, everyone);
+				}
+				continue;
+			}
+			Long known = byKey.get(key);
+			if (known != null) {
+				ids.put(backupId, known);
+				continue;
+			}
+			if (values.get("image_id") instanceof UUID image && !images.contains(image)) {
+				values.put("image_id", null);
+			}
+			long id = insertReturningId(site, "admin_group", values);
+			for (String email : scratch.sql("select email from admin_group_member where group_id = :id").param("id", backupId).query(String.class).list()) {
+				site.sql("insert into admin_group_member (group_id, email) values (:id, :email)").param("id", id).param("email", email).update();
+			}
+			ids.put(backupId, id);
+		}
+		return ids;
 	}
 
 	/**

@@ -10,13 +10,15 @@ import { RequestBuilder } from '../../request-builder';
 import { MessagePage } from '../../models/message-page';
 
 export interface ListAdminMessages$Params {
+  group: number;
   before?: number;
   size?: number;
 }
 
-export function listAdminMessages(http: HttpClient, rootUrl: string, params?: ListAdminMessages$Params, context?: HttpContext): Observable<StrictHttpResponse<MessagePage>> {
+export function listAdminMessages(http: HttpClient, rootUrl: string, params: ListAdminMessages$Params, context?: HttpContext): Observable<StrictHttpResponse<MessagePage>> {
   const rb = new RequestBuilder(rootUrl, listAdminMessages.PATH, 'get');
   if (params) {
+    rb.query('group', params.group, {});
     rb.query('before', params.before, {});
     rb.query('size', params.size, {});
   }

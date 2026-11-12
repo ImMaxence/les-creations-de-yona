@@ -72,9 +72,10 @@ export class AdminWatch {
     await this.load(() => this.api.invoke(markHistorySeen), () => this.history.update((history) => history && { ...history, count: 0 }));
   }
 
-  /** "Messages" opened, or a message came while it is in sight: its badge goes. */
-  async messagesSeen(): Promise<void> {
-    await this.load(() => this.api.invoke(markMessagesSeen), () => this.messages.update((messages) => messages && { ...messages, count: 0 }));
+  /** A group of "Messages" opened, or a message came while it is in sight: the badge counts the other groups only. */
+  async messagesSeen(group: number): Promise<void> {
+    await this.load(() => this.api.invoke(markMessagesSeen, { group }), () => undefined);
+    await this.refreshMessages();
   }
 
   /** "Corbeille" opened: its badge goes. */

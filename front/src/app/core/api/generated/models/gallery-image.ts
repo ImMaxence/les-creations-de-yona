@@ -22,7 +22,7 @@ export interface GalleryImage {
   categories: Array<UsingCategory>;
   createdAt: string;
   id: string;
-  kind: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE' | 'PINTEREST' | 'MENU' | 'RECEIPT';
+  kind: 'RECIPE' | 'CATEGORY' | 'GALLERY' | 'SITE' | 'PINTEREST' | 'MENU' | 'RECEIPT' | 'MESSAGE';
 
   /**
    * Menus showing it as their own photo, by title

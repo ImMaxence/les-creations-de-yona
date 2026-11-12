@@ -246,6 +246,7 @@
 
     <yona-editor-bar
       back="/admin/mon-cap"
+      [history]="history"
       [draft]="status() === 'DRAFT'"
       [saving]="saving()"
       [saveLabel]="id() ? 'Enregistrer' : 'Créer l’article'"
@@ -283,13 +284,10 @@
 <!-- The text of a block: buttons put the formatting, nothing to type by hand -->
 <ng-template #textTemplate let-block let-placeholder="placeholder">
   <div class="text-field">
-    <div class="text-tools" role="toolbar" aria-label="Mise en forme">
-      <button type="button" class="text-tools__button" title="Intertitre" (click)="markup(textarea, block, 'title')">Intertitre</button>
-      <button type="button" class="text-tools__button" title="Gras" (click)="markup(textarea, block, 'bold')"><strong>G</strong></button>
-      <button type="button" class="text-tools__button" title="Liste" (click)="markup(textarea, block, 'list')"><svg yonaIcon="list" [size]="16"></svg>Liste</button>
-      <button type="button" class="text-tools__button" title="Lien vers une recette" (click)="openLink(textarea, block, 'recipe')"><svg yonaIcon="book-open" [size]="16"></svg>Recette</button>
-      <button type="button" class="text-tools__button" title="Lien vers un autre article de Mon CAP" (click)="openLink(textarea, block, 'article')"><svg yonaIcon="graduation-cap" [size]="16"></svg>Article</button>
-    </div>
+    <yona-markdown-tools [field]="textarea" [tools]="textTools" labelled>
+      <button type="button" class="text-tools__button" data-tooltip="Lien vers une recette" (click)="openLink(textarea, block, 'recipe')"><svg yonaIcon="book-open" [size]="16"></svg>Recette</button>
+      <button type="button" class="text-tools__button" data-tooltip="Lien vers un autre article de Mon CAP" (click)="openLink(textarea, block, 'article')"><svg yonaIcon="graduation-cap" [size]="16"></svg>Article</button>
+    </yona-markdown-tools>
     <textarea
       #textarea
       class="input text-field__area"
@@ -300,7 +298,7 @@
       [value]="block.text ?? ''"
       (input)="patch(block.key, { text: $any($event.target).value })"
     ></textarea>
-    <span class="field__hint">Une ligne vide sépare deux paragraphes. Sélectionnez des mots avant « Gras », « Recette » ou « Article »</span>
+    <span class="field__hint">Une ligne vide sépare deux paragraphes. Sélectionnez des mots avant « Gras », « Italique », « Recette » ou « Article » ; un deuxième appui retire le gras</span>
   </div>
 </ng-template>
 

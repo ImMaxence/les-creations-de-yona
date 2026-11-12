@@ -19,7 +19,7 @@ export interface ViewedPhoto {
     <dialog #dialog class="viewer" aria-label="Photo en grand" (close)="index.set(null)" (click)="closeOnBackdrop($event)" (keydown)="onKey($event)">
       @if (current(); as photo) {
         <figure class="viewer__figure">
-          <img class="viewer__image" [src]="'/api/images/' + photo.imageId + '/1600.webp'" [alt]="photo.alt || photo.caption || ''" />
+          <img class="viewer__image" [src]="source()(photo.imageId)" [alt]="photo.alt || photo.caption || ''" />
           @if (photo.caption || photos().length > 1) {
             <figcaption class="viewer__caption">
               @if (photos().length > 1) {
@@ -127,6 +127,8 @@ export interface ViewedPhoto {
 })
 export class PhotoViewer {
   readonly photos = input<ViewedPhoto[]>([]);
+  /** Where a photo is read, 1600 px wide: the site's by default; the back-office's for the photos of the messages. */
+  readonly source = input<(imageId: string) => string>((imageId) => `/api/images/${imageId}/1600.webp`);
 
   protected readonly index = signal<number | null>(null);
   protected readonly current = computed(() => {

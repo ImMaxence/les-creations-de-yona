@@ -9,8 +9,11 @@ export interface MessageMention {
   label: string;
 }
 
-/** A piece of a message: text as typed, or a mention shown as a link. */
-export type MessagePart = { text: string; mention?: never } | { mention: MessageMention; text?: never };
+/** A piece of a message: text as typed, a mention shown as a link, or a web address. */
+export type MessagePart =
+  | { text: string; mention?: never; link?: never }
+  | { mention: MessageMention; text?: never; link?: never }
+  | { link: string; text?: never; mention?: never };
 
 /** How each kind is shown, and where its link leads in the back-office. */
 export const MENTION_KINDS: Record<MentionKind, { name: string; icon: IconName; link: (id: number) => (string | number)[] }> = {
@@ -30,21 +33,69 @@ const KINDS = Object.keys(MENTION_KINDS).join('|');
 /** @[Tarte au citron](RECIPE:12): as a mention is written in the text of a message. */
 const TOKEN = new RegExp(`@\\[([^\\[\\]\\n]{1,200})\\]\\((${KINDS}):(\\d{1,18})\\)`, 'g');
 
-/** The text and the mentions of a message, in order; an unknown kind stays text. */
+/** A web address as typed, up to the next space (fr.lescreationsdeyona.message.MessageTexts). */
+const LINK = /https?:\/\/[^\s<>"]+/gi;
+
+const TRAILING = '.,;:!?…»”’\'"';
+
+/** The text, the mentions and the web addresses of a message, in order; an unknown kind stays text. */
 export function parseMessage(body: string): MessagePart[] {
   const parts: MessagePart[] = [];
   let last = 0;
   for (const match of body.matchAll(TOKEN)) {
     if (match.index > last) {
-      parts.push({ text: body.slice(last, match.index) });
+      parts.push(...withLinks(body.slice(last, match.index)));
     }
     parts.push({ mention: { label: match[1]!, kind: match[2] as MentionKind, id: Number(match[3]) } });
     last = match.index + match[0].length;
   }
   if (last < body.length) {
-    parts.push({ text: body.slice(last) });
+    parts.push(...withLinks(body.slice(last)));
   }
   return parts;
+}
+
+function withLinks(text: string): MessagePart[] {
+  const parts: MessagePart[] = [];
+  let last = 0;
+  for (const match of text.matchAll(LINK)) {
+    const link = trimLink(match[0]);
+    if (match.index > last) {
+      parts.push({ text: text.slice(last, match.index) });
+    }
+    parts.push({ link });
+    last = match.index + link.length;
+  }
+  if (last < text.length) {
+    parts.push({ text: text.slice(last) });
+  }
+  return parts;
+}
+
+/** The first web address of a message, mentions left aside: the one the server reads for its preview. */
+export function firstLink(body: string): string | null {
+  return parseMessage(body).find((part) => part.link)?.link ?? null;
+}
+
+/** "https://site.fr/page)." → "https://site.fr/page"; a closing bracket kept when the address opens one. */
+export function trimLink(link: string): string {
+  let trimmed = link;
+  for (;;) {
+    const last = trimmed.at(-1);
+    const count = (char: string) => [...trimmed].filter((other) => other === char).length;
+    const unbalanced =
+      last === ')' ? count('(') < count(')') : last === ']' ? count('[') < count(']') : !!last && TRAILING.includes(last);
+    if (!unbalanced) {
+      return trimmed;
+    }
+    trimmed = trimmed.slice(0, -1);
+  }
+}
+
+/** "marmiton.org/recettes/tarte…": a web address as a message shows it, shorter. */
+export function shownLink(link: string): string {
+  const shown = link.replace(/^https?:\/\/(www\.)?/i, '');
+  return shown.length > 60 ? `${shown.slice(0, 57)}…` : shown;
 }
 
 /** The text of a message as read in a notification or a list: "@Tarte au citron". */

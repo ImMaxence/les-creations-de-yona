@@ -110,7 +110,7 @@ public class ImageService {
 	 */
 	public ImageStorage.StoredFile open(UUID id, int width) {
 		Image image = get(id);
-		if (image.getKind() == ImageKind.RECEIPT) {
+		if (image.getKind().isPrivate()) {
 			throw new ApiException(ErrorCode.IMAGE_NOT_FOUND);
 		}
 		return imageStorage.open(image.key(width));
@@ -142,6 +142,34 @@ public class ImageService {
 		onCompletion(TransactionSynchronization.STATUS_COMMITTED, () -> imageStorage.deleteFolder(folder));
 	}
 
+	/** A photo of the messages (sent, of a group, of a link's preview), kept apart from the gallery; inside the caller's transaction. */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public Image createMessageImage(ProcessedImage processed) {
+		return create(ImageKind.MESSAGE, processed);
+	}
+
+	/** Photos of the messages gone with their message or their group: never in the trash, their files go once that is committed. */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void deleteMessageImages(Collection<UUID> ids) {
+		for (Image image : imageRepository.findAllById(ids)) {
+			if (image.getKind() != ImageKind.MESSAGE) {
+				continue;
+			}
+			String folder = image.getS3Prefix();
+			imageRepository.delete(image);
+			onCompletion(TransactionSynchronization.STATUS_COMMITTED, () -> imageStorage.deleteFolder(folder));
+		}
+	}
+
+	/** A photo of the messages, for the admins; the caller checks the admin may see it. */
+	public ImageStorage.StoredFile openMessageImage(UUID id, int width) {
+		Image image = get(id);
+		if (image.getKind() != ImageKind.MESSAGE) {
+			throw new ApiException(ErrorCode.IMAGE_NOT_FOUND);
+		}
+		return imageStorage.open(image.key(width));
+	}
+
 	/** Those of these ids that are photos of the gallery that the site may show (landscape). */
 	public Set<UUID> landscapeIdsAmong(Collection<UUID> ids) {
 		return ids.isEmpty() ? Set.of() : new HashSet<>(imageRepository.findLandscapeIds(ids));
@@ -160,7 +188,7 @@ public class ImageService {
 	/** A landscape image of the gallery, to show it on a recipe, a category or the home page. */
 	public Image getLandscape(UUID id) {
 		Image image = get(id);
-		if (image.getKind() == ImageKind.RECEIPT) {
+		if (image.getKind().isPrivate()) {
 			throw new ApiException(ErrorCode.IMAGE_NOT_FOUND);
 		}
 		if (image.getKind() == ImageKind.PINTEREST) {
@@ -204,7 +232,7 @@ public class ImageService {
 	 */
 	@Transactional
 	public GalleryImage replace(UUID id, ProcessedImage retouched) {
-		Image original = get(id);
+		Image original = inGallery(id);
 		String title = "Avant retouche : " + trashedTitle(shownOn(galleryImage(original)));
 		Image replacement = create(original.getKind(), retouched);
 		imageRepository.replaceOnRecipes(id, replacement.getId());
@@ -218,6 +246,15 @@ public class ImageService {
 		auditLog.record(AuditAction.UPDATED, AuditKind.IMAGE, "Photo retouchée", null,
 				new AuditChanges().add("Montrée sur", null, shownOn(replaced)));
 		return replaced;
+	}
+
+	/** An image of the gallery: a receipt or a photo of the messages is not one, whatever its id. */
+	private Image inGallery(UUID id) {
+		Image image = get(id);
+		if (image.getKind().isPrivate()) {
+			throw new ApiException(ErrorCode.IMAGE_NOT_FOUND);
+		}
+		return image;
 	}
 
 	/** Its kind, before a retouched version is decoded: Pinterest photos are vertical. */
@@ -268,7 +305,7 @@ public class ImageService {
 
 	/** {@code title}: null for the usual one, saying where it was shown. */
 	private void trash(UUID id, @Nullable String title) {
-		Image image = get(id);
+		Image image = inGallery(id);
 		List<GalleryImage.RecipeUsage> recipes = imageRepository.findRecipeUsages(List.of(id));
 		List<GalleryImage.RecipeUsage> pinterest = imageRepository.findPinterestUsages(List.of(id));
 		List<GalleryImage.CategoryUsage> categories = imageRepository.findCategoryUsages(List.of(id));

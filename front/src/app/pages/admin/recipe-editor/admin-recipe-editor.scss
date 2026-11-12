@@ -472,3 +472,13 @@ yona-select {
   align-self: center;
   text-decoration: none;
 }
+
+// A label, or the number of a step, with the formatting buttons of its text at the end of the line
+.field__label-row,
+.line__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}

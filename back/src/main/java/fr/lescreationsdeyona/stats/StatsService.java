@@ -162,7 +162,7 @@ public class StatsService {
 						and not exists (select 1 from shop_product p where p.image_id = i.id)
 						and not exists (select 1 from site_content s where s.about_image_id = i.id)) as unused
 				from image i
-				where i.kind <> 'RECEIPT'""")
+				where i.kind not in ('RECEIPT', 'MESSAGE')""")
 			.query((row, index) -> new SiteStats.Images(row.getLong("total"), row.getLong("unused")))
 			.single();
 	}

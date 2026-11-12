@@ -5,7 +5,7 @@ export interface ClaudeAvailability {
   available: boolean;
 
   /**
-   * "claude-opus-5-5"
+   * "claude-haiku-5-5"
    */
   model: string;
 

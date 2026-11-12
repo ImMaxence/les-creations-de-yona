@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Injector, computed, effect, inject, resource, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { attempt } from '../../../core/api/attempt';
@@ -30,7 +30,9 @@ import { Segmented } from '../../../shared/ui/segmented/segmented';
 import { IconName } from '../../../shared/ui/icon/icons';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { EditHistory } from '../edit-history/edit-history';
 import { EditorBar } from '../editor-bar/editor-bar';
+import { MarkdownTool, MarkdownTools } from '../markdown-tools/markdown-tools';
 import { PreviewFrame } from '../preview-frame/preview-frame';
 import { ArticleSearch, ChosenArticle } from './article-search';
 import { DraftKeeper, KeptDraft, readKeptDraft } from '../kept-draft';
@@ -67,8 +69,6 @@ interface EditorBlock extends Omit<CapBlock, 'photos'> {
   photos?: EditorPhoto[];
 }
 
-type Markup = 'title' | 'bold' | 'list';
-
 /** "Recette" or "Article" in the tools of a text: what its link leads to. */
 type LinkKind = 'recipe' | 'article';
 
@@ -97,6 +97,7 @@ let nextKey = 1;
     EditorBar,
     Icon,
     ImageUpload,
+    MarkdownTools,
     NgTemplateOutlet,
     PreviewFrame,
     RecipeSearch,
@@ -109,6 +110,7 @@ let nextKey = 1;
   templateUrl: './admin-cap-editor.html',
   styleUrl: './admin-cap-editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown)': 'history.onKeydown($event)', '(input)': 'history.onInput($event)' },
 })
 export default class AdminCapEditor implements UnsavedChanges {
   private readonly api = inject(Api);
@@ -127,6 +129,7 @@ export default class AdminCapEditor implements UnsavedChanges {
   protected readonly minStepPhotos = MIN_STEP_PHOTOS;
   protected readonly maxTipLength = MAX_TIP_LENGTH;
   protected readonly maxTextLength = MAX_TEXT_LENGTH;
+  protected readonly textTools: readonly MarkdownTool[] = ['title', 'bold', 'italic', 'list'];
 
   /** Null until it is saved for the first time. */
   protected readonly id = signal<number | null>(null);
@@ -207,6 +210,34 @@ export default class AdminCapEditor implements UnsavedChanges {
     blocks: this.formBlocks(),
   }));
   private readonly snapshot = computed(() => JSON.stringify(this.form()));
+  /** Ctrl+Z and Ctrl+Y: every field of the article and its blocks, their keys kept for the page to keep its fields. */
+  private readonly historyState = computed<HistoryState>(() => ({
+    title: this.title(),
+    subtitle: this.subtitle(),
+    date: this.date(),
+    imageId: this.imageId(),
+    style: this.style(),
+    status: this.status(),
+    scheduledAt: this.scheduledAt(),
+    featured: this.featured(),
+    blocks: this.blocks(),
+  }));
+  protected readonly history = new EditHistory<HistoryState>({
+    write: (state) => {
+      this.title.set(state.title);
+      this.subtitle.set(state.subtitle);
+      this.date.set(state.date);
+      this.imageId.set(state.imageId);
+      this.style.set(state.style);
+      this.status.set(state.status);
+      this.scheduledAt.set(state.scheduledAt);
+      this.featured.set(state.featured);
+      this.blocks.set(state.blocks);
+    },
+    host: () => this.host.nativeElement,
+    injector: inject(Injector),
+  });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly draftSnapshot = computed(() => JSON.stringify(this.draft()));
 
   constructor() {
@@ -226,6 +257,14 @@ export default class AdminCapEditor implements UnsavedChanges {
     effect(() => {
       this.draftSnapshot();
       untracked(() => this.keeper.changed());
+    });
+    // Each change a step of Ctrl+Z; another article, a history of its own
+    effect(() => {
+      const state = this.historyState();
+      const id = this.id();
+      if (!this.loading()) {
+        untracked(() => this.history.record(state, id));
+      }
     });
   }
 
@@ -267,6 +306,8 @@ export default class AdminCapEditor implements UnsavedChanges {
     this.blocks.set(entry.blocks.map(toEditor));
     this.basedOn.set(entry.updatedAt);
     this.saved.set(this.snapshot());
+    // Saved again: the same article written as the API keeps it, not a step of Ctrl+Z
+    this.history.replace(this.historyState());
   }
 
   // Kept in this browser
@@ -439,33 +480,7 @@ export default class AdminCapEditor implements UnsavedChanges {
     }
   }
 
-  // Text: buttons rather than Markdown typed by hand
-
-  protected markup(textarea: HTMLTextAreaElement, block: EditorBlock, markup: Markup): void {
-    const text = block.text ?? '';
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = text.slice(start, end);
-    const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-    let next: string;
-    let cursor: [number, number];
-    if (markup === 'bold') {
-      const word = selected || 'texte en gras';
-      next = `${text.slice(0, start)}**${word}**${text.slice(end)}`;
-      cursor = [start + 2, start + 2 + word.length];
-    } else {
-      const prefix = markup === 'title' ? '## ' : '- ';
-      const lines = text.slice(lineStart, end || lineStart).split('\n');
-      const marked = lines.map((line) => (line.startsWith(prefix) ? line : prefix + line)).join('\n');
-      next = text.slice(0, lineStart) + marked + text.slice(end || lineStart);
-      cursor = [lineStart + marked.length, lineStart + marked.length];
-    }
-    this.patch(block.key, { text: next });
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(...cursor);
-    });
-  }
+  // Links of a text: to a recipe, to an article
 
   protected openLink(textarea: HTMLTextAreaElement, block: EditorBlock, kind: LinkKind): void {
     this.linkedRecipe.set(null);
@@ -656,6 +671,19 @@ export default class AdminCapEditor implements UnsavedChanges {
   private formBlocks(): CapBlock[] {
     return this.blocks().map(toForm);
   }
+}
+
+/** What Ctrl+Z goes back through. */
+interface HistoryState {
+  title: string;
+  subtitle: string;
+  date: string;
+  imageId: string | null;
+  style: 'CLASSIC' | 'NOTEBOOK';
+  status: 'DRAFT' | 'PUBLISHED';
+  scheduledAt: string;
+  featured: boolean;
+  blocks: EditorBlock[];
 }
 
 function toEditor(block: CapBlock): EditorBlock {

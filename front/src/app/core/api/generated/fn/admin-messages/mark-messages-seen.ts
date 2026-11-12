@@ -9,11 +9,13 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface MarkMessagesSeen$Params {
+  group: number;
 }
 
-export function markMessagesSeen(http: HttpClient, rootUrl: string, params?: MarkMessagesSeen$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function markMessagesSeen(http: HttpClient, rootUrl: string, params: MarkMessagesSeen$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, markMessagesSeen.PATH, 'put');
   if (params) {
+    rb.query('group', params.group, {});
   }
 
   return http.request(

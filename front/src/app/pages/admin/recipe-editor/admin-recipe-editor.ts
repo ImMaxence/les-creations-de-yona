@@ -11,6 +11,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
   computed,
   effect,
   inject,
@@ -60,7 +62,9 @@ import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { SuggestInput, Suggestion } from '../../../shared/ui/suggest-input/suggest-input';
 import { hasParts } from '../../recipe/recipe-parts';
 import RecipePreview from '../recipe-preview/recipe-preview';
+import { EditHistory } from '../edit-history/edit-history';
 import { EditorBar } from '../editor-bar/editor-bar';
+import { MarkdownTools } from '../markdown-tools/markdown-tools';
 import { PreviewFrame } from '../preview-frame/preview-frame';
 import { parisDateTime } from '../../../shared/format/paris-time';
 import {
@@ -147,6 +151,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     FieldError,
     GlossaryTermDialog,
     ImageUpload,
+    MarkdownTools,
     RecipeAiDialog,
     RecipePreview,
     Select,
@@ -155,6 +160,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
   templateUrl: './admin-recipe-editor.html',
   styleUrl: './admin-recipe-editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown)': 'history.onKeydown($event)', '(input)': 'history.onInput($event)' },
 })
 export default class AdminRecipeEditor implements UnsavedChanges {
   /** From adminRecipeResolver; absent for a new recipe. */
@@ -179,6 +185,17 @@ export default class AdminRecipeEditor implements UnsavedChanges {
    * Otherwise its single part is edited as plain ingredients and steps.
    */
   protected readonly usesParts = linkedSignal(() => hasParts(this.recipe()?.parts ?? []));
+
+  /** Ctrl+Z and Ctrl+Y over the whole form: a word typed, a step removed, the form filled by the AI. */
+  protected readonly history = new EditHistory<{ draft: RecipeDraft; usesParts: boolean }>({
+    write: (state) => {
+      this.draft.set(state.draft);
+      this.usesParts.set(state.usesParts);
+    },
+    host: () => this.host.nativeElement,
+    injector: inject(Injector),
+  });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly statusOptions: SelectOption<'DRAFT' | 'PUBLISHED'>[] = [
     { value: 'DRAFT', label: 'Brouillon (invisible sur le site)', badge: 'draft' },
@@ -312,6 +329,13 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   });
 
   constructor() {
+    // Each change a step of Ctrl+Z; another recipe, a history of its own
+    effect(() => {
+      const state = { draft: this.draft(), usesParts: this.usesParts() };
+      // The recipe read again (created, published from the list of failures): a new history
+      const recipe = this.recipe() ?? null;
+      untracked(() => this.history.record(state, recipe));
+    });
     // On opening (and on moving to another recipe): a form typed earlier and never saved
     effect(() => {
       const key = this.storageKey();
@@ -828,6 +852,8 @@ export default class AdminRecipeEditor implements UnsavedChanges {
         if (existing) {
           const updated = await this.api.invoke(updateRecipe, { id: existing.id, body });
           this.draft.set(toDraft(updated));
+          // The same recipe as the API keeps it: not a step of Ctrl+Z
+          this.history.replace({ draft: this.draft(), usesParts: this.usesParts() });
           this.savedSnapshot.set(JSON.stringify(this.draft()));
           removeStoredDraft(this.storageKey());
           this.aiFilled.set(false);

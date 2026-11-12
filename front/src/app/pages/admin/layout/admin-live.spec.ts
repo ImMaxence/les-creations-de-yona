@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AdminLive, LiveTopic, readTopic } from './admin-live';
+import { AdminLive, LiveTopic, Typing, readTopic, readTyping } from './admin-live';
 
 /** A WebSocket the test opens, sends through and cuts. */
 class FakeSocket {
@@ -10,6 +10,8 @@ class FakeSocket {
   onmessage: ((message: { data: string }) => void) | null = null;
   onclose: (() => void) | null = null;
   closed = false;
+  readyState = 1;
+  readonly sent: string[] = [];
 
   constructor(readonly url: string) {
     FakeSocket.opened.push(this);
@@ -17,6 +19,10 @@ class FakeSocket {
 
   close(): void {
     this.closed = true;
+  }
+
+  send(data: string): void {
+    this.sent.push(data);
   }
 
   receive(data: string): void {
@@ -32,6 +38,14 @@ class Listening {
     inject(AdminLive).on('TRASH', (topic) => this.heard.push(topic));
   }
 }
+
+describe('readTyping', () => {
+  it('reads who writes in which group, and nothing else', () => {
+    expect(readTyping('{"topic":"TYPING","group":3,"email":"a@b.fr","name":null}')).toEqual({ group: 3, email: 'a@b.fr', name: null });
+    expect(readTyping('{"topic":"MESSAGES"}')).toBeNull();
+    expect(readTyping('{"topic":"TYPING","group":"3"}')).toBeNull();
+  });
+});
 
 describe('readTopic', () => {
   it('reads the topic told by the backend, and nothing else', () => {
@@ -133,5 +147,25 @@ describe('AdminLive', () => {
 
     expect(socket.closed).toBe(true);
     expect(FakeSocket.opened).toHaveLength(1);
+  });
+
+  it('tells at once who writes in a group, and says when this admin writes', () => {
+    const heard: Typing[] = [];
+    @Component({ template: '' })
+    class Reading {
+      constructor() {
+        inject(AdminLive).onTyping((typing) => heard.push(typing));
+      }
+    }
+    const live = TestBed.inject(AdminLive);
+    TestBed.createComponent(Reading);
+    live.start();
+    const socket = FakeSocket.opened[0]!;
+
+    socket.receive('{"topic":"TYPING","group":12,"email":"yona@site.fr","name":"Yona"}');
+    live.typing(12);
+
+    expect(heard).toEqual([{ group: 12, email: 'yona@site.fr', name: 'Yona' }]);
+    expect(socket.sent).toEqual(['{"typing":12}']);
   });
 });

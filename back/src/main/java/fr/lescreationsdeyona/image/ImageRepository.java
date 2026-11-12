@@ -16,13 +16,13 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 	/**
 	 * Images of the gallery, optionally only those shown (or not shown) by a recipe (as its photo
 	 * or its Pinterest photo), a category, a menu, an article of "Mon CAP" (its photo, or in its
-	 * blocks), a product of the shop or the "À propos" section. The receipts of the accounts are never
-	 * in it. {@code portrait}: true for the vertical Pinterest photos only, false for all the others
-	 * (landscape), null for all.
+	 * blocks), a product of the shop or the "À propos" section. The receipts of the accounts and the
+	 * photos of the messages are never in it. {@code portrait}: true for the vertical Pinterest photos
+	 * only, false for all the others (landscape), null for all.
 	 */
 	@Query("""
 			select i from Image i
-			where i.kind <> fr.lescreationsdeyona.image.ImageKind.RECEIPT
+			where i.kind <> fr.lescreationsdeyona.image.ImageKind.RECEIPT and i.kind <> fr.lescreationsdeyona.image.ImageKind.MESSAGE
 			and (:kind is null or i.kind = :kind)
 			and (:portrait is null
 				or (:portrait = true and i.kind = fr.lescreationsdeyona.image.ImageKind.PINTEREST)
@@ -84,7 +84,8 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
 	/** Those of these images that may be shown on the site: landscape, from the gallery. */
 	@Query("""
 			select i.id from Image i where i.id in :ids
-			and i.kind <> fr.lescreationsdeyona.image.ImageKind.PINTEREST and i.kind <> fr.lescreationsdeyona.image.ImageKind.RECEIPT""")
+			and i.kind <> fr.lescreationsdeyona.image.ImageKind.PINTEREST and i.kind <> fr.lescreationsdeyona.image.ImageKind.RECEIPT
+			and i.kind <> fr.lescreationsdeyona.image.ImageKind.MESSAGE""")
 	List<UUID> findLandscapeIds(Collection<UUID> ids);
 
 	// Restore from the trash: written in SQL, the entity being immutable and its date set by auditing.

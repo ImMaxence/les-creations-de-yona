@@ -54,9 +54,15 @@ class MentionsTest {
 
 	@Test
 	void refusesAnEmptyMessageAndTrimsTheOthers() {
-		assertThat(AdminMessages.clean("\n  Tu as vu @[Crème brûlée](RECIPE:2) ?  \n")).isEqualTo("Tu as vu @[Crème brûlée](RECIPE:2) ?");
-		assertThatThrownBy(() -> AdminMessages.clean("  \n ")).extracting("code").isEqualTo(ErrorCode.ADMIN_MESSAGE_EMPTY);
-		assertThatThrownBy(() -> AdminMessages.clean(null)).extracting("code").isEqualTo(ErrorCode.ADMIN_MESSAGE_EMPTY);
+		assertThat(AdminMessages.clean("\n  Tu as vu @[Crème brûlée](RECIPE:2) ?  \n", false)).isEqualTo("Tu as vu @[Crème brûlée](RECIPE:2) ?");
+		assertThatThrownBy(() -> AdminMessages.clean("  \n ", false)).extracting("code").isEqualTo(ErrorCode.ADMIN_MESSAGE_EMPTY);
+		assertThatThrownBy(() -> AdminMessages.clean(null, false)).extracting("code").isEqualTo(ErrorCode.ADMIN_MESSAGE_EMPTY);
+	}
+
+	@Test
+	void takesPhotosWithoutText() {
+		assertThat(AdminMessages.clean(null, true)).isEmpty();
+		assertThat(AdminMessages.clean("  ", true)).isEmpty();
 	}
 
 }

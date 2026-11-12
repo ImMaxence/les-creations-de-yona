@@ -2,6 +2,36 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.9.0 - 2026-11-12
+
+Front et backend 2.9.0. Migration de la base : V27
+
+### Ajouté
+
+- **Éditeurs de recettes et d'articles** : Ctrl+Z annule et Ctrl+Y (ou Ctrl+Maj+Z) rétablit tout ce qui a changé, un mot tapé comme une étape retirée, un bloc déplacé ou le formulaire rempli par l'IA ; boutons « Annuler » et « Rétablir » dans la barre du bas, pour le téléphone
+- **Mise en forme qui lit le texte** : « Gras » sur des mots déjà en gras retire le gras (sur une partie seulement, cette partie), sur des mots en partie gras les met tous en gras d'un seul tenant ; de même pour « Italique », « Liste » et « Intertitre »
+- **Recettes** : des boutons Gras, Italique et Liste au-dessus de chaque étape et du conseil de Yona, avec Ctrl+B et Ctrl+I ; Entrée dans une liste commence l'élément suivant, Entrée sur un élément vide la termine
+- **Mon CAP** : un bouton « Italique » dans les textes
+- **Messages** : des groupes, avec leur nom, leur photo et leurs membres, que chaque membre peut changer ; le groupe de tous les admins reste, renommable ; chacun ne lit que ses groupes, avec un badge par groupe
+- **Messages** : « est en train d'écrire… » quand un autre membre écrit, dans la conversation et dans la liste des groupes
+- **Messages** : des photos, avec le trombone, collées ou déposées sur la conversation (10 par message, ouvertes en grand d'un appui) ; une photo d'iPhone est convertie avant l'envoi
+- **Messages** : l'aperçu des liens comme sur un téléphone, le titre, le texte et l'image de la page, montré pendant l'écriture (« × » pour l'enlever) et gardé avec le message ; les adresses du texte deviennent des liens
+
+### Modifié
+
+- **Barre des éditeurs sur téléphone** : la flèche seule pour revenir à la liste, sans le mot « Retour », pour la place d'« Annuler » et « Rétablir »
+- **Sauvegarde** : les groupes, leurs membres et les photos des messages y sont, et reviennent avec « Ajouter ce qui manque » comme avec « Tout remplacer »
+
+### Corrigé
+
+- **Messages** : le champ d'écriture passe la vérification d'accessibilité (axe) ; les lecteurs d'écran lisent toujours ce que « @ » propose
+
+### Technique
+
+- **Historique d'un éditeur** : `EditHistory` (états du formulaire, mots tapés regroupés, champ changé retrouvé et sélectionné) et `yona-markdown-tools` (lecture des styles comme CommonMark, puis réécriture)
+- **Photos des messages** : un type d'image à part (`MESSAGE`), jamais dans la galerie ni sur le site, servi aux seuls membres du groupe ; celles d'un message jamais envoyé effacées le lendemain
+- **Aperçu des liens** : lu par le serveur sur des adresses publiques seulement (ni le serveur, ni son réseau, chaque redirection revérifiée), 1 Mo de page et 5 Mo d'image au plus, 8 secondes, gardé 30 minutes ; WebSocket `/api/admin/live` : la page dit `{"typing":12}`, les autres membres seuls sont prévenus
+
 ## 2.8.0 - 2026-11-12
 
 Front et backend 2.8.0. Migration de la base : V25 et V26

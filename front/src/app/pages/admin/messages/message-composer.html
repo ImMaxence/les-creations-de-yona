@@ -1,0 +1,89 @@
+@if (attachments().length) {
+  <ul role="list" class="attachments" aria-label="Photos à envoyer">
+    @for (attachment of attachments(); track attachment.key) {
+      <li class="attachment" [class.is-failed]="attachment.failed">
+        <img [src]="attachment.preview" alt="" />
+        @if (attachment.progress !== null) {
+          <span class="attachment__progress" role="progressbar" aria-label="Envoi de la photo" [attr.aria-valuenow]="percent(attachment.progress)" aria-valuemin="0" aria-valuemax="100">
+            <span [style.width.%]="percent(attachment.progress)"></span>
+          </span>
+        } @else if (attachment.failed) {
+          <span class="attachment__failed">Pas envoyée</span>
+        }
+        <button type="button" class="attachment__remove" aria-label="Retirer cette photo" (click)="removeAttachment(attachment.key)">
+          <svg yonaIcon="x" [size]="14" [strokeWidth]="3"></svg>
+        </button>
+      </li>
+    }
+  </ul>
+}
+
+@if (shownPage(); as page) {
+  <div class="link-draft" animate.enter="link-draft--enter">
+    @if (page.image) {
+      <img class="link-draft__image" [src]="linkDraftImage(page.url)" alt="" />
+    } @else {
+      <span class="link-draft__image link-draft__image--none" aria-hidden="true"><svg yonaIcon="link" [size]="20"></svg></span>
+    }
+    <span class="link-draft__text">
+      <span class="link-draft__site">{{ page.siteName || shownLink(page.url) }}</span>
+      <strong class="link-draft__title">{{ page.title || shownLink(page.url) }}</strong>
+    </span>
+    <button type="button" class="icon-button" aria-label="Envoyer sans l’aperçu du lien" (click)="dismissPreview()">
+      <svg yonaIcon="x" [size]="18"></svg>
+    </button>
+  </div>
+}
+
+<div class="composer">
+  <input #files type="file" accept="image/*" multiple hidden (change)="onFiles($event)" />
+  <button type="button" class="icon-button composer__attach" aria-label="Ajouter des photos" [disabled]="attachments().length >= 10" (click)="files.click()">
+    <svg yonaIcon="paperclip" [size]="20"></svg>
+  </button>
+  <label class="visually-hidden" for="message-text">Votre message</label>
+  <textarea
+    #field
+    id="message-text"
+    class="input composer__field"
+    rows="1"
+    placeholder="Écrire au groupe…"
+    aria-autocomplete="list"
+    [attr.aria-controls]="suggesting() ? 'mention-list' : null"
+    [attr.aria-activedescendant]="suggesting() ? 'mention-' + active() : null"
+    [maxLength]="maxTyped"
+    [value]="text()"
+    (input)="onInput($event)"
+    (keydown)="onKeydown($event)"
+    (paste)="onPaste($event)"
+    (blur)="closeSuggestions()"
+  ></textarea>
+  @if (suggesting()) {
+    <ul id="mention-list" class="suggestions" role="listbox" aria-label="Citer" [yonaFloating]="field" animate.enter="suggestions--enter">
+      @for (mention of suggestions(); track mention.kind + mention.id; let i = $index) {
+        <!-- pointerdown, not click: chosen before the field loses the focus and closes the list -->
+        <li
+          role="option"
+          class="suggestion"
+          [id]="'mention-' + i"
+          [class.is-active]="i === active()"
+          [attr.aria-selected]="i === active()"
+          (pointerdown)="$event.preventDefault(); choose(mention)"
+          (pointerenter)="active.set(i)"
+        >
+          <svg [yonaIcon]="kinds[mention.kind].icon" [size]="16"></svg>
+          <span class="suggestion__label">{{ mention.label }}</span>
+          <span class="suggestion__kind">{{ kinds[mention.kind].name }}</span>
+        </li>
+      }
+    </ul>
+  }
+  <button yonaButton type="button" class="composer__send" [disabled]="!canSend()" (click)="send()">
+    <svg yonaIcon="send"></svg><span class="composer__send-label">Envoyer</span>
+  </button>
+</div>
+<p class="field__hint composer__hint">
+  Entrée pour envoyer, Maj + Entrée pour aller à la ligne ; @ pour citer une recette, un article, une commande ; des photos avec le trombone, ou collées
+  @if (text().length > maxTyped - 200) {
+    · {{ text().length }} / {{ maxTyped }} caractères
+  }
+</p>

@@ -95,6 +95,7 @@
             placeholder="Nom de la nouvelle catégorie"
             aria-label="Nom de la nouvelle catégorie"
             maxlength="60"
+            data-own-undo
             [value]="newCategoryName()"
             (input)="newCategoryName.set($any($event.target).value)"
             (keydown.enter)="$event.preventDefault(); addCategory()"
@@ -132,6 +133,7 @@
             placeholder="Nom du nouveau tag (végétarien, de saison…)"
             aria-label="Nom du nouveau tag"
             maxlength="40"
+            data-own-undo
             [value]="newTagName()"
             (input)="newTagName.set($any($event.target).value)"
             (keydown.enter)="$event.preventDefault(); addTag()"
@@ -414,9 +416,12 @@
   <section class="admin-panel" aria-labelledby="tip-title">
     <h3 id="tip-title" class="editor__title">Le conseil de Yona (facultatif)</h3>
     <div class="field">
-      <label class="field__label" for="tip">Astuce, conservation, variante…</label>
-      <textarea id="tip" class="input" rows="4" placeholder="Se conserve 3 jours au frais. Version sans gluten : remplacer la farine par…" [formField]="recipeForm.tip"></textarea>
-      <span class="field__hint">Affiché dans un encadré après les étapes. Markdown accepté : **gras**, listes avec « - »</span>
+      <div class="field__label-row">
+        <label class="field__label" for="tip">Astuce, conservation, variante…</label>
+        <yona-markdown-tools [field]="tipArea" />
+      </div>
+      <textarea #tipArea id="tip" class="input" rows="4" placeholder="Se conserve 3 jours au frais. Version sans gluten : remplacer la farine par…" [formField]="recipeForm.tip"></textarea>
+      <span class="field__hint">Affiché dans un encadré après les étapes</span>
       <yona-field-error [field]="recipeForm.tip" />
     </div>
   </section>
@@ -457,6 +462,7 @@
   <yona-editor-bar
     back="/admin/recettes"
     submits
+    [history]="history"
     [draft]="draft().status === 'DRAFT'"
     [saving]="saving()"
     [previewing]="previewing()"
@@ -515,7 +521,7 @@
 
 <!-- Steps of a part (the only part of a recipe without parts) -->
 <ng-template #stepsEditor let-p>
-  <p class="field__hint">Markdown accepté : **gras**, *italique*, listes avec « - » en début de ligne</p>
+  <p class="field__hint">Gras, italique et listes : les boutons de chaque étape (ou Ctrl+B, Ctrl+I), qui les retirent aussi d’un deuxième appui</p>
   <ol
     class="lines"
     cdkDropList
@@ -530,11 +536,15 @@
           <svg yonaIcon="grip-vertical" [size]="18"></svg>
         </button>
         <div class="line__fields">
-          <span class="line__number">Étape {{ i + 1 }}</span>
+          <div class="line__head">
+            <span class="line__number">Étape {{ i + 1 }}</span>
+            <yona-markdown-tools [field]="stepArea" />
+          </div>
           <!-- The words already in the glossary, underlined in a copy of the text drawn under the field -->
           <div class="glossed">
             <div class="glossed__marks" aria-hidden="true" [innerHTML]="markedStep(step.description)"></div>
             <textarea
+              #stepArea
               class="input glossed__area"
               rows="3"
               [attr.aria-label]="'Étape ' + (i + 1)"

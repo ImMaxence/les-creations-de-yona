@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MessageMention, mentionLabel, mentionQuery, parseMessage, plainMessage, withMentions } from './message-format';
+import { MessageMention, firstLink, mentionLabel, mentionQuery, parseMessage, plainMessage, shownLink, withMentions } from './message-format';
 
 const TARTE: MessageMention = { kind: 'RECIPE', id: 12, label: 'Tarte au citron' };
 const EXAMEN: MessageMention = { kind: 'CAP_ENTRY', id: 7, label: 'Examen blanc' };
@@ -51,5 +51,27 @@ describe('message-format', () => {
 
   it('takes the brackets out of a name', () => {
     expect(mentionLabel(' Pâte [sucrée]\n ')).toBe('Pâte sucrée');
+  });
+  it('reads the web addresses of a message, its punctuation left out', () => {
+    expect(parseMessage('Vu https://www.marmiton.org/tarte.aspx, et toi ?')).toEqual([
+      { text: 'Vu ' },
+      { link: 'https://www.marmiton.org/tarte.aspx' },
+      { text: ', et toi ?' },
+    ]);
+    expect(parseMessage('(https://fr.wikipedia.org/wiki/Tarte_(cuisine))')).toEqual([
+      { text: '(' },
+      { link: 'https://fr.wikipedia.org/wiki/Tarte_(cuisine)' },
+      { text: ')' },
+    ]);
+  });
+
+  it('finds the first web address, outside the mentions', () => {
+    expect(firstLink('@[Tarte](RECIPE:2) puis https://site.fr/a et https://site.fr/b')).toBe('https://site.fr/a');
+    expect(firstLink('Rien à lire')).toBeNull();
+  });
+
+  it('shows a web address shorter', () => {
+    expect(shownLink('https://www.marmiton.org/recettes')).toBe('marmiton.org/recettes');
+    expect(shownLink('https://site.fr/' + 'a'.repeat(80))).toHaveLength(58);
   });
 });

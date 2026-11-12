@@ -1,0 +1,231 @@
+@use 'mixins' as m;
+
+:host {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
+// The photos chosen, small, before sending
+.attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.attachment {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &.is-failed img {
+    opacity: 0.4;
+  }
+}
+
+.attachment__progress {
+  position: absolute;
+  inset: auto var(--space-1) var(--space-1);
+  height: 0.3rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background-color: rgb(255 255 255 / 70%);
+
+  span {
+    display: block;
+    height: 100%;
+    background-color: var(--color-accent);
+    transition: width var(--duration-fast) linear;
+  }
+}
+
+.attachment__failed {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 0.1rem;
+  background-color: var(--color-danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.attachment__remove {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background-color: rgb(10 6 4 / 70%);
+  color: #fff;
+
+  @include m.hover {
+    background-color: rgb(10 6 4 / 90%);
+  }
+}
+
+// The preview of the first link, before sending
+.link-draft {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.link-draft--enter {
+  animation: link-draft-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes link-draft-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+}
+
+.link-draft__image {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.link-draft__image--none {
+  display: grid;
+  place-items: center;
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+.link-draft__text {
+  display: grid;
+  min-width: 0;
+}
+
+.link-draft__site {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-draft__title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+// The field, the paperclip and the button beside it
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.composer__attach {
+  flex: none;
+}
+
+.composer__field {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.75rem;
+  max-height: 10rem;
+  resize: none;
+  field-sizing: content;
+}
+
+textarea.composer__field {
+  min-height: 2.75rem;
+}
+
+.composer__send {
+  flex: none;
+}
+
+// Phones: the paper plane alone, the field keeps the width
+.composer__send-label {
+  @include m.below(sm) {
+    @include m.visually-hidden;
+  }
+}
+
+.composer__hint {
+  margin-top: calc(-1 * var(--space-1));
+}
+
+// What "@" offers, above or under the field (yonaFloating)
+.suggestions {
+  display: grid;
+  min-width: 18rem;
+  max-width: min(28rem, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--color-line);
+  list-style: none;
+}
+
+.suggestions--enter {
+  animation: suggestions-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes suggestions-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.suggestion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+
+  svg {
+    color: var(--color-text-muted);
+  }
+
+  &.is-active {
+    background-color: var(--color-surface);
+    color: var(--color-accent);
+
+    svg {
+      color: currentColor;
+    }
+  }
+}
+
+.suggestion__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion__kind {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

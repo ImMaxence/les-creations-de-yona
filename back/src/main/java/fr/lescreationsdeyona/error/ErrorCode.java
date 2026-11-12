@@ -85,9 +85,14 @@ public enum ErrorCode {
 	FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
 
 	// Messages between the admins
-	ADMIN_MESSAGE_EMPTY(HttpStatus.BAD_REQUEST, "Écrivez quelque chose avant d'envoyer"),
+	ADMIN_MESSAGE_EMPTY(HttpStatus.BAD_REQUEST, "Écrivez quelque chose ou ajoutez une photo avant d'envoyer"),
 	ADMIN_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
 	ADMIN_MESSAGE_NOT_YOURS(HttpStatus.FORBIDDEN, "Seule la personne qui l'a écrit peut supprimer ce message"),
+	ADMIN_MESSAGE_PHOTO_GONE(HttpStatus.BAD_REQUEST, "Une des photos n'est plus disponible : ajoutez-la à nouveau"),
+	ADMIN_GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce groupe n'existe plus, ou vous n'en faites plus partie"),
+	ADMIN_GROUP_TOO_SMALL(HttpStatus.BAD_REQUEST, "Choisissez au moins un autre admin pour ce groupe"),
+	ADMIN_GROUP_NOT_ADMIN(HttpStatus.BAD_REQUEST, "Seuls les admins du back-office peuvent faire partie d'un groupe"),
+	ADMIN_GROUP_EVERYONE(HttpStatus.BAD_REQUEST, "Tous les admins font partie de ce groupe : il ne se quitte pas et ne se supprime pas"),
 	FEEDBACK_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre message"),
 
 	// "Mon CAP"
@@ -174,6 +179,7 @@ public enum ErrorCode {
 	PORTRAIT_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "L'image Pinterest doit mesurer au moins 600 × 800 pixels"),
 	IMAGE_NOT_PORTRAIT(HttpStatus.BAD_REQUEST, "L'image Pinterest doit être verticale (3:4 ou plus haute, 2:3 conseillé)"),
 	RECEIPT_TOO_SMALL(HttpStatus.BAD_REQUEST, "La photo du ticket doit mesurer au moins 300 × 300 pixels"),
+	MESSAGE_IMAGE_TOO_SMALL(HttpStatus.BAD_REQUEST, "La photo doit mesurer au moins 50 × 50 pixels"),
 	STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Le stockage des images est indisponible, réessayez plus tard"),
 
 	// Backup
