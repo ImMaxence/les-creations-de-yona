@@ -224,14 +224,16 @@ public class AdminGroups {
 
 	/** "Léa Martin a ajouté sam@site.fr": a line of the group in French, its member by their email. */
 	static String sentence(String actor, GroupEvent event, @Nullable String value) {
-		return actor + switch (event) {
-			case CREATED -> " a créé le groupe « " + value + " »";
-			case RENAMED -> " a renommé le groupe « " + value + " »";
-			case PHOTO_CHANGED -> " a changé la photo du groupe";
-			case PHOTO_REMOVED -> " a retiré la photo du groupe";
-			case ADDED -> " a ajouté " + value;
-			case REMOVED -> " a retiré " + value;
-			case LEFT -> " a quitté le groupe";
+		return switch (event) {
+			case CREATED -> actor + " a créé le groupe « " + value + " »";
+			case RENAMED -> actor + " a renommé le groupe « " + value + " »";
+			case PHOTO_CHANGED -> actor + " a changé la photo du groupe";
+			case PHOTO_REMOVED -> actor + " a retiré la photo du groupe";
+			case ADDED -> actor + " a ajouté " + value;
+			case REMOVED -> actor + " a retiré " + value;
+			case LEFT -> actor + " a quitté le groupe";
+			// Written by the site itself, no member
+			case VERSION -> "Nouvelle version de l'application disponible : version " + value;
 		};
 	}
 

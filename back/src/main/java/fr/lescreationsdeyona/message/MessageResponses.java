@@ -23,8 +23,9 @@ public final class MessageResponses {
 			@Schema(description = "The text, empty for photos alone; a mention is written in it: @[Tarte au citron](RECIPE:12)") String body,
 			Instant sentAt, @Schema(description = "Its photos, in order: /api/admin/messages/images/{id}/800.webp") List<MessagePhoto> photos,
 			@Schema(description = "The preview of its first link, once read on its page") @Nullable LinkPreview link,
-			@Schema(description = "A line of the group (2.13): what its author changed in it, the body then a sentence of it in French") @Nullable GroupEvent event,
-			@Schema(description = "The name given (CREATED, RENAMED) or the email of the member concerned (ADDED, REMOVED)") @Nullable String eventValue) {
+			@Schema(description = "A line of the group (2.13): what its author changed in it, the body then a sentence of it in French; "
+					+ "VERSION (2.14): a new version of the application, written by the site itself (author \"site\")") @Nullable GroupEvent event,
+			@Schema(description = "The name given (CREATED, RENAMED), the email of the member concerned (ADDED, REMOVED) or the version (VERSION)") @Nullable String eventValue) {
 	}
 
 	/** A photo of a message, its size to lay it out before it loads. */

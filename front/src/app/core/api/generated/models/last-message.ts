@@ -8,7 +8,7 @@ export interface LastMessage {
   /**
    * A line of the group (2.13), told as such in the list
    */
-  event?: 'CREATED' | 'RENAMED' | 'PHOTO_CHANGED' | 'PHOTO_REMOVED' | 'ADDED' | 'REMOVED' | 'LEFT';
+  event?: 'CREATED' | 'RENAMED' | 'PHOTO_CHANGED' | 'PHOTO_REMOVED' | 'ADDED' | 'REMOVED' | 'LEFT' | 'VERSION';
   eventValue?: string;
   photos: number;
   sentAt: string;

@@ -17,4 +17,10 @@ class GroupEventsTest {
 		assertThat(AdminGroups.sentence("sam@site.fr", GroupEvent.LEFT, null)).isEqualTo("sam@site.fr a quitté le groupe");
 	}
 
+	@Test
+	void writesANewVersionWithoutAnyMember() {
+		assertThat(AdminGroups.sentence(VersionAnnouncement.SITE, GroupEvent.VERSION, "2.14.0"))
+			.isEqualTo("Nouvelle version de l'application disponible : version 2.14.0");
+	}
+
 }

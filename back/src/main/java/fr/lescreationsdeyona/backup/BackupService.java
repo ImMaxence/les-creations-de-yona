@@ -56,7 +56,7 @@ public class BackupService {
 	 * to the site's content. Orders are saved: losing them would lose work.
 	 */
 	public static final List<String> SITE_ONLY_TABLES = List.of("push_subscription", "web_push_key",
-			"google_drive_link", "audit_event", "feedback", "admin_seen", "app_log", "server_sample", "admin_group_seen");
+			"google_drive_link", "audit_event", "feedback", "admin_seen", "app_log", "server_sample", "admin_group_seen", "announced_version");
 
 	private static final DateTimeFormatter FILE_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
 

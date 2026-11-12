@@ -2,6 +2,19 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.14.0 - 2026-11-12
+
+Front et backend 2.14.0. Migration de la base : V31
+
+### Ajouté
+
+- **Messages** : à chaque nouvelle version du site, une ligne écrite par le site lui-même dans le groupe de tous les admins : « Nouvelle version de l'application disponible : version 2.14.0 »
+- **Messages** : annoncée une seule fois, ni à un redémarrage ni au retour d'une version plus ancienne ; comme les autres lignes du groupe, ni badge, ni son, ni notification
+
+### Technique
+
+- **Messages** : ligne de groupe `VERSION` (auteur `site`, valeur : la version), écrite au démarrage du backend ; table `announced_version` des versions déjà annoncées, propre au serveur (sauvegardée vide)
+
 ## 2.13.0 - 2026-11-12
 
 Front et backend 2.13.0. Migration de la base : V29 et V30

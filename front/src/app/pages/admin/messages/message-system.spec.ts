@@ -24,6 +24,11 @@ describe('systemLine', () => {
     expect(systemLine('LEFT', me)).toBe('Vous avez quitté le groupe');
   });
 
+  it('tells a new version of the application, written by the site itself', () => {
+    const site = { name: 'site', me: false };
+    expect(systemLine('VERSION', site, '2.14.0')).toBe("Nouvelle version de l'application disponible : version 2.14.0");
+  });
+
   it('names a member by their email when nothing better is known', () => {
     expect(systemLine('ADDED', lea, 'sam@site.fr')).toBe('Léa a ajouté sam@site.fr');
   });

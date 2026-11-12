@@ -14,12 +14,12 @@ export interface AdminMessage {
   body: string;
 
   /**
-   * A line of the group (2.13): what its author changed in it, the body then a sentence of it in French
+   * A line of the group (2.13): what its author changed in it, the body then a sentence of it in French; VERSION (2.14): a new version of the application, written by the site itself (author "site")
    */
-  event?: 'CREATED' | 'RENAMED' | 'PHOTO_CHANGED' | 'PHOTO_REMOVED' | 'ADDED' | 'REMOVED' | 'LEFT';
+  event?: 'CREATED' | 'RENAMED' | 'PHOTO_CHANGED' | 'PHOTO_REMOVED' | 'ADDED' | 'REMOVED' | 'LEFT' | 'VERSION';
 
   /**
-   * The name given (CREATED, RENAMED) or the email of the member concerned (ADDED, REMOVED)
+   * The name given (CREATED, RENAMED), the email of the member concerned (ADDED, REMOVED) or the version (VERSION)
    */
   eventValue?: string;
   groupId: number;

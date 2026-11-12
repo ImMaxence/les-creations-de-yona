@@ -1,6 +1,6 @@
 import { AdminMessage } from '../../../core/api/generated/models/admin-message';
 
-/** What a member changed in a group (2.13), written in its conversation as a line of its own. */
+/** What a member changed in a group (2.13), or a new version of the application (2.14), written in its conversation as a line of its own. */
 export type GroupEvent = NonNullable<AdminMessage['event']>;
 
 /** Who did it, or whom it concerns: their first name, or the one reading. */
@@ -31,5 +31,8 @@ export function systemLine(event: GroupEvent, actor: Who, value?: string | null,
       return target?.me ? `${actor.name} vous a retiré` : did(`retiré ${target?.name ?? value ?? ''}`);
     case 'LEFT':
       return did('quitté le groupe');
+    case 'VERSION':
+      // Written by the site itself (2.14), in the group of all the admins: no member
+      return `Nouvelle version de l'application disponible : version ${value ?? ''}`;
   }
 }
