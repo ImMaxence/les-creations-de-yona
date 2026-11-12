@@ -2,6 +2,24 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.10.1 - 2026-11-12
+
+Front et backend 2.10.1. Pas de migration de la base
+
+### Modifié
+
+- **Politique de confidentialité** : les messages entre admins et leurs photos (qui les voit, métadonnées retirées, 90 jours, sauvegardes, aperçu des liens lu par le serveur, accord des personnes photographiées)
+- **Photos des messages** : gardées une heure dans le navigateur qui les affiche, au lieu d'un an, pour qu'une photo supprimée ne reste pas sur un ordinateur partagé
+
+### Corrigé
+
+- **Messages** : l'aperçu d'un lien et la photo d'un groupe s'enregistrent (l'image était refusée par la base, enregistrée trop tard)
+- **Temps réel** : la page qui l'ouvre est acceptée si elle vient de l'adresse publique du site, même quand les proxys devant le serveur lui en annoncent une autre
+
+### Technique
+
+- **Temps réel** : une page refusée est dite dans « Journaux » avec les deux adresses, et chaque connexion ouverte dans les journaux du serveur (« Live connection opened ») : ouverte côté serveur mais jamais côté navigateur, c'est un proxy qui la coupe en chemin
+
 ## 2.10.0 - 2026-11-12
 
 Front et backend 2.10.0. Pas de migration de la base

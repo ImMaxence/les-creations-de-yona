@@ -145,7 +145,11 @@ public class ImageService {
 	/** A photo of the messages (sent, of a group, of a link's preview), kept apart from the gallery; inside the caller's transaction. */
 	@Transactional(propagation = Propagation.MANDATORY)
 	public Image createMessageImage(ProcessedImage processed) {
-		return create(ImageKind.MESSAGE, processed);
+		Image image = create(ImageKind.MESSAGE, processed);
+		// The messages are written in SQL (JdbcClient), not through JPA: the row must be in the table
+		// before a message or a group points to it, not only at the commit
+		imageRepository.flush();
+		return image;
 	}
 
 	/** Photos of the messages gone with their message or their group: never in the trash, their files go once that is committed. */

@@ -70,6 +70,8 @@ public class AdminLive extends TextWebSocketHandler {
 			// Told nothing of the groups, nor who writes: seen in "Journaux" if it ever happens
 			log.warn("Live connection {} opened without a Google account: no group news nor typing for it", session.getId());
 		}
+		// In the logs of the server: opened here while the browser says it never connects, a proxy breaks it on the way
+		log.info("Live connection opened ({} open)", open.size() + 1);
 		// Several threads may send at once: one at a time per connection, a stuck one dropped
 		open.put(session.getId(), new Open(new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, BUFFER_SIZE_LIMIT),
 				user == null || user.getEmail() == null ? null : user.getEmail().toLowerCase(Locale.ROOT),

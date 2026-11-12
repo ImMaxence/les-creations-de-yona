@@ -57,8 +57,11 @@ class AdminMessageController {
 
 	private static final String WEBP = "image/webp";
 
-	/** A photo never changes (a new one has a new id), and is the admins' own. */
-	private static final CacheControl PRIVATE_FOREVER = CacheControl.maxAge(Duration.ofDays(365)).cachePrivate().immutable();
+	/**
+	 * Kept an hour in the browser of the admin, never by a proxy: a photo deleted does not stay a year on a
+	 * computer (shared, perhaps) because it was once seen there.
+	 */
+	private static final CacheControl PRIVATE_HOUR = CacheControl.maxAge(Duration.ofHours(1)).cachePrivate();
 
 	private final AdminMessages messages;
 
@@ -122,7 +125,7 @@ class AdminMessageController {
 		}
 		ImageStorage.StoredFile file = imageService.openMessageImage(id, width);
 		return ResponseEntity.ok()
-			.cacheControl(PRIVATE_FOREVER)
+			.cacheControl(PRIVATE_HOUR)
 			.contentType(MediaType.parseMediaType(WEBP))
 			.contentLength(file.size())
 			.body(new InputStreamResource(file.content()));

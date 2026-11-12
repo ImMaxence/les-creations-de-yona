@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.live;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -139,9 +140,17 @@ class AdminLiveSocketTest {
 	}
 
 	private Page open(String email) throws Exception {
+		return open(email, null);
+	}
+
+	/** {@code origin}: the address of the page opening it, none for a page of the same address. */
+	private Page open(String email, String origin) throws Exception {
 		Page page = new Page();
 		WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
 		headers.add(SIGNED_IN, email);
+		if (origin != null) {
+			headers.setOrigin(origin);
+		}
 		page.session = new StandardWebSocketClient().execute(page, headers, URI.create("ws://localhost:" + port + AdminLive.PATH))
 			.get(5, TimeUnit.SECONDS);
 		sessions.add(page.session);
@@ -167,6 +176,26 @@ class AdminLiveSocketTest {
 		assertThat(yona.told.poll(2, TimeUnit.SECONDS)).isEqualTo("{\"topic\":\"MESSAGES\"}");
 		assertThat(lea.told.poll(2, TimeUnit.SECONDS)).isEqualTo("{\"topic\":\"MESSAGES\"}");
 		assertThat(outsider.told.poll(300, TimeUnit.MILLISECONDS)).isNull();
+	}
+
+	@Test
+	void opensForAPageOfTheSitePublicAddressAndRefusesAnotherSite() throws Exception {
+		open("yona@site.fr", "https://les-creations-de-yona.fr");
+		awaitConnections(1);
+
+		assertThatThrownBy(() -> open("yona@site.fr", "https://pirate.example")).hasRootCauseInstanceOf(Exception.class);
+		assertThat(live.connections()).isEqualTo(1);
+	}
+
+	@Test
+	void readsTheOriginOfAPage() {
+		URI site = URI.create("https://les-creations-de-yona.fr");
+
+		assertThat(LiveConfig.SameSite.sameOrigin("https://les-creations-de-yona.fr", site)).isTrue();
+		assertThat(LiveConfig.SameSite.sameOrigin("https://LES-CREATIONS-DE-YONA.fr:443", site)).isTrue();
+		assertThat(LiveConfig.SameSite.sameOrigin("http://les-creations-de-yona.fr", site)).isFalse();
+		assertThat(LiveConfig.SameSite.sameOrigin("https://les-creations-de-yona.fr.pirate.example", site)).isFalse();
+		assertThat(LiveConfig.SameSite.sameOrigin("pas une adresse", site)).isFalse();
 	}
 
 	@Test
