@@ -29,7 +29,7 @@ import { Floating } from '../../../shared/ui/floating/floating';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { AdminLive } from '../layout/admin-live';
 import { MENTION_KINDS, MessageMention, firstLink, linkHost, mentionLabel, mentionQuery, shownLink, withMentions } from './message-format';
-import { imageFiles, linkDraftImage, sendablePhoto } from './message-photos';
+import { iconLike, imageFiles, linkDraftImage, sendablePhoto } from './message-photos';
 
 /** Characters typed in a message (its mentions written in, the backend takes 3,000). */
 const MAX_TYPED = 2000;
@@ -86,6 +86,7 @@ export class MessageComposer {
   protected readonly shownLink = shownLink;
   protected readonly linkHost = linkHost;
   protected readonly linkDraftImage = linkDraftImage;
+  protected readonly iconLike = iconLike;
 
   protected readonly text = signal('');
   protected readonly sending = signal(false);
@@ -108,13 +109,18 @@ export class MessageComposer {
   private suggestionRun = 0;
   private suggestionTimer: ReturnType<typeof setTimeout> | undefined;
 
-  /** The first link written, and the page read for it; the one whose preview was taken off. */
+  /** The first link written, and the page read for it (null: nothing to show); the one whose preview was taken off. */
   private readonly link = computed(() => firstLink(this.text()));
-  protected readonly linkPage = signal<{ url: string; page: LinkPage } | null>(null);
+  protected readonly linkPage = signal<{ url: string; page: LinkPage | null } | null>(null);
   private readonly dismissed = signal<string | null>(null);
-  protected readonly shownPage = computed(() => {
+  /** The card under the field, as on a phone: at once with the site's name, its image or icon once the page is read. */
+  protected readonly linkCard = computed(() => {
+    const url = this.link();
+    if (!url || url === this.dismissed()) {
+      return null;
+    }
     const read = this.linkPage();
-    return read && read.url === this.link() && read.url !== this.dismissed() ? read.page : null;
+    return { url, page: read?.url === url ? read.page : null };
   });
   private linkTimer: ReturnType<typeof setTimeout> | undefined;
   private lastTyping = 0;
@@ -137,8 +143,8 @@ export class MessageComposer {
         }
         this.linkTimer = setTimeout(async () => {
           const page = await this.api.invoke(previewMessageLink, { url }).catch(() => null);
-          if (page && this.link() === url) {
-            this.linkPage.set({ url, page });
+          if (this.link() === url) {
+            this.linkPage.set({ url, page: page ?? null });
           }
         }, LINK_DELAY_MS);
       });

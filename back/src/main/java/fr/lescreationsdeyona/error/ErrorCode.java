@@ -93,6 +93,10 @@ public enum ErrorCode {
 	ADMIN_GROUP_TOO_SMALL(HttpStatus.BAD_REQUEST, "Choisissez au moins un autre admin pour ce groupe"),
 	ADMIN_GROUP_NOT_ADMIN(HttpStatus.BAD_REQUEST, "Seuls les admins du back-office peuvent faire partie d'un groupe"),
 	ADMIN_GROUP_EVERYONE(HttpStatus.BAD_REQUEST, "Tous les admins font partie de ce groupe : il ne se quitte pas et ne se supprime pas"),
+	ADMIN_MESSAGE_TOO_FAST(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup de messages d'un coup : patientez quelques secondes"),
+	ADMIN_MESSAGE_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Trop de messages en une heure : réessayez un peu plus tard"),
+	ADMIN_MESSAGE_REPEATED(HttpStatus.TOO_MANY_REQUESTS, "Ce message vient déjà d'être envoyé"),
+	ADMIN_MESSAGE_PHOTOS_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup de photos envoyées d'un coup : patientez quelques minutes"),
 	FEEDBACK_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre message"),
 
 	// "Mon CAP"

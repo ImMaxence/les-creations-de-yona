@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
+import { archiveErrorLog } from '../../../core/api/generated/fn/admin-error-log/archive-error-log';
 import { eraseErrorLog } from '../../../core/api/generated/fn/admin-error-log/erase-error-log';
 import { getErrorLogSummary } from '../../../core/api/generated/fn/admin-error-log/get-error-log-summary';
 import { listErrorLog } from '../../../core/api/generated/fn/admin-error-log/list-error-log';
@@ -13,6 +14,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { InfiniteList } from '../../../shared/ui/infinite-scroll/infinite-list';
 import { InfiniteScroll } from '../../../shared/ui/infinite-scroll/infinite-scroll';
+import { Segmented } from '../../../shared/ui/segmented/segmented';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { AdminLive } from '../layout/admin-live';
@@ -35,25 +37,31 @@ export function shortLogger(logger: string | null | undefined): string | null {
  * "Journaux": the errors and warnings of the site, the latest first (30 days). The backend's own
  * (a backup that failed, Gemini out of reach, a request gone wrong) and those of the visitors'
  * browsers (a page that broke). The same problem again adds to its count. Opening the page clears
- * the badge of the menu; the lines new since the last visit say so.
+ * the badge of the menu; the lines new since the last visit say so. A line archived (the problem
+ * handled) leaves the list without being erased, and comes back to it on its own, marked "Revenue",
+ * if the problem happens again.
  */
 @Component({
   selector: 'yona-admin-logs',
-  imports: [Button, Icon, InfiniteScroll, Select, Skeleton],
+  imports: [Button, Icon, InfiniteScroll, Segmented, Select, Skeleton],
   template: `
     <section class="admin-section" aria-labelledby="logs-title">
       <div class="admin-section__head">
         <h2 id="logs-title">Journaux</h2>
         <div class="admin-section__actions">
           <button yonaButton variant="secondary" type="button" (click)="reload()"><svg yonaIcon="refresh-cw"></svg>Actualiser</button>
-          @if ((summary()?.lines ?? 0) > 0) {
+          @if (!archived() && (summary()?.lines ?? 0) > 0) {
+            <button yonaButton variant="secondary" type="button" (click)="archiveAll()"><svg yonaIcon="archive"></svg>Tout archiver</button>
+          }
+          @if ((summary()?.lines ?? 0) + (summary()?.archived ?? 0) > 0) {
             <button yonaButton variant="ghost" type="button" (click)="eraseAll()"><svg yonaIcon="trash"></svg>Tout effacer</button>
           }
         </div>
       </div>
       <p class="field__hint">
         Les erreurs et avertissements du site, 30 jours : ceux du serveur et ceux des navigateurs des visiteurs. Une même
-        erreur qui revient s'ajoute à son compteur. Effacez une ligne une fois le problème réglé
+        erreur qui revient s'ajoute à son compteur. Archivez une ligne une fois le problème traité : elle quitte la liste,
+        et y revient d'elle-même si l'erreur se reproduit. Effacez-la pour l'oublier
       </p>
 
       @if (summary(); as counts) {
@@ -68,7 +76,7 @@ export function shortLogger(logger: string | null | undefined): string | null {
           </div>
           <div class="counter">
             <span class="counter__value">{{ counts.lines }}</span>
-            <span class="counter__label">ligne{{ counts.lines > 1 ? 's' : '' }} sur 30 jours</span>
+            <span class="counter__label">ligne{{ counts.lines > 1 ? 's' : '' }} à traiter sur 30 jours</span>
           </div>
           <div class="counter">
             <span class="counter__value counter__value--small">{{ counts.lastErrorAt ? dateTime(counts.lastErrorAt) : 'Aucune' }}</span>
@@ -78,6 +86,15 @@ export function shortLogger(logger: string | null | undefined): string | null {
       } @else {
         <yona-skeleton kind="figures" [count]="4" />
       }
+
+      <div class="segmented" yonaSegmented role="radiogroup" aria-label="Lignes">
+        <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="!archived()" (click)="archived.set(false)">
+          À traiter{{ summary() ? ' (' + summary()!.lines + ')' : '' }}
+        </button>
+        <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="archived()" (click)="archived.set(true)">
+          <svg yonaIcon="archive" [size]="16"></svg>Archivées{{ summary() ? ' (' + summary()!.archived + ')' : '' }}
+        </button>
+      </div>
 
       <div class="admin-toolbar">
         <yona-select label="Gravité" [options]="levelOptions" [value]="level()" (valueChange)="level.set($event ?? 'ALL')" />
@@ -92,6 +109,9 @@ export function shortLogger(logger: string | null | undefined): string | null {
                 <span class="log__tags">
                   @if (isNew(line)) {
                     <span class="badge badge--featured">Nouveau</span>
+                  }
+                  @if (line.cameBack) {
+                    <span class="badge badge--failed-time" data-tooltip="Archivée, puis l’erreur s’est reproduite">Revenue</span>
                   }
                   <span class="badge" [class.badge--failed]="line.level === 'ERROR'" [class.badge--scheduled]="line.level === 'WARN'">
                     {{ line.level === 'ERROR' ? 'Erreur' : 'Avertissement' }}
@@ -113,6 +133,9 @@ export function shortLogger(logger: string | null | undefined): string | null {
                   @if (line.page) {
                     · page <code>{{ line.page }}</code>
                   }
+                  @if (line.archivedAt) {
+                    · archivée {{ dateTime(line.archivedAt) }}
+                  }
                 </span>
                 @if (line.detail) {
                   <details class="log__detail">
@@ -123,13 +146,18 @@ export function shortLogger(logger: string | null | undefined): string | null {
               </div>
               <div class="admin-row__actions">
                 <button type="button" class="icon-button" aria-label="Copier le détail" (click)="copy(line)"><svg yonaIcon="copy" [size]="18"></svg></button>
+                @if (line.archivedAt) {
+                  <button type="button" class="icon-button" aria-label="Remettre dans la liste" (click)="archive(line, false)"><svg yonaIcon="archive-restore" [size]="18"></svg></button>
+                } @else {
+                  <button type="button" class="icon-button" aria-label="Archiver : problème traité" (click)="archive(line, true)"><svg yonaIcon="archive" [size]="18"></svg></button>
+                }
                 <button type="button" class="icon-button icon-button--danger" aria-label="Effacer cette ligne" (click)="erase(line)"><svg yonaIcon="trash" [size]="18"></svg></button>
               </div>
             </li>
           }
         </ul>
       } @else if (lines.isEmpty()) {
-        <p class="admin-empty">Rien à signaler : aucune erreur ni aucun avertissement</p>
+        <p class="admin-empty">{{ archived() ? 'Aucune ligne archivée' : 'Rien à signaler : aucune erreur ni aucun avertissement à traiter' }}</p>
       } @else if (lines.isLoading()) {
         <yona-skeleton kind="rows" [count]="5" />
       }
@@ -253,15 +281,18 @@ export default class AdminLogs {
   ];
   protected readonly level = signal<Level | 'ALL'>('ALL');
   protected readonly source = signal<Source | 'ALL'>('ALL');
+  /** The lines archived (problems handled) rather than those to handle. */
+  protected readonly archived = signal(false);
   protected readonly summary = signal<ErrorLogSummary | null>(null);
   /** The last visit: what came after it is new. Kept for this visit. */
   private readonly since = signal<string | null>(null);
   protected readonly lines = new InfiniteList({
-    params: () => ({ level: this.level(), source: this.source() }),
-    load: (page, { level, source }) =>
+    params: () => ({ level: this.level(), source: this.source(), archived: this.archived() }),
+    load: (page, { level, source, archived }) =>
       this.api.invoke(listErrorLog, {
         level: level === 'ALL' ? undefined : level,
         source: source === 'ALL' ? undefined : source,
+        archived,
         page,
         size: PAGE_SIZE,
       }),
@@ -291,7 +322,28 @@ export default class AdminLogs {
 
   protected isNew(line: ErrorLogLine): boolean {
     const since = this.since();
-    return !!since && Date.parse(line.lastSeenAt) > Date.parse(since);
+    return !line.archivedAt && !!since && Date.parse(line.lastSeenAt) > Date.parse(since);
+  }
+
+  /** Out of the list, the problem handled; or back in it. */
+  protected async archive(line: ErrorLogLine, archived: boolean): Promise<void> {
+    if ((await attempt(this.api.invoke(archiveErrorLog, { ids: [line.id], archived }))).ok) {
+      this.toaster.success(archived ? 'Ligne archivée : elle reviendra si l’erreur se reproduit' : 'Ligne remise dans la liste');
+      this.reload();
+    }
+  }
+
+  protected async archiveAll(): Promise<void> {
+    const count = this.summary()?.lines ?? 0;
+    const confirmed = await this.confirm.ask({
+      title: 'Tout archiver ?',
+      message: `${count > 1 ? `Les ${count} lignes` : 'La ligne'} à traiter quitte${count > 1 ? 'nt' : ''} la liste sans être effacée${count > 1 ? 's' : ''}, quels que soient les filtres. Une erreur qui se reproduit y revient d’elle-même`,
+      confirmLabel: 'Tout archiver',
+    });
+    if (confirmed && (await attempt(this.api.invoke(archiveErrorLog, { archived: true }))).ok) {
+      this.toaster.success('Journal archivé');
+      this.reload();
+    }
   }
 
   protected reload(): void {
@@ -318,7 +370,7 @@ export default class AdminLogs {
   protected async eraseAll(): Promise<void> {
     const confirmed = await this.confirm.ask({
       title: 'Effacer tout le journal ?',
-      message: 'Les erreurs et avertissements des 30 derniers jours disparaissent. Ceux qui reviendront s’afficheront de nouveau',
+      message: 'Les erreurs et avertissements des 30 derniers jours disparaissent, archivés compris. Ceux qui reviendront s’afficheront de nouveau',
       confirmLabel: 'Tout effacer',
     });
     if (confirmed && (await attempt(this.api.invoke(eraseErrorLog, {}))).ok) {

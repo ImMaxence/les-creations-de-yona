@@ -159,6 +159,8 @@ export type { CreateMenu$Params as CreateMenu$Params } from './fn/admin-menus/cr
 export { createMenu as createMenu } from './fn/admin-menus/create-menu';
 export type { MarkErrorLogSeen$Params as MarkErrorLogSeen$Params } from './fn/admin-error-log/mark-error-log-seen';
 export { markErrorLogSeen as markErrorLogSeen } from './fn/admin-error-log/mark-error-log-seen';
+export type { ArchiveErrorLog$Params as ArchiveErrorLog$Params } from './fn/admin-error-log/archive-error-log';
+export { archiveErrorLog as archiveErrorLog } from './fn/admin-error-log/archive-error-log';
 export type { ListErrorLog$Params as ListErrorLog$Params } from './fn/admin-error-log/list-error-log';
 export { listErrorLog as listErrorLog } from './fn/admin-error-log/list-error-log';
 export type { EraseErrorLog$Params as EraseErrorLog$Params } from './fn/admin-error-log/erase-error-log';

@@ -17,6 +17,7 @@ import fr.lescreationsdeyona.message.MessageResponses.PhotoForm;
 import fr.lescreationsdeyona.message.MessageResponses.Typist;
 import fr.lescreationsdeyona.monitoring.AdminSeen;
 import fr.lescreationsdeyona.security.AdminProperties;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -64,6 +65,20 @@ public class AdminMessages {
 	static final int MAX_PHOTOS = 10;
 
 	static final int MAX_PAGE = 100;
+
+	/** Against a storm of messages (a key held down, a script): 8 in 10 seconds, 200 in an hour, the same text not twice in 30 seconds. */
+	static final int BURST = 8;
+
+	static final Duration BURST_WINDOW = Duration.ofSeconds(10);
+
+	static final int PER_HOUR = 200;
+
+	static final Duration REPEAT_WINDOW = Duration.ofSeconds(30);
+
+	/** Photos sent for messages: 40 in 10 minutes. Pages read for previews: 60 in 10 minutes. */
+	private final Pace photoPace = new Pace(40, Duration.ofMinutes(10), Clock.systemUTC());
+
+	private final Pace previewPace = new Pace(60, Duration.ofMinutes(10), Clock.systemUTC());
 
 	/** A photo sent and never put in a message (the message given up) is erased after this. */
 	private static final Duration UNSENT_PHOTO_KEPT = Duration.ofDays(1);
@@ -171,6 +186,18 @@ public class AdminMessages {
 		return photos;
 	}
 
+	/** Before a photo is read: refused beyond 40 in 10 minutes for this admin. */
+	public void checkPhotoPace() {
+		if (!photoPace.allow(groups.me())) {
+			throw new ApiException(ErrorCode.ADMIN_MESSAGE_PHOTOS_TOO_MANY);
+		}
+	}
+
+	/** A page read for the preview of a link: false beyond 60 in 10 minutes for this admin (no preview then). */
+	public boolean allowPreview() {
+		return previewPace.allow(groups.me());
+	}
+
 	/** A photo for a message being written, stored at once: the message, once sent, holds it. */
 	@Transactional
 	public MessagePhoto upload(ImageProcessor.Sized photo) {
@@ -184,6 +211,7 @@ public class AdminMessages {
 		AdminGroups.Group group = groups.require(form.groupId(), author.email());
 		List<PhotoForm> photos = form.photos() == null ? List.of() : form.photos();
 		String body = clean(form.body(), !photos.isEmpty());
+		checkPace(author.email(), group.id(), body, !photos.isEmpty());
 		checkUnsent(photos);
 		Instant now = Instant.now();
 		long id = jdbc.sql("""
@@ -214,9 +242,9 @@ public class AdminMessages {
 		LinkPreview preview = null;
 		if (link != null) {
 			// Read while it was written (shown under the field): kept with the message at once; otherwise read once sent
-			Optional<LinkPreviews.Page> read = linkPreviews.cached(link);
+			Optional<Optional<LinkPreviews.Page>> read = linkPreviews.cached(link);
 			if (read.isPresent()) {
-				preview = writePreview(id, read.get());
+				preview = writePreview(id, link, read.get().orElse(null));
 			}
 			else {
 				afterCommit(() -> Thread.ofVirtual().name("link-preview-" + id).start(() -> attachPreview(id, link, members)));
@@ -224,6 +252,38 @@ public class AdminMessages {
 		}
 		return new AdminMessage(id, group.id(), author.email(), author.name(), author.picture(), body, now,
 				photos.stream().map(photo -> new MessagePhoto(photo.id(), photo.width(), photo.height())).toList(), preview);
+	}
+
+	/** Not too many at once, nor in an hour, nor the same text again at once (sent twice by a key held down). */
+	private void checkPace(String email, long groupId, String body, boolean withPhotos) {
+		Instant now = Instant.now();
+		long burst = jdbc.sql("select count(*) from admin_message where lower(author_email) = :me and sent_at > :since")
+			.param("me", email)
+			.param("since", utc(now.minus(BURST_WINDOW)))
+			.query(Long.class)
+			.single();
+		if (burst >= BURST) {
+			throw new ApiException(ErrorCode.ADMIN_MESSAGE_TOO_FAST);
+		}
+		long hour = jdbc.sql("select count(*) from admin_message where lower(author_email) = :me and sent_at > :since")
+			.param("me", email)
+			.param("since", utc(now.minus(Duration.ofHours(1))))
+			.query(Long.class)
+			.single();
+		if (hour >= PER_HOUR) {
+			throw new ApiException(ErrorCode.ADMIN_MESSAGE_TOO_MANY);
+		}
+		if (!withPhotos && !body.isEmpty() && jdbc.sql("""
+				select exists (select 1 from admin_message where lower(author_email) = :me and group_id = :group and body = :body
+					and sent_at > :since and not exists (select 1 from admin_message_image i where i.message_id = admin_message.id))""")
+			.param("me", email)
+			.param("group", groupId)
+			.param("body", body)
+			.param("since", utc(now.minus(REPEAT_WINDOW)))
+			.query(Boolean.class)
+			.single()) {
+			throw new ApiException(ErrorCode.ADMIN_MESSAGE_REPEATED);
+		}
 	}
 
 	/** Photos sent for a message, each once, held by no message nor group yet. */
@@ -248,8 +308,8 @@ public class AdminMessages {
 	/** In the background, once sent: the page of its link read, its preview kept with the message. */
 	void attachPreview(long id, String url, Set<String> members) {
 		try {
-			Optional<LinkPreviews.Page> page = linkPreviews.preview(url);
-			if (page.isPresent() && transactions.execute(status -> writePreview(id, page.get())) != null) {
+			LinkPreviews.Page page = linkPreviews.preview(url).orElse(null);
+			if (transactions.execute(status -> writePreview(id, url, page)) != null) {
 				events.publishEvent(new LiveChange(LiveTopic.MESSAGES, members));
 			}
 		}
@@ -258,18 +318,21 @@ public class AdminMessages {
 		}
 	}
 
-	/** The preview kept with the message, with its image; null when the message is gone meanwhile. */
-	private @Nullable LinkPreview writePreview(long id, LinkPreviews.Page page) {
-		ImageProcessor.Sized image = page.image();
+	/**
+	 * The preview kept with the message, with its image; its address alone when the page could not be
+	 * read (the card then names the site, as on a phone). Null when the message is gone meanwhile.
+	 */
+	private @Nullable LinkPreview writePreview(long id, String url, LinkPreviews.@Nullable Page page) {
+		ImageProcessor.Sized image = page == null ? null : page.image();
 		UUID imageId = image == null ? null : imageService.createMessageImage(image.processed()).getId();
 		int updated = jdbc.sql("""
 				update admin_message set link_url = :url, link_title = :title, link_description = :description, link_site = :site,
 					link_image_id = :image, link_image_width = :width, link_image_height = :height
 				where id = :id""")
-			.param("url", page.url())
-			.param("title", page.title())
-			.param("description", page.description())
-			.param("site", page.siteName())
+			.param("url", page == null ? url : page.url())
+			.param("title", page == null ? null : page.title())
+			.param("description", page == null ? null : page.description())
+			.param("site", page == null ? null : page.siteName())
 			.param("image", imageId)
 			.param("width", image == null ? null : image.width())
 			.param("height", image == null ? null : image.height())
@@ -282,8 +345,9 @@ public class AdminMessages {
 			}
 			return null;
 		}
-		return new LinkPreview(page.url(), page.title(), page.description(), page.siteName(), imageId,
-				image == null ? null : image.width(), image == null ? null : image.height());
+		return page == null ? new LinkPreview(url, null, null, null, null, null, null)
+				: new LinkPreview(page.url(), page.title(), page.description(), page.siteName(), imageId,
+						image == null ? null : image.width(), image == null ? null : image.height());
 	}
 
 	/** Its own message only, its photos with it. */

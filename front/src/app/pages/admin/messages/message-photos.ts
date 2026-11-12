@@ -8,6 +8,15 @@ export function linkDraftImage(url: string): string {
   return `/api/admin/messages/link-preview/image?url=${encodeURIComponent(url)}`;
 }
 
+/** The image of a link's preview is the site's icon (small, square: beside the title) rather than the page's (on top). */
+export function iconLike(width: number | null | undefined, height: number | null | undefined): boolean {
+  if (!width || !height) {
+    return false;
+  }
+  const ratio = width / height;
+  return Math.max(width, height) <= 400 && ratio >= 0.75 && ratio <= 1.33;
+}
+
 /** What the API takes as it is: JPEG or PNG, 10 MB at most. */
 const SENDABLE = ['image/jpeg', 'image/png'];
 const MAX_BYTES = 10 * 1024 * 1024;

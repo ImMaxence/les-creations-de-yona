@@ -80,7 +80,7 @@
           <!-- Watched: what grows at the bottom (a photo, a preview) keeps the conversation at its end -->
           <div #threadContent class="thread__content">
             @if (hasOlder()) {
-              <button type="button" class="link-button older" [disabled]="loadingOlder()" (click)="loadOlder()">
+              <button #older type="button" class="link-button older" [disabled]="loadingOlder()" (click)="loadOlder()">
                 <svg yonaIcon="arrow-up" [size]="16"></svg>{{ loadingOlder() ? 'Chargement…' : 'Voir les messages plus anciens' }}
               </button>
             }
@@ -96,19 +96,33 @@
                   @if (shown.message.id === firstNew()) {
                     <li class="new-divider"><span>Nouveaux</span></li>
                   }
-                  <li class="message" [class.is-mine]="shown.mine">
-                    <yona-admin-avatar [name]="nameOf(shown.message.authorEmail, shown.message.authorName)" [picture]="shown.message.authorPicture" />
+                  <!-- As in a chat: the others on the left, their face beside the last message of a run; one's own on the right -->
+                  <li
+                    class="message"
+                    [class.is-mine]="shown.mine"
+                    [class.is-first]="shown.first"
+                    [class.is-last]="shown.last"
+                    [class.is-arrived]="arrived().has(shown.message.id)"
+                  >
+                    @if (!shown.mine) {
+                      <span class="message__face">
+                        @if (shown.last) {
+                          <yona-admin-avatar [name]="nameOf(shown.message.authorEmail, shown.message.authorName)" [picture]="shown.message.authorPicture" />
+                        }
+                      </span>
+                    }
                     <div class="message__content">
-                      <p class="message__head">
-                        <span class="message__author">{{ shown.author }}</span>
+                      <!-- The name and the time once a run, still read out for each message -->
+                      <p class="message__head" [class.visually-hidden]="!shown.first">
+                        <span class="message__author" [class.visually-hidden]="shown.mine">{{ shown.author }}</span>
                         <time class="message__time" [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
                       </p>
-                      @if (shown.parts.length) {
+                      @if (shown.parts.length && !shown.onlyLink) {
                         <p class="message__body">
                           @for (part of shown.parts; track $index) {
                             @if (part.mention; as mention) {
                               <a class="mention" [routerLink]="kinds[mention.kind].link(mention.id)" [attr.data-tooltip]="kinds[mention.kind].name">
-                                <svg [yonaIcon]="kinds[mention.kind].icon" [size]="14"></svg>{{ mention.label }}
+                                <svg [yonaIcon]="kinds[mention.kind].icon" [size]="14"></svg><span>{{ mention.label }}</span>
                               </a>
                             } @else if (part.link; as link) {
                               <a class="message__link" [href]="link" target="_blank" rel="noopener noreferrer">{{ shownLink(link) }}</a>
@@ -134,26 +148,7 @@
                         </div>
                       }
                       @if (shown.message.link; as link) {
-                        <a class="link-card" [class.has-image]="!!link.imageId" [href]="link.url" target="_blank" rel="noopener noreferrer">
-                          @if (link.imageId) {
-                            <img
-                              class="link-card__image"
-                              [src]="messagePhoto(link.imageId)"
-                              alt=""
-                              loading="lazy"
-                              [width]="link.imageWidth ?? 800"
-                              [height]="link.imageHeight ?? 420"
-                            />
-                          }
-                          <!-- As on a phone: the title, then the site; the page's text when it has no image -->
-                          <span class="link-card__text">
-                            <strong class="link-card__title">{{ link.title || link.siteName || shownLink(link.url) }}</strong>
-                            @if (link.description && !link.imageId) {
-                              <span class="link-card__description">{{ link.description }}</span>
-                            }
-                            <span class="link-card__site">{{ linkHost(link.url) }}</span>
-                          </span>
-                        </a>
+                        <yona-link-card [link]="link" />
                       }
                     </div>
                     @if (shown.mine) {

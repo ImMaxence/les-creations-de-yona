@@ -29,6 +29,8 @@ final class LinkPages {
 
 	private static final Pattern ATTRIBUTE = Pattern.compile("([^\\s=/>\"']+)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>\"']+))");
 
+	private static final Pattern LINK_TAG = Pattern.compile("<link\\s[^>]*>", Pattern.CASE_INSENSITIVE);
+
 	private static final Pattern TITLE = Pattern.compile("<title[^>]*>(.*?)</title\\s*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	private static final Pattern CHARSET = Pattern.compile("charset\\s*=\\s*[\"']?([\\w.:-]{1,40})", Pattern.CASE_INSENSITIVE);
@@ -47,8 +49,9 @@ final class LinkPages {
 	private LinkPages() {
 	}
 
-	/** What a page says of itself; {@code image} already made absolute. */
-	record Meta(@Nullable String title, @Nullable String description, @Nullable String siteName, @Nullable URI image) {
+	/** What a page says of itself; {@code image} and {@code icon} (for a page without image) already made absolute. */
+	record Meta(@Nullable String title, @Nullable String description, @Nullable String siteName, @Nullable URI image,
+			@Nullable URI icon) {
 	}
 
 	/** The head of a page: its bytes read in the encoding it declares (UTF-8 otherwise). */
@@ -69,12 +72,31 @@ final class LinkPages {
 		}
 		Matcher title = TITLE.matcher(head);
 		String pageTitle = title.find() ? title.group(1) : null;
+		// The icon of the site: the one made for phones first (a square of 180 px), then the others
+		String touchIcon = null;
+		String icon = null;
+		Matcher link = LINK_TAG.matcher(head);
+		while (link.find()) {
+			Map<String, String> attributes = attributes(link.group());
+			String rel = attributes.getOrDefault("rel", "").toLowerCase(Locale.ROOT);
+			String href = attributes.get("href");
+			if (href == null || href.isBlank() || href.toLowerCase(Locale.ROOT).endsWith(".svg")) {
+				continue;
+			}
+			if (rel.contains("apple-touch-icon") && touchIcon == null) {
+				touchIcon = href;
+			}
+			else if (rel.matches("(.*\\s)?icon(\\s.*)?") && icon == null) {
+				icon = href;
+			}
+		}
 
 		return new Meta(text(first(tags.get("og:title"), tags.get("twitter:title"), pageTitle), MAX_TITLE),
 				text(first(tags.get("og:description"), tags.get("twitter:description"), tags.get("description")), MAX_DESCRIPTION),
 				text(first(tags.get("og:site_name"), siteOf(page)), MAX_SITE),
 				image(page, first(tags.get("og:image:secure_url"), tags.get("og:image"), tags.get("og:image:url"), tags.get("twitter:image"),
-						tags.get("twitter:image:src"))));
+						tags.get("twitter:image:src"))),
+				image(page, first(touchIcon, icon)));
 	}
 
 	/** "lescreationsdeyona.fr" for "https://www.lescreationsdeyona.fr/recettes". */

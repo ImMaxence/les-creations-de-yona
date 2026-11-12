@@ -12,6 +12,7 @@ import { PageResponseErrorLogLine } from '../../models/page-response-error-log-l
 export interface ListErrorLog$Params {
   level?: 'ERROR' | 'WARN';
   source?: 'BACKEND' | 'BROWSER';
+  archived?: boolean;
   page?: number;
   size?: number;
 }
@@ -21,6 +22,7 @@ export function listErrorLog(http: HttpClient, rootUrl: string, params?: ListErr
   if (params) {
     rb.query('level', params.level, {});
     rb.query('source', params.source, {});
+    rb.query('archived', params.archived, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});
   }

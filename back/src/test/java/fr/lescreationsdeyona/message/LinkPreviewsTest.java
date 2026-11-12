@@ -49,6 +49,20 @@ class LinkPreviewsTest {
 	}
 
 	@Test
+	void takesTheIconMadeForPhonesOfAPageWithoutImage() {
+		LinkPages.Meta meta = read("""
+				<head><title>Sans image</title>
+				<link rel="icon" href="/favicon.png">
+				<link rel="icon" type="image/svg+xml" href="/logo.svg">
+				<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"></head>""");
+
+		assertThat(meta.image()).isNull();
+		assertThat(meta.icon()).isEqualTo(URI.create("https://www.marmiton.org/apple-touch-icon.png"));
+		assertThat(read("<head><link rel=\"shortcut icon\" href=\"/f.png\"></head>").icon())
+			.isEqualTo(URI.create("https://www.marmiton.org/f.png"));
+	}
+
+	@Test
 	void readsAPageInTheEncodingItDeclares() {
 		byte[] latin = "<head><meta charset=\"iso-8859-1\"><title>Crème brûlée</title></head>".getBytes(StandardCharsets.ISO_8859_1);
 

@@ -30,7 +30,6 @@ import { MessageGroup } from '../../../core/api/generated/models/message-group';
 import { AdminSession } from '../../../core/auth/admin-session';
 import { Confirm } from '../../../core/dialog/confirm';
 import { firstOfMonth, parisClock } from '../../../shared/format/paris-time';
-import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { PhotoViewer, ViewedPhoto } from '../../../shared/ui/photo-viewer/photo-viewer';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
@@ -38,12 +37,23 @@ import { AdminAvatar } from '../layout/admin-avatar/admin-avatar';
 import { AdminLive, Typing } from '../layout/admin-live';
 import { AdminWatch } from '../layout/admin-watch';
 import { GroupDialog } from './group-dialog';
+import { LinkCard } from './link-card';
 import { MessageComposer } from './message-composer';
-import { MENTION_KINDS, MessagePart, linkHost, parseMessage, shownLink } from './message-format';
+import { MENTION_KINDS, MessagePart, parseMessage, shownLink } from './message-format';
 import { imageFiles, messagePhoto } from './message-photos';
 import { MessageSound } from './message-sound';
 
 const PAGE_SIZE = 50;
+
+/**
+ * Messages kept in the page at most: back at the end of a long conversation read far back, only the
+ * latest are kept (the older ones are read again by scrolling up). The API gives them 50 at a time.
+ */
+const KEPT_AT_MOST = 300;
+const KEPT_AFTER_TRIM = 150;
+
+/** The older messages are read before the top of the conversation is reached. */
+const OLDER_AHEAD = '600px 0px 0px 0px';
 
 /** "est en train d'écrire…" stays this long after the last word of it. */
 const TYPING_SHOWN_MS = 5000;
@@ -60,6 +70,29 @@ interface ShownMessage {
   parts: MessagePart[];
   mine: boolean;
   author: string;
+  /** Only a web address, its card below: the text is not repeated, as on a phone. */
+  onlyLink: boolean;
+  /** Starts a run of the same author (sameRun): the name and the time above it. */
+  first: boolean;
+  /** Ends it: the face beside it. */
+  last: boolean;
+}
+
+/** A few minutes between two messages of the same author: still one run. */
+const RUN_GAP_MS = 5 * 60_000;
+
+/**
+ * Two messages one after the other as one run, as on a phone: the same author, a few minutes apart,
+ * no "Nouveaux" between them. The name shows once, the bubbles are joined.
+ */
+export function sameRun(before: AdminMessage | undefined, after: AdminMessage | undefined, firstNew?: number): boolean {
+  return (
+    !!before &&
+    !!after &&
+    after.id !== firstNew &&
+    before.authorEmail.toLowerCase() === after.authorEmail.toLowerCase() &&
+    Date.parse(after.sentAt) - Date.parse(before.sentAt) < RUN_GAP_MS
+  );
 }
 
 interface Day {
@@ -82,7 +115,7 @@ interface Typist extends Typing {
  */
 @Component({
   selector: 'yona-admin-messages',
-  imports: [AdminAvatar, Button, GroupDialog, Icon, MessageComposer, PhotoViewer, RouterLink, Skeleton],
+  imports: [AdminAvatar, GroupDialog, Icon, LinkCard, MessageComposer, PhotoViewer, RouterLink, Skeleton],
   templateUrl: './admin-messages.html',
   styleUrl: './admin-messages.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,7 +133,6 @@ export default class AdminMessages {
   protected readonly kinds = MENTION_KINDS;
   protected readonly messagePhoto = messagePhoto;
   protected readonly shownLink = shownLink;
-  protected readonly linkHost = linkHost;
   private readonly live = inject(AdminLive);
   protected readonly sound = inject(MessageSound);
   protected readonly bigPhoto = (imageId: string) => messagePhoto(imageId, 1600);
@@ -137,6 +169,9 @@ export default class AdminMessages {
   protected readonly dropping = signal(false);
 
   private readonly thread = viewChild<ElementRef<HTMLElement>>('thread');
+  private readonly older = viewChild<ElementRef<HTMLElement>>('older');
+  /** The top of the conversation near: the older messages are read, again while it stays near. */
+  private olderNear = false;
   private readonly threadContent = viewChild<ElementRef<HTMLElement>>('threadContent');
   /** At the end of the conversation: kept there as it grows. */
   private stickToEnd = true;
@@ -147,8 +182,10 @@ export default class AdminMessages {
   protected readonly days = computed<Day[]>(() => {
     const today = PARIS_DAY.format(new Date());
     const yesterday = PARIS_DAY.format(new Date(Date.now() - 86_400_000));
+    const firstNew = this.firstNew();
+    const messages = this.messages();
     const days: Day[] = [];
-    for (const message of this.messages()) {
+    messages.forEach((message, i) => {
       const key = PARIS_DAY.format(new Date(message.sentAt));
       let day = days.at(-1);
       if (day?.key !== key) {
@@ -157,10 +194,25 @@ export default class AdminMessages {
         days.push(day);
       }
       const mine = this.isMine(message.authorEmail);
-      day.messages.push({ message, parts: parseMessage(message.body), mine, author: mine ? 'Vous' : this.nameOf(message.authorEmail, message.authorName) });
-    }
+      const parts = parseMessage(message.body);
+      const onlyLink = !!message.link && parts.filter((part) => part.link || part.mention || part.text?.trim()).length === 1 && !!parts.find((part) => part.link);
+      // A run stops at the end of a day too
+      const next = messages[i + 1];
+      const nextSameDay = next && PARIS_DAY.format(new Date(next.sentAt)) === key ? next : undefined;
+      day.messages.push({
+        message,
+        parts,
+        mine,
+        author: mine ? 'Vous' : this.nameOf(message.authorEmail, message.authorName),
+        onlyLink,
+        first: !day.messages.length || !sameRun(messages[i - 1], message, firstNew),
+        last: !sameRun(message, nextSameDay, firstNew),
+      });
+    });
     return days;
   });
+  /** Sent or come since the conversation was opened: they pop up as they appear (not the ones read with it, nor the older ones). */
+  protected readonly arrived = signal<ReadonlySet<number>>(new Set());
   /** The first message of the others since the last visit: "Nouveaux" above it. */
   protected readonly firstNew = computed(() => {
     const since = this.since();
@@ -188,6 +240,25 @@ export default class AdminMessages {
       }
     });
     this.live.onTyping((typing) => this.onTyping(typing));
+    // Scrolled up near the top: the older messages read, the place kept
+    effect((onCleanup) => {
+      const older = this.older()?.nativeElement;
+      const box = this.thread()?.nativeElement;
+      if (!older || !box || typeof IntersectionObserver === 'undefined') {
+        return;
+      }
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          this.olderNear = !!entry?.isIntersecting;
+          if (this.olderNear) {
+            void this.loadOlder();
+          }
+        },
+        { root: box, rootMargin: OLDER_AHEAD },
+      );
+      observer.observe(older);
+      onCleanup(() => observer.disconnect());
+    });
     // A photo, a preview or a font loaded after the scroll to the end: still at the end
     effect((onCleanup) => {
       const content = this.threadContent()?.nativeElement;
@@ -308,6 +379,7 @@ export default class AdminMessages {
   private async open(group: MessageGroup): Promise<void> {
     this.openGroup = group.id;
     this.since.set(group.since);
+    this.arrived.set(new Set());
     this.messages.set([]);
     this.hasOlder.set(false);
     this.loading.set(true);
@@ -356,10 +428,14 @@ export default class AdminMessages {
     if (known.size && arrived.some((message) => !this.isMine(message.authorEmail))) {
       this.sound.play();
     }
+    if (known.size && arrived.length) {
+      this.markArrived(arrived.map((message) => message.id));
+    }
     const oldestLatest = latest[0]?.id ?? Number.MAX_SAFE_INTEGER;
     this.messages.update((shown) => (latest.length ? [...shown.filter((message) => message.id < oldestLatest), ...latest] : []));
     if (atEnd) {
       this.scrollToEnd();
+      this.keepLatest();
     }
     if (arrived.length || this.selected()?.unseen) {
       this.markSeen();
@@ -392,8 +468,26 @@ export default class AdminMessages {
     if (page.ok && this.openGroup === group) {
       this.messages.update((shown) => [...[...page.value.messages].reverse(), ...shown]);
       this.hasOlder.set(page.value.hasOlder);
-      // The message read stays in place, the older ones above it
-      afterNextRender(() => box && (box.scrollTop += box.scrollHeight - height), { injector: this.injector });
+      // The message read stays in place, the older ones above it; still near the top (a short page), the next ones
+      afterNextRender(
+        () => {
+          if (box) {
+            box.scrollTop += box.scrollHeight - height;
+          }
+          if (this.olderNear && this.hasOlder()) {
+            void this.loadOlder();
+          }
+        },
+        { injector: this.injector },
+      );
+    }
+  }
+
+  /** At the end of a long conversation: the latest messages only, the older ones read again by scrolling up. */
+  private keepLatest(): void {
+    if (this.stickToEnd && this.messages().length > KEPT_AT_MOST) {
+      this.messages.update((shown) => shown.slice(-KEPT_AFTER_TRIM));
+      this.hasOlder.set(true);
     }
   }
 
@@ -401,8 +495,16 @@ export default class AdminMessages {
     if (message.groupId !== this.openGroup) {
       return;
     }
-    this.messages.update((shown) => (shown.some((other) => other.id === message.id) ? shown : [...shown, message]));
+    if (!this.messages().some((other) => other.id === message.id)) {
+      this.markArrived([message.id]);
+      this.messages.update((shown) => [...shown, message]);
+    }
     this.scrollToEnd();
+    this.keepLatest();
+  }
+
+  private markArrived(ids: number[]): void {
+    this.arrived.update((arrived) => new Set([...arrived, ...ids]));
   }
 
   protected async remove(message: AdminMessage): Promise<void> {
@@ -463,7 +565,11 @@ export default class AdminMessages {
   protected onThreadScroll(): void {
     const box = this.thread()?.nativeElement;
     if (box) {
+      const wasAtEnd = this.stickToEnd;
       this.stickToEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+      if (this.stickToEnd && !wasAtEnd) {
+        this.keepLatest();
+      }
     }
   }
 
@@ -481,7 +587,10 @@ export default class AdminMessages {
   }
 }
 
-/** "Yona est en train d'écrire…", "Yona et Maxence écrivent…"; short: "Yona écrit…". */
+/**
+ * "Yona est en train d'écrire…", "Yona et Léa sont en train d'écrire…", "3 personnes sont en train
+ * d'écrire…"; short, in the list of the groups: "Yona écrit…", "3 personnes écrivent…".
+ */
 export function typingLabel(typists: readonly Typing[], short = false): string | null {
   const names = typists.map((typist) => (typist.name || typist.email).split(' ')[0]!);
   if (!names.length) {
@@ -490,5 +599,6 @@ export function typingLabel(typists: readonly Typing[], short = false): string |
   if (names.length === 1) {
     return short ? `${names[0]} écrit…` : `${names[0]} est en train d’écrire…`;
   }
-  return names.length === 2 ? `${names[0]} et ${names[1]} écrivent…` : 'Plusieurs personnes écrivent…';
+  const who = names.length === 2 ? `${names[0]} et ${names[1]}` : `${names.length} personnes`;
+  return short ? `${who} écrivent…` : `${who} sont en train d’écrire…`;
 }

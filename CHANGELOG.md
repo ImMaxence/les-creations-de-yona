@@ -2,6 +2,31 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.11.0 - 2026-11-12
+
+Front et backend 2.11.0. Migration de la base : V28
+
+### Ajouté
+
+- **Journaux** : « Archiver » une ligne une fois le problème traité, ou toutes d'un coup ; elle quitte la liste sans être effacée et se retrouve dans « Archivées », d'où on la remet ; si l'erreur se reproduit, elle revient d'elle-même dans la liste, marquée « Revenue »
+- **Journaux** : les compteurs et le badge du menu ne comptent plus les lignes archivées
+- **Messages** : anti-spam, 8 messages en 10 secondes et 200 par heure au plus, pas deux fois le même texte en 30 secondes ; photos et aperçus de liens limités aussi
+- **Messages** : « 3 personnes sont en train d'écrire… » quand plusieurs écrivent en même temps
+- **Messages** : un message qui arrive, envoyé ou reçu, apparaît avec une petite animation
+
+### Modifié
+
+- **Messages** : présentés comme un vrai chat, ses messages à droite dans des bulles de la couleur du site, ceux des autres à gauche avec leur photo ; le nom et l'heure une fois par suite de messages
+- **Messages** : un lien s'affiche en carte comme sur iPhone, avec l'image de la page, sinon l'icône du site, sinon son nom ; un message qui n'est qu'un lien ne répète plus l'adresse
+- **Messages** : la carte d'un lien apparaît dès qu'on le colle, avant même que la page soit lue
+- **Messages** : la corbeille de ses messages se voit sans passer la souris dessus
+- **Messages** : barres de défilement fines
+- **Messages** : une longue conversation se charge par morceaux, les plus anciens en remontant ; au-delà de 300 messages, les plus anciens sont retirés de la page en revenant en bas
+
+### Corrigé
+
+- **Messages** : les erreurs s'affichent à nouveau (envoi refusé, session expirée…), elles étaient ignorées sans rien dire
+
 ## 2.10.1 - 2026-11-12
 
 Front et backend 2.10.1. Pas de migration de la base

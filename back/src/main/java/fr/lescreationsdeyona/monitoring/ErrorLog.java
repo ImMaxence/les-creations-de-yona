@@ -52,12 +52,15 @@ public class ErrorLog {
 	public record ErrorLogLine(long id, LoggedProblem.Level level, LoggedProblem.Source source, @Nullable String logger, String message,
 			@Schema(description = "Stack trace of the backend, or of the browser") @Nullable String detail,
 			@Schema(description = "The page of the site it happened on, for a browser") @Nullable String page,
-			@Schema(description = "How many times, since the first") int occurrences, Instant firstSeenAt, Instant lastSeenAt) {
+			@Schema(description = "How many times, since the first") int occurrences, Instant firstSeenAt, Instant lastSeenAt,
+			@Schema(description = "Archived (the problem handled): out of the list, kept 30 days like the others") @Nullable Instant archivedAt,
+			@Schema(description = "Archived once, then happened again") boolean cameBack) {
 	}
 
 	/** The counters at the top of "Journaux", and the badge of the menu. */
 	public record ErrorLogSummary(long errorsLast24Hours, long warningsLast24Hours,
-			@Schema(description = "Lines of the log, 30 days at most") long lines,
+			@Schema(description = "Lines of the log to handle (not archived), 30 days at most") long lines,
+			@Schema(description = "Lines archived") long archived,
 			@Schema(description = "The last time an error happened") @Nullable Instant lastErrorAt,
 			@Schema(description = "Errors (not warnings) seen again or new since this admin last opened the log") long unseenErrors,
 			Instant since) {
@@ -173,7 +176,8 @@ public class ErrorLog {
 						values (:fingerprint, :level, :source, :logger, :message, :detail, :page, :count, :first, :last)
 						on conflict (fingerprint) do update set occurrences = app_log.occurrences + excluded.occurrences,
 							last_seen_at = greatest(app_log.last_seen_at, excluded.last_seen_at), message = excluded.message,
-							detail = coalesce(excluded.detail, app_log.detail), page = coalesce(excluded.page, app_log.page)""")
+							detail = coalesce(excluded.detail, app_log.detail), page = coalesce(excluded.page, app_log.page),
+							came_back = app_log.came_back or app_log.archived_at is not null, archived_at = null""")
 					.param("fingerprint", last.fingerprint())
 					.param("level", last.level().name())
 					.param("source", last.source().name())
@@ -192,16 +196,19 @@ public class ErrorLog {
 		}
 	}
 
-	/** The latest first; {@code level} and {@code source} null for all. */
-	public PageResponse<ErrorLogLine> lines(LoggedProblem.@Nullable Level level, LoggedProblem.@Nullable Source source, int page, int size) {
+	/** The latest first; {@code level} and {@code source} null for all; those to handle, or those archived (the latest archived first). */
+	public PageResponse<ErrorLogLine> lines(LoggedProblem.@Nullable Level level, LoggedProblem.@Nullable Source source, boolean archived,
+			int page, int size) {
 		flush();
-		String where = "where (cast(:level as text) is null or level = :level) and (cast(:source as text) is null or source = :source)";
+		String where = "where (cast(:level as text) is null or level = :level) and (cast(:source as text) is null or source = :source)"
+				+ (archived ? " and archived_at is not null" : " and archived_at is null");
 		long total = jdbc.sql("select count(*) from app_log " + where)
 			.param("level", level == null ? null : level.name())
 			.param("source", source == null ? null : source.name())
 			.query(Long.class)
 			.single();
-		List<ErrorLogLine> lines = jdbc.sql("select * from app_log " + where + " order by last_seen_at desc, id desc limit :size offset :offset")
+		String order = archived ? " order by archived_at desc, id desc" : " order by last_seen_at desc, id desc";
+		List<ErrorLogLine> lines = jdbc.sql("select * from app_log " + where + order + " limit :size offset :offset")
 			.param("level", level == null ? null : level.name())
 			.param("source", source == null ? null : source.name())
 			.param("size", size)
@@ -210,7 +217,8 @@ public class ErrorLog {
 					LoggedProblem.Source.valueOf(row.getString("source")), row.getString("logger"), row.getString("message"),
 					row.getString("detail"), row.getString("page"), row.getInt("occurrences"),
 					row.getObject("first_seen_at", OffsetDateTime.class).toInstant(),
-					row.getObject("last_seen_at", OffsetDateTime.class).toInstant()))
+					row.getObject("last_seen_at", OffsetDateTime.class).toInstant(), instant(row.getObject("archived_at", OffsetDateTime.class)),
+					row.getBoolean("came_back")))
 			.list();
 		return new PageResponse<>(lines, page, size, total, (int) Math.ceil((double) total / size));
 	}
@@ -219,19 +227,39 @@ public class ErrorLog {
 		flush();
 		Instant since = adminSeen.of(AdminSeen.Topic.LOGS).map(AdminSeen.Mark::at).orElseGet(() -> Instant.now().minus(Unseen.FIRST_TIME));
 		return jdbc.sql("""
-				select count(*) filter (where level = 'ERROR' and last_seen_at > now() - interval '24 hours') as errors,
-					count(*) filter (where level = 'WARN' and last_seen_at > now() - interval '24 hours') as warnings,
-					count(*) as lines,
-					max(last_seen_at) filter (where level = 'ERROR') as last_error,
-					count(*) filter (where level = 'ERROR' and last_seen_at > :since) as unseen
+				select count(*) filter (where level = 'ERROR' and last_seen_at > now() - interval '24 hours' and archived_at is null) as errors,
+					count(*) filter (where level = 'WARN' and last_seen_at > now() - interval '24 hours' and archived_at is null) as warnings,
+					count(*) filter (where archived_at is null) as lines,
+					count(*) filter (where archived_at is not null) as archived,
+					max(last_seen_at) filter (where level = 'ERROR' and archived_at is null) as last_error,
+					count(*) filter (where level = 'ERROR' and last_seen_at > :since and archived_at is null) as unseen
 				from app_log""")
 			.param("since", utc(since))
 			.query((row, index) -> {
 				OffsetDateTime lastError = row.getObject("last_error", OffsetDateTime.class);
-				return new ErrorLogSummary(row.getLong("errors"), row.getLong("warnings"), row.getLong("lines"),
+				return new ErrorLogSummary(row.getLong("errors"), row.getLong("warnings"), row.getLong("lines"), row.getLong("archived"),
 						lastError == null ? null : lastError.toInstant(), row.getLong("unseen"), since);
 			})
 			.single();
+	}
+
+	/**
+	 * Archived (the problem handled: out of the list, not erased), or back in the list; {@code ids} null for
+	 * all those of the other list. The mark "come back" goes either way.
+	 */
+	public void archive(@Nullable List<Long> ids, boolean archived) {
+		flush();
+		if (ids != null && ids.isEmpty()) {
+			return;
+		}
+		String which = (archived ? "archived_at is null" : "archived_at is not null") + (ids == null ? "" : " and id in (:ids)");
+		JdbcClient.StatementSpec update = jdbc.sql("update app_log set archived_at = :at, came_back = false where " + which)
+			.param("at", archived ? utc(Instant.now()) : null);
+		if (ids != null) {
+			update = update.param("ids", ids);
+		}
+		update.update();
+		events.publishEvent(new LiveChange(LiveTopic.LOGS));
 	}
 
 	/** Some lines, or all ({@code ids} null): the problem solved, or seen enough. */
@@ -252,6 +280,10 @@ public class ErrorLog {
 		jdbc.sql("delete from app_log where id not in (select id from app_log order by last_seen_at desc limit :max)")
 			.param("max", MAX_LINES)
 			.update();
+	}
+
+	private static @Nullable Instant instant(@Nullable OffsetDateTime at) {
+		return at == null ? null : at.toInstant();
 	}
 
 	private static OffsetDateTime utc(Instant instant) {

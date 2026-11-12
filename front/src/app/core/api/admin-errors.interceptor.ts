@@ -20,7 +20,8 @@ interface ProblemDetail {
  * the admin back to the sign-in page. Public API calls are left alone: their pages handle them.
  */
 export const adminErrorsInterceptor: HttpInterceptorFn = (request, next) => {
-  if (!request.url.startsWith(ADMIN_API) || request.url.startsWith(SESSION_PROBE)) {
+  // The probe exactly: /api/admin/messages also starts with /api/admin/me
+  if (!request.url.startsWith(ADMIN_API) || request.url === SESSION_PROBE) {
     return next(request);
   }
   const toaster = inject(Toaster);

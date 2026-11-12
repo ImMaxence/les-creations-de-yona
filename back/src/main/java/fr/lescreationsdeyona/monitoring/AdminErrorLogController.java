@@ -35,9 +35,9 @@ class AdminErrorLogController {
 	@Operation(summary = "Errors and warnings of the backend and of the visitors' browsers, the latest first (30 days)")
 	@GetMapping
 	PageResponse<ErrorLog.ErrorLogLine> listErrorLog(@RequestParam(required = false) LoggedProblem.@Nullable Level level,
-			@RequestParam(required = false) LoggedProblem.@Nullable Source source,
+			@RequestParam(required = false) LoggedProblem.@Nullable Source source, @RequestParam(defaultValue = "false") boolean archived,
 			@RequestParam(defaultValue = "0") @Min(0) int page, @RequestParam(defaultValue = "50") @Min(1) @Max(100) int size) {
-		return errorLog.lines(level, source, page, size);
+		return errorLog.lines(level, source, archived, page, size);
 	}
 
 	@Operation(summary = "The counters of \"Journaux\" and its badge: errors since this admin last opened it")
@@ -51,6 +51,14 @@ class AdminErrorLogController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void markErrorLogSeen() {
 		adminSeen.mark(AdminSeen.Topic.LOGS, null);
+	}
+
+	@Operation(summary = "Archive lines (the problem handled: out of the list, not erased), or bring them back with archived=false; without ids, all those of the other list",
+			description = "A problem archived that happens again comes back to the list on its own, marked as come back.")
+	@PutMapping("/archived")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void archiveErrorLog(@RequestParam(required = false) @Nullable List<Long> ids, @RequestParam(defaultValue = "true") boolean archived) {
+		errorLog.archive(ids, archived);
 	}
 
 	@Operation(summary = "Erase lines of the log (solved, or seen enough); every line without ids")

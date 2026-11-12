@@ -56,6 +56,13 @@
   align-items: center;
 }
 
+// Thin bars of the colours of the site, without the arrows nor the white track of Windows
+.group-list__nav,
+.thread {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-text) 22%, transparent) transparent;
+}
+
 .group-list__nav {
   flex: 1;
   min-height: 0;
@@ -265,49 +272,65 @@ yona-message-composer {
 
 .day__messages {
   display: grid;
-  gap: var(--space-1);
+  gap: 0.2rem;
+
+  // A long conversation: the messages out of sight are not drawn, their height remembered.
+  // Not the ones that just came: it would cut their entrance at their edges.
+  > li:not(.is-arrived) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 2.75rem;
+  }
 }
 
+// As in a chat: the others' messages on the left, their face beside the last one of a run; one's own on the right
 .message {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--space-3);
-  align-items: start;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  transition: background-color var(--duration-fast) var(--ease-out);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+
+  &.is-first {
+    margin-top: var(--space-2);
+  }
+
+  &.is-mine {
+    flex-direction: row-reverse;
+  }
 
   @include m.hover {
-    background-color: color-mix(in srgb, var(--color-text) 4%, transparent);
-
     .message__delete {
       opacity: 1;
     }
   }
+}
+
+.message__face {
+  flex: none;
+  width: 2rem;
 
   yona-admin-avatar {
-    width: 2.25rem;
-    height: 2.25rem;
-  }
-
-  &.is-mine .message__author {
-    color: var(--color-accent);
+    width: 2rem;
+    height: 2rem;
   }
 }
 
 .message__content {
   display: grid;
   justify-items: start;
-  gap: var(--space-1);
+  gap: 0.2rem;
   min-width: 0;
+  max-width: min(80%, 34rem);
+
+  .is-mine & {
+    justify-items: end;
+  }
 }
 
 .message__head {
   display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2);
-  margin-bottom: -0.15rem;
+  padding-inline: 0.85rem;
+  font-size: var(--text-xs);
 }
 
 .message__author {
@@ -315,13 +338,41 @@ yona-message-composer {
 }
 
 .message__time {
-  font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
 
+// The bubble, joined to the others of its run on its author's side, as on a phone
 .message__body {
+  --bubble-joined: 0.35rem;
+
+  padding: 0.45rem 0.85rem;
+  border-radius: 1.15rem;
+  // The panel's colour, a little darker (lighter in the dark theme): the others' bubbles stand out from it
+  background-color: color-mix(in srgb, var(--color-text) 8%, var(--color-surface));
+  line-height: 1.4;
   white-space: pre-line;
   overflow-wrap: anywhere;
+
+  .message:not(.is-mine, .is-first) & {
+    border-top-left-radius: var(--bubble-joined);
+  }
+
+  .message:not(.is-mine, .is-last) & {
+    border-bottom-left-radius: var(--bubble-joined);
+  }
+
+  .is-mine & {
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  .is-mine:not(.is-first) & {
+    border-top-right-radius: var(--bubble-joined);
+  }
+
+  .is-mine:not(.is-last) & {
+    border-bottom-right-radius: var(--bubble-joined);
+  }
 }
 
 .message__link {
@@ -329,11 +380,16 @@ yona-message-composer {
   text-decoration: underline;
   text-underline-offset: 0.15em;
   overflow-wrap: anywhere;
+
+  .is-mine & {
+    color: inherit;
+  }
 }
 
-// Only on hover with a mouse; always there with a finger or the keyboard
+// Faint beside its own messages, clear on hover; always clear with a finger or the keyboard
 .message__delete {
-  opacity: 0;
+  align-self: center;
+  opacity: 0.45;
   transition: opacity var(--duration-fast) var(--ease-out);
 
   &:focus-visible {
@@ -342,6 +398,40 @@ yona-message-composer {
 
   @media (hover: none) {
     opacity: 1;
+  }
+}
+
+// A message that comes, sent or from another: it pops up from its corner, as on a phone
+.message.is-arrived {
+  .message__content {
+    transform-origin: bottom left;
+    animation: message-in 420ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  }
+
+  &.is-mine .message__content {
+    transform-origin: bottom right;
+  }
+
+  .message__face yona-admin-avatar {
+    animation: message-face-in 300ms var(--ease-out) both;
+  }
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes message-face-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
   }
 }
 
@@ -355,11 +445,22 @@ yona-message-composer {
   border-radius: var(--radius-pill);
   background-color: color-mix(in srgb, var(--color-accent) 14%, transparent);
   color: var(--color-accent-strong);
+  max-width: 100%;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
   vertical-align: baseline;
   transition: background-color var(--duration-fast) var(--ease-out);
+
+  // Its icon kept whole, a long name cut instead
+  svg {
+    flex: none;
+  }
+
+  > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   @include m.hover {
     background-color: color-mix(in srgb, var(--color-accent) 24%, transparent);
@@ -367,6 +468,19 @@ yona-message-composer {
 
   &:focus-visible {
     @include m.focus-ring;
+  }
+
+  // In its own bubble, already of the accent colour: outlined, its text as readable as the bubble's
+  .is-mine & {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-on-accent) 60%, transparent);
+    color: inherit;
+
+    @include m.hover {
+      background-color: transparent;
+      text-decoration: underline;
+      text-underline-offset: 0.15em;
+    }
   }
 }
 
@@ -389,7 +503,7 @@ yona-message-composer {
   display: block;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: var(--radius-sm);
+  border-radius: 0.9rem;
   background-color: var(--color-surface);
   cursor: zoom-in;
 
@@ -417,65 +531,6 @@ yona-message-composer {
       object-fit: contain;
     }
   }
-}
-
-// The page a link leads to, as on a phone: its image, its title, its site
-.link-card {
-  display: grid;
-  width: min(100%, 20rem);
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-bg);
-  box-shadow: 0 0 0 1px var(--color-line);
-  color: var(--color-text);
-  text-decoration: none;
-  transition: box-shadow var(--duration-fast) var(--ease-out);
-
-  @include m.hover {
-    box-shadow: 0 0 0 1px var(--color-accent);
-  }
-
-  &:focus-visible {
-    @include m.focus-ring;
-  }
-}
-
-.link-card__image {
-  width: 100%;
-  height: auto;
-  max-height: 14rem;
-  object-fit: cover;
-  background-color: var(--color-surface);
-}
-
-.link-card__text {
-  display: grid;
-  gap: 0.15rem;
-  padding: var(--space-2) var(--space-3) var(--space-3);
-}
-
-.link-card__site {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-}
-
-.link-card__title,
-.link-card__description {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-}
-
-.link-card__title {
-  font-size: var(--text-sm);
-  line-height: 1.3;
-  -webkit-line-clamp: 3;
-}
-
-.link-card__description {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  -webkit-line-clamp: 2;
 }
 
 // "Yona est en train d'écrire…", its room kept when nobody writes

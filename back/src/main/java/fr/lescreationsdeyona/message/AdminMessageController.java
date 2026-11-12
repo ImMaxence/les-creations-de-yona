@@ -112,6 +112,7 @@ class AdminMessageController {
 	@PostMapping(path = "/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	MessagePhoto uploadMessagePhoto(@RequestPart("file") MultipartFile file) {
+		messages.checkPhotoPace();
 		return messages.upload(imageProcessor.processMessage(file));
 	}
 
@@ -135,6 +136,9 @@ class AdminMessageController {
 			description = "Read by the server on public addresses only; 204 when the page has nothing to show.")
 	@GetMapping("/link-preview")
 	ResponseEntity<LinkPage> previewMessageLink(@RequestParam @Size(max = 2000) String url) {
+		if (linkPreviews.cached(url).isEmpty() && !messages.allowPreview()) {
+			return ResponseEntity.noContent().build();
+		}
 		return linkPreviews.preview(url)
 			.map(page -> ResponseEntity.ok()
 				.cacheControl(CacheControl.maxAge(Duration.ofMinutes(30)).cachePrivate())
@@ -233,6 +237,7 @@ class AdminMessageController {
 	@Operation(summary = "The photo of a group (JPEG or PNG), in place of the one before")
 	@PutMapping(path = "/groups/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	MessageGroup setMessageGroupPhoto(@PathVariable long id, @RequestPart("file") MultipartFile file) {
+		messages.checkPhotoPace();
 		return groups.setPhoto(id, imageProcessor.processMessage(file));
 	}
 

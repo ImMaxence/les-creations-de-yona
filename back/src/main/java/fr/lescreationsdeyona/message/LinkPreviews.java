@@ -55,11 +55,13 @@ class LinkPreviews {
 		return uri == null ? Optional.empty() : pages.get(uri.toString(), key -> read(uri));
 	}
 
-	/** The page already read for this address (while the message was written), without reading it now. */
-	Optional<Page> cached(String url) {
+	/**
+	 * What was read for this address already (while the message was written), without reading it now:
+	 * empty when not read yet; an empty page when it was, and had nothing to show.
+	 */
+	Optional<Optional<Page>> cached(String url) {
 		URI uri = uriOf(url);
-		Optional<Page> read = uri == null ? null : pages.getIfPresent(uri.toString());
-		return read == null ? Optional.empty() : read;
+		return uri == null ? Optional.of(Optional.empty()) : Optional.ofNullable(pages.getIfPresent(uri.toString()));
 	}
 
 	/** An address of the web as typed, or null. */
@@ -87,8 +89,12 @@ class LinkPreviews {
 			if (meta.title() == null && meta.description() == null) {
 				return Optional.empty();
 			}
-			return Optional.of(new Page(uri.toString(), meta.title(), meta.description(), meta.siteName(),
-					meta.image() == null ? null : image(meta.image())));
+			// No big image: the site's icon, shown small beside the title, as on a phone
+			ImageProcessor.Sized image = meta.image() == null ? null : image(meta.image());
+			if (image == null && meta.icon() != null) {
+				image = image(meta.icon());
+			}
+			return Optional.of(new Page(uri.toString(), meta.title(), meta.description(), meta.siteName(), image));
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();

@@ -18,24 +18,22 @@
   </ul>
 }
 
-@if (shownPage(); as page) {
-  <!-- As on a phone: the page's image, its title, its site; the cross sends the message without it -->
-  <div class="link-draft" [class.has-image]="page.image" animate.enter="link-draft--enter">
-    @if (page.image) {
-      <img
-        class="link-draft__image"
-        [src]="linkDraftImage(page.url)"
-        alt=""
-        [width]="page.imageWidth ?? 800"
-        [height]="page.imageHeight ?? 420"
-      />
+@if (linkCard(); as card) {
+  <!-- As on a phone: the site's name at once, then the page's image on top or the site's icon beside its title; the cross sends without it -->
+  <div class="link-draft" [class.has-image]="card.page?.image && !iconLike(card.page?.imageWidth, card.page?.imageHeight)" animate.enter="link-draft--enter">
+    @if (card.page?.image && !iconLike(card.page?.imageWidth, card.page?.imageHeight)) {
+      <img class="link-draft__image" [src]="linkDraftImage(card.url)" alt="" [width]="card.page?.imageWidth ?? 800" [height]="card.page?.imageHeight ?? 420" />
     }
-    <span class="link-draft__text">
-      <strong class="link-draft__title">{{ page.title || page.siteName || shownLink(page.url) }}</strong>
-      @if (page.description && !page.image) {
-        <span class="link-draft__description">{{ page.description }}</span>
+    <span class="link-draft__body">
+      @if (card.page?.image && iconLike(card.page?.imageWidth, card.page?.imageHeight)) {
+        <img class="link-draft__icon" [src]="linkDraftImage(card.url)" alt="" />
+      } @else if (!card.page?.image) {
+        <span class="link-draft__icon link-draft__icon--none" aria-hidden="true"><svg yonaIcon="link" [size]="18"></svg></span>
       }
-      <span class="link-draft__site">{{ linkHost(page.url) }}</span>
+      <span class="link-draft__text">
+        <strong class="link-draft__title">{{ card.page?.title || card.page?.siteName || linkHost(card.url) }}</strong>
+        <span class="link-draft__site">{{ linkHost(card.url) }}</span>
+      </span>
     </span>
     <button type="button" class="link-draft__close" aria-label="Envoyer sans l’aperçu du lien" (click)="dismissPreview()">
       <svg yonaIcon="x" [size]="14" [strokeWidth]="3"></svg>

@@ -4,6 +4,16 @@
 export interface ErrorLogLine {
 
   /**
+   * Archived (the problem handled): out of the list, kept 30 days like the others
+   */
+  archivedAt?: string;
+
+  /**
+   * Archived once, then happened again
+   */
+  cameBack: boolean;
+
+  /**
    * Stack trace of the backend, or of the browser
    */
   detail?: string;
