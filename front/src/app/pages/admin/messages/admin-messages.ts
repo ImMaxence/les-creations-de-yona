@@ -46,6 +46,7 @@ import { MENTION_KINDS, MessagePart, parseMessage, shownLink } from './message-f
 import { imageFiles, messagePhoto } from './message-photos';
 import { readUpTo, seenBy, seenLabel, seenPlaces } from './message-seen';
 import { systemLine } from './message-system';
+import { fitToViewport } from './message-viewport';
 import { MessageSound } from './message-sound';
 import { MessageAlerts } from '../../../core/pwa/message-alerts';
 import { Toaster } from '../../../core/notifications/toaster';
@@ -139,6 +140,8 @@ export default class AdminMessages {
   private readonly watch = inject(AdminWatch);
   private readonly confirm = inject(Confirm);
   private readonly document = inject(DOCUMENT);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -314,20 +317,30 @@ export default class AdminMessages {
       observer.observe(older);
       onCleanup(() => observer.disconnect());
     });
-    // A photo, a preview or a font loaded after the scroll to the end: still at the end
+    // A photo, a preview or a font loaded after the scroll to the end, or the conversation shorter (the
+    // keyboard of a phone open): still at the end
     effect((onCleanup) => {
       const content = this.threadContent()?.nativeElement;
-      if (!content || typeof ResizeObserver === 'undefined') {
+      const box = this.thread()?.nativeElement;
+      if (!content || !box || typeof ResizeObserver === 'undefined') {
         return;
       }
       const observer = new ResizeObserver(() => {
-        const box = this.thread()?.nativeElement;
-        if (box && this.stickToEnd) {
+        if (this.stickToEnd) {
           box.scrollTop = box.scrollHeight;
         }
       });
       observer.observe(content);
+      observer.observe(box);
       onCleanup(() => observer.disconnect());
+    });
+    // The page fitted to the screen, the keyboard of a phone counted (message-viewport.ts)
+    afterNextRender(() => {
+      const view = this.document.defaultView;
+      if (view) {
+        const stop = fitToViewport(this.host.nativeElement, view);
+        this.destroyRef.onDestroy(stop);
+      }
     });
     inject(DestroyRef).onDestroy(() => this.typists().forEach((typist) => clearTimeout(typist.timer)));
   }

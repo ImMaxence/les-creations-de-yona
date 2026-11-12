@@ -1,14 +1,20 @@
 @use 'mixins' as m;
 
 // The whole height of the screen under the bar of the back-office (its padding reduced in admin-frame.scss):
-// the groups and the conversation scroll inside, the page does not. A minimum for a phone held sideways.
+// the groups and the conversation scroll inside, the page does not. The height shown, read by the page
+// (message-viewport.ts), 100dvh before. A minimum for a phone held sideways, but for the keyboard.
 :host {
   // The green of someone there, readable on the panel in both themes
   --color-presence: light-dark(#178a30, #3fc23a);
 
   display: block;
-  height: calc(100dvh - var(--header-height) - 2 * var(--space-4));
+  height: calc(var(--messages-viewport, 100dvh) - var(--header-height) - 2 * var(--space-4));
   min-height: 26rem;
+}
+
+// The keyboard of a phone open: the room left above it, however small
+:host(.is-keyboard) {
+  min-height: 0;
 }
 
 // The groups beside the conversation; on a phone, one or the other (?groupe=)
@@ -59,9 +65,13 @@
   align-items: center;
 }
 
-// Thin bars of the colours of the site, without the arrows nor the white track of Windows
+// Thin bars of the colours of the site, without the arrows nor the white track of Windows.
+// Positioned: the texts kept for screen readers (.visually-hidden, absolute) scroll inside, instead of
+// hanging below the page at the height of the whole conversation, a page then much taller than the
+// screen (scrolled down by iOS for the keyboard, and left there)
 .group-list__nav,
 .thread {
+  position: relative;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--color-text) 22%, transparent) transparent;
 }

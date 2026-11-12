@@ -2,6 +2,19 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.14.1 - 2026-11-12
+
+Front et backend 2.14.1. Pas de migration de la base
+
+### Corrigé
+
+- **Messages** : sur téléphone, la page ne reste plus étirée vers le bas une fois le clavier refermé (iPhone surtout, application installée)
+- **Messages** : clavier ouvert, la page tient dans la place laissée au-dessus : le champ juste sur le clavier, la barre du back-office en haut, le dernier message toujours visible
+
+### Technique
+
+- **Messages** : les textes réservés aux lecteurs d'écran (« Vu », « Envoyé ») dépassaient de la conversation et rallongeaient la page à la hauteur de tous les messages ; la hauteur de la page suit désormais la partie visible de l'écran (`visualViewport`)
+
 ## 2.14.0 - 2026-11-12
 
 Front et backend 2.14.0. Migration de la base : V31
