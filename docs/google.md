@@ -133,6 +133,7 @@ Un échec est affiché dans le back-office, et un nouvel essai a lieu automatiqu
 ## 4. Google Search Console
 
 - https://search.google.com/search-console, propriété « Domaine » `les-creations-de-yona.fr` (validée par un enregistrement DNS TXT chez Cloudflare).
+- Propriété « Préfixe de l'URL » `https://les-creations-de-yona.fr/` (2.14.2) : validée par le fichier HTML `front/public/googlec96cf5bde7d02853.html`, servi à la racine du site. Ne pas le supprimer, ni changer son contenu : Google le relit pour garder la propriété validée.
 - **Sitemaps** : `https://les-creations-de-yona.fr/sitemap.xml`, état « Opération effectuée ».
 - **Pages** : les exclusions par `noindex` (favoris, liste de courses, recherches filtrées, back-office) sont voulues. Les 404 sont des recettes supprimées ou d'anciennes adresses : sans gravité.
 - **Inspection de l'URL** sur une recette, puis « Tester l'URL en ligne » : page indexable, recette détectée.

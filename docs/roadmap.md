@@ -49,6 +49,7 @@ Les versions passées, résumées (le détail depuis la 1.1.0 est dans le [CHANG
 - [x] 2.7.0 : IA dans les articles de Mon CAP, Claude en troisième IA, dictée locale (Whisper), logos des IA ; Journaux (erreurs du serveur et des navigateurs), Versions et santé, historique mémoire et processeur sur 90 jours ; badges Historique, Journaux et Nouveautés ; menu du back-office repliable ; skeletons ; couleurs personnalisées et 12 polices ; Statistiques et Apparence en accordéons ; SEO IA de Mon CAP
 - [x] 2.7.1 : la page ne bouge plus à l'ouverture et à la fermeture d'une fenêtre (place de la barre de défilement réservée, assombrie avec la page) ; « Dicter » : micro autorisé pour le site (Permissions-Policy)
 - [x] 2.7.2 : spectre audio en direct pendant la dictée, et une alerte si le micro ne capte rien
+- [x] 2.14.2 : fichier de validation de la Google Search Console à la racine du site
 - [x] 2.14.1 : Messages : page ajustée au clavier d'un téléphone, plus étirée une fois le clavier refermé
 - [x] 2.14.0 : Messages : chaque nouvelle version du site annoncée une fois dans le groupe de tous les admins, par le site lui-même (migration V31)
 - [x] 2.13.0 : Messages : ce qui change dans un groupe écrit dans sa conversation (création, nom, photo, membre ajouté ou retiré, départ), aussi dans la liste des groupes, sans badge ni son ; notifications des messages pas lus sur les appareils où elles sont activées (migrations V29 et V30)
@@ -102,6 +103,7 @@ Les versions passées, résumées (le détail depuis la 1.1.0 est dans le [CHANG
 
 ## Points ouverts
 
+- 2.14.2 en ligne : `https://les-creations-de-yona.fr/googlec96cf5bde7d02853.html` affiche `google-site-verification: googlec96cf5bde7d02853.html`, puis **Valider** dans la Search Console (propriété `https://les-creations-de-yona.fr/`)
 - 2.14.1 en ligne : sur iPhone (application installée et Safari), dans une conversation, ouvrir puis refermer le clavier : la page revient à sa place, sans vide dessous
 - 2.14.0 en ligne : la migration V31 s'applique au démarrage, puis « Nouvelle version de l'application disponible : version … » arrive dans le groupe de tous les admins avec le numéro mis en ligne (une seule fois, même après un redémarrage)
 - 2.7.0 en ligne : ajouter ANTHROPIC_API_KEY dans Coolify pour Claude ; essayer la dictée sur le MacBook (téléchargement de Whisper, 570 Mo) ; dans Statistiques, regarder la mémoire du backend après une journée (historique sur 7 jours) (tas Java de 512 Mo au plus ; tout le processus : environ 890 Mo mesurés en local sur 16 cœurs, moins avec moins de cœurs) et le temps de réponse des pages.
