@@ -13,6 +13,7 @@ import { IngredientNutritionForm } from '../../../core/api/generated/models/ingr
 import { IngredientResponse } from '../../../core/api/generated/models/ingredient-response';
 import { NutritionLabel } from '../../../core/api/generated/models/nutrition-label';
 import { OpenFoodFactsProduct } from '../../../core/api/generated/models/open-food-facts-product';
+import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { formatGrams, formatKcal } from '../../../shared/format/nutrition';
 import { Button } from '../../../shared/ui/button/button';
@@ -78,7 +79,9 @@ export function productSource(product: OpenFoodFactsProduct): string {
             {{ nutrition.ciqualName ? 'Ciqual · ' + nutrition.ciqualName : 'Étiquette' + (nutrition.labelSource ? ' · ' + nutrition.labelSource : '') }}
             <span class="admin-row__meta">{{ summary(nutrition.per100g) }} pour 100 g</span>
           </p>
-          <button yonaButton variant="ghost" type="button" [disabled]="saving()" (click)="remove()">Retirer les valeurs</button>
+          <button yonaButton variant="secondary" type="button" [disabled]="saving()" (click)="remove()">
+            <svg yonaIcon="trash"></svg>Retirer les valeurs
+          </button>
         } @else {
           <p class="field__hint">
             Pas encore de valeurs : les recettes qui utilisent « {{ ingredient().name }} » le laissent de côté dans leurs valeurs nutritionnelles
@@ -328,6 +331,7 @@ export class IngredientNutritionEditor {
 
   private readonly api = inject(Api);
   private readonly toaster = inject(Toaster);
+  private readonly confirm = inject(Confirm);
 
   protected readonly fields = LABEL_FIELDS;
   protected readonly formatKcal = formatKcal;
@@ -438,8 +442,18 @@ export class IngredientNutritionEditor {
     return this.save({ label, labelSource: source || undefined }, 'Étiquette enregistrée');
   }
 
-  protected remove(): Promise<void> {
-    return this.save({}, 'Valeurs nutritionnelles retirées');
+  /** Its Ciqual food or its label taken off, once confirmed: its recipes leave it out until it has others. */
+  protected async remove(): Promise<void> {
+    const name = this.ingredient().name;
+    const confirmed = await this.confirm.ask({
+      title: `Retirer les valeurs de « ${name} » ?`,
+      message:
+        "Les recettes qui l'utilisent ne le comptent plus : celles qui affichent leurs valeurs nutritionnelles les masquent jusqu'à ce qu'il en ait de nouvelles",
+      confirmLabel: 'Retirer les valeurs',
+    });
+    if (confirmed) {
+      await this.save({}, 'Valeurs nutritionnelles retirées');
+    }
   }
 
   private async save(body: IngredientNutritionForm, message: string): Promise<void> {

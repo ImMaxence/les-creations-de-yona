@@ -83,6 +83,14 @@ class AdminIngredientController {
 		return ingredientService.setEdiblePart(id, form.percent());
 	}
 
+	@Operation(summary = "Take the nutrition facts off several ingredients (their Ciqual food or their label), all or none",
+			description = "The recipes using them leave them out until they have others; those without any are left as they are.")
+	@DeleteMapping("/nutrition")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void removeIngredientNutrition(@RequestParam @NotEmpty @Size(max = 500) List<Long> ids) {
+		ingredientService.removeNutrition(ids);
+	}
+
 	@Operation(summary = "Link ingredients to Ciqual foods, all at once (\"Tout lier\"); all or none")
 	@PutMapping("/ciqual")
 	@ResponseStatus(HttpStatus.NO_CONTENT)

@@ -2,6 +2,7 @@ package fr.lescreationsdeyona.message;
 
 import fr.lescreationsdeyona.live.LiveChange;
 import fr.lescreationsdeyona.live.LiveTopic;
+import fr.lescreationsdeyona.security.AdminProperties;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -21,10 +22,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 /**
  * A new version of the application, told by the site itself in the group of all the admins once the
  * backend has started: "Nouvelle version de l'application disponible : version 2.14.0". A line of the
- * group like the others ({@link GroupEvent#VERSION}): no badge, no sound, no notification ("Nouveautés"
- * has its own badge). Not told again when the same version starts again (a restart, a second server
- * during a deployment), nor when an older one comes back (a rollback); never for a backend run without
- * its version (from an IDE). The versions told are this server's ({@code announced_version}), not the backups'.
+ * group like the others ({@link GroupEvent#VERSION}): no badge, no sound ("Nouveautés" has its own badge), but
+ * a notification on the devices of the admins who turned them on (2.18), as a message. Not told again when the
+ * same version starts again (a restart, a second server during a deployment), nor when an older one comes back
+ * (a rollback); never for a backend run without its version (from an IDE). The versions told are this server's
+ * ({@code announced_version}), not the backups'.
  */
 @Service
 class VersionAnnouncement {
@@ -44,12 +46,15 @@ class VersionAnnouncement {
 
 	private final ApplicationEventPublisher events;
 
+	private final AdminProperties admins;
+
 	VersionAnnouncement(JdbcClient jdbc, ObjectProvider<BuildProperties> buildProperties, TransactionTemplate transactions,
-			ApplicationEventPublisher events) {
+			ApplicationEventPublisher events, AdminProperties admins) {
 		this.jdbc = jdbc;
 		this.buildProperties = buildProperties;
 		this.transactions = transactions;
 		this.events = events;
+		this.admins = admins;
 	}
 
 	@EventListener(ApplicationReadyEvent.class)
@@ -87,18 +92,21 @@ class VersionAnnouncement {
 			.update() == 0) {
 			return false;
 		}
-		jdbc.sql("""
+		long id = jdbc.sql("""
 				insert into admin_message (group_id, author_email, body, sent_at, event, event_value)
-				values (:group, :site, :body, :at, :event, :version)""")
+				values (:group, :site, :body, :at, :event, :version) returning id""")
 			.param("group", everyone)
 			.param("site", SITE)
 			.param("body", AdminGroups.sentence(SITE, GroupEvent.VERSION, version))
 			.param("at", now.atOffset(ZoneOffset.UTC))
 			.param("event", GroupEvent.VERSION.name())
 			.param("version", version)
-			.update();
-		// Every admin is in the group of all of them
+			.query(Long.class)
+			.single();
+		String groupName = jdbc.sql("select name from admin_group where id = :id").param("id", everyone).query(String.class).single();
+		// Every admin is in the group of all of them; each told on their devices too (2.18)
 		events.publishEvent(new LiveChange(LiveTopic.MESSAGES));
+		events.publishEvent(new LineWritten(id, everyone, groupName, GroupEvent.VERSION, version, SITE, null, now, admins.emails()));
 		return true;
 	}
 

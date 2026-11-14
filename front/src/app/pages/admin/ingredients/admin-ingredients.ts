@@ -11,6 +11,7 @@ import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
 import { deleteIngredient } from '../../../core/api/generated/fn/admin-ingredients/delete-ingredient';
 import { deleteIngredients } from '../../../core/api/generated/fn/admin-ingredients/delete-ingredients';
+import { removeIngredientNutrition } from '../../../core/api/generated/fn/admin-ingredients/remove-ingredient-nutrition';
 import { findSimilarIngredients } from '../../../core/api/generated/fn/admin-ingredients/find-similar-ingredients';
 import { mergeIngredients } from '../../../core/api/generated/fn/admin-ingredients/merge-ingredients';
 import { renameIngredient } from '../../../core/api/generated/fn/admin-ingredients/rename-ingredient';
@@ -281,6 +282,34 @@ export default class AdminIngredients {
         this.toaster.success(`${ids.length} ingrédients rangés`);
         this.selection.clear();
       }
+      this.ingredients.reload();
+    }
+  }
+
+  /** The ingredients selected that have nutrition facts: those the button takes them off. */
+  protected readonly selectedWithNutrition = computed(
+    () => (this.ingredients.value() ?? []).filter((ingredient) => this.selection.has(ingredient.id) && !!ingredient.nutrition).length,
+  );
+  protected readonly removingNutrition = signal(false);
+
+  /** Their Ciqual food or their label taken off, all at once, once confirmed. */
+  protected async removeSelectedNutrition(): Promise<void> {
+    const count = this.selectedWithNutrition();
+    const confirmed = await this.confirm.ask({
+      title: count > 1 ? `Retirer les valeurs de ${count} ingrédients ?` : "Retirer les valeurs de l'ingrédient ?",
+      message:
+        "Les recettes qui les utilisent ne les comptent plus : celles qui affichent leurs valeurs nutritionnelles les masquent jusqu'à ce qu'ils en aient de nouvelles",
+      confirmLabel: 'Retirer les valeurs',
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.removingNutrition.set(true);
+    const removed = await attempt(this.api.invoke(removeIngredientNutrition, { ids: this.selection.ids() }));
+    this.removingNutrition.set(false);
+    if (removed.ok) {
+      this.toaster.success(count > 1 ? `Valeurs nutritionnelles retirées de ${count} ingrédients` : 'Valeurs nutritionnelles retirées');
+      this.selection.clear();
       this.ingredients.reload();
     }
   }

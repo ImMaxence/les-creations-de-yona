@@ -190,6 +190,8 @@ export type { TrashRestored } from './models/trash-restored';
 export type { Typist } from './models/typist';
 export type { UnreadCount } from './models/unread-count';
 export type { Unseen } from './models/unseen';
+export type { UnseenMessage } from './models/unseen-message';
+export type { UnseenMessages } from './models/unseen-messages';
 export type { UsingCategory } from './models/using-category';
 export type { UsingMenu } from './models/using-menu';
 export type { UsingRecipe } from './models/using-recipe';

@@ -95,6 +95,32 @@ public class IngredientService {
 		return toResponse(ingredient);
 	}
 
+	/**
+	 * Their nutrition facts taken off (their Ciqual food or their label), all or none: the recipes using them leave them
+	 * out, until they have others. Those without any are left as they are.
+	 */
+	@Transactional
+	public void removeNutrition(Collection<Long> ids) {
+		List<Ingredient> ingredients = ingredientRepository.findAllById(ids);
+		if (ingredients.size() != new HashSet<>(ids).size()) {
+			throw new ApiException(ErrorCode.INGREDIENT_NOT_FOUND);
+		}
+		List<Ingredient> withValues = ingredients.stream()
+			.filter(IngredientService::hasNutrition)
+			.sorted(Comparator.comparing(Ingredient::getName))
+			.toList();
+		if (withValues.isEmpty()) {
+			return;
+		}
+		AuditChanges changes = new AuditChanges();
+		for (Ingredient ingredient : withValues) {
+			changes.add("Valeurs nutritionnelles de " + ingredient.getName(), nutritionLabel(ingredient), null);
+			setNutrition(ingredient, new IngredientNutritionForm(null, null, null));
+		}
+		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, withValues.size() == 1 ? withValues.getFirst().getName()
+				: withValues.size() + " ingrédients", withValues.size() == 1 ? withValues.getFirst().getId() : null, changes);
+	}
+
 	/** The share of it eaten, in percent: every recipe using it counts that much of each quantity. */
 	@Transactional
 	public IngredientResponse setEdiblePart(long id, int percent) {

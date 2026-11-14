@@ -155,6 +155,26 @@ class IngredientNutritionTest {
 	}
 
 	@Test
+	void takesTheValuesOffSeveralAtOnce() {
+		Ingredient eggs = ingredient(1, "Œufs");
+		eggs.setCiqualCode(22000);
+		Ingredient whey = ingredient(2, "Whey");
+		whey.setLabelKcal(new BigDecimal("380"));
+		whey.setLabelSource("Open Food Facts · Whey");
+		Ingredient flour = ingredient(3, "Farine");
+		when(repository.findAllById(any())).thenReturn(List.of(eggs, whey, flour));
+
+		service.removeNutrition(List.of(1L, 2L, 3L));
+
+		assertThat(eggs.getCiqualCode()).isNull();
+		assertThat(whey.getLabelKcal()).isNull();
+		assertThat(whey.getLabelSource()).isNull();
+		// One unknown: nothing is taken off
+		when(repository.findAllById(any())).thenReturn(List.of(eggs));
+		assertThatThrownBy(() -> service.removeNutrition(List.of(1L, 99L))).extracting("code").isEqualTo(ErrorCode.INGREDIENT_NOT_FOUND);
+	}
+
+	@Test
 	void keepsTheShareEatenAndOffersTheUsualOne() {
 		Ingredient chicken = ingredient(1, "Poulet fermier");
 		when(repository.findById(1L)).thenReturn(Optional.of(chicken));

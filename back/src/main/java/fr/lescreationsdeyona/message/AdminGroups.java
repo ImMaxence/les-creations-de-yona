@@ -201,25 +201,38 @@ public class AdminGroups {
 
 	/**
 	 * A line of the conversation saying what a member changed in the group, as a chat does: no badge, no sound,
-	 * not counted against the pace of the messages, not deleted by its author. Its body: the same in French, for
-	 * the list of the groups and the backups (where it tells two lines of the same moment apart).
+	 * not counted against the pace of the messages, not deleted by its author; a notification on the devices of the
+	 * other members, as a message (2.18), the member removed by it included. Its body: the same in French, for the list
+	 * of the groups and the backups (where it tells two lines of the same moment apart).
 	 */
 	private void tell(long groupId, GroupEvent event, @Nullable String value) {
 		MessageAuthor actor = MessageAuthor.current(adminSeen);
 		String email = actor == null ? me() : actor.email();
 		@Nullable String name = actor == null ? null : actor.name();
-		jdbc.sql("""
+		Instant now = Instant.now();
+		long id = jdbc.sql("""
 				insert into admin_message (group_id, author_email, author_name, author_picture, body, sent_at, event, event_value)
-				values (:group, :email, :name, :picture, :body, :at, :event, :value)""")
+				values (:group, :email, :name, :picture, :body, :at, :event, :value) returning id""")
 			.param("group", groupId)
 			.param("email", email)
 			.param("name", name)
 			.param("picture", actor == null ? null : actor.picture())
 			.param("body", sentence(name == null || name.isBlank() ? email : name, event, value))
-			.param("at", utc(Instant.now()))
+			.param("at", utc(now))
 			.param("event", event.name())
 			.param("value", value)
-			.update();
+			.query(Long.class)
+			.single();
+		Group group = jdbc.sql("select id, name, image_id, everyone from admin_group where id = :id")
+			.param("id", groupId)
+			.query((row, index) -> new Group(row.getLong("id"), row.getString("name"), row.getObject("image_id", UUID.class),
+					row.getBoolean("everyone")))
+			.single();
+		Set<String> told = new TreeSet<>(members(group));
+		if (event == GroupEvent.REMOVED && value != null) {
+			told.add(value);
+		}
+		events.publishEvent(new LineWritten(id, groupId, group.name(), event, value, email, name, now, told));
 	}
 
 	/** "Léa Martin a ajouté sam@site.fr": a line of the group in French, its member by their email. */
@@ -328,19 +341,29 @@ public class AdminGroups {
 			.toList();
 	}
 
-	/** The badge of "Messages": what the others wrote in the groups of the admin asking since they last read each. */
-	public Unseen unseen() {
+	/**
+	 * The badge of "Messages": what the others wrote in the groups of the admin asking since they last read each, and the
+	 * latest of it (its toast). One query: the count of all, over the latest row.
+	 */
+	public UnseenMessages unseen() {
 		Instant fallback = firstVisit();
-		long count = adminSeen.admin().map(admin -> jdbc.sql("""
-				select count(*) from admin_message m join admin_group g on g.id = m.group_id
+		return adminSeen.admin().flatMap(admin -> jdbc.sql("""
+				select m.id, m.group_id, g.name as group_name, m.author_email, m.author_name, m.author_picture, m.body, m.sent_at,
+				(select count(*) from admin_message_image i where i.message_id = m.id) as photos, count(*) over () as total
+				from admin_message m join admin_group g on g.id = m.group_id
 				left join admin_group_seen s on s.group_id = g.id and s.admin_email = :me
 				where""" + " " + VISIBLE + """
-				and lower(m.author_email) <> :me and m.event is null and m.sent_at > coalesce(s.seen_at, :fallback)""")
+				and lower(m.author_email) <> :me and m.event is null and m.sent_at > coalesce(s.seen_at, :fallback)
+				order by m.sent_at desc, m.id desc
+				limit 1""")
 			.param("me", admin.toLowerCase(Locale.ROOT))
 			.param("fallback", utc(fallback))
-			.query(Long.class)
-			.single()).orElse(0L);
-		return new Unseen(count, fallback);
+			.query((row, index) -> new UnseenMessages(row.getLong("total"), fallback,
+					UnseenMessages.Latest.of(row.getLong("id"), row.getLong("group_id"), row.getString("group_name"),
+							row.getString("author_email"), row.getString("author_name"), row.getString("author_picture"),
+							row.getString("body"), row.getInt("photos"), row.getObject("sent_at", OffsetDateTime.class).toInstant())))
+			.optional())
+			.orElseGet(() -> new UnseenMessages(0, fallback, null));
 	}
 
 	/** The group, if {@code email} is in it. */

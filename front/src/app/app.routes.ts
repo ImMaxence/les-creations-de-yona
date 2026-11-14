@@ -63,7 +63,7 @@ export const routes: Routes = [
   {
     path: 'mon-cap/:slug',
     loadComponent: () => import('./pages/cap/cap-article'),
-    resolve: { article: capArticleResolver },
+    resolve: { article: capArticleResolver, glossary: glossaryResolver },
     data: { [SEO_DATA_KEY]: capArticleSeo satisfies RouteSeo },
   },
   // For the people close to Yona: nothing for search engines, until open to all

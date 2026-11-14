@@ -7,12 +7,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { Unseen } from '../../models/unseen';
+import { UnseenMessages } from '../../models/unseen-messages';
 
 export interface CountUnseenMessages$Params {
 }
 
-export function countUnseenMessages(http: HttpClient, rootUrl: string, params?: CountUnseenMessages$Params, context?: HttpContext): Observable<StrictHttpResponse<Unseen>> {
+export function countUnseenMessages(http: HttpClient, rootUrl: string, params?: CountUnseenMessages$Params, context?: HttpContext): Observable<StrictHttpResponse<UnseenMessages>> {
   const rb = new RequestBuilder(rootUrl, countUnseenMessages.PATH, 'get');
   if (params) {
   }
@@ -22,7 +22,7 @@ export function countUnseenMessages(http: HttpClient, rootUrl: string, params?: 
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Unseen>;
+      return r as StrictHttpResponse<UnseenMessages>;
     })
   );
 }

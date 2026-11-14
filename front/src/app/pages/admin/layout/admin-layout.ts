@@ -23,6 +23,7 @@ import { AdminLive } from './admin-live';
 import { AdminWatch } from './admin-watch';
 import { AdminAvatar } from './admin-avatar/admin-avatar';
 import { AdminNav } from './admin-nav/admin-nav';
+import { MessageToastStack } from '../messages/message-toasts';
 
 const RAIL_KEY = 'admin-side-rail';
 
@@ -50,7 +51,7 @@ const WIDE_SCREEN = '(width >= 64rem)';
  */
 @Component({
   selector: 'yona-admin-layout',
-  imports: [AdminAvatar, AdminNav, ConfirmDialog, Icon, RouterOutlet],
+  imports: [AdminAvatar, AdminNav, ConfirmDialog, Icon, MessageToastStack, RouterOutlet],
   templateUrl: './admin-layout.html',
   styleUrls: ['./admin-frame.scss', './admin-layout.scss', './admin-publication.scss'],
   encapsulation: ViewEncapsulation.None,

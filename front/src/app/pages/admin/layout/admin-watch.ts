@@ -12,8 +12,10 @@ import { countUnseenTrash } from '../../../core/api/generated/fn/admin-trash/cou
 import { markTrashSeen } from '../../../core/api/generated/fn/admin-trash/mark-trash-seen';
 import { ErrorLogSummary } from '../../../core/api/generated/models/error-log-summary';
 import { Unseen } from '../../../core/api/generated/models/unseen';
+import { UnseenMessages } from '../../../core/api/generated/models/unseen-messages';
 import { FRONT_VERSION } from '../../../core/version';
 import { MessageSound } from '../messages/message-sound';
+import { MessageToasts } from '../messages/message-toasts';
 
 /**
  * What the admin logged in has not looked at yet, beside the entries of the menu: what the others
@@ -25,11 +27,18 @@ import { MessageSound } from '../messages/message-sound';
 export class AdminWatch {
   private readonly api = inject(Api);
   private readonly sound = inject(MessageSound);
+  private readonly toasts = inject(MessageToasts);
+
+  /**
+   * The group whose conversation the admin has in sight ("Messages", the page shown): its new messages are read
+   * there, no toast. Set by the page of the messages while it is open.
+   */
+  readingGroup: () => number | null = () => null;
 
   readonly history = signal<Unseen | null>(null);
   readonly logs = signal<ErrorLogSummary | null>(null);
   readonly trash = signal<Unseen | null>(null);
-  readonly messages = signal<Unseen | null>(null);
+  readonly messages = signal<UnseenMessages | null>(null);
   /** The version of "Nouveautés" read last; undefined until known. */
   private readonly changelogSeen = signal<string | null | undefined>(undefined);
 
@@ -53,7 +62,10 @@ export class AdminWatch {
     ]);
   }
 
-  /** A message of the others more than before (not at the first count): its little sound, on any page. */
+  /**
+   * A message of the others more than before (not at the first count): its little sound, and its toast at the top
+   * right, on any page; none for the conversation the admin reads.
+   */
   refreshMessages(): Promise<void> {
     return this.load(
       () => this.api.invoke(countUnseenMessages),
@@ -62,6 +74,9 @@ export class AdminWatch {
         this.messages.set(value);
         if (before && value.count > before.count) {
           this.sound.play();
+          if (value.latest && value.latest.groupId !== this.readingGroup()) {
+            this.toasts.show(value.latest);
+          }
         }
       },
     );

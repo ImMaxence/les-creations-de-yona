@@ -215,6 +215,8 @@ export type { FindSimilarIngredients$Params as FindSimilarIngredients$Params } f
 export { findSimilarIngredients as findSimilarIngredients } from './fn/admin-ingredients/find-similar-ingredients';
 export type { SuggestIngredientNutrition$Params as SuggestIngredientNutrition$Params } from './fn/admin-ingredients/suggest-ingredient-nutrition';
 export { suggestIngredientNutrition as suggestIngredientNutrition } from './fn/admin-ingredients/suggest-ingredient-nutrition';
+export type { RemoveIngredientNutrition$Params as RemoveIngredientNutrition$Params } from './fn/admin-ingredients/remove-ingredient-nutrition';
+export { removeIngredientNutrition as removeIngredientNutrition } from './fn/admin-ingredients/remove-ingredient-nutrition';
 export type { ReplaceImage$Params as ReplaceImage$Params } from './fn/admin-images/replace-image';
 export { replaceImage as replaceImage } from './fn/admin-images/replace-image';
 export type { DeleteImage$Params as DeleteImage$Params } from './fn/admin-images/delete-image';

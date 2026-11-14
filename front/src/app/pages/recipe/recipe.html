@@ -219,7 +219,13 @@
     @if (recipe().tip; as tip) {
       <aside class="tip" yonaReveal aria-labelledby="tip-title">
         <h2 id="tip-title" class="tip__title"><svg yonaIcon="lightbulb" [size]="22" [strokeWidth]="1.75"></svg>Le conseil de Yona</h2>
-        <div class="prose" [innerHTML]="tip | markdown"></div>
+        <div
+          class="prose"
+          [innerHTML]="tip | markdown | glossary: glossaryMatcher()"
+          (click)="tipPopover.handle($event, glossaryMatcher())"
+          (keydown)="tipPopover.handle($event, glossaryMatcher())"
+        ></div>
+        <yona-glossary-popover #tipPopover />
       </aside>
     }
 

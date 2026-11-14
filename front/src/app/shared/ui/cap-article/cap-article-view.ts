@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CapBlock } from '../../../core/api/generated/models/cap-block';
+import { GlossaryMatcher, GlossaryPipe, NO_GLOSSARY } from '../../format/glossary';
 import { MarkdownPipe } from '../../format/markdown.pipe';
 import { ParisDatePipe } from '../../format/paris-date.pipe';
 import { CAP_PATH } from '../../routing/links';
 import { CoverImage } from '../cover-image/cover-image';
+import { GlossaryPopover } from '../glossary-popover/glossary-popover';
 import { Icon } from '../icon/icon';
 import { PhotoViewer, ViewedPhoto } from '../photo-viewer/photo-viewer';
 import { articlePhotos, frenchDay, isSitePath } from './article-format';
@@ -25,11 +27,12 @@ const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'nume
  * An article of "Mon CAP", as visitors read it: the date, the title and its subtitle above the big
  * photo (never on it), then the blocks in the chosen order, the text in a narrow column, the photos
  * as wide as the article. Every photo opens big. "Carnet" gives it a "cahier de cours" look, the date
- * put forward; both styles keep the site's colors and fonts.
+ * put forward; both styles keep the site's colors and fonts. The words of the glossary are underlined in its
+ * texts, as in the steps of a recipe: a tap shows their definition.
  */
 @Component({
   selector: 'yona-cap-article-view',
-  imports: [CoverImage, Icon, MarkdownPipe, ParisDatePipe, PhotoViewer, RouterLink],
+  imports: [CoverImage, GlossaryPipe, GlossaryPopover, Icon, MarkdownPipe, ParisDatePipe, PhotoViewer, RouterLink],
   template: `
     <article class="article" [class.is-notebook]="notebook()">
       <header class="article__head">
@@ -53,12 +56,12 @@ const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'nume
         </button>
       }
 
-      <div class="article__blocks" (click)="followLink($event)">
+      <div class="article__blocks" (click)="followLink($event); popover.handle($event, glossary())" (keydown)="popover.handle($event, glossary())">
         @for (block of article().blocks; track $index) {
           @switch (block.type) {
             @case ('TEXT') {
               @if (block.text; as text) {
-                <div class="column prose" [innerHTML]="text | markdown"></div>
+                <div class="column prose" [innerHTML]="text | markdown | glossary: glossary()"></div>
               }
             }
             @case ('IMAGE') {
@@ -86,7 +89,7 @@ const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'nume
                   </figure>
                 }
                 @if (block.text; as text) {
-                  <div class="prose photo-text__text" [innerHTML]="text | markdown"></div>
+                  <div class="prose photo-text__text" [innerHTML]="text | markdown | glossary: glossary()"></div>
                 }
               </div>
             }
@@ -124,6 +127,7 @@ const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'nume
       }
     </article>
     <yona-photo-viewer #viewer [photos]="photos()" />
+    <yona-glossary-popover #popover />
   `,
   styleUrl: './cap-article-view.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -134,6 +138,8 @@ export class CapArticleView {
   readonly backLinks = input(false, { transform: booleanAttribute });
   /** In the editor: its photo is not the page's first image. */
   readonly preview = input(false, { transform: booleanAttribute });
+  /** The words of the glossary, underlined in its texts; none by default. */
+  readonly glossary = input<GlossaryMatcher>(NO_GLOSSARY);
 
   private readonly router = inject(Router);
   protected readonly capPath = CAP_PATH;

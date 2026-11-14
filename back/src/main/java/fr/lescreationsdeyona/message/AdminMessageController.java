@@ -16,7 +16,6 @@ import fr.lescreationsdeyona.message.MessageResponses.MessageGroup;
 import fr.lescreationsdeyona.message.MessageResponses.MessagePage;
 import fr.lescreationsdeyona.message.MessageResponses.MessagePhoto;
 import fr.lescreationsdeyona.message.MessageResponses.Typist;
-import fr.lescreationsdeyona.monitoring.Unseen;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -178,9 +177,10 @@ class AdminMessageController {
 		return messages.typists(group);
 	}
 
-	@Operation(summary = "The messages of the others in the groups of this admin since they last read each: the badge of \"Messages\"")
+	@Operation(summary = "The messages of the others in the groups of this admin since they last read each: the badge of \"Messages\"",
+			description = "With the latest of them, for the toast of a message as it comes.")
 	@GetMapping("/unseen")
-	Unseen countUnseenMessages() {
+	UnseenMessages countUnseenMessages() {
 		// Asked by every page of the back-office, every few seconds when its WebSocket is cut: there, then
 		presence.seen(groups.me());
 		return groups.unseen();

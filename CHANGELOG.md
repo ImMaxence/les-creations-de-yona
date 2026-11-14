@@ -2,6 +2,26 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.18.0 - 2026-11-14
+
+Front et backend 2.18.0. Pas de migration de la base
+
+### Ajouté
+
+- **Messages** : un toast en haut à droite de toute page du back-office quand un autre admin écrit, avec sa photo, son prénom, le groupe et le début du message ; un clic ouvre la conversation
+- **Articles de Mon CAP** : les mots du glossaire soulignés dans le texte, leur définition d'un appui, comme dans les étapes des recettes (aussi dans l'aperçu)
+- **Le conseil de Yona** : ses mots du glossaire soulignés et expliqués
+- **Ingrédients** : « Retirer leurs valeurs nutritionnelles » pour plusieurs ingrédients sélectionnés, d'un coup
+- **Notifications des messages** : les lignes écrites par le site aussi, comme un message : une nouvelle version, et ce qui change dans un groupe (« Léa a ajouté Sam », « Léa vous a ajouté au groupe », nouveau nom, photo, départ)
+
+### Modifié
+
+- **Valeurs d'un ingrédient** : « Retirer les valeurs » devient un vrai bouton, avec une confirmation qui dit ce que deviennent ses recettes
+
+### Technique
+
+- **Tests** : toast d'un message, glossaire d'un article et du conseil de Yona, retrait des valeurs d'un ingrédient seul ou en lot, notifications des lignes d'un groupe
+
 ## 2.17.0 - 2026-11-14
 
 Front et backend 2.17.0. Migration de la base : V33

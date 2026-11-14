@@ -310,7 +310,7 @@
   @if (previewOpen()) {
     <yona-preview-frame>
       <div class="preview">
-        <yona-cap-article-view [article]="previewArticle()" backLinks preview />
+        <yona-cap-article-view [article]="previewArticle()" [glossary]="glossaryMatcher()" backLinks preview />
       </div>
     </yona-preview-frame>
   }

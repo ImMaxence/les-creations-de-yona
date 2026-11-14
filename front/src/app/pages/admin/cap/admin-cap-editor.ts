@@ -9,6 +9,7 @@ import { createCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/cre
 import { deleteCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/delete-cap-entry';
 import { duplicateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/duplicate-cap-entry';
 import { listAdminCapEntries } from '../../../core/api/generated/fn/admin-mon-cap/list-admin-cap-entries';
+import { listGlossary } from '../../../core/api/generated/fn/glossary/list-glossary';
 import { getAdminCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/get-admin-cap-entry';
 import { updateCapEntry } from '../../../core/api/generated/fn/admin-mon-cap/update-cap-entry';
 import { getCapAiStatus } from '../../../core/api/generated/fn/admin-mon-cap-ai/get-cap-ai-status';
@@ -21,6 +22,7 @@ import { ImageUploads } from '../../../core/api/image-uploads';
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { SiteData } from '../../../core/site/site-data';
+import { glossaryMatcher } from '../../../shared/format/glossary';
 import { fromParisInput, parisDateTime, toParisInput } from '../../../shared/format/paris-time';
 import { CAP_PATH } from '../../../shared/routing/links';
 import { Button } from '../../../shared/ui/button/button';
@@ -205,6 +207,9 @@ export default class AdminCapEditor implements UnsavedChanges {
   );
   /** The articles of the site, for the links to them in the preview: as online, a draft's words stay plain. */
   private readonly articles = resource({ loader: () => this.api.invoke(listAdminCapEntries) });
+  /** The words of the glossary, underlined in the preview as on the site. */
+  private readonly glossary = resource({ loader: () => this.api.invoke(listGlossary).catch(() => []) });
+  protected readonly glossaryMatcher = computed(() => glossaryMatcher(this.glossary.value() ?? []));
   private readonly publishedSlugs = computed(
     () => new Map((this.articles.value() ?? []).filter((article) => article.status === 'PUBLISHED').map((article) => [article.id, article.slug])),
   );

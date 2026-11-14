@@ -298,6 +298,9 @@ export default class AdminMessages {
       }
     }, PRESENCE_EVERY_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(presenceTimer));
+    // The conversation in sight: its messages need no toast
+    this.watch.readingGroup = () => this.groupInSight();
+    inject(DestroyRef).onDestroy(() => (this.watch.readingGroup = () => null));
     // Scrolled up near the top: the older messages read, the place kept
     effect((onCleanup) => {
       const older = this.older()?.nativeElement;
@@ -550,11 +553,15 @@ export default class AdminMessages {
     this.markSeen();
   }
 
-  /** In sight: the page shown, and the conversation too (beside the groups, or opened on a phone). */
-  private markSeen(): void {
-    const group = this.openGroup;
+  /** The group open, when in sight: the page shown, and the conversation too (beside the groups, or opened on a phone). */
+  private groupInSight(): number | null {
     const inSight = this.reading() || (typeof matchMedia !== 'undefined' && matchMedia(SIDE_BY_SIDE).matches);
-    if (group === null || this.document.visibilityState !== 'visible' || !inSight) {
+    return this.document.visibilityState === 'visible' && inSight ? this.openGroup : null;
+  }
+
+  private markSeen(): void {
+    const group = this.groupInSight();
+    if (group === null) {
       return;
     }
     this.groups.update((groups) => groups?.map((other) => (other.id === group ? { ...other, unseen: 0 } : other)) ?? null);

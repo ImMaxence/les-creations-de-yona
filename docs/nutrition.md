@@ -51,7 +51,7 @@ Dans **Ingrédients**, le bouton carotte de chaque ligne ouvre une fenêtre (2.1
 2. **Produit du commerce** : pour un produit de marque (Kinder Bueno, whey, biscuits…), chercher son nom ou les chiffres de son code-barres. Les produits d'Open Food Facts s'affichent avec leurs kcal ; « Utiliser ces valeurs » remplit l'étiquette, à vérifier puis enregistrer.
 3. **Étiquette** : les 8 valeurs du tableau nutritionnel du paquet, pour 100 g, tapées à la main (ou reprises d'un produit du commerce), et leur provenance (facultative).
 
-Un ingrédient a l'un ou l'autre : un aliment Ciqual, ou une étiquette. La ligne montre « Ciqual · 753 kcal » ou « Étiquette · 380 kcal ». Le filtre **« Valeurs nutritionnelles »** et le lien **« N sans valeurs nutritionnelles »** montrent ceux des recettes à compléter.
+Un ingrédient a l'un ou l'autre : un aliment Ciqual, ou une étiquette. **« Retirer les valeurs »** (en haut de la fenêtre, 2.18 : un vrai bouton, après confirmation) les enlève ; pour plusieurs ingrédients, les sélectionner puis **« Retirer leurs valeurs nutritionnelles »**. Les recettes qui les utilisent ne les comptent plus, et celles qui affichent leurs valeurs les masquent jusqu'à ce qu'ils en aient de nouvelles. La ligne montre « Ciqual · 753 kcal » ou « Étiquette · 380 kcal ». Le filtre **« Valeurs nutritionnelles »** et le lien **« N sans valeurs nutritionnelles »** montrent ceux des recettes à compléter.
 
 **« Proposer les valeurs nutritionnelles »** (en haut de la page) : pour chaque ingrédient des recettes sans valeurs, le plus utilisé d'abord, les trois aliments les plus probables, le premier choisi. On vérifie, on change ou on choisit « Aucun », puis **« Lier N ingrédients »** les lie tous d'un coup.
 
@@ -175,6 +175,7 @@ Code : `core/kitchen/daily-needs.ts` (formules, profil gardé), `pages/recipe/nu
 | `GET /api/site-sections` | `nutritionFilters` : une recette publiée affiche ses valeurs par portion |
 | `POST /api/admin/recipes/nutrition` | Estimation de la recette en cours d'écriture (lignes, recettes liées, portions, poids après cuisson, grille) |
 | `PUT /api/admin/ingredients/{id}/edible-part` | `{ percent }`, de 1 à 100 : la part mangée |
+| `DELETE /api/admin/ingredients/nutrition?ids=` | Les valeurs de plusieurs ingrédients retirées (aliment Ciqual ou étiquette), tout ou rien (2.18) |
 | `PUT /api/admin/ingredients/{id}/nutrition` | `{ ciqualCode }`, ou `{ label, labelSource }`, ou `{}` pour retirer |
 | `PUT /api/admin/ingredients/ciqual` | `{ links: [{ ingredientId, ciqualCode }] }`, tout ou rien |
 | `GET /api/admin/ingredients/nutrition-suggestions` | Les ingrédients sans valeurs et leurs aliments probables (`name=` pour ceux-là seulement) |

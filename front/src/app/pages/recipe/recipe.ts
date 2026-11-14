@@ -21,7 +21,8 @@ import { RecipeNotes } from '../../core/kitchen/recipe-notes';
 import { ShoppingList, shoppingRecipeOf } from '../../core/kitchen/shopping-list';
 import { Toaster } from '../../core/notifications/toaster';
 import { absoluteUrl } from '../../core/seo/page-seo';
-import { glossaryMatcher } from '../../shared/format/glossary';
+import { GlossaryPipe, glossaryMatcher } from '../../shared/format/glossary';
+import { GlossaryPopover } from '../../shared/ui/glossary-popover/glossary-popover';
 import { MarkdownPipe } from '../../shared/format/markdown.pipe';
 import { ParisDatePipe } from '../../shared/format/paris-date.pipe';
 import { formatMinutes, formatQuantity } from '../../shared/format/units';
@@ -64,6 +65,8 @@ import { Icon } from '../../shared/ui/icon/icon';
     CookingMode,
     CoverImage,
     DifficultyStars,
+    GlossaryPipe,
+    GlossaryPopover,
     YoutubeVideo,
     ParisDatePipe,
     IngredientList,
@@ -85,7 +88,7 @@ export default class Recipe {
   readonly recipe = input.required<RecipeDetail>();
   /** From relatedRecipesResolver: "Vous aimerez aussi". */
   readonly related = input<RecipeCardModel[]>([]);
-  /** From glossaryResolver: the words underlined in the steps. */
+  /** From glossaryResolver: the words underlined in the steps and in "Le conseil de Yona". */
   readonly glossary = input<GlossaryTermResponse[]>([]);
   /** ?portions=8, from a search ("tarte 8 personnes"): the quantities shown for that many at once. */
   readonly portions = input<string>();

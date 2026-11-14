@@ -23,6 +23,18 @@ final class MessageTexts {
 		return MENTION.matcher(body).replaceAll(match -> Matcher.quoteReplacement("@" + match.group(1)));
 	}
 
+	/** A title, a quote or an item at the start of a line: "## ", "> ", "- ", "1. ". */
+	private static final Pattern LINE_MARK = Pattern.compile("(?m)^\\s{0,3}(?:#{1,6}\\s+|>\\s?|[-*+]\\s+|\\d{1,3}[.)]\\s+)");
+
+	/** Bold, italic, struck or code around words: "**", "__", "*", "_", "~~", "`". */
+	private static final Pattern EMPHASIS = Pattern.compile("(\\*\\*|__|~~|`)(\\S(?:.*?\\S)?)\\1|(?<![\\p{L}\\p{N}])([*_])(\\S(?:.*?\\S)?)\\3(?![\\p{L}\\p{N}])");
+
+	/** "Regarde la tarte" for "**Regarde** la tarte", mentions written out: as a toast shows it. */
+	static String readable(String body) {
+		String text = LINE_MARK.matcher(plain(body)).replaceAll("");
+		return EMPHASIS.matcher(text).replaceAll(match -> Matcher.quoteReplacement(match.group(2) != null ? match.group(2) : match.group(4)));
+	}
+
 	/** The start of the text, on one line, cut after a word with "…" when longer. */
 	static String excerpt(String body, int length) {
 		String text = plain(body).replaceAll("\\s+", " ").strip();

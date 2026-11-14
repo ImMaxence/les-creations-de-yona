@@ -142,6 +142,11 @@
             [options]="aisleOptions"
             (picked)="setAisle(selection.ids(), $event)"
           />
+          @if (selectedWithNutrition(); as count) {
+            <button yonaButton variant="secondary" type="button" [disabled]="removingNutrition()" (click)="removeSelectedNutrition()">
+              <svg yonaIcon="trash"></svg>Retirer leurs valeurs nutritionnelles ({{ count }})
+            </button>
+          }
         </div>
       }
       <ul role="list" class="admin-list">

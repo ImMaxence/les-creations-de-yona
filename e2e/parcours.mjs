@@ -670,6 +670,34 @@ await part('Mon CAP (articles simulés)', async () => {
   await page.context().close();
 });
 
+await part('Glossaire dans les articles et le conseil de Yona (données simulées)', async () => {
+  const term = { id: 1, name: 'Feuilletage', slug: 'feuilletage', definition: 'Pâte faite de couches de beurre et de détrempe, pliées plusieurs fois', forms: [] };
+  const card = { id: 8, slug: 'feuilletage-e2e', title: 'Le feuilletage', happenedOn: '2026-11-03', style: 'CLASSIC', excerpt: 'Six tours' };
+  const article = { ...card, updatedAt: '2026-11-04T08:00:00Z', blocks: [{ type: 'TEXT', text: 'Six tours pour un **feuilletage** régulier' }] };
+  const page = await newPage(browser, PHONE, errors);
+  await page.route('**/api/glossary', (route) => route.fulfill({ json: [term] }));
+  await page.route(`**/api/cap/entries/${card.slug}`, (route) => route.fulfill({ json: article }));
+  await page.route(`**/api/recipes/${recipe.slug}`, (route) => route.fulfill({ json: { ...recipe, tip: 'Un feuilletage se repose au frais entre deux tours' } }));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  await goClient(page, `/mon-cap/${card.slug}`);
+  const word = page.locator('yona-cap-article-view dfn.glossary-term');
+  await word.waitFor();
+  check('Article : le mot du glossaire souligné dans le texte', (await word.innerText()) === 'feuilletage');
+  await word.click();
+  const definition = page.locator('yona-cap-article-view .popover');
+  await definition.waitFor();
+  check('Article : sa définition au toucher', (await definition.innerText()).includes('couches de beurre'));
+  await page.keyboard.press('Escape');
+  await goClient(page, new URL(recipeUrl(recipe)).pathname);
+  const tipWord = page.locator('.tip dfn.glossary-term');
+  await tipWord.waitFor();
+  await tipWord.click();
+  await page.locator('.tip .popover').waitFor();
+  check('« Le conseil de Yona » : le mot souligné et sa définition', (await tipWord.innerText()) === 'feuilletage' && (await page.locator('.tip .popover').innerText()).includes('couches de beurre'));
+  await page.context().close();
+});
+
 await part('Infobulles de la barre du haut (ordinateur)', async () => {
   const page = await newPage(browser, DESKTOP, errors);
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
@@ -965,6 +993,31 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   );
   // The cross at the top and the button at the bottom are both « Fermer »
   await chickenDialog.getByRole('button', { name: 'Fermer' }).last().click();
+
+  // Its values taken off: in its window once confirmed, or for the selection
+  await page.route('**/api/admin/ingredients/1/nutrition', (route) => {
+    writes.push({ url: route.request().url(), body: route.request().postDataJSON() });
+    route.fulfill({ json: { ...butter, nutrition: undefined } });
+  });
+  await page.route('**/api/admin/ingredients/nutrition?**', (route) => {
+    writes.push({ url: route.request().url(), method: route.request().method() });
+    route.fulfill({ status: 204 });
+  });
+  await page.getByRole('button', { name: 'Valeurs nutritionnelles de Beurre' }).click();
+  const butterDialog = page.getByRole('dialog', { name: 'Valeurs nutritionnelles · Beurre' });
+  await butterDialog.getByRole('button', { name: 'Retirer les valeurs' }).click();
+  const confirmRemove = page.getByRole('alertdialog');
+  check('Retirer les valeurs : une confirmation qui dit ce que deviennent ses recettes', (await confirmRemove.innerText()).includes('ne le comptent plus'));
+  await confirmRemove.getByRole('button', { name: 'Retirer les valeurs' }).click();
+  await butterDialog.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+  check('Valeurs de l’ingrédient retirées, la fenêtre refermée', writes.at(-1)?.url.endsWith('/ingredients/1/nutrition') && JSON.stringify(writes.at(-1)?.body) === '{}', JSON.stringify(writes.at(-1)));
+  await page.getByLabel('Sélectionner Beurre').check();
+  await page.getByLabel('Sélectionner Poulet fermier').check();
+  await page.getByRole('button', { name: /Retirer leurs valeurs nutritionnelles \(2\)/ }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Retirer les valeurs' }).click();
+  await page.waitForTimeout(300);
+  const bulk = writes.at(-1);
+  check('Sélection : les valeurs de plusieurs ingrédients retirées d’un coup', bulk?.method === 'DELETE' && bulk.url.includes('ids=1') && bulk.url.includes('ids=4'), JSON.stringify(bulk));
   await page.getByRole('button', { name: '1 sans valeurs nutritionnelles' }).click();
   check('« 1 sans valeurs nutritionnelles » : ceux des recettes à compléter', (await page.locator('.admin-row__title').allTextContents()).join('|') === 'Spéculoos');
 
@@ -1072,6 +1125,41 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   check('Éditeur : le poids après cuisson et la grille envoyés à l’estimation', estimated?.cookedGrams === 850 && estimated?.nutriScoreKind === 'BEVERAGE', JSON.stringify({ cookedGrams: estimated?.cookedGrams, kind: estimated?.nutriScoreKind }));
   check('Éditeur : une portion de plus de 1 500 kcal signalée', (await panel.locator('.state--incomplete').first().innerText()).includes('vérifiez les quantités'));
   await panel.screenshot({ path: SHOTS + 'nutrition-editeur.png' });
+  await page.context().close();
+});
+
+await part('Messages : toast d’un message reçu (back-office, données simulées)', async () => {
+  const page = await newPage(browser, DESKTOP, errors);
+  await page.route('**/api/admin/**', (route) => route.fulfill({ json: [] }));
+  await fakeAdmin(page);
+  const since = new Date().toISOString();
+  let unseen = { count: 0, since };
+  // Asked at each page of the back-office: registered after fakeAdmin, it answers first
+  await page.route('**/api/admin/messages/unseen', (route) => route.fulfill({ json: unseen }));
+  await page.goto(BASE + '/admin/ingredients', { waitUntil: 'load' });
+  await answerCookies(page);
+  await page.locator('h2, h1').first().waitFor();
+  check('Pas de toast pour les messages déjà là à l’ouverture', (await page.locator('yona-message-toasts .toast').count()) === 0);
+  unseen = {
+    count: 1,
+    since,
+    latest: { id: 41, groupId: 7, groupName: 'Pâtisserie', authorName: 'Léa Martin', text: 'La tarte est au four, viens goûter', photos: 0, sentAt: since },
+  };
+  await page.locator('yona-admin-nav').first().getByRole('link', { name: 'Glossaire' }).click();
+  const toast = page.locator('yona-message-toasts .toast');
+  await toast.waitFor({ timeout: 5000 });
+  const text = (await toast.innerText()).replace(/\s+/g, ' ');
+  check('Un message arrive : toast en haut à droite, qui l’envoie, son groupe et son texte', text.includes('Léa') && text.includes('Pâtisserie') && text.includes('La tarte est au four'), text);
+  const box = await toast.boundingBox();
+  check('Le toast est en haut à droite de l’écran', !!box && box.y < 60 && box.x + box.width > DESKTOP.width - 60, JSON.stringify(box));
+  // Once it has slid in
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: SHOTS + 'message-toast.png' });
+  await toast.locator('.toast__open').click();
+  await page.waitForURL('**/admin/messages?groupe=7');
+  // It slides away before leaving the page
+  await page.locator('yona-message-toasts .toast').waitFor({ state: 'detached', timeout: 3000 }).catch(() => {});
+  check('Un clic ouvre la conversation, le toast s’en va', (await page.locator('yona-message-toasts .toast').count()) === 0);
   await page.context().close();
 });
 
