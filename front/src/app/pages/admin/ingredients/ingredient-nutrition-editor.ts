@@ -112,7 +112,8 @@ export function productSource(product: OpenFoodFactsProduct): string {
               <yona-data-source-logo name="ciqual" [size]="16" />
               <span>
                 Les aliments de base de la table Ciqual de l'Anses. Les plus proches de « {{ ingredient().name }} » sont proposés ;
-                tapez un mot pour chercher parmi tous (20 résultats au plus)
+                tapez un mot pour chercher parmi tous (20 résultats au plus). Nouvelle version de la table : « Mettre à jour Ciqual »,
+                en haut de la page Ingrédients
               </span>
             </p>
             <ul role="list" class="foods">

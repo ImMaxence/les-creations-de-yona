@@ -52,7 +52,7 @@ Logos : celui d'Open Food Facts (le leur, pour nommer la source) sur l'onglet et
 
 ### Une nouvelle version de la table Ciqual
 
-L'Anses met à jour la table tous les quelques années. **« Table Ciqual »** (en haut à droite d'Ingrédients) montre la version du site, son nombre d'aliments, et ce pas à pas pour la remplacer :
+L'Anses met à jour la table tous les quelques années. Le bouton **« Mettre à jour Ciqual »** (2.16.1), en haut de la page **Ingrédients** (menu Blog), ouvre le panneau « Table Ciqual » : la version du site, son nombre d'aliments, et ce pas à pas pour la remplacer :
 
 1. Télécharger le fichier **Excel (`.xlsx`) en français** de la nouvelle version sur [ciqual.anses.fr](https://ciqual.anses.fr/) (ou sur [recherche.data.gouv.fr](https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/RDMHWY) pour la 2025), par exemple « Table Ciqual 2028_FR_….xlsx ». Pas le `.xls` ni les fichiers XML.
 2. Garder son nom tel quel : la version en est tirée. Puis **« Importer une nouvelle version »**, choisir le fichier, confirmer : une à deux minutes.

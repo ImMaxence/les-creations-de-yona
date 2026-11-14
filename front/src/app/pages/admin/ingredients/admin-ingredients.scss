@@ -5,6 +5,17 @@
   position: relative;
 }
 
+// On a phone, a long label goes on two lines rather than widen the page
+.nutrition-actions {
+  min-width: 0;
+
+  > button {
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+  }
+}
+
 .detect {
   display: flex;
   align-items: center;
@@ -149,6 +160,13 @@
 .aisle-select {
   min-width: 11rem;
   font-size: var(--text-sm);
+}
+
+// The aisle and five buttons: on a phone, the buttons go under the aisle rather than widen the page
+.admin-row__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 // The weight of one piece of an ingredient, under its row

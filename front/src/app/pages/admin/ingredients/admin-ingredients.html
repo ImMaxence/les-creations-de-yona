@@ -1,12 +1,13 @@
 <section class="admin-section" aria-labelledby="ingredients-title">
   <div class="admin-section__head ingredients-head">
     <h2 id="ingredients-title">Ingrédients</h2>
-    <div class="admin-section__actions">
+    <!-- Nutrition facts: link the ingredients, and update the Ciqual table when the Anses publishes a new one -->
+    <div class="admin-section__actions nutrition-actions">
       <button yonaButton variant="secondary" type="button" [attr.aria-expanded]="showSuggestions()" (click)="showSuggestions.set(!showSuggestions())">
         <svg yonaIcon="sparkles"></svg>Proposer les valeurs nutritionnelles
       </button>
-      <button yonaButton variant="ghost" type="button" [attr.aria-expanded]="showCiqual()" (click)="showCiqual.set(!showCiqual())">
-        <svg yonaIcon="database-zap"></svg>Table Ciqual
+      <button yonaButton variant="secondary" type="button" [attr.aria-expanded]="showCiqual()" (click)="showCiqual.set(!showCiqual())">
+        <svg yonaIcon="database-zap"></svg>Mettre à jour Ciqual
       </button>
     </div>
     <div class="detect">

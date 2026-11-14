@@ -2,6 +2,22 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.16.1 - 2026-11-14
+
+Front et backend 2.16.1. Pas de migration de la base
+
+### Modifié
+
+- **Ingrédients** : un bouton « Mettre à jour Ciqual » bien visible en haut de la page, à la place du lien discret « Table Ciqual » ; la fenêtre des valeurs d'un ingrédient y renvoie
+
+### Corrigé
+
+- **Ingrédients** : sur téléphone, la page ne déborde plus à droite (les boutons d'une ligne passent sous le rayon, ceux du haut à la ligne)
+
+### Technique
+
+- **Tests** : le parcours Chrome vérifie que la page Ingrédients ne déborde pas sur téléphone
+
 ## 2.16.0 - 2026-11-14
 
 Front et backend 2.16.0. Pas de migration de la base

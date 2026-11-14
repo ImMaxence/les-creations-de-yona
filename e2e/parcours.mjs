@@ -917,11 +917,17 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   await proposals.getByRole('button', { name: 'Lier 1 ingrédient' }).click();
   await page.waitForTimeout(300);
   check('« Tout lier » : chaque ingrédient à l’aliment choisi', JSON.stringify(writes.at(-1)?.body) === JSON.stringify({ links: [{ ingredientId: 2, ciqualCode: 24009 }] }), JSON.stringify(writes.at(-1)?.body));
-  await page.getByRole('button', { name: 'Table Ciqual' }).click();
+  await page.getByRole('button', { name: 'Mettre à jour Ciqual' }).click();
   const table = page.locator('yona-ciqual-table');
   await table.getByText('Ciqual 2025').waitFor();
   check('Table Ciqual : sa version, ses aliments, l’import d’une nouvelle', (await table.innerText()).replace(/\s/g, ' ').includes('3 484 aliments') && (await table.getByRole('button', { name: 'Importer une nouvelle version' }).isVisible()));
   await page.screenshot({ path: SHOTS + 'nutrition-ingredients.png', fullPage: true });
+  // On a phone, the buttons of the head go on two lines rather than widen the page
+  await page.setViewportSize(PHONE);
+  await page.waitForTimeout(300);
+  const widths = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
+  check('Ingrédients sur téléphone : rien ne déborde à droite', widths[0] <= widths[1], `contenu de ${widths[0]} px pour ${widths[1]} px d'écran`);
+  await page.setViewportSize(DESKTOP);
 
   // L'éditeur de recette : l'estimation en direct, et l'ingrédient à lier en un clic
   // Cannelle without values: incomplete
