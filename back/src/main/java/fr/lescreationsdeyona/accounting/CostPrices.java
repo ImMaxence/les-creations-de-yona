@@ -1,10 +1,10 @@
 package fr.lescreationsdeyona.accounting;
 
 import fr.lescreationsdeyona.accounting.PurchaseUnit.Measure;
+import fr.lescreationsdeyona.common.Quantities;
 import fr.lescreationsdeyona.common.Texts;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Map;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
@@ -20,19 +20,6 @@ final class CostPrices {
 
 	private static final Pattern SPACES = Pattern.compile("\\s+");
 
-	/** Recipe units, folded (lower case, without accents nor dots): what they measure, and how much of it. */
-	private static final Map<String, Amount> UNITS = Map.ofEntries(unit("g", Measure.MASS, "1"), unit("gr", Measure.MASS, "1"),
-			unit("gramme", Measure.MASS, "1"), unit("grammes", Measure.MASS, "1"), unit("kg", Measure.MASS, "1000"),
-			unit("kilo", Measure.MASS, "1000"), unit("kilos", Measure.MASS, "1000"), unit("mg", Measure.MASS, "0.001"),
-			unit("ml", Measure.VOLUME, "1"), unit("cl", Measure.VOLUME, "10"), unit("dl", Measure.VOLUME, "100"),
-			unit("l", Measure.VOLUME, "1000"), unit("litre", Measure.VOLUME, "1000"), unit("litres", Measure.VOLUME, "1000"),
-			unit("c a soupe", Measure.VOLUME, "15"), unit("cuillere a soupe", Measure.VOLUME, "15"),
-			unit("cuilleres a soupe", Measure.VOLUME, "15"), unit("cs", Measure.VOLUME, "15"), unit("c s", Measure.VOLUME, "15"),
-			unit("cas", Measure.VOLUME, "15"), unit("c a s", Measure.VOLUME, "15"), unit("c a cafe", Measure.VOLUME, "5"),
-			unit("cuillere a cafe", Measure.VOLUME, "5"), unit("cuilleres a cafe", Measure.VOLUME, "5"),
-			unit("cc", Measure.VOLUME, "5"), unit("c c", Measure.VOLUME, "5"), unit("cac", Measure.VOLUME, "5"),
-			unit("c a c", Measure.VOLUME, "5"), unit("pincee", Measure.MASS, "0.5"), unit("pincees", Measure.MASS, "0.5"));
-
 	private CostPrices() {
 	}
 
@@ -40,14 +27,13 @@ final class CostPrices {
 	record Amount(Measure measure, BigDecimal base) {
 	}
 
-	private static Map.Entry<String, Amount> unit(String name, Measure measure, String base) {
-		return Map.entry(name, new Amount(measure, new BigDecimal(base)));
-	}
-
-	/** "250" "g" → 250 g; "2" "c. à soupe" → 30 ml; "3" without unit, or "1" "gousse" → pieces. */
+	/** "250" "g" → 250 g; "2" "c. à soupe" → 30 ml; "3" without unit, or "1" "gousse" → pieces (see {@link Quantities}). */
 	static Amount amount(BigDecimal quantity, @Nullable String unit) {
-		Amount one = unit == null ? null : UNITS.get(fold(unit));
-		return one == null ? new Amount(Measure.PIECE, quantity) : new Amount(one.measure(), one.base().multiply(quantity));
+		Quantities.Unit one = Quantities.unit(unit);
+		if (one == null) {
+			return new Amount(Measure.PIECE, quantity);
+		}
+		return new Amount(one.kind() == Quantities.Kind.MASS ? Measure.MASS : Measure.VOLUME, one.base().multiply(quantity));
 	}
 
 	/** The price of one gram, one millilitre or one piece of a purchase. */
@@ -95,10 +81,6 @@ final class CostPrices {
 	/** The same thing whatever its case and accents: "Beurre doux" and "beurre doux". */
 	static String key(String name) {
 		return SPACES.matcher(Texts.foldCaseAndAccents(name)).replaceAll(" ").strip();
-	}
-
-	private static String fold(String unit) {
-		return SPACES.matcher(Texts.foldCaseAndAccents(unit).replace('.', ' ').replace('\'', ' ')).replaceAll(" ").strip();
 	}
 
 }

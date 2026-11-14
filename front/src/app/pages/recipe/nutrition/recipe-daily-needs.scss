@@ -1,0 +1,344 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+// "Mes besoins du jour"
+.needs {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+
+  @container recipe (width >= 48rem) {
+    padding: var(--space-5);
+  }
+}
+
+.needs__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+
+  svg {
+    color: var(--color-accent);
+  }
+}
+
+.needs__form,
+.needs__result {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.needs__intro,
+.needs__note {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.needs__note {
+  font-size: var(--text-xs);
+}
+
+.needs__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+}
+
+.needs__field {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.needs__field--wide {
+  max-width: 32rem;
+}
+
+.needs__input {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+
+  input {
+    width: 5.5rem;
+    padding: var(--space-2);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    font-variant-numeric: tabular-nums;
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+}
+
+.needs__error {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.needs__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.needs__submit {
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.needs__link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.needs__daily {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+
+  strong {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  span {
+    color: var(--color-text-muted);
+  }
+}
+
+.needs__advice {
+  font-weight: 600;
+}
+
+.portion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.portion__label {
+  font-weight: 600;
+}
+
+.portion__stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+.portion__button {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-pill);
+  color: var(--color-accent);
+
+  &:disabled {
+    opacity: 0.4;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.portion__value {
+  min-width: 7.5rem;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// The share of the day: a meter, the track a lighter step of the accent, a tick for a main meal.
+.meter {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.meter__track {
+  position: relative;
+  height: 0.75rem;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 18%, var(--color-bg));
+}
+
+.meter__fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-accent);
+  transition: width var(--duration-base) var(--ease-out);
+}
+
+.meter__mark {
+  position: absolute;
+  top: -0.25rem;
+  bottom: -0.25rem;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background-color: var(--color-text);
+}
+
+.meter__scale {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.meter__meal {
+  position: absolute;
+  transform: translateX(-50%);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+// Proteins, carbohydrates, fat: a meter each against the band the Anses recommends.
+.macros {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.macros__title {
+  font-weight: 600;
+}
+
+.macros__list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+// Narrow: the name and its share on a line, the bar under them, then the reference. Wide: all on one line.
+.macro {
+  display: grid;
+  grid-template-areas:
+    'name value'
+    'bar bar'
+    'status status';
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+
+  @container recipe (width >= 48rem) {
+    grid-template-areas: 'name bar value status';
+    grid-template-columns: 6rem minmax(8rem, 1fr) 3rem minmax(15rem, auto);
+  }
+}
+
+.macro__name {
+  grid-area: name;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.macro__value {
+  grid-area: value;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.macro__bar {
+  position: relative;
+  grid-area: bar;
+  height: 0.625rem;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 14%, var(--color-bg));
+}
+
+.macro__fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-accent);
+}
+
+// Above the fill, so that it shows over it too: hatched, with a tick at each end
+.macro__band {
+  position: absolute;
+  inset-block: -3px;
+  border-inline: 2px solid var(--color-text);
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--color-text) 40%, transparent) 0 2px,
+    transparent 2px 5px
+  );
+}
+
+.macro__status {
+  display: inline-flex;
+  grid-area: status;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.macro__status--ok {
+  color: var(--color-text);
+}
+
+.macros__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.macros__key {
+  flex: none;
+  width: 1.5rem;
+  height: 0.625rem;
+  border-inline: 2px solid var(--color-text);
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--color-text) 35%, transparent) 0 2px,
+    transparent 2px 5px
+  );
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meter__fill {
+    transition: none;
+  }
+}

@@ -76,8 +76,8 @@ class LinkedRecipesTest {
 	private static RecipeDetail detailOf(Recipe recipe) {
 		List<String> equipment = recipe.getEquipment() == null ? List.of() : recipe.getEquipment().lines().toList();
 		return new RecipeDetail(recipe.getId(), recipe.getTitle(), recipe.getSlug(), null, RecipeStatus.PUBLISHED, RecipeTheme.SWEET,
-				false, null, List.of(), List.of(), null, null, null, null, null, null, null, equipment, List.of(), null, null, null,
-				List.of(), Instant.EPOCH, Instant.EPOCH, null, null);
+				false, null, null, List.of(), List.of(), null, null, null, null, null, null, null, equipment, List.of(), null, null, null,
+				List.of(), Instant.EPOCH, Instant.EPOCH, null, null, null);
 	}
 
 	@Test

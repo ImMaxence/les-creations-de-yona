@@ -1,0 +1,152 @@
+<section class="needs no-print" aria-labelledby="needs-title">
+  <h3 id="needs-title" class="needs__title"><svg yonaIcon="activity" [size]="20" [strokeWidth]="1.75"></svg>Mes besoins du jour</h3>
+
+  @if (showForm()) {
+    <form class="needs__form" (submit)="save($event)" novalidate>
+      <p class="needs__intro">
+        Comparez une portion à ce dont vous avez besoin chaque jour. Vos réponses restent dans ce navigateur, rien n'est envoyé au site
+      </p>
+      <div class="needs__row">
+        <div class="segmented" yonaSegmented role="radiogroup" aria-label="Je suis">
+          <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="sex() === 'FEMALE'" (click)="sex.set('FEMALE')">Une femme</button>
+          <button type="button" class="segmented__option" role="radio" [attr.aria-checked]="sex() === 'MALE'" (click)="sex.set('MALE')">Un homme</button>
+        </div>
+      </div>
+      <div class="needs__fields">
+        <label class="needs__field">
+          <span>Âge</span>
+          <span class="needs__input">
+            <input type="number" inputmode="numeric" name="age" [min]="limits.age.min" [max]="limits.age.max" step="1" [value]="age() ?? ''" (input)="age.set(readNumber($event))" />
+            ans
+          </span>
+        </label>
+        <label class="needs__field">
+          <span>Taille</span>
+          <span class="needs__input">
+            <input type="number" inputmode="numeric" name="height" [min]="limits.heightCm.min" [max]="limits.heightCm.max" step="1" [value]="heightCm() ?? ''" (input)="heightCm.set(readNumber($event))" />
+            cm
+          </span>
+        </label>
+        <label class="needs__field">
+          <span>Poids</span>
+          <span class="needs__input">
+            <input type="number" inputmode="decimal" name="weight" [min]="limits.weightKg.min" [max]="limits.weightKg.max" step="0.5" [value]="weightKg() ?? ''" (input)="weightKg.set(readNumber($event))" />
+            kg
+          </span>
+        </label>
+      </div>
+      <div class="needs__field needs__field--wide">
+        <span>Activité</span>
+        <yona-select label="Activité" [options]="activityOptions" [value]="activity()" (valueChange)="activity.set($event ?? activity())" />
+      </div>
+      <div class="needs__field needs__field--wide">
+        <span>Objectif</span>
+        <yona-select label="Objectif" [options]="goalOptions" [value]="goal()" (valueChange)="goal.set($event ?? goal())" />
+      </div>
+      @if (invalid()) {
+        <p class="needs__error" role="alert">
+          Vérifiez vos réponses : âge de {{ limits.age.min }} à {{ limits.age.max }} ans, taille de {{ limits.heightCm.min }} à
+          {{ limits.heightCm.max }} cm, poids de {{ limits.weightKg.min }} à {{ limits.weightKg.max }} kg
+        </p>
+      }
+      <div class="needs__actions">
+        <button type="submit" class="needs__submit">Calculer mes besoins</button>
+        @if (profile()) {
+          <button type="button" class="needs__link" (click)="editing.set(false)">Annuler</button>
+        }
+      </div>
+    </form>
+  } @else if (daily(); as daily) {
+    <div class="needs__result">
+      <p class="needs__daily">
+        <strong>{{ formatKcal(daily) }}</strong>
+        <span>par jour, pour vous</span>
+      </p>
+
+      @if (advice(); as advice) {
+        <p class="needs__advice" role="status">
+          @switch (advice.verdict) {
+            @case ('LIGHT') {
+              Une portion est légère pour vous : pour un repas, prenez {{ formatPortions(advice.portions) }}, ou ajoutez un accompagnement
+            }
+            @case ('HEARTY') {
+              Une portion est copieuse pour vous : pour un repas, {{ formatPortions(advice.portions) }} suffit
+            }
+            @default {
+              Une portion fait un repas équilibré pour vous
+            }
+          }
+        </p>
+      }
+
+      @if (byServing()) {
+        <div class="portion">
+          <span class="portion__label" id="my-portion-label">Ma part</span>
+          <div class="portion__stepper" role="group" aria-labelledby="my-portion-label">
+            <button type="button" class="portion__button" aria-label="Une part plus petite" [disabled]="myPortions() <= minPortion" (click)="changePortions(-portionStep)">
+              <svg yonaIcon="minus" [size]="18"></svg>
+            </button>
+            <output class="portion__value" aria-live="polite">{{ formatPortions(myPortions()) }}</output>
+            <button type="button" class="portion__button" aria-label="Une part plus grande" [disabled]="myPortions() >= maxPortion" (click)="changePortions(portionStep)">
+              <svg yonaIcon="plus" [size]="18"></svg>
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="meter">
+        <p class="meter__figure">
+          <strong>{{ formatKcal(myKcal()) }}</strong>, soit <strong>{{ myPercent() }} %</strong> de vos besoins du jour
+        </p>
+        <div class="meter__track" role="img" [attr.aria-label]="myPercent() + ' % de vos besoins du jour ; un repas principal en représente environ ' + mealPercent + ' %'">
+          <div class="meter__fill" [style.width.%]="myPercent() > 100 ? 100 : myPercent()"></div>
+          <div class="meter__mark" [style.left.%]="mealPercent"></div>
+        </div>
+        <div class="meter__scale" aria-hidden="true">
+          <span>0</span>
+          <span class="meter__meal" [style.left.%]="mealPercent">Un repas</span>
+          <span>Votre journée</span>
+        </div>
+      </div>
+
+      @if (shares(); as shares) {
+        <div class="macros">
+          <p class="macros__title">D'où vient l'énergie</p>
+          <ul role="list" class="macros__list">
+            @for (macro of macros; track macro.key) {
+              <li class="macro">
+                <span class="macro__name">{{ macro.label }}</span>
+                <strong class="macro__value">{{ shares[macro.key] }} %</strong>
+                <span class="macro__bar" aria-hidden="true">
+                  <span class="macro__fill" [style.width.%]="shares[macro.key]"></span>
+                  <span class="macro__band" [style.left.%]="references[macro.key].min" [style.width.%]="references[macro.key].max - references[macro.key].min"></span>
+                </span>
+                @switch (macroStatus(macro.key, shares[macro.key])) {
+                  @case ('LOW') {
+                    <span class="macro__status">Sous le repère de {{ references[macro.key].min }} à {{ references[macro.key].max }} %</span>
+                  }
+                  @case ('HIGH') {
+                    <span class="macro__status">Au-dessus du repère de {{ references[macro.key].min }} à {{ references[macro.key].max }} %</span>
+                  }
+                  @default {
+                    <span class="macro__status macro__status--ok"><svg yonaIcon="check" [size]="14"></svg>Dans le repère de {{ references[macro.key].min }} à {{ references[macro.key].max }} %</span>
+                  }
+                }
+              </li>
+            }
+          </ul>
+          <p class="macros__legend"><span class="macros__key" aria-hidden="true"></span>Repères de l'Anses pour un adulte, sur la journée</p>
+        </div>
+      }
+
+      <p class="needs__note">
+        Calcul de Mifflin-St Jeor, selon votre activité et votre objectif. Une estimation, pas un avis médical : pour un régime, demandez
+        conseil à un médecin ou à un diététicien
+      </p>
+      <div class="needs__actions">
+        <button type="button" class="needs__link" (click)="edit()">Modifier mes informations</button>
+        <button type="button" class="needs__link" (click)="forget()">Effacer mes informations</button>
+      </div>
+    </div>
+  }
+</section>

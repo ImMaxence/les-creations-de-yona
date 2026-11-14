@@ -2,6 +2,7 @@ package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.category.CategoryResponse;
 import fr.lescreationsdeyona.ingredient.IngredientPiece;
+import fr.lescreationsdeyona.nutrition.RecipeNutrition;
 import fr.lescreationsdeyona.tag.TagResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
@@ -13,6 +14,8 @@ import org.jspecify.annotations.Nullable;
 /** A full recipe: public recipe page, and back-office edit form. */
 public record RecipeDetail(Long id, String title, String slug, @Nullable String intro, RecipeStatus status,
 		RecipeTheme theme, boolean featured,
+		@Schema(description = "Its nutrition facts shown on its page; absent from a copy kept before 2.15 (not shown)")
+		@Nullable Boolean showNutrition,
 		@Schema(description = "Why its scheduled publication did not happen; a failed recipe only") @Nullable String publicationFailure,
 		@Schema(description = "At least one; the first one is the main category, in the recipe URL")
 		List<CategoryResponse> categories,
@@ -32,13 +35,28 @@ public record RecipeDetail(Long id, String title, String slug, @Nullable String 
 		Instant createdAt, Instant updatedAt,
 		@Schema(description = "First publication; absent for a recipe never published") @Nullable Instant publishedAt,
 		@Schema(description = "A draft to be published at that time; for a failed recipe, the time it was planned")
-		@Nullable Instant scheduledAt) {
+		@Nullable Instant scheduledAt,
+		@Schema(description = "Computed from its ingredients: on the site when shown, in the back-office preview; absent otherwise")
+		@Nullable RecipeNutrition nutrition) {
 
 	/** The same recipe with its parts and equipment as the site shows them, linked recipes unfolded. */
 	public RecipeDetail unfolded(List<Part> unfoldedParts, List<String> allEquipment) {
-		return new RecipeDetail(id, title, slug, intro, status, theme, featured, publicationFailure, categories, tags, servings,
-				prepMinutes, cookMinutes, restMinutes, difficulty, youtubeVideoId, tip, allEquipment, questions, mold, imageId,
-				pinterestImageId, unfoldedParts, createdAt, updatedAt, publishedAt, scheduledAt);
+		return new RecipeDetail(id, title, slug, intro, status, theme, featured, showNutrition, publicationFailure, categories, tags,
+				servings, prepMinutes, cookMinutes, restMinutes, difficulty, youtubeVideoId, tip, allEquipment, questions, mold, imageId,
+				pinterestImageId, unfoldedParts, createdAt, updatedAt, publishedAt, scheduledAt, nutrition);
+	}
+
+	/** The recipe {@code r} with its nutrition facts. Static: MapStruct would take a method of one parameter for a setter. */
+	public static RecipeDetail withNutrition(RecipeDetail r, RecipeNutrition facts) {
+		return new RecipeDetail(r.id, r.title, r.slug, r.intro, r.status, r.theme, r.featured, r.showNutrition, r.publicationFailure,
+				r.categories, r.tags, r.servings, r.prepMinutes, r.cookMinutes, r.restMinutes, r.difficulty, r.youtubeVideoId, r.tip,
+				r.equipment, r.questions, r.mold, r.imageId, r.pinterestImageId, r.parts, r.createdAt, r.updatedAt, r.publishedAt,
+				r.scheduledAt, facts);
+	}
+
+	/** Whether its page shows its nutrition facts. */
+	public boolean showsNutrition() {
+		return Boolean.TRUE.equals(showNutrition);
 	}
 
 	/**

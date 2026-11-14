@@ -23,6 +23,8 @@ final class RecipeChanges {
 			.add("Statut", status(before.status()), status(after.status()))
 			.add("Publication programmée", before.scheduledAt(), after.scheduledAt())
 			.add("À la une", before.featured(), after.featured())
+			.add("Valeurs nutritionnelles", before.showsNutrition() ? "Affichées" : "Masquées",
+					after.showsNutrition() ? "Affichées" : "Masquées")
 			.add("Thème", theme(before.theme()), theme(after.theme()))
 			.add("Catégories", before.categories().stream().map(CategoryResponse::name).toList(),
 					after.categories().stream().map(CategoryResponse::name).toList())

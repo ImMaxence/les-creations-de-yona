@@ -33,4 +33,28 @@ public class Ingredient {
 
 	private String piecePlural;
 
+	/** The food of the Ciqual table it is, for the nutrition facts; null with the values of a label, or none yet. */
+	private Integer ciqualCode;
+
+	// What its label says for 100 g, for a product the Ciqual table does not have: all set, or all null.
+
+	private BigDecimal labelKcal;
+
+	private BigDecimal labelProteins;
+
+	private BigDecimal labelCarbohydrates;
+
+	private BigDecimal labelSugars;
+
+	private BigDecimal labelFat;
+
+	private BigDecimal labelSaturatedFat;
+
+	private BigDecimal labelFibre;
+
+	private BigDecimal labelSalt;
+
+	/** "Open Food Facts · Kinder Bueno · Ferrero · 3017626998106"; null when typed by the admin. */
+	private String labelSource;
+
 }

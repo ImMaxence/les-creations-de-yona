@@ -8,16 +8,22 @@ import fr.lescreationsdeyona.common.PublicCache;
 import fr.lescreationsdeyona.common.Texts;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
+import fr.lescreationsdeyona.nutrition.CiqualFood;
+import fr.lescreationsdeyona.nutrition.CiqualFoods;
+import fr.lescreationsdeyona.nutrition.CiqualSearch;
+import fr.lescreationsdeyona.nutrition.NutritionLabel;
 import fr.lescreationsdeyona.trash.TrashBin;
 import fr.lescreationsdeyona.trash.TrashItem;
 import fr.lescreationsdeyona.trash.TrashKind;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -33,21 +39,86 @@ import org.springframework.util.StringUtils;
 @Transactional(readOnly = true)
 public class IngredientService {
 
+	/** Foods offered for an ingredient without nutrition facts. */
+	static final int SUGGESTED_FOODS = 3;
+
 	private final IngredientRepository ingredientRepository;
 
 	private final TrashBin trashBin;
 
 	private final AuditLog auditLog;
 
+	private final CiqualFoods ciqualFoods;
+
 	/** All ingredients, or those whose name contains {@code query} (case and accents ignored), by name. */
 	public List<IngredientResponse> search(@Nullable String query) {
 		List<Ingredient> ingredients = StringUtils.hasText(query)
 				? ingredientRepository.findByNameContainingOrderByNameAsc(query.strip())
 				: ingredientRepository.findAll(Sort.by("name"));
+		return toResponses(ingredients);
+	}
+
+	/**
+	 * The ingredients without nutrition facts and the Ciqual foods they most probably are: those named, or else
+	 * those of at least one recipe, the most used first.
+	 */
+	public List<NutritionSuggestion> nutritionSuggestions(@Nullable List<String> names) {
+		List<Ingredient> ingredients = names == null || names.isEmpty() ? ingredientRepository.findAll()
+				: names.stream().map(String::strip).distinct().map(ingredientRepository::findByName).flatMap(Optional::stream).toList();
 		Map<Long, Long> recipeCounts = recipeCounts();
+		List<CiqualFood> foods = ciqualFoods.all();
 		return ingredients.stream()
-			.map(ingredient -> toResponse(ingredient, recipeCounts.getOrDefault(ingredient.getId(), 0L)))
+			.filter(ingredient -> !hasNutrition(ingredient))
+			.filter(ingredient -> names != null && !names.isEmpty() || recipeCounts.containsKey(ingredient.getId()))
+			.sorted(Comparator.comparingLong((Ingredient ingredient) -> -recipeCounts.getOrDefault(ingredient.getId(), 0L))
+				.thenComparing(Ingredient::getName))
+			.map(ingredient -> new NutritionSuggestion(
+					toResponse(ingredient, recipeCounts.getOrDefault(ingredient.getId(), 0L), Map.of()),
+					CiqualSearch.suggest(foods, ingredient.getName(), SUGGESTED_FOODS)))
 			.toList();
+	}
+
+	/** Its Ciqual food, or the values of its label, or none: what the recipes using it count. */
+	@Transactional
+	public IngredientResponse setNutrition(long id, IngredientNutritionForm form) {
+		Ingredient ingredient = find(id);
+		if (form.ciqualCode() != null && form.label() != null) {
+			throw new ApiException(ErrorCode.INGREDIENT_NUTRITION_INVALID);
+		}
+		if (form.label() != null && !form.label().isConsistent()) {
+			throw new ApiException(ErrorCode.NUTRITION_LABEL_INCONSISTENT);
+		}
+		String before = nutritionLabel(ingredient);
+		if (form.ciqualCode() != null) {
+			ciqualFoods.find(form.ciqualCode()).orElseThrow(() -> new ApiException(ErrorCode.CIQUAL_FOOD_NOT_FOUND));
+		}
+		setNutrition(ingredient, form);
+		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, ingredient.getName(), id,
+				new AuditChanges().add("Valeurs nutritionnelles", before, nutritionLabel(ingredient)));
+		return toResponse(ingredient);
+	}
+
+	/** "Tout lier": each ingredient to its Ciqual food, all or none. */
+	@Transactional
+	public void linkToCiqual(List<IngredientCiqualLinksForm.Link> links) {
+		Map<Long, Integer> codesById = new LinkedHashMap<>();
+		links.forEach(link -> codesById.put(link.ingredientId(), link.ciqualCode()));
+		List<Ingredient> ingredients = ingredientRepository.findAllById(codesById.keySet());
+		if (ingredients.size() != codesById.size()) {
+			throw new ApiException(ErrorCode.INGREDIENT_NOT_FOUND);
+		}
+		Map<Integer, CiqualFood> foods = ciqualFoods.findAll(codesById.values());
+		if (!foods.keySet().containsAll(codesById.values())) {
+			throw new ApiException(ErrorCode.CIQUAL_FOOD_NOT_FOUND);
+		}
+		AuditChanges changes = new AuditChanges();
+		for (Ingredient ingredient : ingredients.stream().sorted(Comparator.comparing(Ingredient::getName)).toList()) {
+			String before = nutritionLabel(ingredient);
+			setNutrition(ingredient, new IngredientNutritionForm(codesById.get(ingredient.getId()), null, null));
+			changes.add("Valeurs nutritionnelles de " + ingredient.getName(), before, nutritionLabel(ingredient));
+		}
+		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, ingredients.size() == 1 ? ingredients.getFirst().getName()
+				: ingredients.size() + " ingrédients", ingredients.size() == 1 ? ingredients.getFirst().getId() : null, changes);
 	}
 
 	/** For the ingredient filter of the public recipes page. */
@@ -64,11 +135,7 @@ public class IngredientService {
 
 	/** Ingredients probably written several ways ("Pomme", "pommes"), each group the most used first. */
 	public List<SimilarIngredients> findSimilar() {
-		Map<Long, Long> recipeCounts = recipeCounts();
-		List<IngredientResponse> ingredients = ingredientRepository.findAll(Sort.by("name"))
-			.stream()
-			.map(ingredient -> toResponse(ingredient, recipeCounts.getOrDefault(ingredient.getId(), 0L)))
-			.toList();
+		List<IngredientResponse> ingredients = toResponses(ingredientRepository.findAll(Sort.by("name")));
 		return SimilarNames.groups(ingredients, IngredientResponse::name)
 			.stream()
 			.map(group -> new SimilarIngredients(group.stream()
@@ -85,7 +152,7 @@ public class IngredientService {
 		}
 		Ingredient created = ingredientRepository.save(newIngredient(name));
 		auditLog.record(AuditAction.CREATED, AuditKind.INGREDIENT, name, created.getId());
-		return toResponse(created, 0);
+		return toResponse(created, 0, Map.of());
 	}
 
 	@Transactional
@@ -101,7 +168,7 @@ public class IngredientService {
 		AuditChanges changes = new AuditChanges().add("Nom", ingredient.getName(), name);
 		ingredient.setName(name);
 		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, name, id, changes);
-		return toResponse(ingredient, ingredientRepository.countRecipesUsing(id));
+		return toResponse(ingredient);
 	}
 
 	/**
@@ -146,13 +213,22 @@ public class IngredientService {
 				.findFirst()
 				.ifPresent(piece -> setPiece(target, piece));
 		}
+		// And for the nutrition facts
+		if (!hasNutrition(target)) {
+			ingredientRepository.findAllById(sourceIds)
+				.stream()
+				.map(IngredientService::nutritionForm)
+				.filter(Objects::nonNull)
+				.findFirst()
+				.ifPresent(nutrition -> setNutrition(target, nutrition));
+		}
 		List<String> merged = ingredientRepository.findAllById(sourceIds).stream().map(Ingredient::getName).toList();
 		ingredientRepository.moveLines(target.getId(), sourceIds);
 		ingredientRepository.movePurchases(target.getId(), sourceIds);
 		ingredientRepository.deleteAllByIdInBatch(sourceIds);
 		auditLog.record(AuditAction.MERGED, AuditKind.INGREDIENT, target.getName() + " (avec " + String.join(", ", merged) + ")",
 				target.getId());
-		return toResponse(target, ingredientRepository.countRecipesUsing(target.getId()));
+		return toResponse(target);
 	}
 
 	/** To the trash for 30 days; refused while a recipe uses it. */
@@ -194,13 +270,18 @@ public class IngredientService {
 		Ingredient ingredient = newIngredient(kept.name());
 		ingredient.setAisle(kept.aisle());
 		setPiece(ingredient, kept.piece());
-		return toResponse(ingredientRepository.save(ingredient), 0);
+		IngredientNutritionForm nutrition = kept.nutrition();
+		// Its Ciqual food may have left the table since (a new version): to be linked again then
+		if (nutrition != null && (nutrition.ciqualCode() == null || ciqualFoods.find(nutrition.ciqualCode()).isPresent())) {
+			setNutrition(ingredient, nutrition);
+		}
+		return toResponse(ingredientRepository.save(ingredient));
 	}
 
 	private void trash(List<Ingredient> ingredients) {
 		for (Ingredient ingredient : ingredients) {
 			trashBin.put(TrashBin.Entry.of(TrashKind.INGREDIENT, ingredient.getName(), null, null,
-					new TrashedIngredient(ingredient.getName(), ingredient.getAisle(), piece(ingredient))));
+					new TrashedIngredient(ingredient.getName(), ingredient.getAisle(), piece(ingredient), nutritionForm(ingredient))));
 		}
 		ingredientRepository.deleteAll(ingredients);
 	}
@@ -231,7 +312,7 @@ public class IngredientService {
 		AuditChanges changes = new AuditChanges().add("Équivalent", pieceLabel(piece(ingredient)), pieceLabel(cleaned));
 		setPiece(ingredient, cleaned);
 		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, ingredient.getName(), id, changes);
-		return toResponse(ingredient, ingredientRepository.countRecipesUsing(id));
+		return toResponse(ingredient);
 	}
 
 	/** Used by the recipe form: the admin types a name, an existing ingredient is reused if any. */
@@ -289,9 +370,84 @@ public class IngredientService {
 		return names.stream().map(name -> "« " + name + " »").collect(Collectors.joining(", "));
 	}
 
-	private static IngredientResponse toResponse(Ingredient ingredient, long recipeCount) {
+	/** With the number of recipes using each, and their Ciqual foods read at once. */
+	private List<IngredientResponse> toResponses(List<Ingredient> ingredients) {
+		Map<Long, Long> recipeCounts = recipeCounts();
+		Map<Integer, CiqualFood> foods = ciqualFoods.findAll(codes(ingredients));
+		return ingredients.stream()
+			.map(ingredient -> toResponse(ingredient, recipeCounts.getOrDefault(ingredient.getId(), 0L), foods))
+			.toList();
+	}
+
+	private IngredientResponse toResponse(Ingredient ingredient) {
+		return toResponse(ingredient, ingredient.getId() == null ? 0 : ingredientRepository.countRecipesUsing(ingredient.getId()),
+				ciqualFoods.findAll(codes(List.of(ingredient))));
+	}
+
+	/** {@code foods}: the Ciqual foods of the ingredients, by code. */
+	private static IngredientResponse toResponse(Ingredient ingredient, long recipeCount, Map<Integer, CiqualFood> foods) {
 		return new IngredientResponse(ingredient.getId(), ingredient.getName(), ingredient.getAisle(), recipeCount,
-				piece(ingredient));
+				piece(ingredient), nutrition(ingredient, foods));
+	}
+
+	private static Set<Integer> codes(List<Ingredient> ingredients) {
+		return ingredients.stream().map(Ingredient::getCiqualCode).filter(Objects::nonNull).collect(Collectors.toSet());
+	}
+
+	private static boolean hasNutrition(Ingredient ingredient) {
+		return ingredient.getCiqualCode() != null || ingredient.getLabelKcal() != null;
+	}
+
+	private static @Nullable IngredientNutrition nutrition(Ingredient ingredient, Map<Integer, CiqualFood> foods) {
+		NutritionLabel label = label(ingredient);
+		if (label != null) {
+			return new IngredientNutrition(null, null, label, ingredient.getLabelSource(), label.facts().rounded());
+		}
+		CiqualFood food = ingredient.getCiqualCode() == null ? null : foods.get(ingredient.getCiqualCode());
+		return food == null ? null : new IngredientNutrition(food.code(), food.name(), null, null, food.per100g().rounded());
+	}
+
+	private static @Nullable NutritionLabel label(Ingredient ingredient) {
+		return ingredient.getLabelKcal() == null ? null
+				: new NutritionLabel(ingredient.getLabelKcal(), ingredient.getLabelProteins(), ingredient.getLabelCarbohydrates(),
+						ingredient.getLabelSugars(), ingredient.getLabelFat(), ingredient.getLabelSaturatedFat(), ingredient.getLabelFibre(),
+						ingredient.getLabelSalt());
+	}
+
+	/** What saves its nutrition facts again (the trash, a merge); null without any. */
+	private static @Nullable IngredientNutritionForm nutritionForm(Ingredient ingredient) {
+		NutritionLabel label = label(ingredient);
+		if (label != null) {
+			return new IngredientNutritionForm(null, label, ingredient.getLabelSource());
+		}
+		return ingredient.getCiqualCode() == null ? null : new IngredientNutritionForm(ingredient.getCiqualCode(), null, null);
+	}
+
+	/** A Ciqual food, or a label, or none: the other one is cleared. */
+	private static void setNutrition(Ingredient ingredient, IngredientNutritionForm form) {
+		NutritionLabel label = form.ciqualCode() == null ? form.label() : null;
+		ingredient.setCiqualCode(form.ciqualCode());
+		ingredient.setLabelKcal(label == null ? null : label.kcal());
+		ingredient.setLabelProteins(label == null ? null : label.proteins());
+		ingredient.setLabelCarbohydrates(label == null ? null : label.carbohydrates());
+		ingredient.setLabelSugars(label == null ? null : label.sugars());
+		ingredient.setLabelFat(label == null ? null : label.fat());
+		ingredient.setLabelSaturatedFat(label == null ? null : label.saturatedFat());
+		ingredient.setLabelFibre(label == null ? null : label.fibre());
+		ingredient.setLabelSalt(label == null ? null : label.salt());
+		ingredient.setLabelSource(label == null || !StringUtils.hasText(form.labelSource()) ? null : form.labelSource().strip());
+	}
+
+	/** "Ciqual : Beurre à 80% MG minimum, doux", "Étiquette : 380 kcal pour 100 g (Open Food Facts · …)", for the history. */
+	private @Nullable String nutritionLabel(Ingredient ingredient) {
+		if (ingredient.getLabelKcal() != null) {
+			String kcal = ingredient.getLabelKcal().stripTrailingZeros().toPlainString().replace('.', ',');
+			return "Étiquette : " + kcal + " kcal pour 100 g"
+					+ (ingredient.getLabelSource() == null ? "" : " (" + ingredient.getLabelSource() + ")");
+		}
+		Integer code = ingredient.getCiqualCode();
+		return code == null ? null
+				: "Ciqual : " + ciqualFoods.find(code).map(CiqualFood::name).orElse("aliment n° " + code);
 	}
 
 	private static @Nullable IngredientPiece piece(Ingredient ingredient) {

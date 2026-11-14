@@ -40,6 +40,16 @@ describe('fromAiDraft', () => {
     expect(draft.parts[0]!.steps[0]!.ingredientKeys).toEqual([eggs!.key, flour!.key]);
   });
 
+  it('keeps whether the nutrition facts are shown', () => {
+    const current = { ...toDraft(null), showNutrition: true };
+
+    expect(fromAiDraft(current, AI).showNutrition).toBe(true);
+    expect(toRecipeForm(current).showNutrition).toBe(true);
+    expect(toDraft(null).showNutrition).toBe(false);
+    // A recipe saved before 2.15 has none: not shown
+    expect(toDraft({ categories: [], tags: [], equipment: [], questions: [], parts: [] } as unknown as RecipeDetail).showNutrition).toBe(false);
+  });
+
   it('sees an untouched new recipe as empty, and a typed title as content', () => {
     expect(hasContent(toDraft(null))).toBe(false);
     expect(hasContent({ ...toDraft(null), title: 'Tarte' })).toBe(true);

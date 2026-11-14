@@ -744,6 +744,197 @@ await part('Affichage sur un écran de 320 px (zoom à 400 %)', async () => {
   await page.context().close();
 });
 
+/** Les valeurs nutritionnelles d'une recette, telles que l'API les donne (2.15). */
+const NUTRITION = {
+  servings: 6,
+  grams: 900,
+  perServing: { kcal: 312.4, proteins: 4.2, carbohydrates: 45, sugars: 22.5, fat: 12, saturatedFat: 7.5, fibre: 2.1, salt: 0.25 },
+  total: { kcal: 1874, proteins: 25, carbohydrates: 270, sugars: 135, fat: 72, saturatedFat: 45, fibre: 12.6, salt: 1.5 },
+  per100g: { kcal: 208, proteins: 2.8, carbohydrates: 30, sugars: 15, fat: 8, saturatedFat: 5, fibre: 1.4, salt: 0.17 },
+  nutriScore: { grade: 'C', score: 9 },
+  countedLines: 4,
+  missing: [{ name: 'Cannelle', reason: 'NO_VALUES' }],
+  ciqualVersion: 'Ciqual 2025',
+  fromLabels: false,
+};
+
+await part('Valeurs nutritionnelles et besoins du jour (téléphone, valeurs simulées)', async () => {
+  const path = new URL(recipeUrl(recipe)).pathname;
+  const page = await newPage(browser, PHONE, errors);
+  await page.route(`**/api/recipes/${recipe.slug}`, (route) => route.fulfill({ json: { ...recipe, showNutrition: true, nutrition: NUTRITION } }));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  await goClient(page, path);
+  const block = page.locator('yona-recipe-nutrition');
+  await block.waitFor();
+  check('Valeurs nutritionnelles : le bloc et son Nutri-Score estimé', (await page.getByRole('img', { name: 'Nutri-Score estimé : C' }).count()) === 1);
+  const energy = page.locator('.fact__link');
+  check(
+    '« Énergie » parmi les repères de la recette, lien vers les valeurs',
+    (await energy.innerText()).replace(/\s/g, '').startsWith('312kcal') && (await energy.getAttribute('href')).endsWith('#valeurs-nutritionnelles'),
+  );
+  const rows = await block.locator('.facts-table tbody tr').allInnerTexts();
+  check('Tableau par portion et pour 100 g, dans l’ordre des étiquettes', rows.length === 8 && rows[0].includes('312 kcal') && rows[0].includes('208 kcal') && rows[4].includes('22,5 g'), rows.slice(0, 2).join(' | '));
+  check('Les ingrédients non comptés nommés, la source citée', (await block.innerText()).includes('Non comptés : Cannelle') && (await block.innerText()).includes('Ciqual 2025'));
+
+  // « Mes besoins du jour » : son code ne vient qu'une fois le visiteur arrivé jusqu'à lui (@defer)
+  const openNeeds = async () => {
+    await page.locator('yona-recipe-nutrition .needs-placeholder').scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
+    await page.locator('yona-recipe-daily-needs').waitFor();
+  };
+  check('« Mes besoins du jour » pas encore chargé, son titre déjà là', (await page.locator('yona-recipe-daily-needs').count()) === 0 && (await block.innerText()).includes('Mes besoins du jour'));
+  await openNeeds();
+
+  // Ce que la page envoie au site pendant le calcul : rien
+  const sent = [];
+  page.on('request', (request) => {
+    if (request.method() !== 'GET') {
+      sent.push(request.url());
+    }
+  });
+  await page.getByLabel('Âge').fill('30');
+  await page.getByLabel('Taille').fill('165');
+  await page.getByLabel('Poids').fill('60');
+  await page.getByRole('button', { name: 'Calculer mes besoins' }).click();
+  await page.locator('.needs__result').waitFor();
+  check('Mes besoins : 1 820 kcal par jour (femme, 30 ans, peu active)', (await page.locator('.needs__daily strong').innerText()).replace(/\s/g, '') === '1820kcal');
+  check('Une portion légère : 2 portions conseillées pour un repas', (await page.locator('.needs__advice').innerText()).includes('légère') && (await page.locator('.portion__value').innerText()) === '2 portions');
+  check('La jauge : 625 kcal, soit 34 % de la journée', (await page.locator('.meter__figure').innerText()).replace(/\s/g, '') === '625kcal,soit34%devosbesoinsdujour');
+  await page.getByRole('button', { name: 'Une part plus petite' }).click();
+  await page.locator('.portion__value', { hasText: '1,75 portion' }).waitFor({ timeout: 3000 }).catch(() => {});
+  check('« Ma part » réglable : 1,75 portion, 547 kcal', (await page.locator('.portion__value').innerText()) === '1,75 portion' && (await page.locator('.meter__figure').innerText()).includes('547'));
+  check('Protéines, glucides et lipides face aux repères de l’Anses', (await page.locator('.macro').count()) === 3 && (await page.locator('.macros').innerText()).includes('Dans le repère de 35 à 40 %') && (await page.locator('.macros').innerText()).includes('Au-dessus du repère de 40 à 55 %'));
+  check('Rien d’envoyé au site : le calcul reste dans le navigateur', sent.length === 0, sent.join(', '));
+  const stored = await page.evaluate(() => localStorage.getItem('yona-daily-needs'));
+  check('Le profil gardé dans ce navigateur', !!stored && stored.includes('"weightKg":60'));
+  const { violations } = await new AxeBuilder({ page }).withTags(AXE_RULES).analyze();
+  check('Recette avec ses valeurs nutritionnelles : aucun problème d’accessibilité', violations.length === 0, violations.map((v) => `${v.id} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 2).join(' | ')})`).join(' ; '));
+  await block.screenshot({ path: SHOTS + 'nutrition-telephone.png' });
+
+  // Une autre recette, puis celle-ci : le profil est repris
+  await goClient(page, '/recettes');
+  await goClient(page, path);
+  await page.locator('yona-recipe-nutrition').waitFor();
+  await openNeeds();
+  await page.locator('.needs__result').waitFor();
+  check('Profil repris sur la recette suivante, sans rien retaper', (await page.locator('.needs__daily strong').innerText()).replace(/\s/g, '') === '1820kcal');
+  await page.getByRole('button', { name: 'Effacer mes informations' }).click();
+  await page.getByRole('button', { name: 'Calculer mes besoins' }).waitFor({ timeout: 3000 }).catch(() => {});
+  check('« Effacer mes informations » : formulaire vide, rien de gardé', (await page.getByRole('button', { name: 'Calculer mes besoins' }).isVisible()) && (await page.evaluate(() => localStorage.getItem('yona-daily-needs'))) === 'null');
+
+  await page.context().close();
+
+  // Interrupteur éteint : rien de nouveau sur la recette (une page neuve, qui demande la recette à son tour)
+  const hidden = await newPage(browser, PHONE, errors);
+  await hidden.route(`**/api/recipes/${recipe.slug}`, (route) => route.fulfill({ json: { ...recipe, showNutrition: false, nutrition: NUTRITION } }));
+  await hidden.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(hidden);
+  await goClient(hidden, path);
+  await hidden.locator('h1').waitFor();
+  await hidden.waitForTimeout(500);
+  check('Valeurs masquées par Yona : ni bloc ni « Énergie »', (await hidden.locator('yona-recipe-nutrition').count()) === 0 && (await hidden.locator('.fact__link').count()) === 0);
+  await hidden.context().close();
+});
+
+await part('Valeurs nutritionnelles (back-office, données simulées)', async () => {
+  const page = await newPage(browser, DESKTOP, errors);
+  // Sans session, toute autre route du back-office répondrait 401 : des listes vides par défaut
+  await page.route('**/api/admin/**', (route) => route.fulfill({ json: [] }));
+  await fakeAdmin(page);
+  const facts = (kcal) => ({ kcal, proteins: 5, carbohydrates: 70, sugars: 35, fat: 18, saturatedFat: 8, fibre: 2, salt: 1 });
+  const speculoosFood = { code: 24009, name: 'Spéculoos', subgroupCode: '0706', subgroupName: 'biscuits sucrés', per100g: facts(480) };
+  const butter = {
+    id: 1, name: 'Beurre', aisle: 'DAIRY_EGGS', recipeCount: 3,
+    nutrition: { ciqualCode: 16400, ciqualName: 'Beurre à 80% MG minimum, doux', per100g: { ...facts(753), fat: 83 } },
+  };
+  const speculoos = { id: 2, name: 'Spéculoos', recipeCount: 2 };
+  const saffron = { id: 3, name: 'Safran', recipeCount: 0 };
+  const writes = [];
+  await page.route('**/api/admin/ingredients', (route) =>
+    route.request().method() === 'GET' ? route.fulfill({ json: [butter, speculoos, saffron] }) : route.fallback(),
+  );
+  await page.route('**/api/admin/ingredients/nutrition-suggestions**', (route) =>
+    route.fulfill({ json: [{ ingredient: speculoos, foods: [speculoosFood, { ...speculoosFood, code: 24015, name: 'Biscuit sec petit beurre' }] }] }),
+  );
+  await page.route('**/api/admin/ingredients/2/nutrition', (route) => {
+    writes.push({ url: route.request().url(), body: route.request().postDataJSON() });
+    route.fulfill({ json: { ...speculoos, nutrition: { ciqualCode: 24009, ciqualName: 'Spéculoos', per100g: facts(480) } } });
+  });
+  await page.route('**/api/admin/ingredients/ciqual', (route) => {
+    writes.push({ url: route.request().url(), body: route.request().postDataJSON() });
+    route.fulfill({ status: 204 });
+  });
+  await page.route('**/api/admin/nutrition/ciqual', (route) =>
+    route.fulfill({ json: { version: 'Ciqual 2025', foodCount: 3484, importedAt: '2026-11-14T10:00:00Z', importedBy: 'migration' } }),
+  );
+  await page.route('**/api/admin/nutrition/ciqual/foods?**', (route) => route.fulfill({ json: [speculoosFood] }));
+  await page.route('**/api/admin/nutrition/open-food-facts?**', (route) =>
+    route.fulfill({
+      json: [{ code: '5410126116953', name: 'Spéculoos', brands: 'Lotus', quantity: '250 g', per100g: { kcal: 484, proteins: 4.9, carbohydrates: 72, sugars: 38, fat: 19, saturatedFat: 8, fibre: 1.3, salt: 1 } }],
+    }),
+  );
+  await page.goto(BASE + '/admin/ingredients', { waitUntil: 'load' });
+  await page.getByRole('button', { name: 'Valeurs nutritionnelles de Beurre' }).waitFor();
+  await answerCookies(page);
+  check('Ingrédients : l’aliment Ciqual de chacun et ses kcal', (await page.locator('.admin-row', { hasText: 'Beurre' }).innerText()).includes('Ciqual · 753 kcal'));
+  await page.getByRole('button', { name: '1 sans valeurs nutritionnelles' }).click();
+  check('« 1 sans valeurs nutritionnelles » : ceux des recettes à compléter', (await page.locator('.admin-row__title').allTextContents()).join('|') === 'Spéculoos');
+
+  await page.getByRole('button', { name: 'Valeurs nutritionnelles de Spéculoos' }).click();
+  const editor = page.locator('yona-ingredient-nutrition-editor');
+  await editor.getByText('Biscuit sec petit beurre').waitFor();
+  check('L’aliment le plus proche proposé d’emblée', (await editor.locator('.food').first().innerText()).includes('Spéculoos'));
+  await editor.getByRole('button', { name: 'Choisir' }).first().click();
+  await page.waitForTimeout(300);
+  check('« Choisir » : l’ingrédient lié à son aliment Ciqual', writes.at(-1)?.body?.ciqualCode === 24009, JSON.stringify(writes.at(-1)?.body));
+
+  await editor.getByRole('tab', { name: 'Produit du commerce' }).click();
+  await editor.getByRole('button', { name: 'Chercher' }).click();
+  await editor.getByRole('button', { name: 'Utiliser ces valeurs' }).click();
+  check('Produit d’Open Food Facts : ses valeurs reprises dans l’étiquette', (await editor.getByLabel('Énergie (kcal)').inputValue()) === '484');
+  await editor.getByRole('button', { name: "Enregistrer l'étiquette" }).click();
+  await page.waitForTimeout(300);
+  const saved = writes.at(-1)?.body;
+  check('Étiquette enregistrée, avec sa provenance', saved?.label?.kcal === 484 && saved?.labelSource === 'Open Food Facts · Spéculoos · Lotus · 5410126116953', JSON.stringify(saved));
+  await editor.getByRole('button', { name: 'Fermer', exact: true }).click();
+
+  await page.getByRole('button', { name: 'Proposer les valeurs nutritionnelles' }).click();
+  const proposals = page.locator('yona-nutrition-suggestions');
+  await proposals.getByRole('button', { name: 'Lier 1 ingrédient' }).click();
+  await page.waitForTimeout(300);
+  check('« Tout lier » : chaque ingrédient à l’aliment choisi', JSON.stringify(writes.at(-1)?.body) === JSON.stringify({ links: [{ ingredientId: 2, ciqualCode: 24009 }] }), JSON.stringify(writes.at(-1)?.body));
+  await page.getByRole('button', { name: 'Table Ciqual' }).click();
+  const table = page.locator('yona-ciqual-table');
+  await table.getByText('Ciqual 2025').waitFor();
+  check('Table Ciqual : sa version, ses aliments, l’import d’une nouvelle', (await table.innerText()).replace(/\s/g, ' ').includes('3 484 aliments') && (await table.getByRole('button', { name: 'Importer une nouvelle version' }).isVisible()));
+  await page.screenshot({ path: SHOTS + 'nutrition-ingredients.png', fullPage: true });
+
+  // L'éditeur de recette : l'estimation en direct, et l'ingrédient à lier en un clic
+  await page.route('**/api/admin/recipes/nutrition', (route) => {
+    writes.push({ url: route.request().url(), body: route.request().postDataJSON() });
+    route.fulfill({ json: NUTRITION });
+  });
+  await page.route('**/api/admin/ingredients/nutrition-suggestions?**', (route) =>
+    route.fulfill({ json: [{ ingredient: { id: 9, name: 'Cannelle', recipeCount: 1 }, foods: [{ code: 11003, name: 'Cannelle, poudre', subgroupCode: '1005', per100g: facts(250) }] }] }),
+  );
+  await page.goto(BASE + '/admin/recettes/nouvelle', { waitUntil: 'load' });
+  await page.getByLabel('Afficher les valeurs nutritionnelles sur la recette').waitFor();
+  await page.getByLabel('Quantité').first().fill('200');
+  await page.getByLabel('Unité').first().fill('g');
+  await page.getByRole('combobox', { name: 'Ingrédient' }).first().fill('Farine');
+  const panel = page.locator('yona-recipe-nutrition-panel');
+  await panel.getByText('312 kcal').waitFor({ timeout: 5000 });
+  const asked = writes.filter((write) => write.url.endsWith('/recipes/nutrition')).at(-1)?.body;
+  check('Éditeur : l’estimation de la recette en cours d’écriture', JSON.stringify(asked?.parts?.[0]?.ingredients?.[0]) === JSON.stringify({ name: 'Farine', quantity: 200, unit: 'g' }), JSON.stringify(asked));
+  await panel.getByRole('button', { name: 'Lier à « Cannelle, poudre »' }).click();
+  await page.waitForTimeout(300);
+  const link = writes.filter((write) => write.url.endsWith('/ingredients/ciqual')).at(-1)?.body;
+  check('Éditeur : l’ingrédient non compté lié en un clic, l’estimation refaite', JSON.stringify(link) === JSON.stringify({ links: [{ ingredientId: 9, ciqualCode: 11003 }] }) && writes.at(-1)?.url.endsWith('/recipes/nutrition'), JSON.stringify(link));
+  await page.getByLabel('Afficher les valeurs nutritionnelles sur la recette').check();
+  check('Éditeur : l’interrupteur des valeurs nutritionnelles', await page.getByLabel('Afficher les valeurs nutritionnelles sur la recette').isChecked());
+  await page.context().close();
+});
+
 await part('Accessibilité (axe, téléphone)', async () => {
   const paths = ['/', '/recettes', new URL(recipeUrl(recipe)).pathname, '/glossaire', '/installer', '/liste-de-courses', '/favoris', '/donner-mon-avis', '/mon-cap', '/accessibilite', '/declaration-d-accessibilite'];
   if (menus.length) {
@@ -1003,6 +1194,11 @@ await part('Mon CAP : brouillon gardé dans le navigateur', async () => {
   await fakeAdmin(page);
   // Le choix d'une recette à lier lit les recettes du back-office
   await page.route('**/api/admin/recipes?**', (route) => route.fulfill({ json: { content: [], page: 0, size: 50, totalElements: 0, totalPages: 0 } }));
+  // Le choix d'un article à lier (2.10) lit les articles, et les tags et ingrédients sont demandés aussi :
+  // sans réponse, l'API répondrait 401 et la session simulée prendrait fin
+  await page.route('**/api/admin/cap/entries**', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/admin/tags', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/admin/ingredients', (route) => route.fulfill({ json: [] }));
   await page.goto(BASE + '/admin/mon-cap/nouveau?modele=vide', { waitUntil: 'load' });
   await answerCookies(page);
   const title = page.locator('#article-title');

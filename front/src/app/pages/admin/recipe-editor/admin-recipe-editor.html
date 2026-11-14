@@ -403,6 +403,21 @@
   }
   <yona-field-error [field]="recipeForm.parts" />
 
+  <section class="admin-panel" aria-labelledby="nutrition-title">
+    <h3 id="nutrition-title" class="editor__title">Valeurs nutritionnelles</h3>
+    <div class="field">
+      <label class="checkbox-field">
+        <input type="checkbox" [formField]="recipeForm.showNutrition" />
+        Afficher les valeurs nutritionnelles sur la recette
+      </label>
+      <span class="field__hint">
+        Calories par portion, Nutri-Score estimé et « Mes besoins du jour », calculés depuis les ingrédients. Idéal pour les recettes
+        sportives ou légères
+      </span>
+    </div>
+    <yona-recipe-nutrition-panel [parts]="draft().parts" [servings]="draft().servings" />
+  </section>
+
   <section class="admin-panel" aria-labelledby="equipment-title">
     <h3 id="equipment-title" class="editor__title">Matériel (facultatif)</h3>
     <div class="field">

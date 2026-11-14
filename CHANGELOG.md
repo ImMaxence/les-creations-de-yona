@@ -2,6 +2,29 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.15.0 - 2026-11-14
+
+Front et backend 2.15.0. Migration de la base : V32
+
+### Ajouté
+
+- **Valeurs nutritionnelles** : sur une recette, les calories par portion, les protéines, glucides et lipides, le tableau par portion et pour 100 g, et un Nutri-Score estimé de A à E, calculés à partir des ingrédients ; affichées seulement quand Yona coche « Afficher les valeurs nutritionnelles » dans l'éditeur
+- **Mes besoins du jour** : sous les valeurs, le visiteur indique son âge, sa taille, son poids, son activité et son objectif ; le site calcule ses besoins par jour, la part d'une portion dans sa journée, la part conseillée pour un repas (réglable) et l'équilibre protéines, glucides et lipides face aux repères de l'Anses ; gardé dans son navigateur seulement
+- **Table Ciqual** : les 3 484 aliments de la table Ciqual 2025 de l'Anses sont dans le site ; chaque ingrédient se lie à son aliment (« Beurre » → « Beurre à 80% MG minimum, doux »), cherché par son nom
+- **Proposer les valeurs nutritionnelles** : dans Ingrédients, l'aliment le plus probable proposé pour chaque ingrédient des recettes, le plus utilisé en premier, à vérifier puis à lier d'un coup
+- **Produits du commerce** : pour un produit absent de Ciqual (Kinder Bueno, spéculoos, whey), recherche par nom ou par code-barres sur Open Food Facts, ou valeurs de l'étiquette saisies à la main
+- **Éditeur de recette** : les valeurs de la recette en cours d'écriture, les ingrédients non comptés et pourquoi, et l'aliment à lier en un clic
+- **Nouvelle version de Ciqual** : importée depuis Ingrédients avec le fichier Excel de l'Anses ; les ingrédients gardent leur aliment
+
+### Technique
+
+- **Migration V32** : tables `ciqual_food` et `ciqual_table` (Ciqual 2025, Licence Ouverte), colonnes `ciqual_code` et `label_*` des ingrédients, `show_nutrition` des recettes ; sauvegardées, gardées telles quelles par « Fusionner »
+- **Nutri-Score** : algorithme 2023 des aliments en général, sur le poids cru des ingrédients ; badge propre au site, pas le logo officiel
+- **API** : `POST /api/admin/recipes/nutrition`, `PUT /api/admin/ingredients/{id}/nutrition`, `PUT /api/admin/ingredients/ciqual`, `GET /api/admin/ingredients/nutrition-suggestions`, `/api/admin/nutrition/ciqual` (version, import, recherche), `GET /api/admin/nutrition/open-food-facts`
+- **Référencement** : les valeurs dans les données structurées de la recette (`NutritionInformation`) et dans sa version Markdown
+- **Unités des recettes** : la conversion en grammes (cuillères, pincées, pièces) partagée entre le prix de revient et la nutrition
+- **Tests** : tests unitaires du calcul, du Nutri-Score, de la table Ciqual, d'Open Food Facts et du calculateur ; parcours Chrome des valeurs nutritionnelles, de « Mes besoins du jour » et du back-office ; le brouillon d'un article de Mon CAP de nouveau vérifié par le parcours (articles à lier simulés)
+
 ## 2.14.2 - 2026-11-14
 
 Front et backend 2.14.2. Pas de migration de la base

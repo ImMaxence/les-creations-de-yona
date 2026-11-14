@@ -48,7 +48,7 @@
   </header>
 
   <div class="container body">
-    @if (recipe().prepMinutes || recipe().cookMinutes || recipe().restMinutes || recipe().difficulty) {
+    @if (recipe().prepMinutes || recipe().cookMinutes || recipe().restMinutes || recipe().difficulty || nutrition()) {
       <dl class="facts enter" style="--delay: 200ms">
         @if (recipe().prepMinutes; as prep) {
           <div class="fact">
@@ -83,6 +83,17 @@
             <svg yonaIcon="gauge" [size]="22" [strokeWidth]="1.75"></svg>
             <dt>Difficulté</dt>
             <dd><yona-difficulty-stars [value]="difficulty" /></dd>
+          </div>
+        }
+        @if (nutrition(); as facts) {
+          <div class="fact">
+            <svg yonaIcon="flame" [size]="22" [strokeWidth]="1.75"></svg>
+            <dt>Énergie</dt>
+            <dd>
+              <a class="fact__link" [routerLink]="[]" [fragment]="nutritionAnchor" replaceUrl>
+                {{ formatKcal((facts.perServing ?? facts.total).kcal) }}@if (facts.perServing) {<span class="fact__unit"> / portion</span>}
+              </a>
+            </dd>
           </div>
         }
       </dl>
@@ -200,6 +211,10 @@
         }
       </section>
     </div>
+
+    @if (nutrition(); as facts) {
+      <yona-recipe-nutrition class="nutrition-block" yonaReveal [nutrition]="facts" />
+    }
 
     @if (recipe().tip; as tip) {
       <aside class="tip" yonaReveal aria-labelledby="tip-title">

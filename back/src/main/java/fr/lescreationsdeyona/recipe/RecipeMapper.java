@@ -27,6 +27,7 @@ public interface RecipeMapper {
 	@Mapping(target = "pinterestImageId", source = "pinterestImage.id")
 	@Mapping(target = "mold", source = ".")
 	@Mapping(target = "equipment", source = "equipment", qualifiedByName = "lines")
+	@Mapping(target = "nutrition", ignore = true)
 	RecipeDetail toDetail(Recipe recipe);
 
 	@Mapping(target = "linkedRecipe", source = ".")

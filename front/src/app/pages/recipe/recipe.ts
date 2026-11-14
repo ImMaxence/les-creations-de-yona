@@ -47,6 +47,8 @@ import { CookingMode } from './cooking-mode/cooking-mode';
 import { IngredientList } from './ingredient-list/ingredient-list';
 import { RecipeIngredients } from './ingredients/recipe-ingredients';
 import { RecipeNotesEditor } from './notes/recipe-notes';
+import { NUTRITION_ANCHOR, RecipeNutrition } from './nutrition/recipe-nutrition';
+import { formatKcal } from '../../shared/format/nutrition';
 import { RecipePlanner } from './planner/recipe-planner';
 import { QUESTIONS_ANCHOR, hasParts, moldArea, shownIngredients, totalIngredients } from './recipe-parts';
 import { RecipeSteps } from './steps/recipe-steps';
@@ -69,6 +71,7 @@ import { Icon } from '../../shared/ui/icon/icon';
     RecipeCard,
     RecipeIngredients,
     RecipeNotesEditor,
+    RecipeNutrition,
     RecipePlanner,
     RecipeSteps,
     Reveal,
@@ -97,6 +100,14 @@ export default class Recipe {
   protected readonly formatQuantity = formatQuantity;
   protected readonly recipeLinkOf = recipeLinkOf;
   protected readonly imageTransition = RECIPE_IMAGE_TRANSITION;
+  protected readonly nutritionAnchor = NUTRITION_ANCHOR;
+  protected readonly formatKcal = formatKcal;
+
+  /** Its nutrition facts, when Yona shows them on its page (absent from a copy kept offline before 2.15). */
+  protected readonly nutrition = computed(() => {
+    const recipe = this.recipe();
+    return recipe.showNutrition && recipe.nutrition ? recipe.nutrition : null;
+  });
 
   protected readonly totalMinutes = computed(
     () => (this.recipe().prepMinutes ?? 0) + (this.recipe().restMinutes ?? 0) + (this.recipe().cookMinutes ?? 0),

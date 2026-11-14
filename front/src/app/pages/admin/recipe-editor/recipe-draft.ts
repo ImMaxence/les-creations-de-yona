@@ -18,6 +18,8 @@ export interface RecipeDraft {
   theme: RecipeTheme;
   /** Published, or scheduled: featured once published, in place of the featured recipe of its theme. */
   featured: boolean;
+  /** Its nutrition facts (calories, Nutri-Score) shown on its page. */
+  showNutrition: boolean;
   /** Drafts only: Paris time, as the datetime-local field shows it ("2026-10-31T10:00"); "" for none. */
   scheduledAt: string;
   /** The first one is the main category, in the recipe URL. */
@@ -120,6 +122,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       status: 'DRAFT',
       theme: 'SWEET',
       featured: false,
+      showNutrition: false,
       scheduledAt: '',
       categoryIds: [],
       tagIds: [],
@@ -145,6 +148,7 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
     status: recipe.status === 'FAILED' ? 'DRAFT' : recipe.status,
     theme: recipe.theme,
     featured: recipe.featured,
+    showNutrition: recipe.showNutrition ?? false,
     // A failed recipe's time has passed: a new one is chosen, or none
     scheduledAt: recipe.scheduledAt && recipe.status !== 'FAILED' ? toParisInput(recipe.scheduledAt) : '',
     categoryIds: recipe.categories.map((category) => category.id),
@@ -253,6 +257,7 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
     status: draft.status,
     theme: draft.theme,
     featured: draft.featured && (draft.status === 'PUBLISHED' || isScheduled(draft)),
+    showNutrition: draft.showNutrition,
     scheduledAt: isScheduled(draft) ? (fromParisInput(draft.scheduledAt) ?? undefined) : undefined,
     categoryIds: draft.categoryIds,
     tagIds: draft.tagIds,

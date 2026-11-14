@@ -85,6 +85,7 @@ import {
   toRecipeForm,
 } from './recipe-draft';
 import { RecipeAiDialog } from './recipe-ai-dialog';
+import { RecipeNutritionPanel } from './recipe-nutrition-panel';
 import { RecoveredDraft } from '../recovered-draft';
 import { UnsavedChanges } from './unsaved-changes.guard';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -153,6 +154,7 @@ const DIFFICULTY_OPTIONS: SelectOption<number | null>[] = [
     ImageUpload,
     MarkdownTools,
     RecipeAiDialog,
+    RecipeNutritionPanel,
     RecipePreview,
     Select,
     SuggestInput,

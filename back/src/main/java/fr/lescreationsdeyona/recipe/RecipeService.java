@@ -20,6 +20,8 @@ import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientService;
 import fr.lescreationsdeyona.menu.MenuService;
+import fr.lescreationsdeyona.nutrition.NutritionService;
+import fr.lescreationsdeyona.nutrition.RecipeNutrition;
 import fr.lescreationsdeyona.shop.ShopProductRepository;
 import fr.lescreationsdeyona.tag.Tag;
 import fr.lescreationsdeyona.tag.TagResponse;
@@ -106,6 +108,8 @@ public class RecipeService {
 
 	private final ShopProductRepository shopProductRepository;
 
+	private final NutritionService nutritionService;
+
 	// Public site: published recipes only.
 
 	/** Published recipes only, whatever {@code filter.status()}; no back-office criteria. */
@@ -146,12 +150,55 @@ public class RecipeService {
 	/** A draft is reported as not found, like a recipe that does not exist. */
 	@Cacheable(PublicCache.RECIPE)
 	public RecipeDetail getPublished(String slug) {
-		return unfolded(findPublished(slug));
+		return shown(findPublished(slug));
 	}
 
 	/** As visitors read it: the recipes it uses as parts unfolded, quantities multiplied. */
 	private RecipeDetail unfolded(Recipe recipe) {
 		return LinkedRecipes.unfold(recipe, recipeMapper.toDetail(recipe), recipeMapper);
+	}
+
+	/** Unfolded, with its nutrition facts when its page shows them. */
+	private RecipeDetail shown(Recipe recipe) {
+		RecipeDetail detail = unfolded(recipe);
+		return detail.showsNutrition()
+				? RecipeDetail.withNutrition(detail, nutritionOf(detail, BigDecimal.ONE, detail.servings()))
+				: detail;
+	}
+
+	/** Its unfolded lines, quantities times {@code ratio}, added up. */
+	private RecipeNutrition nutritionOf(RecipeDetail unfolded, BigDecimal ratio, @Nullable Integer servings) {
+		return nutritionService.compute(nutritionLines(unfolded, ratio), servings);
+	}
+
+	private static List<NutritionService.Line> nutritionLines(RecipeDetail unfolded, BigDecimal ratio) {
+		return unfolded.parts()
+			.stream()
+			.flatMap(part -> part.ingredients().stream())
+			.map(line -> new NutritionService.Line(line.name(), line.quantity() == null ? null : line.quantity().multiply(ratio),
+					line.unit()))
+			.toList();
+	}
+
+	/**
+	 * The nutrition facts of the recipe being written in the editor, saved or not: its lines, and the recipes it
+	 * uses as parts, as saved.
+	 */
+	public RecipeNutrition estimateNutrition(NutritionEstimateForm form) {
+		List<NutritionService.Line> lines = new ArrayList<>();
+		for (NutritionEstimateForm.Part part : form.parts()) {
+			if (part.linkedRecipeId() != null) {
+				BigDecimal ratio = part.linkedRatio() == null ? BigDecimal.ONE : part.linkedRatio();
+				lines.addAll(nutritionLines(unfolded(find(part.linkedRecipeId())), ratio));
+			}
+			else {
+				part.ingredients()
+					.stream()
+					.filter(line -> StringUtils.hasText(line.name()))
+					.forEach(line -> lines.add(new NutritionService.Line(line.name().strip(), line.quantity(), line.unit())));
+			}
+		}
+		return nutritionService.compute(lines, form.servings());
 	}
 
 	/** "Vous aimerez aussi": 3 published recipes sharing its tags or categories, else the latest. */
@@ -193,7 +240,7 @@ public class RecipeService {
 
 	/** A recipe as visitors would read it, for "Aperçu": drafts too. */
 	public RecipeDetail getUnfolded(long id) {
-		return unfolded(find(id));
+		return shown(find(id));
 	}
 
 	@Transactional
@@ -239,7 +286,7 @@ public class RecipeService {
 		}
 		apply(form, recipe);
 		recipe.setUpdatedAt(Instant.now());
-		return unfolded(recipe);
+		return shown(recipe);
 	}
 
 	/**
@@ -576,6 +623,7 @@ public class RecipeService {
 		recipe.setTheme(theme);
 		recipe.setPublicationFailure(null);
 		recipe.setFeatured(form.featured());
+		recipe.setShowNutrition(Boolean.TRUE.equals(form.showNutrition()));
 		recipe.setScheduledAt(scheduledAt);
 		recipe.getCategories().clear();
 		recipe.getCategories().addAll(categories);
@@ -832,7 +880,7 @@ public class RecipeService {
 	private static RecipeForm formOf(RecipeDetail recipe, String title, RecipeStatus status, RecipeTheme theme,
 			List<Long> categoryIds, List<Long> tagIds, Function<RecipeDetail.LinkedRecipe, Long> linkedId) {
 		RecipeDetail.Mold mold = recipe.mold();
-		return new RecipeForm(title, recipe.intro(), status, theme, false, categoryIds, tagIds, recipe.servings(),
+		return new RecipeForm(title, recipe.intro(), status, theme, false, recipe.showsNutrition(), categoryIds, tagIds, recipe.servings(),
 				recipe.prepMinutes(), recipe.cookMinutes(), recipe.restMinutes(), recipe.difficulty(),
 				recipe.youtubeVideoId() == null ? null : "https://www.youtube.com/watch?v=" + recipe.youtubeVideoId(),
 				recipe.tip(), recipe.equipment(), recipe.questions(), mold == null ? null : new RecipeForm.Mold(mold.shape(), mold.lengthCm(), mold.widthCm()),

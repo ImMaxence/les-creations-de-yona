@@ -1,0 +1,78 @@
+<section class="nutrition" [id]="anchor" aria-labelledby="nutrition-title">
+  <header class="nutrition__head">
+    <h2 id="nutrition-title" class="nutrition__title">
+      <svg yonaIcon="flame" [size]="22" [strokeWidth]="1.75"></svg>Valeurs nutritionnelles
+    </h2>
+    @if (nutrition().nutriScore; as score) {
+      <div class="score" role="img" [attr.aria-label]="gradeLabel(score.grade)">
+        <span class="score__label" aria-hidden="true">Nutri-Score estimé</span>
+        <ol class="score__grades" aria-hidden="true">
+          @for (grade of grades; track grade) {
+            <li class="score__grade" [attr.data-grade]="grade" [class.is-current]="grade === score.grade">{{ grade }}</li>
+          }
+        </ol>
+      </div>
+    }
+  </header>
+
+  <dl class="tiles">
+    <div class="tile tile--energy">
+      <dt>{{ byServing() ? 'Par portion' : 'Pour la recette' }}</dt>
+      <dd>{{ formatKcal(portion().kcal) }}</dd>
+    </div>
+    <div class="tile">
+      <dt>Protéines</dt>
+      <dd>{{ rows[6]!.value(portion()) }}</dd>
+    </div>
+    <div class="tile">
+      <dt>Glucides</dt>
+      <dd>{{ rows[3]!.value(portion()) }}</dd>
+    </div>
+    <div class="tile">
+      <dt>Lipides</dt>
+      <dd>{{ rows[1]!.value(portion()) }}</dd>
+    </div>
+  </dl>
+
+  <div class="table-wrap">
+    <table class="facts-table">
+      <caption class="visually-hidden">Valeurs nutritionnelles {{ byServing() ? 'par portion et pour 100 g' : 'de la recette et pour 100 g' }}</caption>
+      <thead>
+        <tr>
+          <th scope="col"><span class="visually-hidden">Nutriment</span></th>
+          <th scope="col">{{ byServing() ? 'Par portion' : 'Recette entière' }}</th>
+          <th scope="col">Pour 100 g</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows; track row.label) {
+          <tr [class.is-part]="row.part">
+            <th scope="row">{{ row.label }}</th>
+            <td>{{ row.value(portion()) }}</td>
+            <td>{{ row.value(nutrition().per100g) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="notes">
+    @if (missing()) {
+      <p>Non comptés : {{ missing() }}</p>
+    }
+    <p>
+      Estimation à partir des ingrédients crus, la cuisson n'est pas comptée. {{ source() }}. Le Nutri-Score est calculé par le
+      site comme pour un aliment : ce n'est pas le logo officiel
+    </p>
+  </div>
+
+  <!-- Its code is loaded once the visitor comes to it: the recipes that show no values, most of them, carry none of it -->
+  @defer (on viewport) {
+    <yona-recipe-daily-needs class="no-print" [portion]="portion()" [byServing]="byServing()" />
+  } @placeholder {
+    <section class="needs-placeholder no-print" aria-labelledby="needs-title">
+      <h3 id="needs-title" class="needs-placeholder__title">Mes besoins du jour</h3>
+      <p>Comparez une portion à ce dont vous avez besoin chaque jour</p>
+    </section>
+  }
+</section>

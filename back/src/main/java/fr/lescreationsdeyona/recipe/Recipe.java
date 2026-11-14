@@ -105,6 +105,9 @@ public class Recipe {
 	 */
 	private boolean featured;
 
+	/** Its nutrition facts (calories, Nutri-Score) shown on its page, computed from its ingredients. */
+	private boolean showNutrition;
+
 	/** First publication, kept if the recipe goes back to draft; null for a recipe never published. */
 	private Instant publishedAt;
 

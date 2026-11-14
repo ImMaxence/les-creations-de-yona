@@ -45,7 +45,7 @@ if (wanted('pc-accueil', 'pc-recettes', 'pc-recette')) {
 // Le back-office sans connexion Google : la page « Nouveautés », la seule sans données de l'API admin
 if (wanted('pc-administration')) {
   const admin = await newPage(browser, DESKTOP);
-  await fakeAdmin(admin, '2.14.2');
+  await fakeAdmin(admin, '2.15.0');
   await admin.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
   await admin.locator('details.changelog__version').first().waitFor();
   await shoot(admin, 'pc-administration');
@@ -56,7 +56,7 @@ if (wanted('pc-administration')) {
 if (wanted('pc-ia-recette', 'pc-ia-image')) {
   const admin = await newPage(browser, DESKTOP);
   await admin.route('**/api/admin/**', (route) => route.fulfill({ json: [] }));
-  await fakeAdmin(admin, '2.14.2');
+  await fakeAdmin(admin, '2.15.0');
   await admin.route('**/api/admin/recipe-ai', (route) => route.fulfill({ json: { available: true } }));
   const open = async () => {
     await admin.goto(BASE + '/admin/recettes/nouvelle', { waitUntil: 'load' });
@@ -262,7 +262,7 @@ if (wanted('pc-comptabilite', 'pc-facture')) {
     lines: [{ label: 'Tarte au citron meringuée', detail: 'la tarte, 8 parts', quantity: 1, unitPrice: 24, total: 24 }],
   };
   const admin = await newPage(browser, DESKTOP);
-  await fakeAdmin(admin, '2.14.2');
+  await fakeAdmin(admin, '2.15.0');
   await admin.route('**/api/admin/accounting?**', (route) => route.fulfill({ json: overview }));
   await admin.route('**/api/admin/accounting/costs', (route) => route.fulfill({ json: costs }));
   await admin.route('**/api/admin/invoices?**', (route) => route.fulfill({ json: [{ id: 3, number: '2026-0003', orderId: 21, issuedOn: '2026-11-09', customerName: 'Léa Martin', amount: 22 }] }));
@@ -278,6 +278,69 @@ if (wanted('pc-comptabilite', 'pc-facture')) {
     await shoot(admin, 'pc-facture');
   }
   await admin.context().close();
+}
+
+// Valeurs nutritionnelles (2.15) : valeurs simulées sur la recette du parcours, profil « Mes besoins » déjà rempli
+if (wanted('telephone-nutrition', 'telephone-besoins', 'pc-ingredients-nutrition')) {
+  const nutrition = {
+    servings: recipe.servings ?? 6,
+    grams: 900,
+    perServing: { kcal: 312.4, proteins: 4.2, carbohydrates: 45, sugars: 22.5, fat: 12, saturatedFat: 7.5, fibre: 2.1, salt: 0.25 },
+    total: { kcal: 1874, proteins: 25, carbohydrates: 270, sugars: 135, fat: 72, saturatedFat: 45, fibre: 12.6, salt: 1.5 },
+    per100g: { kcal: 208, proteins: 2.8, carbohydrates: 30, sugars: 15, fat: 8, saturatedFat: 5, fibre: 1.4, salt: 0.17 },
+    nutriScore: { grade: 'C', score: 9 },
+    countedLines: 5,
+    missing: [],
+    ciqualVersion: 'Ciqual 2025',
+    fromLabels: false,
+  };
+  if (wanted('telephone-nutrition', 'telephone-besoins')) {
+    const phone = await newPage(browser, PHONE);
+    await phone.addInitScript(() => {
+      localStorage.setItem('yona-daily-needs', JSON.stringify({ sex: 'FEMALE', age: 30, heightCm: 165, weightKg: 60, activity: 'MODERATE', goal: 'KEEP' }));
+    });
+    await phone.route(`**/api/recipes/${recipe.slug}`, (route) => route.fulfill({ json: { ...recipe, showNutrition: true, nutrition } }));
+    await phone.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await answerCookies(phone);
+    await goClient(phone, new URL(recipeUrl(recipe)).pathname);
+    await phone.locator('yona-recipe-nutrition').waitFor();
+    await shoot(phone, 'telephone-nutrition', () => phone.locator('#valeurs-nutritionnelles').evaluate((block) => window.scrollTo(0, block.getBoundingClientRect().top + window.scrollY - 72)));
+    await shoot(phone, 'telephone-besoins', async () => {
+      // Loaded once scrolled to (@defer)
+      await phone.locator('.needs-placeholder').scrollIntoViewIfNeeded().catch(() => {});
+      await phone.locator('.needs__daily').evaluate((block) => window.scrollTo(0, block.getBoundingClientRect().top + window.scrollY - 140));
+    });
+    await phone.context().close();
+  }
+  if (wanted('pc-ingredients-nutrition')) {
+    const admin = await newPage(browser, DESKTOP);
+    await admin.route('**/api/admin/**', (route) => route.fulfill({ json: [] }));
+    await fakeAdmin(admin, '2.15.0');
+    const facts = (kcal, proteins, carbohydrates, fat) => ({ kcal, proteins, carbohydrates, sugars: 0, fat, saturatedFat: 0, fibre: 0, salt: 0 });
+    const food = (code, name, subgroupName, per100g) => ({ code, name, subgroupCode: '0000', subgroupName, per100g });
+    const butter = food(16400, 'Beurre à 80% MG minimum, doux', 'beurres', facts(753, 0.6, 0.7, 83));
+    const ingredients = [
+      { id: 1, name: 'Beurre doux', aisle: 'DAIRY_EGGS', recipeCount: 9, nutrition: { ciqualCode: 16400, ciqualName: butter.name, per100g: butter.per100g } },
+      { id: 2, name: 'Farine', aisle: 'SWEET_GROCERY', recipeCount: 8, nutrition: { ciqualCode: 9440, ciqualName: 'Farine de blé tendre ou froment T45 (pour pâtisserie)', per100g: facts(345, 9.6, 72.8, 1.1) } },
+      { id: 3, name: 'Spéculoos', aisle: 'SWEET_GROCERY', recipeCount: 2 },
+      { id: 4, name: 'Whey vanille', aisle: 'SWEET_GROCERY', recipeCount: 1, nutrition: { labelSource: 'Open Food Facts · Whey protéine vanille', label: { kcal: 380, proteins: 78, carbohydrates: 6, sugars: 4, fat: 6, saturatedFat: 4, fibre: 0, salt: 0.5 }, per100g: facts(380, 78, 6, 6) } },
+    ];
+    await admin.route('**/api/admin/ingredients', (route) => route.fulfill({ json: ingredients }));
+    await admin.route('**/api/admin/ingredients/nutrition-suggestions**', (route) =>
+      route.fulfill({
+        json: [{ ingredient: ingredients[2], foods: [food(24009, 'Spéculoos', 'biscuits sucrés', facts(483, 5.6, 70.6, 19.6)), food(24015, 'Biscuit sec petit beurre', 'biscuits sucrés', facts(450, 7.8, 73.4, 13.3))] }],
+      }),
+    );
+    await admin.goto(BASE + '/admin/ingredients', { waitUntil: 'load' });
+    await admin.getByRole('button', { name: 'Valeurs nutritionnelles de Spéculoos' }).waitFor();
+    await shoot(admin, 'pc-ingredients-nutrition', async () => {
+      await admin.getByRole('button', { name: 'Valeurs nutritionnelles de Spéculoos' }).click();
+      await admin.locator('yona-ingredient-nutrition-editor .food').first().waitFor();
+      // The row of the ingredient at the top: its editor, and the foods offered, in view
+      await admin.locator('.admin-row', { hasText: 'Spéculoos' }).evaluate((row) => row.scrollIntoView({ block: 'start' }));
+    });
+    await admin.context().close();
+  }
 }
 
 await browser.close();

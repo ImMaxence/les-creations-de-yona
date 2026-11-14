@@ -28,6 +28,8 @@ public record RecipeForm(
 				+ "theme of its main category") @Nullable RecipeTheme theme,
 		@Schema(description = "Published, or scheduled: featured once published, in place of the featured recipe")
 		@NotNull Boolean featured,
+		@Schema(description = "Shows its nutrition facts (calories, Nutri-Score) on its page; absent: not shown")
+		@Nullable Boolean showNutrition,
 		@Schema(description = "Each one once; the first one is the main category, in the recipe URL")
 		@NotEmpty @Size(max = 10) List<@NotNull Long> categoryIds,
 		@Schema(description = "Absent or empty for none") @Size(max = 20) @Nullable List<@NotNull Long> tagIds,

@@ -4,6 +4,7 @@
 import { CategoryResponse } from '../models/category-response';
 import { Mold } from '../models/mold';
 import { Part } from '../models/part';
+import { RecipeNutrition } from '../models/recipe-nutrition';
 import { RecipeQuestion } from '../models/recipe-question';
 import { TagResponse } from '../models/tag-response';
 export interface RecipeDetail {
@@ -33,6 +34,11 @@ export interface RecipeDetail {
    * Mold the quantities are written for
    */
   mold?: Mold;
+
+  /**
+   * Computed from its ingredients: on the site when shown, in the back-office preview; absent otherwise
+   */
+  nutrition?: RecipeNutrition;
 
   /**
    * At least one: a recipe without parts has a single, untitled one
@@ -70,6 +76,11 @@ export interface RecipeDetail {
    */
   scheduledAt?: string;
   servings?: number;
+
+  /**
+   * Its nutrition facts shown on its page; absent from a copy kept before 2.15 (not shown)
+   */
+  showNutrition?: boolean;
   slug: string;
   status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
 

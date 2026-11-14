@@ -3,6 +3,7 @@ package fr.lescreationsdeyona.recipe;
 import fr.lescreationsdeyona.common.PageResponse;
 import fr.lescreationsdeyona.image.ImageChoice;
 import fr.lescreationsdeyona.image.ImageProcessor;
+import fr.lescreationsdeyona.nutrition.RecipeNutrition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -108,6 +109,13 @@ class AdminRecipeController {
 	@PostMapping("/preview")
 	RecipeDetail previewRecipe(@RequestParam(required = false) @Nullable Long id, @Valid @RequestBody RecipeForm form) {
 		return recipeService.preview(id, form);
+	}
+
+	@Operation(summary = "Nutrition facts of a recipe being written, saved or not: per serving, per 100 g, Nutri-Score",
+			description = "From what the site knows of its ingredients; those it cannot count are named. Nothing is saved.")
+	@PostMapping("/nutrition")
+	RecipeNutrition estimateRecipeNutrition(@Valid @RequestBody NutritionEstimateForm form) {
+		return recipeService.estimateNutrition(form);
 	}
 
 	@Operation(summary = "Duplicate a recipe: a draft titled \"… (copie)\", same content, photos, categories and tags")

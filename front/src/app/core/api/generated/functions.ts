@@ -95,6 +95,8 @@ export type { DuplicateRecipe$Params as DuplicateRecipe$Params } from './fn/admi
 export { duplicateRecipe as duplicateRecipe } from './fn/admin-recipes/duplicate-recipe';
 export type { PreviewRecipe$Params as PreviewRecipe$Params } from './fn/admin-recipes/preview-recipe';
 export { previewRecipe as previewRecipe } from './fn/admin-recipes/preview-recipe';
+export type { EstimateRecipeNutrition$Params as EstimateRecipeNutrition$Params } from './fn/admin-recipes/estimate-recipe-nutrition';
+export { estimateRecipeNutrition as estimateRecipeNutrition } from './fn/admin-recipes/estimate-recipe-nutrition';
 export type { GetUnfoldedRecipe$Params as GetUnfoldedRecipe$Params } from './fn/admin-recipes/get-unfolded-recipe';
 export { getUnfoldedRecipe as getUnfoldedRecipe } from './fn/admin-recipes/get-unfolded-recipe';
 export type { GetOrderAlert$Params as GetOrderAlert$Params } from './fn/admin-order-alerts/get-order-alert';
@@ -193,6 +195,10 @@ export type { DeleteIngredient$Params as DeleteIngredient$Params } from './fn/ad
 export { deleteIngredient as deleteIngredient } from './fn/admin-ingredients/delete-ingredient';
 export type { SetIngredientPiece$Params as SetIngredientPiece$Params } from './fn/admin-ingredients/set-ingredient-piece';
 export { setIngredientPiece as setIngredientPiece } from './fn/admin-ingredients/set-ingredient-piece';
+export type { SetIngredientNutrition$Params as SetIngredientNutrition$Params } from './fn/admin-ingredients/set-ingredient-nutrition';
+export { setIngredientNutrition as setIngredientNutrition } from './fn/admin-ingredients/set-ingredient-nutrition';
+export type { LinkIngredientsToCiqual$Params as LinkIngredientsToCiqual$Params } from './fn/admin-ingredients/link-ingredients-to-ciqual';
+export { linkIngredientsToCiqual as linkIngredientsToCiqual } from './fn/admin-ingredients/link-ingredients-to-ciqual';
 export type { SetIngredientAisle$Params as SetIngredientAisle$Params } from './fn/admin-ingredients/set-ingredient-aisle';
 export { setIngredientAisle as setIngredientAisle } from './fn/admin-ingredients/set-ingredient-aisle';
 export type { SearchIngredients$Params as SearchIngredients$Params } from './fn/admin-ingredients/search-ingredients';
@@ -205,6 +211,8 @@ export type { MergeIngredients$Params as MergeIngredients$Params } from './fn/ad
 export { mergeIngredients as mergeIngredients } from './fn/admin-ingredients/merge-ingredients';
 export type { FindSimilarIngredients$Params as FindSimilarIngredients$Params } from './fn/admin-ingredients/find-similar-ingredients';
 export { findSimilarIngredients as findSimilarIngredients } from './fn/admin-ingredients/find-similar-ingredients';
+export type { SuggestIngredientNutrition$Params as SuggestIngredientNutrition$Params } from './fn/admin-ingredients/suggest-ingredient-nutrition';
+export { suggestIngredientNutrition as suggestIngredientNutrition } from './fn/admin-ingredients/suggest-ingredient-nutrition';
 export type { ReplaceImage$Params as ReplaceImage$Params } from './fn/admin-images/replace-image';
 export { replaceImage as replaceImage } from './fn/admin-images/replace-image';
 export type { DeleteImage$Params as DeleteImage$Params } from './fn/admin-images/delete-image';
@@ -331,6 +339,14 @@ export type { ReadRecipeAiLocalAnswer$Params as ReadRecipeAiLocalAnswer$Params }
 export { readRecipeAiLocalAnswer as readRecipeAiLocalAnswer } from './fn/admin-recipe-ai/read-recipe-ai-local-answer';
 export type { GetRecipeAiLocalPrompt$Params as GetRecipeAiLocalPrompt$Params } from './fn/admin-recipe-ai/get-recipe-ai-local-prompt';
 export { getRecipeAiLocalPrompt as getRecipeAiLocalPrompt } from './fn/admin-recipe-ai/get-recipe-ai-local-prompt';
+export type { GetCiqualTable$Params as GetCiqualTable$Params } from './fn/admin-nutrition/get-ciqual-table';
+export { getCiqualTable as getCiqualTable } from './fn/admin-nutrition/get-ciqual-table';
+export type { ImportCiqualTable$Params as ImportCiqualTable$Params } from './fn/admin-nutrition/import-ciqual-table';
+export { importCiqualTable as importCiqualTable } from './fn/admin-nutrition/import-ciqual-table';
+export type { SearchOpenFoodFacts$Params as SearchOpenFoodFacts$Params } from './fn/admin-nutrition/search-open-food-facts';
+export { searchOpenFoodFacts as searchOpenFoodFacts } from './fn/admin-nutrition/search-open-food-facts';
+export type { SearchCiqualFoods$Params as SearchCiqualFoods$Params } from './fn/admin-nutrition/search-ciqual-foods';
+export { searchCiqualFoods as searchCiqualFoods } from './fn/admin-nutrition/search-ciqual-foods';
 export type { BackUpToDriveNow$Params as BackUpToDriveNow$Params } from './fn/admin-google-drive/back-up-to-drive-now';
 export { backUpToDriveNow as backUpToDriveNow } from './fn/admin-google-drive/back-up-to-drive-now';
 export type { GetDriveStatus$Params as GetDriveStatus$Params } from './fn/admin-google-drive/get-drive-status';

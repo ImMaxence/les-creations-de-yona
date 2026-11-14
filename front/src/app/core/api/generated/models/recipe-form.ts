@@ -56,6 +56,11 @@ export interface RecipeForm {
   servings?: number;
 
   /**
+   * Shows its nutrition facts (calories, Nutri-Score) on its page; absent: not shown
+   */
+  showNutrition?: boolean;
+
+  /**
    * DRAFT or PUBLISHED: FAILED is set by the site only
    */
   status: 'DRAFT' | 'PUBLISHED' | 'FAILED';

@@ -49,6 +49,7 @@ Les versions passées, résumées (le détail depuis la 1.1.0 est dans le [CHANG
 - [x] 2.7.0 : IA dans les articles de Mon CAP, Claude en troisième IA, dictée locale (Whisper), logos des IA ; Journaux (erreurs du serveur et des navigateurs), Versions et santé, historique mémoire et processeur sur 90 jours ; badges Historique, Journaux et Nouveautés ; menu du back-office repliable ; skeletons ; couleurs personnalisées et 12 polices ; Statistiques et Apparence en accordéons ; SEO IA de Mon CAP
 - [x] 2.7.1 : la page ne bouge plus à l'ouverture et à la fermeture d'une fenêtre (place de la barre de défilement réservée, assombrie avec la page) ; « Dicter » : micro autorisé pour le site (Permissions-Policy)
 - [x] 2.7.2 : spectre audio en direct pendant la dictée, et une alerte si le micro ne capte rien
+- [x] 2.15.0 : valeurs nutritionnelles des recettes (calories, tableau, Nutri-Score estimé) et « Mes besoins du jour » ; table Ciqual 2025 de l'Anses dans le site, ingrédients liés à leur aliment (proposés, tous d'un coup), produits du commerce par Open Food Facts ou étiquette, import d'une nouvelle version de Ciqual (migration V32)
 - [x] 2.14.2 : fichier de validation de la Google Search Console à la racine du site
 - [x] 2.14.1 : Messages : page ajustée au clavier d'un téléphone, plus étirée une fois le clavier refermé
 - [x] 2.14.0 : Messages : chaque nouvelle version du site annoncée une fois dans le groupe de tous les admins, par le site lui-même (migration V31)
@@ -103,6 +104,7 @@ Les versions passées, résumées (le détail depuis la 1.1.0 est dans le [CHANG
 
 ## Points ouverts
 
+- 2.15.0 en ligne : la migration V32 s'applique au démarrage (table Ciqual 2025, 3 484 aliments, environ 0,5 s). Puis dans Ingrédients : « Proposer les valeurs nutritionnelles », vérifier et lier ; « Spéculoos », whey et produits de marque par « Produit du commerce » (Open Food Facts doit répondre depuis le serveur) ou l'étiquette ; le poids d'une pièce des ingrédients comptés à la pièce (œufs, gousses). Créer la catégorie « Sportif / Diet » si voulu, cocher « Afficher les valeurs nutritionnelles » sur quelques recettes et relire leurs valeurs ; essayer « Mes besoins du jour » sur un téléphone ; le test des résultats enrichis de Google voit `nutrition` dans la recette
 - 2.14.2 en ligne : `https://les-creations-de-yona.fr/googlec96cf5bde7d02853.html` affiche `google-site-verification: googlec96cf5bde7d02853.html`, puis **Valider** dans la Search Console (propriété `https://les-creations-de-yona.fr/`)
 - 2.14.1 en ligne : sur iPhone (application installée et Safari), dans une conversation, ouvrir puis refermer le clavier : la page revient à sa place, sans vide dessous
 - 2.14.0 en ligne : la migration V31 s'applique au démarrage, puis « Nouvelle version de l'application disponible : version … » arrive dans le groupe de tous les admins avec le numéro mis en ligne (une seule fois, même après un redémarrage)

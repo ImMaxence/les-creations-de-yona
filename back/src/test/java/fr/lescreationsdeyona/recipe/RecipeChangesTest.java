@@ -45,6 +45,19 @@ class RecipeChangesTest {
 					List.of("Peut-on la congeler ? Oui, 3 mois", "Sans gluten ? Avec une farine de riz")));
 	}
 
+	@Test
+	void saysWhenTheNutritionFactsAreShownOrNot() {
+		RecipeDetail hidden = recipe("Tarte", List.of());
+		RecipeDetail shown = new RecipeDetail(hidden.id(), hidden.title(), hidden.slug(), null, hidden.status(), hidden.theme(), false,
+				true, null, List.of(), List.of(), hidden.servings(), hidden.prepMinutes(), null, null, null, null, null, List.of(),
+				List.of(), null, null, null, hidden.parts(), Instant.EPOCH, Instant.EPOCH, null, null, null);
+
+		assertThat(RecipeChanges.between(hidden, shown)).usingRecursiveComparison()
+			.isEqualTo(new AuditChanges().add("Valeurs nutritionnelles", "Masquées", "Affichées"));
+		// A recipe kept from before 2.15 (absent): not shown
+		assertThat(hidden.showsNutrition()).isFalse();
+	}
+
 	private static RecipeDetail recipe(String title, List<RecipeQuestion> questions) {
 		return recipe(title, 20, List.of(), List.of(new RecipeDetail.Step("Cuire", null, List.of())), questions);
 	}
@@ -56,9 +69,9 @@ class RecipeChangesTest {
 
 	private static RecipeDetail recipe(String title, Integer prepMinutes, List<RecipeDetail.IngredientLine> ingredients,
 			List<RecipeDetail.Step> steps, List<RecipeQuestion> questions) {
-		return new RecipeDetail(1L, title, "tarte", null, RecipeStatus.PUBLISHED, RecipeTheme.SWEET, false, null, List.of(),
+		return new RecipeDetail(1L, title, "tarte", null, RecipeStatus.PUBLISHED, RecipeTheme.SWEET, false, null, null, List.of(),
 				List.of(), 6, prepMinutes, null, null, null, null, null, List.of(), questions, null, null, null,
-				List.of(new RecipeDetail.Part(null, ingredients, steps)), Instant.EPOCH, Instant.EPOCH, null, null);
+				List.of(new RecipeDetail.Part(null, ingredients, steps)), Instant.EPOCH, Instant.EPOCH, null, null, null);
 	}
 
 }

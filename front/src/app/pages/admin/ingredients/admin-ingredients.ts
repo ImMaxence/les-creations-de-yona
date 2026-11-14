@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { formatKcal } from '../../../shared/format/nutrition';
+import { CiqualTable } from './ciqual-table';
+import { IngredientNutritionEditor } from './ingredient-nutrition-editor';
+import { NutritionSuggestions } from './nutrition-suggestions';
 import { debounceTime } from 'rxjs';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
@@ -34,6 +38,9 @@ type UsageFilter = 'ALL' | 'USED' | 'UNUSED';
 /** An aisle, or none (''): the ingredients still to shelve. */
 type AisleFilter = Aisle | '' | 'ALL';
 
+/** With nutrition facts or not: MISSING, those of the recipes still without. */
+type NutritionFilter = 'ALL' | 'MISSING' | 'SET';
+
 /** For a group of similar ingredients: keep one of them, or replace them all by a new name. */
 type MergeChoice = { keptId: number } | { newName: string };
 
@@ -43,7 +50,7 @@ type MergeChoice = { keptId: number } | { newName: string };
  */
 @Component({
   selector: 'yona-admin-ingredients',
-  imports: [Icon, RouterLink, BulkBar, Button, Select, Skeleton],
+  imports: [Icon, RouterLink, BulkBar, Button, CiqualTable, IngredientNutritionEditor, NutritionSuggestions, Select, Skeleton],
   templateUrl: './admin-ingredients.html',
   styleUrl: './admin-ingredients.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,9 +65,10 @@ export default class AdminIngredients {
   private readonly toaster = inject(Toaster);
 
   protected readonly maxNameLength = MAX_NAME_LENGTH;
-  protected readonly search = signal('');
+  /** ?q=Beurre, from the nutrition facts of the recipe editor: that ingredient found at once. */
+  protected readonly search = signal(inject(ActivatedRoute).snapshot.queryParamMap.get('q') ?? '');
   private readonly debouncedSearch = toSignal(toObservable(this.search).pipe(debounceTime(300)), {
-    initialValue: '',
+    initialValue: this.search(),
   });
   protected readonly ingredients = resource({
     params: () => ({ q: this.debouncedSearch().trim() || undefined }),
@@ -81,15 +89,41 @@ export default class AdminIngredients {
     ...AISLES,
   ];
   protected readonly aisleFilter = signal<AisleFilter>('ALL');
+  protected readonly nutritionFilterOptions: SelectOption<NutritionFilter>[] = [
+    { value: 'ALL', label: 'Toutes les valeurs' },
+    { value: 'MISSING', label: 'À compléter' },
+    { value: 'SET', label: 'Renseignées' },
+  ];
+  protected readonly nutritionFilter = signal<NutritionFilter>('ALL');
   protected readonly shown = computed(() => {
     const usage = this.usage();
     const aisle = this.aisleFilter();
+    const nutrition = this.nutritionFilter();
     return (this.ingredients.value() ?? []).filter(
       (ingredient) =>
         (usage === 'ALL' || (usage === 'USED') === ingredient.recipeCount > 0) &&
-        (aisle === 'ALL' || (ingredient.aisle ?? '') === aisle),
+        (aisle === 'ALL' || (ingredient.aisle ?? '') === aisle) &&
+        (nutrition === 'ALL' ||
+          (nutrition === 'SET' ? !!ingredient.nutrition : !ingredient.nutrition && ingredient.recipeCount > 0)),
     );
   });
+  /** Used in a recipe but without nutrition facts: those recipes leave it out of theirs. */
+  protected readonly withoutNutritionCount = computed(
+    () => (this.ingredients.value() ?? []).filter((ingredient) => ingredient.recipeCount > 0 && !ingredient.nutrition).length,
+  );
+  /** The ingredient whose nutrition facts are being set. */
+  protected readonly nutritionId = signal<number | null>(null);
+  protected readonly showSuggestions = signal(false);
+  protected readonly showCiqual = signal(false);
+
+  /** "Ciqual · 753 kcal", "Étiquette · 380 kcal", per 100 g. */
+  protected nutritionLabel(ingredient: IngredientResponse): string | null {
+    const nutrition = ingredient.nutrition;
+    if (!nutrition) {
+      return null;
+    }
+    return `${nutrition.ciqualCode ? 'Ciqual' : 'Étiquette'} · ${formatKcal(nutrition.per100g.kcal)}`;
+  }
   /** Used in a recipe but not shelved yet: they fall in "Autres" in the shopping lists. */
   protected readonly withoutAisleCount = computed(
     () => (this.ingredients.value() ?? []).filter((ingredient) => ingredient.recipeCount > 0 && !ingredient.aisle).length,

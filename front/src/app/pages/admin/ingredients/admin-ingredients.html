@@ -1,6 +1,14 @@
 <section class="admin-section" aria-labelledby="ingredients-title">
   <div class="admin-section__head ingredients-head">
     <h2 id="ingredients-title">Ingrédients</h2>
+    <div class="admin-section__actions">
+      <button yonaButton variant="secondary" type="button" [attr.aria-expanded]="showSuggestions()" (click)="showSuggestions.set(!showSuggestions())">
+        <svg yonaIcon="sparkles"></svg>Proposer les valeurs nutritionnelles
+      </button>
+      <button yonaButton variant="ghost" type="button" [attr.aria-expanded]="showCiqual()" (click)="showCiqual.set(!showCiqual())">
+        <svg yonaIcon="database-zap"></svg>Table Ciqual
+      </button>
+    </div>
     <div class="detect">
       <button yonaButton variant="secondary" type="button" aria-describedby="detect-help" [disabled]="detecting()" (click)="detectSimilar()">
         <svg yonaIcon="copy"></svg>{{ detecting() ? 'Recherche…' : 'Détecter les doublons' }}
@@ -31,6 +39,13 @@
     Les ingrédients sont créés depuis les recettes. Un renommage s'applique à toutes les recettes qui
     l'utilisent
   </p>
+
+  @if (showCiqual()) {
+    <yona-ciqual-table (imported)="ingredients.reload()" (closed)="showCiqual.set(false)" />
+  }
+  @if (showSuggestions()) {
+    <yona-nutrition-suggestions (linked)="ingredients.reload()" (closed)="showSuggestions.set(false)" />
+  }
 
   @if (similarGroups(); as groups) {
     @if (groups.length) {
@@ -87,12 +102,18 @@
     />
     <yona-select label="Utilisation" [options]="usageOptions" [(value)]="usage" />
     <yona-select label="Rayon" [options]="aisleFilterOptions" [(value)]="aisleFilter" />
+    <yona-select label="Valeurs nutritionnelles" [options]="nutritionFilterOptions" [(value)]="nutritionFilter" />
     @if (unusedCount()) {
       <span class="admin-row__meta">{{ unusedCount() }} non utilisé{{ unusedCount() > 1 ? 's' : '' }}</span>
     }
     @if (withoutAisleCount()) {
       <button type="button" class="link-button" (click)="aisleFilter.set(''); usage.set('USED')">
         {{ withoutAisleCount() }} sans rayon
+      </button>
+    }
+    @if (withoutNutritionCount()) {
+      <button type="button" class="link-button" (click)="nutritionFilter.set('MISSING')">
+        {{ withoutNutritionCount() }} sans valeurs nutritionnelles
       </button>
     }
   </div>
@@ -154,6 +175,9 @@
                   @if (pieceLabel(ingredient); as label) {
                     <span class="badge">{{ label }}</span>
                   }
+                  @if (nutritionLabel(ingredient); as label) {
+                    <span class="badge" [attr.title]="ingredient.nutrition?.ciqualName ?? ingredient.nutrition?.labelSource ?? null">{{ label }}</span>
+                  }
                 </span>
               </span>
               <div class="admin-row__actions">
@@ -167,6 +191,15 @@
                 />
                 <button type="button" class="icon-button" [attr.aria-label]="'Équivalent en pièces de ' + ingredient.name" (click)="startPiece(ingredient)">
                   <svg yonaIcon="calculator" [size]="18"></svg>
+                </button>
+                <button
+                  type="button"
+                  class="icon-button"
+                  [attr.aria-label]="'Valeurs nutritionnelles de ' + ingredient.name"
+                  [attr.aria-expanded]="nutritionId() === ingredient.id"
+                  (click)="nutritionId.set(nutritionId() === ingredient.id ? null : ingredient.id)"
+                >
+                  <svg yonaIcon="carrot" [size]="18"></svg>
                 </button>
                 <button type="button" class="icon-button" [attr.aria-label]="'Renommer ' + ingredient.name" (click)="startRename(ingredient)">
                   <svg yonaIcon="pencil" [size]="18"></svg>
@@ -201,6 +234,9 @@
                   <button yonaButton variant="ghost" type="button" (click)="pieceId.set(null)">Annuler</button>
                 </div>
               </form>
+            }
+            @if (nutritionId() === ingredient.id) {
+              <yona-ingredient-nutrition-editor [ingredient]="ingredient" (saved)="ingredients.reload()" (closed)="nutritionId.set(null)" />
             }
           </li>
         }

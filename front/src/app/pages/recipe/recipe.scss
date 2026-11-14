@@ -217,6 +217,18 @@
 }
 
 // "Le conseil de Yona", after the steps
+// "Énergie": a link to the nutrition facts further down (focus ring: the global one of the site)
+.fact__link {
+  color: inherit;
+  text-decoration: underline var(--color-accent);
+  text-underline-offset: 0.2em;
+}
+
+.fact__unit {
+  font: 400 var(--text-sm) var(--font-body);
+  color: var(--color-text-muted);
+}
+
 .tip {
   display: grid;
   gap: var(--space-3);

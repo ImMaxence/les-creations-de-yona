@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ApiException;
+import fr.lescreationsdeyona.nutrition.CiqualFoods;
 import fr.lescreationsdeyona.trash.TrashBin;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,8 @@ class IngredientAisleTest {
 
 	private final IngredientRepository repository = mock(IngredientRepository.class);
 
-	private final IngredientService service = new IngredientService(repository, mock(TrashBin.class), mock(AuditLog.class));
+	private final IngredientService service = new IngredientService(repository, mock(TrashBin.class), mock(AuditLog.class),
+			mock(CiqualFoods.class));
 
 	private static Ingredient ingredient(long id, String name, Aisle aisle) {
 		Ingredient ingredient = new Ingredient();

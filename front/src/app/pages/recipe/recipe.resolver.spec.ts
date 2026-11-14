@@ -133,4 +133,34 @@ describe('recipeSeo', () => {
       },
     ]);
   });
+
+  it('gives Google the nutrition facts per serving, when the page shows them', () => {
+    const nutrition = {
+      servings: 6,
+      grams: 900,
+      perServing: { kcal: 312.4, proteins: 4.2, carbohydrates: 45, sugars: 22.5, fat: 12, saturatedFat: 7.5, fibre: 2.1, salt: 0.25 },
+      total: { kcal: 1874, proteins: 25, carbohydrates: 270, sugars: 135, fat: 72, saturatedFat: 45, fibre: 12.6, salt: 1.5 },
+      per100g: { kcal: 208, proteins: 2.8, carbohydrates: 30, sugars: 15, fat: 8, saturatedFat: 5, fibre: 1.4, salt: 0.17 },
+      nutriScore: { grade: 'C', score: 9 },
+      countedLines: 2,
+      missing: [{ name: 'Cannelle', reason: 'NO_VALUES' }],
+      ciqualVersion: 'Ciqual 2025',
+      fromLabels: false,
+    };
+    const steps: Part[] = [{ ingredients: [], steps: [step('Mélangez')] }];
+
+    expect(jsonLd(recipe(steps, { nutrition } as unknown as Partial<RecipeDetail>))['nutrition']).toBeUndefined();
+    expect(jsonLd(recipe(steps, { showNutrition: true, nutrition } as unknown as Partial<RecipeDetail>))['nutrition']).toEqual({
+      '@type': 'NutritionInformation',
+      servingSize: '1 portion',
+      calories: '312 calories',
+      fatContent: '12 g',
+      saturatedFatContent: '7.5 g',
+      carbohydrateContent: '45 g',
+      sugarContent: '22.5 g',
+      fiberContent: '2.1 g',
+      proteinContent: '4.2 g',
+      sodiumContent: '100 mg',
+    });
+  });
 });

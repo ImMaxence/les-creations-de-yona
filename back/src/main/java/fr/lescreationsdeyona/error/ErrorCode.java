@@ -144,6 +144,13 @@ public enum ErrorCode {
 	INGREDIENT_IN_USE(HttpStatus.CONFLICT, "Cet ingrédient est utilisé dans au moins une recette"),
 	INGREDIENT_MERGE_INVALID(HttpStatus.BAD_REQUEST, "Choisissez au moins deux ingrédients, et l'ingrédient à garder ou le nouveau nom"),
 	INGREDIENT_MERGE_CONFLICT(HttpStatus.CONFLICT, "Ces ingrédients figurent ensemble dans une même partie d'une recette : corrigez-la avant de les fusionner"),
+	INGREDIENT_NUTRITION_INVALID(HttpStatus.BAD_REQUEST, "Choisissez un aliment de la table Ciqual ou saisissez les valeurs de l'étiquette, pas les deux"),
+	NUTRITION_LABEL_INCONSISTENT(HttpStatus.BAD_REQUEST, "Les sucres ne peuvent pas dépasser les glucides, ni les acides gras saturés les lipides : vérifiez l'étiquette"),
+
+	// Nutrition facts
+	CIQUAL_FOOD_NOT_FOUND(HttpStatus.BAD_REQUEST, "Cet aliment n'est pas dans la table Ciqual du site"),
+	CIQUAL_FILE_INVALID(HttpStatus.BAD_REQUEST, "Ce fichier n'est pas la table Ciqual : importez le fichier Excel (.xlsx) publié par l'Anses"),
+	OPEN_FOOD_FACTS_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "Open Food Facts ne répond pas pour le moment : réessayez dans quelques minutes, ou saisissez les valeurs de l'étiquette"),
 
 	// Social links
 	DUPLICATE_SOCIAL_PLATFORM(HttpStatus.BAD_REQUEST, "Chaque réseau social ne peut apparaître qu'une seule fois"),

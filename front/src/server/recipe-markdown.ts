@@ -1,6 +1,7 @@
 import type { RecipeDetail } from '../app/core/api/generated/models/recipe-detail';
 import { SITE_NAME, absoluteUrl } from '../app/core/seo/page-seo';
 import { describeMold, hasParts, shownIngredients } from '../app/pages/recipe/recipe-parts';
+import { nutritionMarkdown } from '../app/shared/format/nutrition';
 import { firstOfMonth } from '../app/shared/format/paris-time';
 import { formatMinutes, formatQuantity } from '../app/shared/format/units';
 import { recipeLink } from '../app/shared/routing/links';
@@ -52,6 +53,9 @@ export function recipeToMarkdown(recipe: RecipeDetail): string {
       lines.push(`${index + 1}. ${first}`, ...rest.map((line) => (line.trim() ? `   ${line}` : '')));
     });
     lines.push('');
+  }
+  if (recipe.showNutrition && recipe.nutrition) {
+    lines.push(...nutritionMarkdown(recipe.nutrition));
   }
   if (recipe.tip) {
     lines.push('## Le conseil de Yona', '', recipe.tip.trim(), '');

@@ -14,6 +14,7 @@ import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.ingredient.IngredientService;
 import fr.lescreationsdeyona.menu.MenuService;
+import fr.lescreationsdeyona.nutrition.NutritionService;
 import fr.lescreationsdeyona.tag.TagService;
 import fr.lescreationsdeyona.trash.TrashBin;
 import java.util.List;
@@ -33,7 +34,7 @@ class RecipeServiceSortTest {
 	private final RecipeService service = new RecipeService(recipeRepository, mock(CategoryRepository.class),
 			mock(IngredientService.class), mock(ImageService.class), mock(TagService.class), mock(MenuService.class),
 			mock(TrashBin.class), mock(RecipeMapper.class), mock(ApplicationEventPublisher.class), mock(AuditLog.class),
-			mock(ShopProductRepository.class));
+			mock(ShopProductRepository.class), mock(NutritionService.class));
 
 	private final RecipeFilter noFilter = new RecipeFilter(null, null, null, null, List.of(), null, null, null, null, null, null);
 

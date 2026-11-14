@@ -67,6 +67,28 @@ class AdminIngredientController {
 		return ingredientService.setPiece(id, form.piece());
 	}
 
+	@Operation(summary = "The nutrition facts of an ingredient: its Ciqual food, or the values of its label for 100 g, or none",
+			description = "What the recipes using it count. A Ciqual food and a label together are refused.")
+	@PutMapping("/{id}/nutrition")
+	IngredientResponse setIngredientNutrition(@PathVariable long id, @Valid @RequestBody IngredientNutritionForm form) {
+		return ingredientService.setNutrition(id, form);
+	}
+
+	@Operation(summary = "Link ingredients to Ciqual foods, all at once (\"Tout lier\"); all or none")
+	@PutMapping("/ciqual")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void linkIngredientsToCiqual(@Valid @RequestBody IngredientCiqualLinksForm form) {
+		ingredientService.linkToCiqual(form.links());
+	}
+
+	@Operation(summary = "Ingredients without nutrition facts, and the 3 Ciqual foods each most probably is",
+			description = "Those named, or else those of at least one recipe, the most used first.")
+	@GetMapping("/nutrition-suggestions")
+	List<NutritionSuggestion> suggestIngredientNutrition(
+			@RequestParam(required = false) @Size(max = 200) @Nullable List<@Size(max = 100) String> name) {
+		return ingredientService.nutritionSuggestions(name);
+	}
+
 	@Operation(summary = "Put ingredients in a shop aisle (sorting the shopping list), or in none")
 	@PutMapping("/aisle")
 	@ResponseStatus(HttpStatus.NO_CONTENT)

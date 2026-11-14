@@ -91,8 +91,11 @@ class RestoredData {
 			"shop_order_line", "account_entry", "account_purchase_line", "invoice", "invoice_line", "site_content", "site_theme",
 			"shop_settings", "admin_message", "admin_group", "admin_group_member", "admin_message_image");
 
-	/** Saved, and restored by "Tout remplacer", but left out of a merge: a thing deleted on the site stays deleted. */
-	static final Set<String> NOT_MERGED = Set.of("trash_item");
+	/**
+	 * Saved, and restored by "Tout remplacer", but left out of a merge: a thing deleted on the site stays deleted; the
+	 * Ciqual table stays the site's own version.
+	 */
+	static final Set<String> NOT_MERGED = Set.of("trash_item", "ciqual_food", "ciqual_table");
 
 	/** The label of a line of the accounts coming from an order, followed by its number. */
 	private static final String ORDER_LABEL = "Commande n° ";
@@ -314,18 +317,36 @@ class RestoredData {
 
 	private Map<Long, Long> mergeIngredients(JdbcClient scratch, JdbcClient site, Added added) {
 		Map<Long, Long> ids = new HashMap<>();
-		for (Map<String, Object> row : scratch.sql("select id, name, aisle, piece_grams, piece_singular, piece_plural from ingredient")
+		for (Map<String, Object> row : scratch.sql("""
+				select id, name, aisle, piece_grams, piece_singular, piece_plural, ciqual_code, label_kcal, label_proteins,
+				label_carbohydrates, label_sugars, label_fat, label_saturated_fat, label_fibre, label_salt, label_source
+				from ingredient""")
 			.query().listOfRows()) {
-			// An ingredient already on the site keeps its aisle and its weight; one added comes with the backup's
+			// An ingredient already on the site keeps its aisle, its weight and its nutrition facts; one added comes with
+			// the backup's, its Ciqual food only if the site's table has it (another version may not)
 			added.ingredients += site.sql("""
-					insert into ingredient (name, aisle, piece_grams, piece_singular, piece_plural)
-					values (:name, :aisle, :piece_grams, :piece_singular, :piece_plural)
+					insert into ingredient (name, aisle, piece_grams, piece_singular, piece_plural, ciqual_code, label_kcal,
+					label_proteins, label_carbohydrates, label_sugars, label_fat, label_saturated_fat, label_fibre, label_salt,
+					label_source)
+					values (:name, :aisle, :piece_grams, :piece_singular, :piece_plural,
+					(select code from ciqual_food where code = :ciqual_code), :label_kcal, :label_proteins, :label_carbohydrates,
+					:label_sugars, :label_fat, :label_saturated_fat, :label_fibre, :label_salt, :label_source)
 					on conflict (name) do nothing""")
 				.param("name", row.get("name"))
 				.param("aisle", row.get("aisle"))
 				.param("piece_grams", row.get("piece_grams"))
 				.param("piece_singular", row.get("piece_singular"))
 				.param("piece_plural", row.get("piece_plural"))
+				.param("ciqual_code", row.get("ciqual_code"), java.sql.Types.INTEGER)
+				.param("label_kcal", row.get("label_kcal"), java.sql.Types.NUMERIC)
+				.param("label_proteins", row.get("label_proteins"), java.sql.Types.NUMERIC)
+				.param("label_carbohydrates", row.get("label_carbohydrates"), java.sql.Types.NUMERIC)
+				.param("label_sugars", row.get("label_sugars"), java.sql.Types.NUMERIC)
+				.param("label_fat", row.get("label_fat"), java.sql.Types.NUMERIC)
+				.param("label_saturated_fat", row.get("label_saturated_fat"), java.sql.Types.NUMERIC)
+				.param("label_fibre", row.get("label_fibre"), java.sql.Types.NUMERIC)
+				.param("label_salt", row.get("label_salt"), java.sql.Types.NUMERIC)
+				.param("label_source", row.get("label_source"), java.sql.Types.VARCHAR)
 				.update();
 			// The column collation ignores case and accents: finds the site's spelling too.
 			Long siteId = site.sql("select id from ingredient where name = :name").param("name", row.get("name"))

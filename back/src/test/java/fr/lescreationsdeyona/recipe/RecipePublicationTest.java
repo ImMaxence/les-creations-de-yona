@@ -25,6 +25,7 @@ import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientService;
 import fr.lescreationsdeyona.menu.MenuService;
+import fr.lescreationsdeyona.nutrition.NutritionService;
 import fr.lescreationsdeyona.tag.TagService;
 import fr.lescreationsdeyona.trash.TrashBin;
 import java.time.Duration;
@@ -54,7 +55,7 @@ class RecipePublicationTest {
 
 	private final RecipeService service = new RecipeService(recipeRepository, categoryRepository, ingredientService,
 			mock(ImageService.class), mock(TagService.class), mock(MenuService.class), mock(TrashBin.class), recipeMapper,
-			events, auditLog, mock(ShopProductRepository.class));
+			events, auditLog, mock(ShopProductRepository.class), mock(NutritionService.class));
 
 	private final Category desserts = new Category();
 
@@ -84,7 +85,7 @@ class RecipePublicationTest {
 	}
 
 	private static RecipeForm form(RecipeStatus status, boolean featured, Instant scheduledAt) {
-		return new RecipeForm("Tarte", null, status, RecipeTheme.SAVORY, featured, List.of(1L), null, null, null, null, null,
+		return new RecipeForm("Tarte", null, status, RecipeTheme.SAVORY, featured, null, List.of(1L), null, null, null, null, null,
 				null, null, null, null, null, null, scheduledAt,
 				List.of(new RecipeForm.Part(null, List.of(new RecipeForm.IngredientLine("Farine", null, null, null)),
 						List.of(new RecipeForm.Step("Mélanger", null, List.of())))));
