@@ -34,7 +34,12 @@ import org.springframework.context.ApplicationEventPublisher;
 class RecipeNutritionEstimateTest {
 
 	private static final RecipeNutrition NUTRITION = new RecipeNutrition(4, 100, NutritionFacts.NONE, NutritionFacts.NONE,
-			NutritionFacts.NONE, null, 1, List.of(), "Ciqual 2025", false);
+			NutritionFacts.NONE, null, 1, List.of(), "Ciqual 2025", false, true);
+
+	/** The butter has no facts yet. */
+	private static final RecipeNutrition INCOMPLETE = new RecipeNutrition(4, 100, NutritionFacts.NONE, NutritionFacts.NONE,
+			NutritionFacts.NONE, null, 1, List.of(new RecipeNutrition.MissingIngredient("Beurre", RecipeNutrition.Reason.NO_VALUES)),
+			"Ciqual 2025", false, false);
 
 	private final RecipeRepository recipeRepository = mock(RecipeRepository.class);
 
@@ -125,6 +130,20 @@ class RecipeNutritionEstimateTest {
 		assertThat(shown.nutrition()).isSameAs(NUTRITION);
 		verify(nutritionService).compute(lines.capture(), eq(6));
 		assertThat(lines.getValue()).extracting(NutritionService.Line::name).containsExactly("Farine", "Beurre");
+	}
+
+	@Test
+	void hidesIncompleteFactsAndListsTheirRecipe() {
+		when(recipeRepository.findBySlugAndStatus("pate-sablee", RecipeStatus.PUBLISHED)).thenReturn(Optional.of(dough));
+		when(nutritionService.compute(anyList(), any())).thenReturn(INCOMPLETE);
+		dough.setShowNutrition(true);
+
+		assertThat(service.getPublished("pate-sablee").nutrition()).isNull();
+		when(recipeRepository.findByShowNutritionTrue()).thenReturn(List.of(dough));
+		assertThat(service.withIncompleteNutrition()).containsExactly(2L);
+		// Completed: no longer listed
+		when(nutritionService.compute(anyList(), any())).thenReturn(NUTRITION);
+		assertThat(service.withIncompleteNutrition()).isEmpty();
 	}
 
 }

@@ -11,7 +11,7 @@ import { RecipeDetail } from '../../core/api/generated/models/recipe-detail';
 import { Step } from '../../core/api/generated/models/step';
 import { AUTHOR_REF, WEBSITE_ID, breadcrumb } from '../../core/seo/json-ld';
 import { PageSeo, absoluteUrl, excerpt, markdownPathOf } from '../../core/seo/page-seo';
-import { nutritionInformation } from '../../shared/format/nutrition';
+import { nutritionInformation, shownNutrition } from '../../shared/format/nutrition';
 import { isoDuration } from '../../shared/format/units';
 import { RECIPES_PATH, categoryQueryParams, mainCategory, recipeLink } from '../../shared/routing/links';
 import { QUESTIONS_ANCHOR, hasParts, stepAnchor, totalIngredients } from './recipe-parts';
@@ -144,7 +144,7 @@ function recipeNode(
     ),
     tool: recipe.equipment.length ? recipe.equipment.map((item) => ({ '@type': 'HowToTool', name: item })) : undefined,
     // Shown on the page only when Yona chose to: the same estimate
-    nutrition: recipe.showNutrition && recipe.nutrition ? nutritionInformation(recipe.nutrition) : undefined,
+    nutrition: shownNutrition(recipe) ? nutritionInformation(shownNutrition(recipe)!) : undefined,
     recipeInstructions: hasParts(recipe.parts)
       ? recipe.parts.map((part, index) => ({
           '@type': 'HowToSection',

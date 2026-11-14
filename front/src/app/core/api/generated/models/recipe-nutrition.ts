@@ -12,6 +12,11 @@ export interface RecipeNutrition {
   ciqualVersion: string;
 
   /**
+   * Every ingredient has its nutrition facts, every quantity is weighed: only then does the page of the recipe show them. A line without quantity ("sel, au goût") of an ingredient that has its facts does not prevent it
+   */
+  complete: boolean;
+
+  /**
    * Ingredient lines counted
    */
   countedLines: number;

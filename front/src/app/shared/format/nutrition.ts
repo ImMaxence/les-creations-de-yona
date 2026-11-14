@@ -8,6 +8,14 @@ const SALT = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
 
 export const NUTRI_SCORE_GRADES = ['A', 'B', 'C', 'D', 'E'] as const;
 
+/**
+ * The nutrition facts a recipe shows: when Yona ticked them and every ingredient has its values (the API sends
+ * them only then); null otherwise, and for a copy kept offline before 2.15.
+ */
+export function shownNutrition(recipe: { showNutrition?: boolean; nutrition?: RecipeNutrition }): RecipeNutrition | null {
+  return recipe.showNutrition && recipe.nutrition?.complete ? recipe.nutrition : null;
+}
+
 /** 1318.7 → "1 319 kcal". */
 export function formatKcal(kcal: number): string {
   return `${KCAL.format(kcal)} kcal`;

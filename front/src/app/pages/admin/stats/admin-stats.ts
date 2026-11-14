@@ -34,6 +34,8 @@ const MISSING_LABELS: Record<IncompleteRecipe['missing'][number], string> = {
   TIME: 'Temps',
   SERVINGS: 'Portions',
   DIFFICULTY: 'Difficulté',
+  // Shown on the recipe, but an ingredient lacks its values: hidden until completed
+  NUTRITION: 'Valeurs nutritionnelles',
 };
 
 const ASSISTANT_LABELS: Record<AiVisits['assistant'], string> = {

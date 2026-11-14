@@ -158,12 +158,29 @@ public class RecipeService {
 		return LinkedRecipes.unfold(recipe, recipeMapper.toDetail(recipe), recipeMapper);
 	}
 
-	/** Unfolded, with its nutrition facts when its page shows them. */
+	/**
+	 * Unfolded, with its nutrition facts when its page shows them and they are complete (every ingredient has its
+	 * facts): half of them would be wrong, they wait until the admin completes them (Statistiques lists the recipe).
+	 */
 	private RecipeDetail shown(Recipe recipe) {
 		RecipeDetail detail = unfolded(recipe);
-		return detail.showsNutrition()
-				? RecipeDetail.withNutrition(detail, nutritionOf(detail, BigDecimal.ONE, detail.servings()))
-				: detail;
+		if (!detail.showsNutrition()) {
+			return detail;
+		}
+		RecipeNutrition nutrition = nutritionOf(detail, BigDecimal.ONE, detail.servings());
+		return nutrition.complete() ? RecipeDetail.withNutrition(detail, nutrition) : detail;
+	}
+
+	/** The recipes showing their nutrition facts whose facts are not complete yet, hidden from their page meanwhile. */
+	public Set<Long> withIncompleteNutrition() {
+		Set<Long> ids = new HashSet<>();
+		for (Recipe recipe : recipeRepository.findByShowNutritionTrue()) {
+			RecipeDetail detail = unfolded(recipe);
+			if (!nutritionOf(detail, BigDecimal.ONE, detail.servings()).complete()) {
+				ids.add(recipe.getId());
+			}
+		}
+		return ids;
 	}
 
 	/** Its unfolded lines, quantities times {@code ratio}, added up. */

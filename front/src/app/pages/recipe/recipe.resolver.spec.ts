@@ -146,6 +146,7 @@ describe('recipeSeo', () => {
       missing: [{ name: 'Cannelle', reason: 'NO_VALUES' }],
       ciqualVersion: 'Ciqual 2025',
       fromLabels: false,
+      complete: true,
     };
     const steps: Part[] = [{ ingredients: [], steps: [step('Mélangez')] }];
 

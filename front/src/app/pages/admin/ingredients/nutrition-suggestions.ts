@@ -7,6 +7,7 @@ import { NutritionSuggestion } from '../../../core/api/generated/models/nutritio
 import { Toaster } from '../../../core/notifications/toaster';
 import { formatKcal } from '../../../shared/format/nutrition';
 import { Button } from '../../../shared/ui/button/button';
+import { DataSourceLogo } from '../../../shared/ui/data-source-logo/data-source-logo';
 import { Icon } from '../../../shared/ui/icon/icon';
 
 /** None of the foods offered: the ingredient is left as it is. */
@@ -18,11 +19,11 @@ const NONE = 0;
  */
 @Component({
   selector: 'yona-nutrition-suggestions',
-  imports: [Button, Icon],
+  imports: [Button, DataSourceLogo, Icon],
   template: `
     <section class="admin-panel suggestions" aria-labelledby="suggestions-title">
       <div class="suggestions__head">
-        <h3 id="suggestions-title">Correspondances proposées</h3>
+        <h3 id="suggestions-title" class="suggestions__title"><yona-data-source-logo name="ciqual" [size]="20" />Valeurs nutritionnelles proposées</h3>
         <button type="button" class="icon-button" aria-label="Fermer les correspondances" (click)="closed.emit()"><svg yonaIcon="x" [size]="18"></svg></button>
       </div>
       @if (suggestions.value(); as suggestions) {
@@ -78,6 +79,12 @@ const NONE = 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    .suggestions__title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
     }
 
     .suggestions__list {

@@ -11,12 +11,14 @@ import { NutritionSuggestion } from '../../models/nutrition-suggestion';
 
 export interface SuggestIngredientNutrition$Params {
   name?: Array<string>;
+  limit?: number;
 }
 
 export function suggestIngredientNutrition(http: HttpClient, rootUrl: string, params?: SuggestIngredientNutrition$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<NutritionSuggestion>>> {
   const rb = new RequestBuilder(rootUrl, suggestIngredientNutrition.PATH, 'get');
   if (params) {
     rb.query('name', params.name, {});
+    rb.query('limit', params.limit, {});
   }
 
   return http.request(

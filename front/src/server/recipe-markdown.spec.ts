@@ -106,6 +106,7 @@ describe('recipeToMarkdown', () => {
       missing: [{ name: 'Cannelle', reason: 'NO_VALUES' }],
       ciqualVersion: 'Ciqual 2025',
       fromLabels: false,
+      complete: true,
     };
 
     expect(recipeToMarkdown(recipe({ nutrition } as unknown as Partial<RecipeDetail>))).not.toContain('Valeurs nutritionnelles');

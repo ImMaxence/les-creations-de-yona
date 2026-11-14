@@ -60,6 +60,21 @@ class NutritionCalculatorTest {
 		assertThat(nutrition.ciqualVersion()).isEqualTo("Ciqual 2025");
 		assertThat(nutrition.missing()).isEmpty();
 		assertThat(nutrition.nutriScore()).isNotNull();
+		assertThat(nutrition.complete()).isTrue();
+	}
+
+	@Test
+	void isCompleteOnlyWhenEveryIngredientHasItsFacts() {
+		// "Sel, au goût": nothing to count, but it has its facts
+		assertThat(compute(4, line("Farine", "200", "g"), line("Sel", null, null)).complete()).isTrue();
+		// Without quantity, and without facts either: incomplete
+		RecipeNutrition withoutFacts = compute(4, line("Farine", "200", "g"), line("Levure", null, null));
+		assertThat(withoutFacts.missing()).containsExactly(new MissingIngredient("Levure", Reason.NO_VALUES));
+		assertThat(withoutFacts.complete()).isFalse();
+		// Pieces of an unknown weight
+		assertThat(compute(4, line("Farine", "200", "g"), line("Vanille", "1", "gousse")).complete()).isFalse();
+		// Nothing counted at all
+		assertThat(compute(4, line("Sel", null, null)).complete()).isFalse();
 	}
 
 	@Test
@@ -72,6 +87,7 @@ class NutritionCalculatorTest {
 				new MissingIngredient("Vanille", Reason.NO_WEIGHT), new MissingIngredient("Levure", Reason.NO_VALUES),
 				new MissingIngredient("Chocolat", Reason.NO_VALUES));
 		assertThat(nutrition.fromLabels()).isFalse();
+		assertThat(nutrition.complete()).isFalse();
 	}
 
 	@Test

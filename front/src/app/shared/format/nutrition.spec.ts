@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RecipeNutrition } from '../../core/api/generated/models/recipe-nutrition';
-import { NUTRIENT_ROWS, formatGrams, formatKcal, missingNames, missingReason, nutritionSource } from './nutrition';
+import { NUTRIENT_ROWS, formatGrams, formatKcal, missingNames, missingReason, nutritionSource, shownNutrition } from './nutrition';
 
 const facts = { kcal: 1318.7, proteins: 16.94, carbohydrates: 45, sugars: 12.25, fat: 16, saturatedFat: 9.5, fibre: 2, salt: 0.123 };
 
@@ -18,6 +18,7 @@ const nutrition: RecipeNutrition = {
   ],
   ciqualVersion: 'Ciqual 2025',
   fromLabels: false,
+  complete: true,
 };
 
 describe('nutrition format', () => {
@@ -54,5 +55,12 @@ describe('nutrition format', () => {
     expect(nutritionSource({ ...nutrition, fromLabels: true })).toBe(
       "D'après la table Ciqual 2025 de l'Anses et les étiquettes des produits",
     );
+  });
+  it('shows the facts only when ticked and complete', () => {
+    expect(shownNutrition({ showNutrition: true, nutrition })).toBe(nutrition);
+    expect(shownNutrition({ showNutrition: false, nutrition })).toBeNull();
+    // An ingredient without values: hidden until completed
+    expect(shownNutrition({ showNutrition: true, nutrition: { ...nutrition, complete: false } })).toBeNull();
+    expect(shownNutrition({ showNutrition: true })).toBeNull();
   });
 });

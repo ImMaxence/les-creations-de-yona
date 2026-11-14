@@ -753,9 +753,10 @@ const NUTRITION = {
   per100g: { kcal: 208, proteins: 2.8, carbohydrates: 30, sugars: 15, fat: 8, saturatedFat: 5, fibre: 1.4, salt: 0.17 },
   nutriScore: { grade: 'C', score: 9 },
   countedLines: 4,
-  missing: [{ name: 'Cannelle', reason: 'NO_VALUES' }],
+  missing: [{ name: 'Cannelle', reason: 'NO_QUANTITY' }],
   ciqualVersion: 'Ciqual 2025',
   fromLabels: false,
+  complete: true,
 };
 
 await part('Valeurs nutritionnelles et besoins du jour (téléphone, valeurs simulées)', async () => {
@@ -880,23 +881,36 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   await page.getByRole('button', { name: '1 sans valeurs nutritionnelles' }).click();
   check('« 1 sans valeurs nutritionnelles » : ceux des recettes à compléter', (await page.locator('.admin-row__title').allTextContents()).join('|') === 'Spéculoos');
 
-  await page.getByRole('button', { name: 'Valeurs nutritionnelles de Spéculoos' }).click();
-  const editor = page.locator('yona-ingredient-nutrition-editor');
+  const openNutrition = () => page.getByRole('button', { name: 'Valeurs nutritionnelles de Spéculoos' }).click();
+  await openNutrition();
+  const dialog = page.getByRole('dialog', { name: 'Valeurs nutritionnelles · Spéculoos' });
+  const editor = dialog.locator('yona-ingredient-nutrition-editor');
   await editor.getByText('Biscuit sec petit beurre').waitFor();
-  check('L’aliment le plus proche proposé d’emblée', (await editor.locator('.food').first().innerText()).includes('Spéculoos'));
+  check('Une fenêtre, l’aliment le plus proche proposé d’emblée', (await editor.locator('.food').first().innerText()).includes('Spéculoos'));
+  const chosenTab = editor.getByRole('tab', { name: 'Aliment Ciqual' });
+  const [tabColor, tabBackground] = await chosenTab.evaluate((tab) => [getComputedStyle(tab).color, getComputedStyle(document.body).backgroundColor]);
+  check('L’onglet choisi écrit en clair sur la couleur du thème', tabColor !== 'rgb(0, 0, 0)' && (await chosenTab.getAttribute('aria-selected')) === 'true', `${tabColor} sur ${tabBackground}`);
   await editor.getByRole('button', { name: 'Choisir' }).first().click();
-  await page.waitForTimeout(300);
-  check('« Choisir » : l’ingrédient lié à son aliment Ciqual', writes.at(-1)?.body?.ciqualCode === 24009, JSON.stringify(writes.at(-1)?.body));
+  await dialog.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+  check('« Choisir » : l’ingrédient lié à son aliment Ciqual, la fenêtre refermée', writes.at(-1)?.body?.ciqualCode === 24009 && !(await dialog.isVisible()), JSON.stringify(writes.at(-1)?.body));
 
+  await openNutrition();
   await editor.getByRole('tab', { name: 'Produit du commerce' }).click();
   await editor.getByRole('button', { name: 'Chercher' }).click();
   await editor.getByRole('button', { name: 'Utiliser ces valeurs' }).click();
   check('Produit d’Open Food Facts : ses valeurs reprises dans l’étiquette', (await editor.getByLabel('Énergie (kcal)').inputValue()) === '484');
+  // A label on two lines leaves its field level with those of its row
+  // Fields of a row of the grid start at the same height; their inputs must end at the same height too
+  const fields = await editor.locator('.label-fields .field').evaluateAll((all) =>
+    all.map((field) => [Math.round(field.getBoundingClientRect().top), Math.round(field.querySelector('input').getBoundingClientRect().bottom)]),
+  );
+  const rows = new Map();
+  fields.forEach(([top, bottom]) => rows.set(top, [...(rows.get(top) ?? []), bottom]));
+  check('Étiquette : les champs d’une même rangée alignés', [...rows.values()].every((row) => Math.max(...row) - Math.min(...row) <= 1), JSON.stringify(fields));
   await editor.getByRole('button', { name: "Enregistrer l'étiquette" }).click();
   await page.waitForTimeout(300);
   const saved = writes.at(-1)?.body;
   check('Étiquette enregistrée, avec sa provenance', saved?.label?.kcal === 484 && saved?.labelSource === 'Open Food Facts · Spéculoos · Lotus · 5410126116953', JSON.stringify(saved));
-  await editor.getByRole('button', { name: 'Fermer', exact: true }).click();
 
   await page.getByRole('button', { name: 'Proposer les valeurs nutritionnelles' }).click();
   const proposals = page.locator('yona-nutrition-suggestions');
@@ -910,9 +924,10 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   await page.screenshot({ path: SHOTS + 'nutrition-ingredients.png', fullPage: true });
 
   // L'éditeur de recette : l'estimation en direct, et l'ingrédient à lier en un clic
+  // Cannelle without values: incomplete
   await page.route('**/api/admin/recipes/nutrition', (route) => {
     writes.push({ url: route.request().url(), body: route.request().postDataJSON() });
-    route.fulfill({ json: NUTRITION });
+    route.fulfill({ json: { ...NUTRITION, missing: [{ name: 'Cannelle', reason: 'NO_VALUES' }], complete: false } });
   });
   await page.route('**/api/admin/ingredients/nutrition-suggestions?**', (route) =>
     route.fulfill({ json: [{ ingredient: { id: 9, name: 'Cannelle', recipeCount: 1 }, foods: [{ code: 11003, name: 'Cannelle, poudre', subgroupCode: '1005', per100g: facts(250) }] }] }),
@@ -926,6 +941,7 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   await panel.getByText('312 kcal').waitFor({ timeout: 5000 });
   const asked = writes.filter((write) => write.url.endsWith('/recipes/nutrition')).at(-1)?.body;
   check('Éditeur : l’estimation de la recette en cours d’écriture', JSON.stringify(asked?.parts?.[0]?.ingredients?.[0]) === JSON.stringify({ name: 'Farine', quantity: 200, unit: 'g' }), JSON.stringify(asked));
+  check('Éditeur : valeurs incomplètes, pas affichées sur la recette tant qu’un ingrédient manque', (await panel.locator('.state--incomplete').innerText()).includes('Incomplètes'));
   await panel.getByRole('button', { name: 'Lier à « Cannelle, poudre »' }).click();
   await page.waitForTimeout(300);
   const link = writes.filter((write) => write.url.endsWith('/ingredients/ciqual')).at(-1)?.body;

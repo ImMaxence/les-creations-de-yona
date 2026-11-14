@@ -131,7 +131,7 @@ class IngredientNutritionTest {
 		when(repository.countRecipesPerIngredient()).thenReturn(List.of(new RecipeCount(1, 2), new RecipeCount(2, 5),
 				new RecipeCount(3, 9)));
 
-		List<NutritionSuggestion> suggestions = service.nutritionSuggestions(null);
+		List<NutritionSuggestion> suggestions = service.nutritionSuggestions(null, 3);
 
 		// The most used first; the one linked, and the one of no recipe, left out
 		assertThat(suggestions).extracting(suggestion -> suggestion.ingredient().name()).containsExactly("Beurre", "Œufs");

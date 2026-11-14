@@ -4,7 +4,6 @@ import fr.lescreationsdeyona.common.Quantities;
 import fr.lescreationsdeyona.nutrition.RecipeNutrition.MissingIngredient;
 import fr.lescreationsdeyona.nutrition.RecipeNutrition.Reason;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,12 +39,13 @@ final class NutritionCalculator {
 		Set<MissingIngredient> missing = new LinkedHashSet<>();
 		for (Line line : lines) {
 			Ingredient ingredient = ingredients.apply(line.name());
-			if (line.quantity() == null || line.quantity().signum() <= 0) {
-				missing.add(new MissingIngredient(line.name(), Reason.NO_QUANTITY));
-				continue;
-			}
+			// An ingredient without facts first: even without quantity, the recipe is not complete without them
 			if (ingredient == null || ingredient.per100g() == null) {
 				missing.add(new MissingIngredient(line.name(), Reason.NO_VALUES));
+				continue;
+			}
+			if (line.quantity() == null || line.quantity().signum() <= 0) {
+				missing.add(new MissingIngredient(line.name(), Reason.NO_QUANTITY));
 				continue;
 			}
 			BigDecimal weight = Quantities.grams(line.quantity(), line.unit(), ingredient.pieceGrams());
@@ -65,8 +65,9 @@ final class NutritionCalculator {
 		NutritionFacts per100g = grams > 0 ? total.times(100 / grams) : NutritionFacts.NONE;
 		NutritionFacts perServing = servings != null && servings > 0 ? total.times(1.0 / servings).rounded() : null;
 		NutriScore nutriScore = grams > 0 ? NutriScore.of(per100g, fruitsVegetablesLegumes * 100 / grams) : null;
+		List<MissingIngredient> left = List.copyOf(missing);
 		return new RecipeNutrition(servings, Math.round(grams), perServing, total.rounded(), per100g.rounded(), nutriScore,
-				counted, new ArrayList<>(missing), ciqualVersion, fromLabels);
+				counted, left, ciqualVersion, fromLabels, counted > 0 && RecipeNutrition.isComplete(left));
 	}
 
 }

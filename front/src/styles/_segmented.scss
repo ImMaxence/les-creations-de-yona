@@ -42,6 +42,7 @@
 
   &[aria-pressed='true'],
   &[aria-checked='true'],
+  &[aria-selected='true'],
   &.is-chosen {
     background-color: var(--color-accent);
     color: var(--color-on-accent);

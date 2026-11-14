@@ -15,12 +15,16 @@ import { OpenFoodFactsProduct } from '../../../core/api/generated/models/open-fo
 import { Toaster } from '../../../core/notifications/toaster';
 import { formatGrams, formatKcal } from '../../../shared/format/nutrition';
 import { Button } from '../../../shared/ui/button/button';
+import { DataSourceLogo } from '../../../shared/ui/data-source-logo/data-source-logo';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { Segmented } from '../../../shared/ui/segmented/segmented';
 
 type Tab = 'CIQUAL' | 'SHOP' | 'LABEL';
 
 type LabelKey = keyof NutritionLabel;
+
+/** Foods offered for its name, before anything is typed. */
+const OFFERED_FOODS = 6;
 
 /** The fields of a label, in its order; the values are typed as on the packet, per 100 g. */
 export const LABEL_FIELDS: { key: LabelKey; label: string; unit: string; max: number }[] = [
@@ -57,12 +61,13 @@ export function productSource(product: OpenFoodFactsProduct): string {
 }
 
 /**
- * The nutrition facts of an ingredient, in its row of "Ingrédients": the Ciqual food it is (searched, or
- * offered), a product of the shops found on Open Food Facts, or the values of its label typed by hand.
+ * The nutrition facts of an ingredient, in a dialog of "Ingrédients": the Ciqual food it is (searched, or
+ * offered), a product of the shops found on Open Food Facts, or the values of its label typed by hand. Saved, the
+ * dialog closes ("saved").
  */
 @Component({
   selector: 'yona-ingredient-nutrition-editor',
-  imports: [Button, Icon, Segmented],
+  imports: [Button, DataSourceLogo, Icon, Segmented],
   template: `
     <div class="nutrition">
       <div class="nutrition__current">
@@ -81,9 +86,15 @@ export function productSource(product: OpenFoodFactsProduct): string {
       </div>
 
       <div class="segmented" yonaSegmented role="tablist" aria-label="Valeurs nutritionnelles depuis">
-        <button type="button" class="segmented__option" role="tab" [attr.aria-selected]="tab() === 'CIQUAL'" (click)="tab.set('CIQUAL')">Aliment Ciqual</button>
-        <button type="button" class="segmented__option" role="tab" [attr.aria-selected]="tab() === 'SHOP'" (click)="tab.set('SHOP')">Produit du commerce</button>
-        <button type="button" class="segmented__option" role="tab" [attr.aria-selected]="tab() === 'LABEL'" (click)="tab.set('LABEL')">Étiquette</button>
+        <button type="button" class="segmented__option" role="tab" [attr.aria-selected]="tab() === 'CIQUAL'" (click)="tab.set('CIQUAL')">
+          <yona-data-source-logo name="ciqual" [size]="16" />Aliment Ciqual
+        </button>
+        <button type="button" class="segmented__option" role="tab" [attr.aria-selected]="tab() === 'SHOP'" (click)="tab.set('SHOP')">
+          <yona-data-source-logo name="open-food-facts" [size]="16" />Produit du commerce
+        </button>
+        <button type="button" class="segmented__option" role="tab" [attr.aria-selected]="tab() === 'LABEL'" (click)="tab.set('LABEL')">
+          <svg yonaIcon="pencil" [size]="16"></svg>Étiquette
+        </button>
       </div>
 
       @switch (tab()) {
@@ -97,8 +108,12 @@ export function productSource(product: OpenFoodFactsProduct): string {
               [value]="query()"
               (input)="query.set($any($event.target).value)"
             />
-            <p class="field__hint">
-              Les aliments de base de la table Ciqual de l'Anses. Les plus proches de « {{ ingredient().name }} » sont proposés
+            <p class="field__hint source">
+              <yona-data-source-logo name="ciqual" [size]="16" />
+              <span>
+                Les aliments de base de la table Ciqual de l'Anses. Les plus proches de « {{ ingredient().name }} » sont proposés ;
+                tapez un mot pour chercher parmi tous (20 résultats au plus)
+              </span>
             </p>
             <ul role="list" class="foods">
               @for (food of foods(); track food.code) {
@@ -134,10 +149,12 @@ export function productSource(product: OpenFoodFactsProduct): string {
                 <svg yonaIcon="search"></svg>{{ shopSearching() ? 'Recherche…' : 'Chercher' }}
               </button>
             </div>
-            <p class="field__hint">
-              <svg yonaIcon="scan-barcode" [size]="16"></svg>
-              Le nom du produit, ou les chiffres sous le code-barres du paquet. Les valeurs viennent d'Open Food Facts : vérifiez-les
-              avant d'enregistrer
+            <p class="field__hint source">
+              <yona-data-source-logo name="open-food-facts" [size]="16" />
+              <span>
+                Le nom du produit, ou les chiffres sous le code-barres du paquet (<svg yonaIcon="scan-barcode" [size]="14"></svg>).
+                Les valeurs viennent d'Open Food Facts, la base ouverte des produits du commerce : vérifiez-les avant d'enregistrer
+              </span>
             </p>
             @if (products(); as products) {
               <ul role="list" class="foods">
@@ -160,7 +177,7 @@ export function productSource(product: OpenFoodFactsProduct): string {
         }
         @case ('LABEL') {
           <form class="nutrition__tab" role="tabpanel" (submit)="$event.preventDefault(); saveLabel()">
-            <p class="field__hint">Les valeurs du tableau nutritionnel du paquet, pour 100 g</p>
+            <p class="field__hint">Les valeurs du tableau nutritionnel du paquet, pour 100 g, tapées à la main ou reprises d'un produit du commerce</p>
             <div class="label-fields">
               @for (field of fields; track field.key) {
                 <label class="field">
@@ -188,9 +205,6 @@ export function productSource(product: OpenFoodFactsProduct): string {
           </form>
         }
       }
-      <div class="admin-toolbar">
-        <button yonaButton variant="ghost" type="button" (click)="closed.emit()">Fermer</button>
-      </div>
     </div>
   `,
   styles: `
@@ -200,9 +214,18 @@ export function productSource(product: OpenFoodFactsProduct): string {
       gap: var(--space-3);
     }
 
-    .nutrition {
-      flex: 1 1 100%;
-      padding-top: var(--space-2);
+    .source {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+
+      yona-data-source-logo {
+        margin-top: 2px;
+      }
+
+      svg {
+        vertical-align: -2px;
+      }
     }
 
     .nutrition__current {
@@ -216,15 +239,13 @@ export function productSource(product: OpenFoodFactsProduct): string {
     .foods {
       display: grid;
       gap: var(--space-2);
-      max-height: 22rem;
-      overflow-y: auto;
     }
 
+    /* The name on the left, its button on the right, whatever the length of the name */
     .food {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      justify-content: space-between;
       gap: var(--space-2) var(--space-4);
       padding: var(--space-2) 0;
       border-bottom: 1px solid var(--color-line);
@@ -242,9 +263,12 @@ export function productSource(product: OpenFoodFactsProduct): string {
       gap: var(--space-3);
     }
 
-    .field__hint svg {
-      vertical-align: -3px;
-      margin-right: var(--space-1);
+    /* A label on two lines leaves its field at the bottom, level with those of its row */
+    .label-fields .field {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-1);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -253,7 +277,6 @@ export class IngredientNutritionEditor {
   readonly ingredient = input.required<IngredientResponse>();
   /** Saved: the ingredient as it is now. */
   readonly saved = output<IngredientResponse>();
-  readonly closed = output<void>();
 
   private readonly api = inject(Api);
   private readonly toaster = inject(Toaster);
@@ -277,7 +300,7 @@ export class IngredientNutritionEditor {
     loader: ({ params }) => this.api.invoke(searchCiqualFoods, params),
   });
   private readonly offered = resource({
-    params: () => ({ name: [this.ingredient().name] }),
+    params: () => ({ name: [this.ingredient().name], limit: OFFERED_FOODS }),
     loader: ({ params }) => this.api.invoke(suggestIngredientNutrition, params),
   });
   protected readonly foods = computed<CiqualFood[]>(() =>

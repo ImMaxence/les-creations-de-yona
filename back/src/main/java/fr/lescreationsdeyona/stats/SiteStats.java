@@ -35,7 +35,9 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 		Instant computedAt) {
 
 	public enum MissingField {
-		PHOTO, INTRO, TIME, SERVINGS, DIFFICULTY
+		PHOTO, INTRO, TIME, SERVINGS, DIFFICULTY,
+		/** Shows its nutrition facts, but an ingredient lacks them: hidden from its page until completed (2.15). */
+		NUTRITION
 	}
 
 	public record IncompleteRecipe(Long id, String title, RecipeStatus status, List<MissingField> missing) {

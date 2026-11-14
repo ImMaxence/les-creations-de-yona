@@ -3,7 +3,7 @@
 
 export interface IncompleteRecipe {
   id: number;
-  missing: Array<'PHOTO' | 'INTRO' | 'TIME' | 'SERVINGS' | 'DIFFICULTY'>;
+  missing: Array<'PHOTO' | 'INTRO' | 'TIME' | 'SERVINGS' | 'DIFFICULTY' | 'NUTRITION'>;
   status: 'DRAFT' | 'PUBLISHED' | 'FAILED';
   title: string;
 }

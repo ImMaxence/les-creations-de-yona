@@ -2,6 +2,33 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.16.0 - 2026-11-14
+
+Front et backend 2.16.0. Pas de migration de la base
+
+### Ajouté
+
+- **Statistiques** : « Valeurs nutritionnelles » parmi ce qui manque aux recettes à compléter, quand une recette les affiche mais qu'un ingrédient n'a pas les siennes
+- **Table Ciqual** : le pas à pas pour mettre la table à jour (quel fichier télécharger, garder son nom, importer, relier les ingrédients signalés)
+- **Valeurs d'un ingrédient** : les logos des sources sur les onglets et leurs explications (Open Food Facts ; une icône pour Ciqual en attendant son logo)
+
+### Modifié
+
+- **Valeurs nutritionnelles** : affichées sur la recette seulement une fois chaque ingrédient renseigné et chaque quantité pesée, plus de valeurs à moitié justes ; un ingrédient sans quantité (« sel, au goût ») ne l'empêche pas s'il a ses valeurs
+- **Éditeur de recette** : les valeurs de la recette dites complètes (affichées) ou incomplètes (pas encore)
+- **Valeurs d'un ingrédient** : dans une fenêtre, toujours au même endroit, refermée une fois l'aliment choisi ou l'étiquette enregistrée ; 6 aliments Ciqual proposés d'emblée au lieu de 3
+
+### Corrigé
+
+- **Choix en pilule** : le texte de l'onglet choisi en clair sur la couleur du thème (il restait noir)
+- **Étiquette** : les champs d'une même rangée alignés, même sous un libellé sur deux lignes
+- **Valeurs d'un ingrédient** : « Choisir » à droite du nom de l'aliment, plus en dessous
+
+### Technique
+
+- **API** : `complete` dans les valeurs nutritionnelles d'une recette, `NUTRITION` parmi ce qui manque à une recette à compléter, `limit` (1 à 10, 3 par défaut) sur `GET /api/admin/ingredients/nutrition-suggestions`
+- **Tests** : valeurs complètes ou non, recette aux valeurs incomplètes cachée et listée ; parcours Chrome de la fenêtre, de l'onglet choisi, de l'alignement de l'étiquette et de l'éditeur incomplet
+
 ## 2.15.0 - 2026-11-14
 
 Front et backend 2.15.0. Migration de la base : V32

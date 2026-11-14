@@ -8,6 +8,7 @@ import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { parisDateTime } from '../../../shared/format/paris-time';
 import { Button } from '../../../shared/ui/button/button';
+import { DataSourceLogo } from '../../../shared/ui/data-source-logo/data-source-logo';
 import { Icon } from '../../../shared/ui/icon/icon';
 
 /** Where the Anses publishes the table: the Excel file is to be downloaded there. */
@@ -19,26 +20,41 @@ export const CIQUAL_DOWNLOAD = 'https://ciqual.anses.fr/';
  */
 @Component({
   selector: 'yona-ciqual-table',
-  imports: [Button, Icon],
+  imports: [Button, DataSourceLogo, Icon],
   template: `
     <section class="admin-panel ciqual" aria-labelledby="ciqual-title">
       <div class="ciqual__head">
-        <h3 id="ciqual-title">Table Ciqual</h3>
+        <h3 id="ciqual-title" class="ciqual__title"><yona-data-source-logo name="ciqual" [size]="20" />Table Ciqual</h3>
         <button type="button" class="icon-button" aria-label="Fermer la table Ciqual" (click)="closed.emit()"><svg yonaIcon="x" [size]="18"></svg></button>
       </div>
       @if (table.value(); as table) {
         <p>
-          <strong>{{ table.version }}</strong>, {{ table.foodCount.toLocaleString('fr-FR') }} aliments
+          Le site utilise <strong>{{ table.version }}</strong>, {{ table.foodCount.toLocaleString('fr-FR') }} aliments
           <span class="admin-row__meta">
             {{ table.importedBy === 'migration' ? 'installée avec le site' : 'importée le ' + day(table.importedAt) + ' par ' + table.importedBy }}
           </span>
         </p>
       }
       <p class="field__hint">
-        Les valeurs nutritionnelles des aliments de base, publiées par l'Anses (Licence Ouverte). Quand une nouvelle version sort,
-        téléchargez le fichier Excel (.xlsx) sur
-        <a [href]="download" target="_blank" rel="noopener noreferrer">ciqual.anses.fr</a>, puis importez-le ici : les ingrédients
-        gardent leur aliment, les recettes suivent les nouvelles valeurs
+        Les valeurs nutritionnelles des aliments de base, publiées par l'Anses (Licence Ouverte). Une nouvelle version sort tous les
+        quelques années : rien à faire d'ici là
+      </p>
+      <h4 class="ciqual__subtitle">Mettre à jour la table</h4>
+      <ol class="ciqual__steps">
+        <li>
+          Sur <a [href]="download" target="_blank" rel="noopener noreferrer">ciqual.anses.fr</a>, ouvrir la page de téléchargement de
+          la table et prendre le fichier <strong>Excel (.xlsx)</strong> en français, par exemple « Table Ciqual 2028_FR….xlsx ». Pas le
+          fichier .xls ni les fichiers XML
+        </li>
+        <li>Garder son nom tel quel : la version (« Ciqual 2028 ») en est tirée</li>
+        <li>« Importer une nouvelle version » ci-dessous, choisir le fichier et confirmer : une à deux minutes</li>
+        <li>
+          Lire le résultat : les ingrédients dont l'aliment a disparu de la table sont nommés. Les lier de nouveau (bouton carotte de
+          leur ligne, ou « Proposer les valeurs nutritionnelles »). Les autres gardent leur aliment, avec ses nouvelles valeurs
+        </li>
+      </ol>
+      <p class="field__hint">
+        Un fichier qui n'est pas la table, ou une colonne qui manque, ne change rien : le message dit ce qui ne va pas
       </p>
       <div class="admin-toolbar">
         <input #fileInput type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="pick($event)" />
@@ -72,6 +88,24 @@ export const CIQUAL_DOWNLOAD = 'https://ciqual.anses.fr/';
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    .ciqual__title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .ciqual__subtitle {
+      font-size: var(--text-base);
+    }
+
+    .ciqual__steps {
+      display: grid;
+      gap: var(--space-2);
+      padding-left: var(--space-5);
+      font-size: var(--text-sm);
+      list-style: decimal;
     }
 
     .ciqual__result p:first-child {

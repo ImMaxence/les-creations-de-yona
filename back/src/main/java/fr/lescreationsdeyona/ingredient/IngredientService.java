@@ -39,9 +39,6 @@ import org.springframework.util.StringUtils;
 @Transactional(readOnly = true)
 public class IngredientService {
 
-	/** Foods offered for an ingredient without nutrition facts. */
-	static final int SUGGESTED_FOODS = 3;
-
 	private final IngredientRepository ingredientRepository;
 
 	private final TrashBin trashBin;
@@ -59,10 +56,10 @@ public class IngredientService {
 	}
 
 	/**
-	 * The ingredients without nutrition facts and the Ciqual foods they most probably are: those named, or else
-	 * those of at least one recipe, the most used first.
+	 * The ingredients without nutrition facts and the {@code limit} Ciqual foods they most probably are: those named,
+	 * or else those of at least one recipe, the most used first.
 	 */
-	public List<NutritionSuggestion> nutritionSuggestions(@Nullable List<String> names) {
+	public List<NutritionSuggestion> nutritionSuggestions(@Nullable List<String> names, int limit) {
 		List<Ingredient> ingredients = names == null || names.isEmpty() ? ingredientRepository.findAll()
 				: names.stream().map(String::strip).distinct().map(ingredientRepository::findByName).flatMap(Optional::stream).toList();
 		Map<Long, Long> recipeCounts = recipeCounts();
@@ -74,7 +71,7 @@ public class IngredientService {
 				.thenComparing(Ingredient::getName))
 			.map(ingredient -> new NutritionSuggestion(
 					toResponse(ingredient, recipeCounts.getOrDefault(ingredient.getId(), 0L), Map.of()),
-					CiqualSearch.suggest(foods, ingredient.getName(), SUGGESTED_FOODS)))
+					CiqualSearch.suggest(foods, ingredient.getName(), limit)))
 			.toList();
 	}
 

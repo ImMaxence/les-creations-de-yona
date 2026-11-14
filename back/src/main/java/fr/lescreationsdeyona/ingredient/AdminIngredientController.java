@@ -3,6 +3,8 @@ package fr.lescreationsdeyona.ingredient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import java.util.List;
@@ -81,12 +83,13 @@ class AdminIngredientController {
 		ingredientService.linkToCiqual(form.links());
 	}
 
-	@Operation(summary = "Ingredients without nutrition facts, and the 3 Ciqual foods each most probably is",
+	@Operation(summary = "Ingredients without nutrition facts, and the Ciqual foods each most probably is (3 by default)",
 			description = "Those named, or else those of at least one recipe, the most used first.")
 	@GetMapping("/nutrition-suggestions")
 	List<NutritionSuggestion> suggestIngredientNutrition(
-			@RequestParam(required = false) @Size(max = 200) @Nullable List<@Size(max = 100) String> name) {
-		return ingredientService.nutritionSuggestions(name);
+			@RequestParam(required = false) @Size(max = 200) @Nullable List<@Size(max = 100) String> name,
+			@RequestParam(defaultValue = "3") @Min(1) @Max(10) int limit) {
+		return ingredientService.nutritionSuggestions(name, limit);
 	}
 
 	@Operation(summary = "Put ingredients in a shop aisle (sorting the shopping list), or in none")

@@ -17,6 +17,8 @@ Sur une recette où Yona les affiche :
 
 Une recette sans portions donne les valeurs de la recette entière. Le calculateur est fait pour les adultes (18 à 100 ans).
 
+**Seulement des valeurs complètes** (2.16) : une recette n'affiche ses valeurs que si **chaque ingrédient a les siennes** (un aliment Ciqual ou une étiquette) et que chaque quantité se pèse. Un ingrédient sans quantité (« sel, au goût ») ne l'empêche pas s'il a ses valeurs : il n'y a rien à compter, il est nommé sous le tableau. Tant qu'il manque quelque chose, la recette s'affiche sans valeurs (ni bloc, ni « Énergie », ni données pour Google), et **Statistiques** la liste parmi les recettes à compléter (« Manque : Valeurs nutritionnelles »).
+
 ## Pour Yona
 
 ### Afficher les valeurs d'une recette
@@ -24,7 +26,7 @@ Une recette sans portions donne les valeurs de la recette entière. Le calculate
 Dans l'éditeur de recette, panneau **« Valeurs nutritionnelles »** :
 
 - la case **« Afficher les valeurs nutritionnelles sur la recette »** (décochée par défaut : rien ne change sur les recettes existantes) ;
-- l'estimation de la recette en cours d'écriture, recalculée pendant la frappe : kcal par portion, Nutri-Score, protéines, glucides, lipides ;
+- l'estimation de la recette en cours d'écriture, recalculée pendant la frappe : kcal par portion, Nutri-Score, protéines, glucides, lipides, et si elle est **complète** (affichée sur la recette) ou **incomplète** (pas encore) ;
 - les ingrédients **non comptés** et pourquoi :
   - sans quantité (« sel, au goût ») ;
   - poids d'une pièce inconnu (« 2 gousses » d'un ingrédient sans équivalent en grammes : à indiquer dans Ingrédients) ;
@@ -34,11 +36,11 @@ Un ingrédient tout juste tapé n'existe qu'une fois la recette enregistrée : o
 
 ### Donner ses valeurs à un ingrédient
 
-Dans **Ingrédients**, le bouton carotte de chaque ligne ouvre ses valeurs nutritionnelles. Trois façons de les donner :
+Dans **Ingrédients**, le bouton carotte de chaque ligne ouvre une fenêtre (2.16), ses valeurs nutritionnelles. Trois onglets, trois façons de les donner :
 
-1. **Aliment Ciqual** : les aliments les plus proches de son nom sont proposés d'emblée ; on peut aussi chercher (« beurre dou », « farine t55 »). « Choisir » le lie.
+1. **Aliment Ciqual** : les 6 aliments les plus proches de son nom sont proposés d'emblée ; un mot tapé cherche parmi tous (« beurre dou », « farine t55 », 20 résultats au plus). « Choisir » le lie et ferme la fenêtre.
 2. **Produit du commerce** : pour un produit de marque (Kinder Bueno, whey, biscuits…), chercher son nom ou les chiffres de son code-barres. Les produits d'Open Food Facts s'affichent avec leurs kcal ; « Utiliser ces valeurs » remplit l'étiquette, à vérifier puis enregistrer.
-3. **Étiquette** : les 8 valeurs du tableau nutritionnel du paquet, pour 100 g, et leur provenance (facultative).
+3. **Étiquette** : les 8 valeurs du tableau nutritionnel du paquet, pour 100 g, tapées à la main (ou reprises d'un produit du commerce), et leur provenance (facultative).
 
 Un ingrédient a l'un ou l'autre : un aliment Ciqual, ou une étiquette. La ligne montre « Ciqual · 753 kcal » ou « Étiquette · 380 kcal ». Le filtre **« Valeurs nutritionnelles »** et le lien **« N sans valeurs nutritionnelles »** montrent ceux des recettes à compléter.
 
@@ -46,12 +48,14 @@ Un ingrédient a l'un ou l'autre : un aliment Ciqual, ou une étiquette. La lign
 
 Chaque changement est dans l'Historique (« Valeurs nutritionnelles » : avant, après).
 
+Logos : celui d'Open Food Facts (le leur, pour nommer la source) sur l'onglet et l'explication « Produit du commerce ». Pour Ciqual, une icône simple : le site officiel était en maintenance et sans logo propre à télécharger, et la marque « République française » de l'Anses est réservée à l'État (`shared/ui/data-source-logo`, à remplacer par le logo de Ciqual s'il peut être repris).
+
 ### Une nouvelle version de la table Ciqual
 
-L'Anses met à jour la table tous les quelques années. **« Table Ciqual »** (en haut d'Ingrédients) montre la version du site et son nombre d'aliments. Pour la remplacer :
+L'Anses met à jour la table tous les quelques années. **« Table Ciqual »** (en haut à droite d'Ingrédients) montre la version du site, son nombre d'aliments, et ce pas à pas pour la remplacer :
 
-1. Télécharger le fichier Excel (`.xlsx`) de la nouvelle version sur [ciqual.anses.fr](https://ciqual.anses.fr/) (ou sur [recherche.data.gouv.fr](https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/RDMHWY) pour la 2025).
-2. **« Importer une nouvelle version »**, choisir le fichier, confirmer.
+1. Télécharger le fichier **Excel (`.xlsx`) en français** de la nouvelle version sur [ciqual.anses.fr](https://ciqual.anses.fr/) (ou sur [recherche.data.gouv.fr](https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/RDMHWY) pour la 2025), par exemple « Table Ciqual 2028_FR_….xlsx ». Pas le `.xls` ni les fichiers XML.
+2. Garder son nom tel quel : la version en est tirée. Puis **« Importer une nouvelle version »**, choisir le fichier, confirmer : une à deux minutes.
 3. Le site lit les colonnes par leur titre, quel que soit leur ordre. Il garde les aliments par leur code (les ingrédients restent liés, les recettes suivent les nouvelles valeurs), ajoute les nouveaux et retire ceux qui ont disparu.
 4. Le résultat : nombre d'aliments, ajoutés, retirés, et les ingrédients dont l'aliment a disparu, à lier de nouveau.
 

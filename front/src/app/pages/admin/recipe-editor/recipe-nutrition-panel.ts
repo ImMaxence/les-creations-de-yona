@@ -74,9 +74,21 @@ export function estimateForm(parts: PartDraft[], servings: number | null): Nutri
           {{ formatGrams(nutrition.grams) }} en tout · {{ nutrition.ciqualVersion }}
         </span>
       </div>
+      @if (nutrition.complete) {
+        <p class="state state--complete">
+          <svg yonaIcon="circle-check" [size]="16"></svg>
+          Complètes : chaque ingrédient a ses valeurs{{ shown() ? ', affichées sur la recette' : '' }}
+        </p>
+      } @else {
+        <p class="state state--incomplete" role="status">
+          <svg yonaIcon="triangle-alert" [size]="16"></svg>
+          Incomplètes : {{ shown() ? "la recette ne les affichera" : "elles ne s'afficheront" }} qu'une fois chaque ingrédient
+          renseigné{{ shown() ? ' (Statistiques la liste parmi les recettes à compléter)' : '' }}
+        </p>
+      }
       @if (nutrition.missing.length) {
         <div class="missing">
-          <p class="missing__title"><svg yonaIcon="triangle-alert" [size]="16"></svg>Non comptés</p>
+          <p class="missing__title">Non comptés</p>
           <ul role="list" class="missing__list">
             @for (item of nutrition.missing; track item.name + item.reason) {
               <li class="missing__item">
@@ -137,6 +149,23 @@ export function estimateForm(parts: PartDraft[], servings: number | null): Nutri
       font-weight: 700;
     }
 
+    .state {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      font-weight: 600;
+
+      svg {
+        flex: none;
+        margin-top: 2px;
+      }
+    }
+
+    .state--incomplete {
+      color: var(--color-danger);
+    }
+
     .missing {
       display: grid;
       gap: var(--space-2);
@@ -166,6 +195,8 @@ export function estimateForm(parts: PartDraft[], servings: number | null): Nutri
 export class RecipeNutritionPanel {
   readonly parts = input.required<PartDraft[]>();
   readonly servings = input<number | null>(null);
+  /** "Afficher les valeurs nutritionnelles" ticked. */
+  readonly shown = input(false);
 
   private readonly api = inject(Api);
   private readonly toaster = inject(Toaster);

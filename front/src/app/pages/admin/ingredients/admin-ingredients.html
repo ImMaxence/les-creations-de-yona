@@ -195,9 +195,9 @@
                 <button
                   type="button"
                   class="icon-button"
+                  aria-haspopup="dialog"
                   [attr.aria-label]="'Valeurs nutritionnelles de ' + ingredient.name"
-                  [attr.aria-expanded]="nutritionId() === ingredient.id"
-                  (click)="nutritionId.set(nutritionId() === ingredient.id ? null : ingredient.id)"
+                  (click)="nutritionId.set(ingredient.id)"
                 >
                   <svg yonaIcon="carrot" [size]="18"></svg>
                 </button>
@@ -235,9 +235,6 @@
                 </div>
               </form>
             }
-            @if (nutritionId() === ingredient.id) {
-              <yona-ingredient-nutrition-editor [ingredient]="ingredient" (saved)="ingredients.reload()" (closed)="nutritionId.set(null)" />
-            }
           </li>
         }
       </ul>
@@ -248,3 +245,20 @@
     <yona-skeleton kind="rows" [count]="8" />
   }
 </section>
+
+<!-- The nutrition facts of an ingredient, in a window: the same place whatever is chosen -->
+<yona-dialog
+  size="md"
+  fixedHeight
+  [title]="'Valeurs nutritionnelles · ' + (nutritionIngredient()?.name ?? '')"
+  subtitle="Pour 100 g, ce que comptent les recettes qui l'utilisent"
+  [open]="nutritionIngredient() !== null"
+  (closed)="nutritionId.set(null)"
+>
+  @if (nutritionIngredient(); as ingredient) {
+    <yona-ingredient-nutrition-editor [ingredient]="ingredient" (saved)="nutritionSaved()" />
+  }
+  <ng-container dialogActions>
+    <button yonaButton variant="ghost" type="button" (click)="nutritionId.set(null)">Fermer</button>
+  </ng-container>
+</yona-dialog>

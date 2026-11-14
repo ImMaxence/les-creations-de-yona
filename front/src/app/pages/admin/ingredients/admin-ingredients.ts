@@ -25,6 +25,7 @@ import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { AISLES, Aisle } from '../../../shared/format/aisles';
 import { Button } from '../../../shared/ui/button/button';
+import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
 import { BulkBar } from '../bulk-bar/bulk-bar';
 import { ADMIN_RECIPES_QUERY } from '../recipes/admin-recipes-query';
@@ -50,7 +51,7 @@ type MergeChoice = { keptId: number } | { newName: string };
  */
 @Component({
   selector: 'yona-admin-ingredients',
-  imports: [Icon, RouterLink, BulkBar, Button, CiqualTable, IngredientNutritionEditor, NutritionSuggestions, Select, Skeleton],
+  imports: [Icon, RouterLink, BulkBar, Button, CiqualTable, Dialog, IngredientNutritionEditor, NutritionSuggestions, Select, Skeleton],
   templateUrl: './admin-ingredients.html',
   styleUrl: './admin-ingredients.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -111,8 +112,17 @@ export default class AdminIngredients {
   protected readonly withoutNutritionCount = computed(
     () => (this.ingredients.value() ?? []).filter((ingredient) => ingredient.recipeCount > 0 && !ingredient.nutrition).length,
   );
-  /** The ingredient whose nutrition facts are being set. */
+  /** The ingredient whose nutrition facts are being set, in the dialog. */
   protected readonly nutritionId = signal<number | null>(null);
+  protected readonly nutritionIngredient = computed(
+    () => (this.ingredients.value() ?? []).find((ingredient) => ingredient.id === this.nutritionId()) ?? null,
+  );
+
+  /** Saved: the dialog closes, the list shows its new values. */
+  protected nutritionSaved(): void {
+    this.nutritionId.set(null);
+    this.ingredients.reload();
+  }
   protected readonly showSuggestions = signal(false);
   protected readonly showCiqual = signal(false);
 

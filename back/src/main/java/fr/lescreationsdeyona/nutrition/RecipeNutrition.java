@@ -19,7 +19,15 @@ public record RecipeNutrition(
 		@Schema(description = "Ingredient lines counted") int countedLines,
 		@Schema(description = "Ingredients left out, each once, in the order of the recipe") List<MissingIngredient> missing,
 		@Schema(description = "The Ciqual table the foods come from: \"Ciqual 2025\"") String ciqualVersion,
-		@Schema(description = "Some ingredients counted with the values of their label (a product of a brand…)") boolean fromLabels) {
+		@Schema(description = "Some ingredients counted with the values of their label (a product of a brand…)") boolean fromLabels,
+		@Schema(description = "Every ingredient has its nutrition facts, every quantity is weighed: only then does the page of the "
+				+ "recipe show them. A line without quantity (\"sel, au goût\") of an ingredient that has its facts does not prevent it")
+		boolean complete) {
+
+	/** Nothing left out but lines without quantity of ingredients that have their facts. */
+	static boolean isComplete(List<MissingIngredient> missing) {
+		return missing.stream().allMatch(item -> item.reason() == Reason.NO_QUANTITY);
+	}
 
 	/** An ingredient the facts leave out, and why. */
 	public record MissingIngredient(String name, Reason reason) {
@@ -27,7 +35,7 @@ public record RecipeNutrition(
 
 	public enum Reason {
 
-		/** "Sel, au goût": nothing to count. */
+		/** "Sel, au goût": nothing to count, the ingredient having its facts. */
 		NO_QUANTITY,
 
 		/** Counted in pieces ("2 gousses"), without the weight of one piece. */

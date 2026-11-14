@@ -1,6 +1,7 @@
 package fr.lescreationsdeyona.stats;
 
 import fr.lescreationsdeyona.image.ImageStorage;
+import fr.lescreationsdeyona.recipe.RecipeService;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
 import fr.lescreationsdeyona.search.SearchMissService;
 import java.io.IOException;
@@ -11,7 +12,9 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +48,8 @@ public class StatsService {
 
 	private final AiVisitService aiVisitService;
 
+	private final RecipeService recipeService;
+
 	public SiteStats compute() {
 		return new SiteStats(recipes(), jdbc.sql("select count(*) from category").query(Long.class).single(),
 				ingredients(), images(), recipesPerCategory(), topIngredients(), mostViewedRecipes(), recipesPerMonth(), storage(),
@@ -59,24 +64,28 @@ public class StatsService {
 	}
 
 	/**
-	 * What Google shows in its recipe results (photo, description, times, yield) and what visitors
-	 * look for on the page (difficulty).
+	 * What Google shows in its recipe results (photo, description, times, yield), what visitors look for on the
+	 * page (difficulty), and nutrition facts shown but incomplete (hidden from the page meanwhile).
 	 */
 	private List<SiteStats.IncompleteRecipe> incompleteRecipes() {
+		// An id no recipe has: "in ()" would not be valid SQL
+		Set<Long> nutrition = new HashSet<>(recipeService.withIncompleteNutrition());
+		nutrition.add(-1L);
 		return jdbc.sql("""
 				select id, title, status, image_id is null as no_photo, coalesce(trim(intro), '') = '' as no_intro,
 					prep_minutes is null and cook_minutes is null as no_time, servings is null as no_servings,
-					difficulty is null as no_difficulty
+					difficulty is null as no_difficulty, id in (:nutrition) as no_nutrition
 				from recipe
 				where image_id is null or coalesce(trim(intro), '') = '' or (prep_minutes is null and cook_minutes is null)
-					or servings is null or difficulty is null
+					or servings is null or difficulty is null or id in (:nutrition)
 				order by status = 'PUBLISHED' desc,
 					(image_id is null)::int + (coalesce(trim(intro), '') = '')::int
 						+ (prep_minutes is null and cook_minutes is null)::int + (servings is null)::int
-						+ (difficulty is null)::int desc,
+						+ (difficulty is null)::int + (id in (:nutrition))::int desc,
 					title
 				limit :limit""")
 			.param("limit", INCOMPLETE_RECIPES)
+			.param("nutrition", nutrition)
 			.query((row, index) -> {
 				List<SiteStats.MissingField> missing = new ArrayList<>();
 				if (row.getBoolean("no_photo")) {
@@ -93,6 +102,9 @@ public class StatsService {
 				}
 				if (row.getBoolean("no_difficulty")) {
 					missing.add(SiteStats.MissingField.DIFFICULTY);
+				}
+				if (row.getBoolean("no_nutrition")) {
+					missing.add(SiteStats.MissingField.NUTRITION);
 				}
 				return new SiteStats.IncompleteRecipe(row.getLong("id"), row.getString("title"),
 						RecipeStatus.valueOf(row.getString("status")), missing);
