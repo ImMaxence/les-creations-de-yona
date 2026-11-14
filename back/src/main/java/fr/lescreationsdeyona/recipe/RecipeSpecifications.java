@@ -11,6 +11,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -24,6 +25,11 @@ final class RecipeSpecifications {
 	private static final char LIKE_ESCAPE = '\\';
 
 	private RecipeSpecifications() {
+	}
+
+	/** One of these recipes; none when empty. */
+	static Specification<Recipe> idIn(Collection<Long> ids) {
+		return (root, query, builder) -> ids.isEmpty() ? builder.disjunction() : root.get("id").in(ids);
 	}
 
 	static Specification<Recipe> matching(RecipeFilter filter) {

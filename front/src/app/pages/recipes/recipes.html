@@ -18,6 +18,9 @@
       @if (filters().theme; as theme) {
         · {{ themeLabel(theme) }}
       }
+      @if (nutritionLabel(); as label) {
+        · {{ label }}
+      }
       @if (chosenServings(); as count) {
         · quantités pour {{ count }} personne{{ count > 1 ? 's' : '' }}
       }
@@ -163,7 +166,7 @@
       }
 
       <div class="filters__footer">
-        <!-- Tag, time and difficulty: behind a button, unless one is in use -->
+        <!-- Tag, time, difficulty and nutrition: behind a button, unless one is in use -->
         <button
           type="button"
           class="more-toggle"
@@ -221,6 +224,19 @@
             (valueChange)="changeDifficulty($event)"
           />
         </div>
+        @if (showNutritionFilter()) {
+          <div class="filter filter--grow">
+            <span class="filter__label" aria-hidden="true">Valeurs nutritionnelles</span>
+            <yona-select
+              class="tool-select"
+              label="Filtrer par valeurs nutritionnelles"
+              size="large"
+              [options]="nutritionOptions"
+              [value]="filters().nutrition"
+              (valueChange)="changeNutrition($event)"
+            />
+          </div>
+        }
       </div>
     </div>
   </div>

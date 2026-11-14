@@ -3,6 +3,7 @@ package fr.lescreationsdeyona.content;
 import fr.lescreationsdeyona.cap.CapEntryRepository;
 import fr.lescreationsdeyona.cap.CapStatus;
 import fr.lescreationsdeyona.common.PublicCache;
+import fr.lescreationsdeyona.recipe.RecipeService;
 import fr.lescreationsdeyona.shop.ShopMode;
 import fr.lescreationsdeyona.shop.ShopSettingsRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,10 +42,13 @@ class SiteSectionsController {
 
 		private final ShopSettingsRepository shopSettingsRepository;
 
+		private final RecipeService recipeService;
+
 		@Cacheable(PublicCache.SITE_SECTIONS)
 		public SiteSections read() {
 			return new SiteSections(entryRepository.existsByStatus(CapStatus.PUBLISHED),
-					shopSettingsRepository.findAll().stream().anyMatch(settings -> settings.getMode() == ShopMode.OPEN));
+					shopSettingsRepository.findAll().stream().anyMatch(settings -> settings.getMode() == ShopMode.OPEN),
+					recipeService.hasPublishedNutrition());
 		}
 
 	}

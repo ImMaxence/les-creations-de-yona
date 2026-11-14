@@ -43,6 +43,11 @@ export interface ListPublishedRecipes$Params {
   theme?: 'SWEET' | 'SAVORY';
 
 /**
+ * Among the recipes whose page shows their nutrition facts: LIGHT, 500 kcal a serving at most; HIGH_PROTEIN, 20 % of the energy from proteins at least
+ */
+  nutrition?: 'LIGHT' | 'HIGH_PROTEIN';
+
+/**
  * Zero-based page index (0..N)
  */
   page?: number;
@@ -68,6 +73,7 @@ export function listPublishedRecipes(http: HttpClient, rootUrl: string, params?:
     rb.query('maxMinutes', params.maxMinutes, {});
     rb.query('difficulty', params.difficulty, {});
     rb.query('theme', params.theme, {});
+    rb.query('nutrition', params.nutrition, {});
     rb.query('page', params.page, {});
     rb.query('size', params.size, {});
     rb.query('sort', params.sort, {});

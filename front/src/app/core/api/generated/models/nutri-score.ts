@@ -9,7 +9,7 @@ export interface NutriScore {
   grade: string;
 
   /**
-   * From -17 (best) to 55: the points that give the grade
+   * The points that give the grade, the fewer the better
    */
   score: number;
 }

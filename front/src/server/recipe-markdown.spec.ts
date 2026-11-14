@@ -107,14 +107,19 @@ describe('recipeToMarkdown', () => {
       ciqualVersion: 'Ciqual 2025',
       fromLabels: false,
       complete: true,
+      cookedGrams: 750,
+      nutriScoreKind: 'GENERAL',
+      proteinEnergyPercent: 5,
+      contributors: [],
     };
 
     expect(recipeToMarkdown(recipe({ nutrition } as unknown as Partial<RecipeDetail>))).not.toContain('Valeurs nutritionnelles');
     const markdown = recipeToMarkdown(recipe({ showNutrition: true, nutrition } as unknown as Partial<RecipeDetail>));
 
     expect(markdown).toContain(
-      '## Valeurs nutritionnelles\n\nEstimées à partir des ingrédients crus. D\'après la table Ciqual 2025 de l\'Anses. ' +
-        'Nutri-Score estimé par le site : C.\n\n| Nutriment | Par portion | Pour 100 g |\n| --- | --- | --- |\n' +
+      '## Valeurs nutritionnelles\n\nEstimation à partir des ingrédients, sans os ni épluchures, pour 100 g du plat cuit (750 g en ' +
+        'tout). D\'après la table Ciqual 2025 de l\'Anses. Nutri-Score estimé par le site comme pour un aliment : C.\n\n' +
+        '| Nutriment | Par portion | Pour 100 g |\n| --- | --- | --- |\n' +
         '| Énergie | 312 kcal | 208 kcal |\n',
     );
     expect(markdown).toContain('| dont sucres | 22,5 g | 15 g |\n| Fibres | 2,1 g | 1,4 g |');

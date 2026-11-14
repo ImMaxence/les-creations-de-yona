@@ -9,6 +9,11 @@ export interface SiteSections {
   capPublished: boolean;
 
   /**
+   * A published recipe shows its nutrition facts per serving: the recipes page offers its filters "Léger" and "Riche en protéines"
+   */
+  nutritionFilters: boolean;
+
+  /**
    * The shop is open to all: in the menu and on the home page (not while kept for the close ones)
    */
   shopOpen: boolean;

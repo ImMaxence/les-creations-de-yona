@@ -64,11 +64,14 @@ class RecipeController {
 			@RequestParam(required = false) @Nullable DifficultyLevel difficulty,
 			@Parameter(description = "Sweet or savory; without it, \"sucré\" or \"salé\" typed in q chooses it")
 			@RequestParam(required = false) @Nullable RecipeTheme theme,
+			@Parameter(description = "Among the recipes whose page shows their nutrition facts: LIGHT, 500 kcal a serving at most; "
+					+ "HIGH_PROTEIN, 20 % of the energy from proteins at least")
+			@RequestParam(required = false) @Nullable NutritionFilter nutrition,
 			@ParameterObject @PageableDefault(size = 12, sort = "publishedAt", direction = Sort.Direction.DESC)
 			Pageable pageable) {
 		Page<RecipeCard> recipes = recipeService.searchPublished(
 				new RecipeFilter(null, q, category, tag, ingredient == null ? List.of() : ingredient, null, null, null,
-						theme, maxMinutes, difficulty), pageable);
+						theme, maxMinutes, difficulty), nutrition, pageable);
 		if (recipes.isEmpty() && pageable.getPageNumber() == 0 && StringUtils.hasText(q)) {
 			searchMissService.record(q);
 		}

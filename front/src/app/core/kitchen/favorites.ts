@@ -34,8 +34,8 @@ export class Favorites {
     return this.cards().some((card) => card.slug === slug);
   }
 
-  /** Added first, or removed; true when it is now a favorite. */
-  toggle(recipe: RecipeCard): boolean {
+  /** Added first, or removed; true when it is now a favorite. A card, or the recipe itself (its page). */
+  toggle(recipe: Pick<RecipeCard, 'title' | 'slug' | 'imageId' | 'createdAt' | 'publishedAt' | 'categories'>): boolean {
     if (this.has(recipe.slug)) {
       this.remove(recipe.slug);
       return false;

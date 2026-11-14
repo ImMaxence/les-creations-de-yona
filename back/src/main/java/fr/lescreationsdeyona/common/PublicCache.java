@@ -20,6 +20,9 @@ public class PublicCache {
 
 	public static final String RECIPE = "public-recipe";
 
+	/** The nutrition facts per serving of the published recipes, for their cards and the filters. */
+	public static final String RECIPE_NUTRITION = "public-recipe-nutrition";
+
 	public static final String RELATED_RECIPES = "public-related-recipes";
 
 	public static final String FEATURED_RECIPE = "public-featured-recipe";

@@ -3,6 +3,16 @@
 
 import { NutritionEstimatePart } from '../models/nutrition-estimate-part';
 export interface NutritionEstimateForm {
+
+  /**
+   * Weight of the whole recipe once cooked, in grams; absent: the raw weight
+   */
+  cookedGrams?: number;
+
+  /**
+   * The grid of its Nutri-Score: GENERAL when absent
+   */
+  nutriScoreKind?: 'GENERAL' | 'RED_MEAT' | 'CHEESE' | 'FATS' | 'BEVERAGE';
   parts: Array<NutritionEstimatePart>;
   servings?: number;
 }

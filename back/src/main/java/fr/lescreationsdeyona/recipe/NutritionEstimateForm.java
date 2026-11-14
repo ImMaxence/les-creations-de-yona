@@ -1,10 +1,12 @@
 package fr.lescreationsdeyona.recipe;
 
+import fr.lescreationsdeyona.nutrition.NutriScoreKind;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -17,6 +19,9 @@ import org.jspecify.annotations.Nullable;
  * uses as parts. Blank lines (being typed) are left out.
  */
 public record NutritionEstimateForm(@Positive @Nullable Integer servings,
+		@Schema(description = "Weight of the whole recipe once cooked, in grams; absent: the raw weight") @Positive @Max(100_000)
+		@Nullable Integer cookedGrams,
+		@Schema(description = "The grid of its Nutri-Score: GENERAL when absent") @Nullable NutriScoreKind nutriScoreKind,
 		@NotNull @Size(max = 10) List<@Valid @NotNull Part> parts) {
 
 	@Schema(name = "NutritionEstimatePart")

@@ -14,6 +14,11 @@ export interface RecipeDetail {
    */
   categories: Array<CategoryResponse>;
   cookMinutes?: number;
+
+  /**
+   * Weight of the whole recipe once cooked, in grams; absent: the raw weight
+   */
+  cookedGrams?: number;
   createdAt: string;
 
   /**
@@ -34,6 +39,11 @@ export interface RecipeDetail {
    * Mold the quantities are written for
    */
   mold?: Mold;
+
+  /**
+   * The grid of its Nutri-Score; absent from a copy kept before 2.17 (GENERAL)
+   */
+  nutriScoreKind?: 'GENERAL' | 'RED_MEAT' | 'CHEESE' | 'FATS' | 'BEVERAGE';
 
   /**
    * Computed from its ingredients: on the site when shown, in the back-office preview; absent otherwise

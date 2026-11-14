@@ -7,5 +7,9 @@ public record IngredientResponse(Long id, String name,
 		@Schema(description = "Shop aisle, for the shopping list; absent until set") @Nullable Aisle aisle,
 		@Schema(description = "Number of recipes using it, drafts included") long recipeCount,
 		@Schema(description = "Weight of one piece, for \"400 g (≈ 8 œufs)\"; absent when bought by weight") @Nullable IngredientPiece piece,
-		@Schema(description = "For the nutrition facts of the recipes; absent until set") @Nullable IngredientNutrition nutrition) {
+		@Schema(description = "For the nutrition facts of the recipes; absent until set") @Nullable IngredientNutrition nutrition,
+		@Schema(description = "Share of it the nutrition facts count, in percent: 100 unless bones, skin or peel are not eaten")
+		int ediblePercent,
+		@Schema(description = "What such an ingredient usually weighs and how much of it is eaten, to offer; absent when unknown")
+		@Nullable IngredientUsual usual) {
 }

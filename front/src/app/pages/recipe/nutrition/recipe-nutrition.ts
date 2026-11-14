@@ -1,6 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RecipeNutrition as RecipeNutritionModel } from '../../../core/api/generated/models/recipe-nutrition';
-import { NUTRIENT_ROWS, NUTRI_SCORE_GRADES, formatKcal, missingNames, nutritionSource } from '../../../shared/format/nutrition';
+import {
+  NUTRIENT_ROWS,
+  NUTRI_SCORE_GRADES,
+  estimateNote,
+  formatKcal,
+  missingNames,
+  nutriScoreAs,
+  nutritionSource,
+  proteinClaimLabel,
+} from '../../../shared/format/nutrition';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { RecipeDailyNeeds } from './recipe-daily-needs';
 
@@ -31,6 +40,12 @@ export class RecipeNutrition {
   protected readonly portion = computed(() => this.nutrition().perServing ?? this.nutrition().total);
   protected readonly missing = computed(() => missingNames(this.nutrition()));
   protected readonly source = computed(() => nutritionSource(this.nutrition()));
+  /** Raw, or per 100 g of the dish once cooked. */
+  protected readonly estimate = computed(() => estimateNote(this.nutrition()));
+  /** "une boisson": the grid of its Nutri-Score. */
+  protected readonly gradedAs = computed(() => nutriScoreAs(this.nutrition().nutriScoreKind));
+  /** "Riche en protéines", by the European rules; null below 12 % of the energy. */
+  protected readonly claim = computed(() => proteinClaimLabel(this.nutrition().proteinClaim));
 
   protected gradeLabel(grade: string): string {
     return `Nutri-Score estimé : ${grade}`;

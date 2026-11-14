@@ -13,6 +13,11 @@ export interface RecipeForm {
   cookMinutes?: number;
 
   /**
+   * Weight of the whole recipe once cooked, in grams: its facts per 100 g and its Nutri-Score are then those of the dish as eaten; absent: the raw weight
+   */
+  cookedGrams?: number;
+
+  /**
    * From 1 to 5, by half points
    */
   difficulty?: number;
@@ -32,6 +37,11 @@ export interface RecipeForm {
    * Mold the quantities are written for; absent for none
    */
   mold?: Mold;
+
+  /**
+   * The grid of its Nutri-Score: GENERAL when absent
+   */
+  nutriScoreKind?: 'GENERAL' | 'RED_MEAT' | 'CHEESE' | 'FATS' | 'BEVERAGE';
 
   /**
    * A single untitled part for a recipe without parts. At least one ingredient and one step in all

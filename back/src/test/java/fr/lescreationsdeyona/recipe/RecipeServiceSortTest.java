@@ -34,7 +34,8 @@ class RecipeServiceSortTest {
 	private final RecipeService service = new RecipeService(recipeRepository, mock(CategoryRepository.class),
 			mock(IngredientService.class), mock(ImageService.class), mock(TagService.class), mock(MenuService.class),
 			mock(TrashBin.class), mock(RecipeMapper.class), mock(ApplicationEventPublisher.class), mock(AuditLog.class),
-			mock(ShopProductRepository.class), mock(NutritionService.class));
+			mock(ShopProductRepository.class), mock(NutritionService.class),
+			mock(RecipeCards.class), mock(PublishedNutrition.class));
 
 	private final RecipeFilter noFilter = new RecipeFilter(null, null, null, null, List.of(), null, null, null, null, null, null);
 
@@ -60,7 +61,7 @@ class RecipeServiceSortTest {
 	void keepsTheViewsOutOfThePublicOrders() {
 		anyPageIsEmpty();
 
-		assertThatThrownBy(() -> service.searchPublished(noFilter, sortedBy("viewCount")))
+		assertThatThrownBy(() -> service.searchPublished(noFilter, null, sortedBy("viewCount")))
 			.isInstanceOf(ApiException.class)
 			.extracting("code")
 			.isEqualTo(ErrorCode.INVALID_SORT);

@@ -13,7 +13,7 @@ import { SiteSections } from '../api/generated/models/site-sections';
 import { SocialLinkResponse } from '../api/generated/models/social-link-response';
 
 /** Without an answer of the API, no link to them. */
-const NO_SECTIONS: SiteSections = { capPublished: false, shopOpen: false };
+const NO_SECTIONS: SiteSections = { capPublished: false, shopOpen: false, nutritionFilters: false };
 
 /** Texts of the site until the API answers, or if it cannot: the ones the migration starts with. */
 const DEFAULT_CONTENT: SiteContentResponse = {
@@ -57,6 +57,8 @@ export class SiteData {
   readonly capPublished = computed(() => this.sectionsState().capPublished);
   /** Open to all (not while kept for the close ones): the "Boutique" link and the home section only show then. */
   readonly shopOpen = computed(() => this.sectionsState().shopOpen);
+  /** A published recipe shows its nutrition facts per serving: the recipes page offers "Léger" and "Riche en protéines". */
+  readonly nutritionFilters = computed(() => this.sectionsState().nutritionFilters);
 
   async load(): Promise<void> {
     if (this.isBuildTime) {

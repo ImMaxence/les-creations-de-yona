@@ -8,6 +8,8 @@ export type MoldShapeChoice = 'NONE' | 'ROUND' | 'SQUARE' | 'RECTANGLE';
 
 export type RecipeTheme = NonNullable<RecipeForm['theme']>;
 
+export type NutriScoreKind = NonNullable<RecipeForm['nutriScoreKind']>;
+
 /** Editable copy of a recipe: every field exists, empty ones as "" or null. */
 export interface RecipeDraft {
   title: string;
@@ -20,6 +22,10 @@ export interface RecipeDraft {
   featured: boolean;
   /** Its nutrition facts (calories, Nutri-Score) shown on its page. */
   showNutrition: boolean;
+  /** Weight of the whole recipe once cooked, in grams: its facts per 100 g and its Nutri-Score are those of the dish. */
+  cookedGrams: number | null;
+  /** The grid of its Nutri-Score: a drink, a sauce made of oil, a dish of red meat or cheese have their own. */
+  nutriScoreKind: NutriScoreKind;
   /** Drafts only: Paris time, as the datetime-local field shows it ("2026-10-31T10:00"); "" for none. */
   scheduledAt: string;
   /** The first one is the main category, in the recipe URL. */
@@ -123,6 +129,8 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
       theme: 'SWEET',
       featured: false,
       showNutrition: false,
+      cookedGrams: null,
+      nutriScoreKind: 'GENERAL',
       scheduledAt: '',
       categoryIds: [],
       tagIds: [],
@@ -149,6 +157,8 @@ export function toDraft(recipe: RecipeDetail | null | undefined): RecipeDraft {
     theme: recipe.theme,
     featured: recipe.featured,
     showNutrition: recipe.showNutrition ?? false,
+    cookedGrams: recipe.cookedGrams ?? null,
+    nutriScoreKind: recipe.nutriScoreKind ?? 'GENERAL',
     // A failed recipe's time has passed: a new one is chosen, or none
     scheduledAt: recipe.scheduledAt && recipe.status !== 'FAILED' ? toParisInput(recipe.scheduledAt) : '',
     categoryIds: recipe.categories.map((category) => category.id),
@@ -258,6 +268,8 @@ export function toRecipeForm(draft: RecipeDraft): RecipeForm {
     theme: draft.theme,
     featured: draft.featured && (draft.status === 'PUBLISHED' || isScheduled(draft)),
     showNutrition: draft.showNutrition,
+    cookedGrams: draft.cookedGrams ?? undefined,
+    nutriScoreKind: draft.nutriScoreKind,
     scheduledAt: isScheduled(draft) ? (fromParisInput(draft.scheduledAt) ?? undefined) : undefined,
     categoryIds: draft.categoryIds,
     tagIds: draft.tagIds,
@@ -359,6 +371,8 @@ export const recipeSchema = schema<RecipeDraft>((recipe) => {
     value().length === 0 ? { kind: 'noCategory', message: 'Choisissez au moins une catégorie' } : undefined,
   );
   min(recipe.servings, 1, { message: 'Au moins 1 portion' });
+  min(recipe.cookedGrams, 1, { message: 'Au moins 1 g' });
+  max(recipe.cookedGrams, 100_000, { message: '100 kg au plus' });
   min(recipe.prepMinutes, 0, { message: 'Durée positive' });
   min(recipe.cookMinutes, 0, { message: 'Durée positive' });
   min(recipe.restMinutes, 0, { message: 'Durée positive' });

@@ -1,10 +1,12 @@
 package fr.lescreationsdeyona.recipe;
 
+import fr.lescreationsdeyona.nutrition.NutriScoreKind;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -30,6 +32,9 @@ public record RecipeForm(
 		@NotNull Boolean featured,
 		@Schema(description = "Shows its nutrition facts (calories, Nutri-Score) on its page; absent: not shown")
 		@Nullable Boolean showNutrition,
+		@Schema(description = "Weight of the whole recipe once cooked, in grams: its facts per 100 g and its Nutri-Score are then "
+				+ "those of the dish as eaten; absent: the raw weight") @Positive @Max(100_000) @Nullable Integer cookedGrams,
+		@Schema(description = "The grid of its Nutri-Score: GENERAL when absent") @Nullable NutriScoreKind nutriScoreKind,
 		@Schema(description = "Each one once; the first one is the main category, in the recipe URL")
 		@NotEmpty @Size(max = 10) List<@NotNull Long> categoryIds,
 		@Schema(description = "Absent or empty for none") @Size(max = 20) @Nullable List<@NotNull Long> tagIds,

@@ -18,8 +18,8 @@ import fr.lescreationsdeyona.menu.MenuResponses.MenuDetail;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuRecipe;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuSummary;
 import fr.lescreationsdeyona.recipe.Recipe;
+import fr.lescreationsdeyona.recipe.RecipeCards;
 import fr.lescreationsdeyona.recipe.RecipeLinks;
-import fr.lescreationsdeyona.recipe.RecipeMapper;
 import fr.lescreationsdeyona.recipe.RecipeRepository;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
 import fr.lescreationsdeyona.trash.TrashBin;
@@ -51,7 +51,7 @@ public class MenuService {
 
 	private final RecipeRepository recipeRepository;
 
-	private final RecipeMapper recipeMapper;
+	private final RecipeCards recipeCards;
 
 	private final ImageService imageService;
 
@@ -80,7 +80,7 @@ public class MenuService {
 			throw new ApiException(ErrorCode.MENU_NOT_FOUND);
 		}
 		return new MenuDetail(menu.getTitle(), menu.getSlug(), menu.getIntro(), imageId(menu.getImage()),
-				recipes.stream().map(recipeMapper::toCard).toList(), menu.getUpdatedAt());
+				recipes.stream().map(recipeCards::of).toList(), menu.getUpdatedAt());
 	}
 
 	// Back-office

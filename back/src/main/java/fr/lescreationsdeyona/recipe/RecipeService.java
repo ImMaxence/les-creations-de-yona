@@ -20,6 +20,7 @@ import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientService;
 import fr.lescreationsdeyona.menu.MenuService;
+import fr.lescreationsdeyona.nutrition.NutriScoreKind;
 import fr.lescreationsdeyona.nutrition.NutritionService;
 import fr.lescreationsdeyona.nutrition.RecipeNutrition;
 import fr.lescreationsdeyona.shop.ShopProductRepository;
@@ -54,6 +55,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -110,17 +112,36 @@ public class RecipeService {
 
 	private final NutritionService nutritionService;
 
+	private final RecipeCards recipeCards;
+
+	private final PublishedNutrition publishedNutrition;
+
 	// Public site: published recipes only.
 
-	/** Published recipes only, whatever {@code filter.status()}; no back-office criteria. */
+	/**
+	 * Published recipes only, whatever {@code filter.status()}; no back-office criteria. {@code nutrition}: those whose page
+	 * shows their facts and match it, null for all.
+	 */
 	@Cacheable(PublicCache.RECIPES)
-	public Page<RecipeCard> searchPublished(RecipeFilter filter, Pageable pageable) {
+	public Page<RecipeCard> searchPublished(RecipeFilter filter, @Nullable NutritionFilter nutrition, Pageable pageable) {
 		RecipeFilter published = new RecipeFilter(null, filter.text(), filter.categorySlug(), filter.tagSlug(),
 				filter.ingredientNames(), null, null, RecipeStatus.PUBLISHED, filter.theme(), filter.maxMinutes(),
 				filter.difficulty());
-		return recipeRepository
-			.findAll(RecipeSpecifications.matching(published), Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES))
-			.map(recipeMapper::toCard);
+		Specification<Recipe> matching = RecipeSpecifications.matching(published);
+		if (nutrition != null) {
+			matching = matching.and(RecipeSpecifications.idIn(publishedNutrition.perServing()
+				.entrySet()
+				.stream()
+				.filter(entry -> nutrition.matches(entry.getValue()))
+				.map(Map.Entry::getKey)
+				.toList()));
+		}
+		return recipeRepository.findAll(matching, Pageables.requireSortedOn(pageable, SORTABLE_PROPERTIES)).map(recipeCards::of);
+	}
+
+	/** Whether a published recipe shows its nutrition facts per serving: the recipes page then offers its filters. */
+	public boolean hasPublishedNutrition() {
+		return !publishedNutrition.perServing().isEmpty();
 	}
 
 	/**
@@ -134,7 +155,7 @@ public class RecipeService {
 					.or(() -> recipeRepository.findFirstByStatusOrderByPublishedAtDesc(RecipeStatus.PUBLISHED))
 				: recipeRepository.findFirstByFeaturedTrueAndStatusAndTheme(RecipeStatus.PUBLISHED, theme)
 					.or(() -> recipeRepository.findFirstByStatusAndThemeOrderByPublishedAtDesc(RecipeStatus.PUBLISHED, theme));
-		return featured.map(recipeMapper::toCard);
+		return featured.map(recipeCards::of);
 	}
 
 	/** Published recipes mentioning each word typed (title, category, tag, ingredient), by title. */
@@ -183,12 +204,13 @@ public class RecipeService {
 		return ids;
 	}
 
-	/** Its unfolded lines, quantities times {@code ratio}, added up. */
+	/** Its unfolded lines, quantities times {@code ratio}, added up; per 100 g of its weight once cooked when given. */
 	private RecipeNutrition nutritionOf(RecipeDetail unfolded, BigDecimal ratio, @Nullable Integer servings) {
-		return nutritionService.compute(nutritionLines(unfolded, ratio), servings);
+		return nutritionService.compute(nutritionLines(unfolded, ratio), servings, unfolded.cookedGrams(), unfolded.nutriScoreKind());
 	}
 
-	private static List<NutritionService.Line> nutritionLines(RecipeDetail unfolded, BigDecimal ratio) {
+	/** The lines of its parts, linked recipes unfolded, quantities times {@code ratio}. */
+	static List<NutritionService.Line> nutritionLines(RecipeDetail unfolded, BigDecimal ratio) {
 		return unfolded.parts()
 			.stream()
 			.flatMap(part -> part.ingredients().stream())
@@ -215,7 +237,7 @@ public class RecipeService {
 					.forEach(line -> lines.add(new NutritionService.Line(line.name().strip(), line.quantity(), line.unit())));
 			}
 		}
-		return nutritionService.compute(lines, form.servings());
+		return nutritionService.compute(lines, form.servings(), form.cookedGrams(), form.nutriScoreKind());
 	}
 
 	/** "Vous aimerez aussi": 3 published recipes sharing its tags or categories, else the latest. */
@@ -225,7 +247,7 @@ public class RecipeService {
 		Map<Long, Recipe> recipesById = recipeRepository.findAllById(ids)
 			.stream()
 			.collect(Collectors.toMap(Recipe::getId, Function.identity()));
-		return ids.stream().map(recipesById::get).filter(Objects::nonNull).map(recipeMapper::toCard).toList();
+		return ids.stream().map(recipesById::get).filter(Objects::nonNull).map(recipeCards::of).toList();
 	}
 
 	/**
@@ -641,6 +663,8 @@ public class RecipeService {
 		recipe.setPublicationFailure(null);
 		recipe.setFeatured(form.featured());
 		recipe.setShowNutrition(Boolean.TRUE.equals(form.showNutrition()));
+		recipe.setCookedGrams(form.cookedGrams());
+		recipe.setNutriScoreKind(form.nutriScoreKind() == null ? NutriScoreKind.GENERAL : form.nutriScoreKind());
 		recipe.setScheduledAt(scheduledAt);
 		recipe.getCategories().clear();
 		recipe.getCategories().addAll(categories);
@@ -897,7 +921,8 @@ public class RecipeService {
 	private static RecipeForm formOf(RecipeDetail recipe, String title, RecipeStatus status, RecipeTheme theme,
 			List<Long> categoryIds, List<Long> tagIds, Function<RecipeDetail.LinkedRecipe, Long> linkedId) {
 		RecipeDetail.Mold mold = recipe.mold();
-		return new RecipeForm(title, recipe.intro(), status, theme, false, recipe.showsNutrition(), categoryIds, tagIds, recipe.servings(),
+		return new RecipeForm(title, recipe.intro(), status, theme, false, recipe.showsNutrition(), recipe.cookedGrams(),
+				recipe.nutriScoreKind(), categoryIds, tagIds, recipe.servings(),
 				recipe.prepMinutes(), recipe.cookMinutes(), recipe.restMinutes(), recipe.difficulty(),
 				recipe.youtubeVideoId() == null ? null : "https://www.youtube.com/watch?v=" + recipe.youtubeVideoId(),
 				recipe.tip(), recipe.equipment(), recipe.questions(), mold == null ? null : new RecipeForm.Mold(mold.shape(), mold.lengthCm(), mold.widthCm()),

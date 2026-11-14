@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.16.1 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.17.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -39,9 +39,11 @@ La boutique pour les proches et le carnet de route du CAP Pâtisserie :
 **Pour les recettes sportives ou légères, chaque recette peut afficher ce qu'elle apporte.** Yona coche une case, et le site calcule tout seul à partir des ingrédients et de leurs quantités.
 
 - 🔥 **Calories par portion, protéines, glucides, lipides** : un tableau par portion et pour 100 g, dans l'ordre des étiquettes, et un repère « Énergie » en haut de la recette.
-- 🅰️ **Nutri-Score estimé de A à E** : calculé par le site avec l'algorithme 2023 de Santé publique France (un badge du site, pas le logo officiel).
+- 🅰️ **Nutri-Score estimé de A à E** : calculé par le site avec l'algorithme 2023 de Santé publique France et sa grille (boisson, matière grasse, viande rouge, fromage), pour 100 g du plat cuit quand Yona le pèse (un badge du site, pas le logo officiel).
+- 💪 **Repas légers ou riches en protéines** : les kcal et les protéines d'une portion sur chaque carte, « Riche en protéines » selon les règles européennes, et un filtre « Léger » ou « Riche en protéines » sur la page Recettes.
 - 🎯 **Mes besoins du jour** : le visiteur indique son âge, sa taille, son poids, son activité et son objectif. Le site lui donne ses besoins par jour, la part d'une portion dans sa journée, la part conseillée pour un repas (réglable), et l'équilibre protéines, glucides et lipides face aux repères de l'Anses. Rien ne quitte son navigateur.
 - 🥕 **3 484 aliments de la table Ciqual 2025 de l'Anses** déjà dans le site. Un ingrédient se lie à son aliment en un clic : l'aliment le plus probable est proposé (« Œufs » → « Oeuf cru »), et le bouton « Proposer les valeurs nutritionnelles » le fait pour tous les ingrédients d'un coup.
+- ⚖️ **Ce qui se mange vraiment** : la part mangée de chaque ingrédient (sans les os d'un poulet ni la peau d'une banane), le poids habituel d'une pièce proposé (« 1 rouleau = 230 g »), et dans l'éditeur les ingrédients qui pèsent le plus, avec une alerte quand une portion dépasse 1 500 kcal.
 - 🛒 **Produits du commerce** (Kinder Bueno, whey…) : recherche par nom ou par code-barres sur Open Food Facts, ou valeurs de l'étiquette tapées à la main.
 - 🔄 **Nouvelle version de Ciqual** : l'admin importe le fichier Excel de l'Anses, les ingrédients gardent leur aliment et les recettes suivent les nouvelles valeurs.
 
@@ -94,7 +96,7 @@ Les modèles locaux se téléchargent une seule fois, directement depuis Hugging
 - « Donner mon avis » : un message à Yona, lu dans le back-office.
 - Mon CAP : le carnet de route de Yona vers son CAP Pâtisserie, en articles : une frise d'aperçus, et une page par article faite de blocs (texte, grande photo, photo + texte, étapes en photos, astuce), photos en grand d'un appui ; le dernier article, ou le « Coup de cœur », sur l'accueil.
 - Recettes qui en utilisent d'autres (une pâte sablée écrite une fois, reprise dans chaque tarte) ; équivalents en pièces (« 400 g ≈ 8 œufs »).
-- Valeurs nutritionnelles des recettes choisies par Yona (calories par portion, tableau par portion et pour 100 g, Nutri-Score estimé) et « Mes besoins du jour » : besoins par jour, part conseillée pour un repas, équilibre des nutriments, gardés dans le navigateur.
+- Valeurs nutritionnelles des recettes choisies par Yona (calories par portion, tableau par portion et pour 100 g, Nutri-Score estimé, « Riche en protéines »), kcal sur les cartes et filtre « Léger » ou « Riche en protéines », et « Mes besoins du jour » : besoins par jour, part conseillée pour un repas, équilibre des nutriments, gardés dans le navigateur.
 - Boutique pour les proches : des produits (boîte de 6, à l'unité) aux prix TTC, recherche et catégories, « Ma demande » toujours à portée de main et gardée en quittant la page, un lien de suivi, sans compte ni paiement sur le site.
 
 **Pour Yona (back-office, connexion Google)**
@@ -107,7 +109,7 @@ Les modèles locaux se téléchargent une seule fois, directement depuis Hugging
 - Temps réel : les badges du menu (messages, retours, commandes, historique, corbeille, journaux) changent dès qu'un autre admin, un visiteur ou le site agit.
 - Journaux : les erreurs et avertissements du serveur et des navigateurs des visiteurs, regroupés, comptés, avec un badge dans le menu pour les nouvelles erreurs, à archiver une fois traités (ils reviennent s'ils se reproduisent).
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons, valeurs nutritionnelles), glossaire.
-- Valeurs nutritionnelles : chaque ingrédient lié à son aliment de la table Ciqual (proposé, ou tous d'un coup), à un produit d'Open Food Facts trouvé par son nom ou son code-barres, ou aux valeurs de son étiquette ; dans l'éditeur, l'estimation de la recette en cours d'écriture et les ingrédients non comptés, à lier en un clic ; import d'une nouvelle version de Ciqual.
+- Valeurs nutritionnelles : chaque ingrédient lié à son aliment de la table Ciqual (proposé, ou tous d'un coup), à un produit d'Open Food Facts trouvé par son nom ou son code-barres, ou aux valeurs de son étiquette ; part mangée et poids habituel d'une pièce proposés ; dans l'éditeur, l'estimation de la recette en cours d'écriture, le poids après cuisson, la grille du Nutri-Score, les ingrédients les plus énergétiques et les ingrédients non comptés, à lier en un clic ; import d'une nouvelle version de Ciqual.
 - Apparence (20 thèmes ou des couleurs personnalisées, 37 polices montrées dans leur style, arrondi ; chaque partie repliable), statistiques en accordéons (versions et santé du serveur, mémoire et processeur en direct et sur 7, 30 ou 90 jours, nombre de vues, recettes les plus vues), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés » avec un badge tant que la version n'est pas lue.
 - Boutique : fermée, réservée aux proches ou ouverte à tous ; commandes et statuts, notification sur le téléphone à chaque nouvelle commande, produits (formats, prix TTC, avec ou sans recette) ; comptabilité par mois, trimestre ou année (chiffres clés, graphique, où part l'argent, meilleures ventes, achats détaillés, coût de revient et marges, tickets de caisse, export CSV) ; factures des commandes récupérées, numérotées à la suite et à enregistrer en PDF.
 - Tableau de bord sans la barre du site : toutes les sections dans un panneau à gauche (Blog, Boutique, Site), repliable en colonne d'icônes sur ordinateur, ouvert d'un bouton sur téléphone ; page de connexion Google, photo du compte ; skeletons pendant les chargements.

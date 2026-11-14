@@ -24,8 +24,14 @@ function check(name, ok, detail = '') {
   console.log(`${ok ? 'OK  ' : 'ÉCHEC'} ${name}${detail ? ' — ' + detail : ''}`);
 }
 
-/** Une partie du parcours : une erreur inattendue la marque en échec, la suite continue. */
+/**
+ * Une partie du parcours : une erreur inattendue la marque en échec, la suite continue. `PARTIE=nutrition npm test` ne
+ * passe que les parties dont le titre contient ce mot (casse ignorée).
+ */
 async function part(title, run) {
+  if (process.env.PARTIE && !title.toLowerCase().includes(process.env.PARTIE.toLowerCase())) {
+    return;
+  }
   console.log(`\n${title}`);
   try {
     await run();
@@ -744,7 +750,7 @@ await part('Affichage sur un écran de 320 px (zoom à 400 %)', async () => {
   await page.context().close();
 });
 
-/** Les valeurs nutritionnelles d'une recette, telles que l'API les donne (2.15). */
+/** Les valeurs nutritionnelles d'une recette, telles que l'API les donne (2.17). */
 const NUTRITION = {
   servings: 6,
   grams: 900,
@@ -757,6 +763,13 @@ const NUTRITION = {
   ciqualVersion: 'Ciqual 2025',
   fromLabels: false,
   complete: true,
+  nutriScoreKind: 'GENERAL',
+  proteinEnergyPercent: 5,
+  contributors: [
+    { name: 'Beurre', kcal: 900, percent: 48 },
+    { name: 'Sucre', kcal: 600, percent: 32 },
+    { name: 'Farine', kcal: 374, percent: 20 },
+  ],
 };
 
 await part('Valeurs nutritionnelles et besoins du jour (téléphone, valeurs simulées)', async () => {
@@ -837,6 +850,48 @@ await part('Valeurs nutritionnelles et besoins du jour (téléphone, valeurs sim
   await hidden.context().close();
 });
 
+await part('Cartes et filtres nutritionnels (téléphone, valeurs simulées)', async () => {
+  const page = await newPage(browser, PHONE, errors);
+  const asked = [];
+  const card = { ...recipe, nutrition: { kcal: 452, proteins: 32.4, proteinClaim: 'RICH', light: true } };
+  await page.route('**/api/recipes?**', (route) => {
+    asked.push(new URL(route.request().url()).searchParams.get('nutrition'));
+    route.fulfill({ json: { content: [card], totalElements: 1, totalPages: 1, number: 0, size: 12 } });
+  });
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await answerCookies(page);
+  await goClient(page, '/recettes?nutrition=proteines');
+  const shown = page.locator('yona-recipe-card').first();
+  await shown.locator('.card__nutrition').waitFor();
+  check('Filtre « Riche en protéines » : demandé à l’API, rappelé dans le compte', asked.at(-1) === 'HIGH_PROTEIN' && (await page.locator('.recipes__count').innerText()).includes('riche en protéines'), String(asked.at(-1)));
+  const text = (await shown.locator('.card__nutrition').innerText()).replace(/\s+/g, ' ');
+  check('Carte : kcal et protéines d’une portion, « Riche en protéines »', text.includes('452 kcal · 32,4 g de protéines') && text.includes('Riche en protéines'), text);
+  await page.locator('.filters-toggle').click();
+  const filter = page.locator('.filter', { hasText: 'Valeurs nutritionnelles' });
+  check('Le filtre en usage reste affiché, avec son choix', (await filter.innerText()).includes('Riche en protéines'));
+  await filter.locator('button').first().click();
+  await page.getByRole('option', { name: /Léger/ }).click();
+  await page.waitForURL(/nutrition=leger/);
+  await shown.locator('.card__nutrition').waitFor();
+  check('Filtre « Léger » : 500 kcal max la portion', asked.at(-1) === 'LIGHT', String(asked.at(-1)));
+  await shown.screenshot({ path: SHOTS + 'nutrition-carte.png' });
+
+  // A recipe rich in proteins, weighed once cooked, graded as a drink
+  const path = new URL(recipeUrl(recipe)).pathname;
+  await page.route(`**/api/recipes/${recipe.slug}`, (route) =>
+    route.fulfill({
+      json: { ...recipe, showNutrition: true, nutrition: { ...NUTRITION, cookedGrams: 750, nutriScoreKind: 'BEVERAGE', proteinClaim: 'RICH', proteinEnergyPercent: 41 } },
+    }),
+  );
+  await goClient(page, path);
+  const block = page.locator('yona-recipe-nutrition');
+  await block.waitFor();
+  check('Recette : « Riche en protéines » sous les protéines, avec sa part de l’énergie', (await block.locator('.tile__claim').innerText()) === "Riche en protéines · 41 % de l'énergie");
+  const notes = (await block.locator('.notes').innerText()).replace(/\s+/g, ' ');
+  check('Recette : pour 100 g du plat cuit, Nutri-Score calculé comme pour une boisson', notes.includes('pour 100 g du plat cuit (750 g en tout)') && notes.includes('comme pour une boisson'), notes);
+  await page.context().close();
+});
+
 await part('Valeurs nutritionnelles (back-office, données simulées)', async () => {
   const page = await newPage(browser, DESKTOP, errors);
   // Sans session, toute autre route du back-office répondrait 401 : des listes vides par défaut
@@ -848,12 +903,22 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
     id: 1, name: 'Beurre', aisle: 'DAIRY_EGGS', recipeCount: 3,
     nutrition: { ciqualCode: 16400, ciqualName: 'Beurre à 80% MG minimum, doux', per100g: { ...facts(753), fat: 83 } },
   };
-  const speculoos = { id: 2, name: 'Spéculoos', recipeCount: 2 };
-  const saffron = { id: 3, name: 'Safran', recipeCount: 0 };
+  const speculoos = { id: 2, name: 'Spéculoos', recipeCount: 2, ediblePercent: 100 };
+  const saffron = { id: 3, name: 'Safran', recipeCount: 0, ediblePercent: 100 };
+  const chicken = {
+    id: 4, name: 'Poulet fermier', recipeCount: 1, ediblePercent: 100,
+    usual: { piece: { grams: 1500, singular: 'poulet', plural: 'poulets' }, ediblePercent: 68 },
+    nutrition: { ciqualCode: 36005, ciqualName: 'Poulet, viande et peau, cru', per100g: facts(200) },
+  };
   const writes = [];
   await page.route('**/api/admin/ingredients', (route) =>
-    route.request().method() === 'GET' ? route.fulfill({ json: [butter, speculoos, saffron] }) : route.fallback(),
+    route.request().method() === 'GET' ? route.fulfill({ json: [butter, speculoos, saffron, chicken] }) : route.fallback(),
   );
+  await page.route('**/api/admin/ingredients/4/edible-part', (route) => {
+    writes.push({ url: route.request().url(), body: route.request().postDataJSON() });
+    chicken.ediblePercent = route.request().postDataJSON().percent;
+    route.fulfill({ json: chicken });
+  });
   await page.route('**/api/admin/ingredients/nutrition-suggestions**', (route) =>
     route.fulfill({ json: [{ ingredient: speculoos, foods: [speculoosFood, { ...speculoosFood, code: 24015, name: 'Biscuit sec petit beurre' }] }] }),
   );
@@ -878,6 +943,28 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   await page.getByRole('button', { name: 'Valeurs nutritionnelles de Beurre' }).waitFor();
   await answerCookies(page);
   check('Ingrédients : l’aliment Ciqual de chacun et ses kcal', (await page.locator('.admin-row', { hasText: 'Beurre' }).innerText()).includes('Ciqual · 753 kcal'));
+
+  // A whole chicken: its usual weight offered, the share of it eaten
+  await page.getByRole('button', { name: 'Équivalent en pièces de Poulet fermier' }).click();
+  const piece = page.locator('form.piece');
+  check(
+    'Poids d’une pièce : le poids habituel d’un poulet pré-rempli, à vérifier',
+    (await piece.getByLabel("Poids d'une pièce (g)").inputValue()) === '1500' && (await piece.getByLabel('Singulier').inputValue()) === 'poulet' && (await piece.innerText()).includes('Poids habituel proposé'),
+  );
+  await piece.getByRole('button', { name: 'Annuler' }).click();
+  await page.getByRole('button', { name: 'Valeurs nutritionnelles de Poulet fermier' }).click();
+  const chickenDialog = page.getByRole('dialog', { name: 'Valeurs nutritionnelles · Poulet fermier' });
+  await chickenDialog.getByRole('button', { name: 'Habituellement 68 %' }).click();
+  check('Part mangée : la part habituelle proposée en un clic', (await chickenDialog.getByLabel('Part mangée (%)').inputValue()) === '68');
+  await chickenDialog.getByRole('button', { name: 'Enregistrer la part' }).click();
+  await page.locator('.admin-row', { hasText: 'Poulet fermier' }).getByText('Part mangée 68 %').waitFor({ timeout: 3000 }).catch(() => {});
+  check(
+    'Part mangée enregistrée, la fenêtre reste ouverte, la ligne l’affiche',
+    JSON.stringify(writes.at(-1)?.body) === JSON.stringify({ percent: 68 }) && (await chickenDialog.isVisible()) && (await page.locator('.admin-row', { hasText: 'Poulet fermier' }).innerText()).includes('Part mangée 68 %'),
+    JSON.stringify(writes.at(-1)?.body),
+  );
+  // The cross at the top and the button at the bottom are both « Fermer »
+  await chickenDialog.getByRole('button', { name: 'Fermer' }).last().click();
   await page.getByRole('button', { name: '1 sans valeurs nutritionnelles' }).click();
   check('« 1 sans valeurs nutritionnelles » : ceux des recettes à compléter', (await page.locator('.admin-row__title').allTextContents()).join('|') === 'Spéculoos');
 
@@ -932,8 +1019,24 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   // L'éditeur de recette : l'estimation en direct, et l'ingrédient à lier en un clic
   // Cannelle without values: incomplete
   await page.route('**/api/admin/recipes/nutrition', (route) => {
+    const body = route.request().postDataJSON();
+    writes.push({ url: route.request().url(), body });
+    // Weighed once cooked: a serving of 1 650 kcal, too heavy to be right
+    const perServing = body.cookedGrams ? { ...NUTRITION.perServing, kcal: 1650 } : NUTRITION.perServing;
+    route.fulfill({
+      json: {
+        ...NUTRITION,
+        perServing,
+        missing: [{ name: 'Cannelle', reason: 'NO_VALUES' }, { name: 'Pâte feuilletée', reason: 'NO_WEIGHT' }],
+        complete: false,
+      },
+    });
+  });
+  const pastry = { id: 7, name: 'Pâte feuilletée', recipeCount: 1, ediblePercent: 100, usual: { piece: { grams: 230, singular: 'rouleau', plural: 'rouleaux' } } };
+  await page.route('**/api/admin/ingredients?q=**', (route) => route.fulfill({ json: [pastry] }));
+  await page.route('**/api/admin/ingredients/7/piece', (route) => {
     writes.push({ url: route.request().url(), body: route.request().postDataJSON() });
-    route.fulfill({ json: { ...NUTRITION, missing: [{ name: 'Cannelle', reason: 'NO_VALUES' }], complete: false } });
+    route.fulfill({ json: { ...pastry, piece: pastry.usual.piece } });
   });
   await page.route('**/api/admin/ingredients/nutrition-suggestions?**', (route) =>
     route.fulfill({ json: [{ ingredient: { id: 9, name: 'Cannelle', recipeCount: 1 }, foods: [{ code: 11003, name: 'Cannelle, poudre', subgroupCode: '1005', per100g: facts(250) }] }] }),
@@ -954,6 +1057,21 @@ await part('Valeurs nutritionnelles (back-office, données simulées)', async ()
   check('Éditeur : l’ingrédient non compté lié en un clic, l’estimation refaite', JSON.stringify(link) === JSON.stringify({ links: [{ ingredientId: 9, ciqualCode: 11003 }] }) && writes.at(-1)?.url.endsWith('/recipes/nutrition'), JSON.stringify(link));
   await page.getByLabel('Afficher les valeurs nutritionnelles sur la recette').check();
   check('Éditeur : l’interrupteur des valeurs nutritionnelles', await page.getByLabel('Afficher les valeurs nutritionnelles sur la recette').isChecked());
+  const contributors = await panel.locator('.contributor').allInnerTexts();
+  check('Éditeur : les 3 ingrédients qui apportent le plus d’énergie', contributors.length === 3 && contributors[0].includes('Beurre') && contributors[0].includes('48 %'), contributors.join(' | '));
+  check('Éditeur : pas d’alerte pour une portion de 312 kcal', (await panel.getByText('Plus de 1').count()) === 0);
+  await panel.getByRole('button', { name: '1 rouleau = 230 g' }).click();
+  await page.waitForTimeout(300);
+  const usedPiece = writes.filter((write) => write.url.endsWith('/ingredients/7/piece')).at(-1)?.body;
+  check('Éditeur : le poids habituel d’une pièce en un clic', JSON.stringify(usedPiece) === JSON.stringify({ piece: { grams: 230, singular: 'rouleau', plural: 'rouleaux' } }), JSON.stringify(usedPiece));
+  await page.getByLabel('Poids après cuisson (g, facultatif)').fill('850');
+  await page.getByRole('combobox', { name: 'Grille du Nutri-Score' }).click();
+  await page.getByRole('option', { name: 'Boisson' }).click();
+  await panel.getByText('Plus de 1').waitFor({ timeout: 5000 }).catch(() => {});
+  const estimated = writes.filter((write) => write.url.endsWith('/recipes/nutrition')).at(-1)?.body;
+  check('Éditeur : le poids après cuisson et la grille envoyés à l’estimation', estimated?.cookedGrams === 850 && estimated?.nutriScoreKind === 'BEVERAGE', JSON.stringify({ cookedGrams: estimated?.cookedGrams, kind: estimated?.nutriScoreKind }));
+  check('Éditeur : une portion de plus de 1 500 kcal signalée', (await panel.locator('.state--incomplete').first().innerText()).includes('vérifiez les quantités'));
+  await panel.screenshot({ path: SHOTS + 'nutrition-editeur.png' });
   await page.context().close();
 });
 

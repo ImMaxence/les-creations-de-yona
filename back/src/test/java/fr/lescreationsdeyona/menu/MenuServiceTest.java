@@ -16,7 +16,7 @@ import fr.lescreationsdeyona.menu.MenuResponses.AdminMenu;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuRecipe;
 import fr.lescreationsdeyona.menu.MenuResponses.MenuSummary;
 import fr.lescreationsdeyona.recipe.Recipe;
-import fr.lescreationsdeyona.recipe.RecipeMapper;
+import fr.lescreationsdeyona.recipe.RecipeCards;
 import fr.lescreationsdeyona.recipe.RecipeLinks.MenuPlace;
 import fr.lescreationsdeyona.recipe.RecipeRepository;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
@@ -39,8 +39,7 @@ class MenuServiceTest {
 
 	private final ImageService imageService = mock(ImageService.class);
 
-	private final MenuService service = new MenuService(menuRepository, recipeRepository, mock(RecipeMapper.class),
-			imageService, trashBin, mock(AuditLog.class));
+	private final MenuService service = new MenuService(menuRepository, recipeRepository, mock(RecipeCards.class), imageService, trashBin, mock(AuditLog.class));
 
 	private static Image photo() {
 		Image image = mock(Image.class);

@@ -2,6 +2,26 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.17.0 - 2026-11-14
+
+Front et backend 2.17.0. Migration de la base : V33
+
+### Ajouté
+
+- **Cartes des recettes** : les kcal et les protéines d'une portion, et « Riche en protéines » ou « Source de protéines », pour les recettes qui affichent leurs valeurs
+- **Recettes** : un filtre « Valeurs nutritionnelles » (« Léger », 500 kcal max la portion, ou « Riche en protéines »), proposé dès qu'une recette publiée affiche ses valeurs
+- **Valeurs nutritionnelles** : « Riche en protéines » (20 % de l'énergie au moins) ou « Source de protéines » (12 %), selon les règles européennes, sous les protéines de la recette
+- **Part mangée** : pour chaque ingrédient, la part qui se mange (68 % d'un poulet entier, 64 % d'une banane), proposée pour les plus courants ; les os, la peau et les épluchures ne comptent plus
+- **Poids d'une pièce** : le poids habituel des ingrédients courants pré-rempli (œuf, gousse d'ail, rouleau de pâte, citron…), et proposé en un clic dans l'éditeur de recette
+- **Éditeur de recette** : le poids après cuisson, pour des valeurs pour 100 g et un Nutri-Score du plat tel qu'on le mange
+- **Éditeur de recette** : la grille du Nutri-Score (boisson, matière grasse, viande rouge, fromage), chacune avec les règles de 2023
+- **Éditeur de recette** : les 3 ingrédients qui apportent le plus d'énergie, et une alerte au-delà de 1 500 kcal par portion (une quantité mal tapée se voit tout de suite)
+
+### Technique
+
+- **Tests** : grilles du Nutri-Score, part mangée, poids après cuisson, poids habituels, filtres et cartes, en tests unitaires et dans le parcours Chrome
+- **Parcours Chrome** : `PARTIE=nutrition npm test` ne passe que les parties voulues
+
 ## 2.16.1 - 2026-11-14
 
 Front et backend 2.16.1. Pas de migration de la base

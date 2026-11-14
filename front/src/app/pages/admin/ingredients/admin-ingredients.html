@@ -179,6 +179,9 @@
                   @if (nutritionLabel(ingredient); as label) {
                     <span class="badge" [attr.title]="ingredient.nutrition?.ciqualName ?? ingredient.nutrition?.labelSource ?? null">{{ label }}</span>
                   }
+                  @if (ingredient.ediblePercent < 100) {
+                    <span class="badge">Part mangée {{ ingredient.ediblePercent }} %</span>
+                  }
                 </span>
               </span>
               <div class="admin-row__actions">
@@ -212,7 +215,10 @@
             }
             @if (pieceId() === ingredient.id) {
               <form class="piece" (submit)="$event.preventDefault(); savePiece(ingredient)">
-                <p class="field__hint">Pour afficher « 400 g (≈ 8 œufs) » : le poids d'une pièce, et son nom</p>
+                <p class="field__hint">
+                  Pour afficher « 400 g (≈ 8 œufs) » et compter « 2 gousses » dans les valeurs nutritionnelles : le poids d'une pièce telle
+                  qu'achetée, et son nom{{ pieceOffered() ? '. Poids habituel proposé : vérifiez-le avant d’enregistrer' : '' }}
+                </p>
                 <div class="piece__fields">
                   <label class="field">
                     <span class="field__label">Poids d'une pièce (g)</span>
@@ -257,7 +263,7 @@
   (closed)="nutritionId.set(null)"
 >
   @if (nutritionIngredient(); as ingredient) {
-    <yona-ingredient-nutrition-editor [ingredient]="ingredient" (saved)="nutritionSaved()" />
+    <yona-ingredient-nutrition-editor [ingredient]="ingredient" (saved)="nutritionSaved()" (edited)="ingredients.reload()" />
   }
   <ng-container dialogActions>
     <button yonaButton variant="ghost" type="button" (click)="nutritionId.set(null)">Fermer</button>

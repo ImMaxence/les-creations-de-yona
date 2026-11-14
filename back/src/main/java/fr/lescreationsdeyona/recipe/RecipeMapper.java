@@ -15,6 +15,7 @@ import org.mapstruct.Named;
 public interface RecipeMapper {
 
 	@Mapping(target = "imageId", source = "image.id")
+	@Mapping(target = "nutrition", ignore = true)
 	RecipeCard toCard(Recipe recipe);
 
 	@Mapping(target = "categorySlug", source = "mainCategory.slug")

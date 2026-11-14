@@ -58,13 +58,24 @@ public class NutritionService {
 	public record Line(String name, @Nullable BigDecimal quantity, @Nullable String unit) {
 	}
 
-	/** Added up from the ingredients named by the lines; a name the site does not know counts as an ingredient without values. */
+	/** Per 100 g of the raw weight, graded as a food in general. */
 	public RecipeNutrition compute(List<Line> lines, @Nullable Integer servings) {
+		return compute(lines, servings, null, null);
+	}
+
+	/**
+	 * Added up from the ingredients named by the lines; a name the site does not know counts as an ingredient without
+	 * values. {@code cookedGrams}: the weight of the whole recipe once cooked, null for the raw weight; {@code kind}: the
+	 * grid of its Nutri-Score, null for the general one.
+	 */
+	public RecipeNutrition compute(List<Line> lines, @Nullable Integer servings, @Nullable Integer cookedGrams,
+			@Nullable NutriScoreKind kind) {
 		Map<String, NutritionCalculator.Ingredient> ingredients = ingredients(
 				lines.stream().map(Line::name).collect(Collectors.toSet()));
 		return NutritionCalculator.compute(
 				lines.stream().map(line -> new NutritionCalculator.Line(line.name(), line.quantity(), line.unit())).toList(),
-				name -> ingredients.get(Texts.foldCaseAndAccents(name.strip())), servings, ciqualFoods.table().version());
+				name -> ingredients.get(Texts.foldCaseAndAccents(name.strip())), servings, cookedGrams,
+				kind == null ? NutriScoreKind.GENERAL : kind, ciqualFoods.table().version());
 	}
 
 	/** What the admin types: "beurre doux". */
@@ -116,7 +127,7 @@ public class NutritionService {
 		}
 		Map<String, NutritionCalculator.Ingredient> found = new HashMap<>();
 		jdbc.sql("""
-				select i.name, i.piece_grams, i.label_kcal, i.label_proteins, i.label_carbohydrates, i.label_sugars, i.label_fat,
+				select i.name, i.piece_grams, i.edible_percent, i.label_kcal, i.label_proteins, i.label_carbohydrates, i.label_sugars, i.label_fat,
 				i.label_saturated_fat, i.label_fibre, i.label_salt, f.code, f.name as food_name, f.subgroup_code, f.subgroup_name,
 				f.kcal, f.proteins, f.carbohydrates, f.sugars, f.fat, f.saturated_fat, f.fibre, f.salt
 				from ingredient i left join ciqual_food f on f.code = i.ciqual_code
@@ -130,22 +141,23 @@ public class NutritionService {
 
 	private static NutritionCalculator.Ingredient ingredient(ResultSet rs) throws SQLException {
 		BigDecimal pieceGrams = rs.getBigDecimal("piece_grams");
+		int edible = rs.getInt("edible_percent");
 		BigDecimal labelKcal = rs.getBigDecimal("label_kcal");
 		if (labelKcal != null) {
 			NutritionFacts label = new NutritionFacts(labelKcal.doubleValue(), rs.getDouble("label_proteins"),
 					rs.getDouble("label_carbohydrates"), rs.getDouble("label_sugars"), rs.getDouble("label_fat"),
 					rs.getDouble("label_saturated_fat"), rs.getDouble("label_fibre"), rs.getDouble("label_salt"));
-			return new NutritionCalculator.Ingredient(label, false, true, pieceGrams);
+			return new NutritionCalculator.Ingredient(label, false, true, pieceGrams, edible);
 		}
 		if (rs.getObject("code") == null) {
-			return new NutritionCalculator.Ingredient(null, false, false, pieceGrams);
+			return new NutritionCalculator.Ingredient(null, false, false, pieceGrams, edible);
 		}
 		CiqualFood food = new CiqualRow(rs.getInt("code"), rs.getString("food_name"), rs.getString("subgroup_code"),
 				rs.getString("subgroup_name"), rs.getBigDecimal("kcal"), rs.getBigDecimal("proteins"), rs.getBigDecimal("carbohydrates"),
 				rs.getBigDecimal("sugars"), rs.getBigDecimal("fat"), rs.getBigDecimal("saturated_fat"), rs.getBigDecimal("fibre"),
 				rs.getBigDecimal("salt"))
 			.food();
-		return new NutritionCalculator.Ingredient(food.per100g(), food.isFruitVegetableOrLegume(), false, pieceGrams);
+		return new NutritionCalculator.Ingredient(food.per100g(), food.isFruitVegetableOrLegume(), false, pieceGrams, edible);
 	}
 
 }

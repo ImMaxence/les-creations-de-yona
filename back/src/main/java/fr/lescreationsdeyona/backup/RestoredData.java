@@ -319,18 +319,20 @@ class RestoredData {
 		Map<Long, Long> ids = new HashMap<>();
 		for (Map<String, Object> row : scratch.sql("""
 				select id, name, aisle, piece_grams, piece_singular, piece_plural, ciqual_code, label_kcal, label_proteins,
-				label_carbohydrates, label_sugars, label_fat, label_saturated_fat, label_fibre, label_salt, label_source
+				label_carbohydrates, label_sugars, label_fat, label_saturated_fat, label_fibre, label_salt, label_source,
+				edible_percent
 				from ingredient""")
 			.query().listOfRows()) {
-			// An ingredient already on the site keeps its aisle, its weight and its nutrition facts; one added comes with
-			// the backup's, its Ciqual food only if the site's table has it (another version may not)
+			// An ingredient already on the site keeps its aisle, its weight, its nutrition facts and the share of it eaten;
+			// one added comes with the backup's, its Ciqual food only if the site's table has it (another version may not)
 			added.ingredients += site.sql("""
 					insert into ingredient (name, aisle, piece_grams, piece_singular, piece_plural, ciqual_code, label_kcal,
 					label_proteins, label_carbohydrates, label_sugars, label_fat, label_saturated_fat, label_fibre, label_salt,
-					label_source)
+					label_source, edible_percent)
 					values (:name, :aisle, :piece_grams, :piece_singular, :piece_plural,
 					(select code from ciqual_food where code = :ciqual_code), :label_kcal, :label_proteins, :label_carbohydrates,
-					:label_sugars, :label_fat, :label_saturated_fat, :label_fibre, :label_salt, :label_source)
+					:label_sugars, :label_fat, :label_saturated_fat, :label_fibre, :label_salt, :label_source,
+					coalesce(:edible_percent, 100))
 					on conflict (name) do nothing""")
 				.param("name", row.get("name"))
 				.param("aisle", row.get("aisle"))
@@ -347,6 +349,7 @@ class RestoredData {
 				.param("label_fibre", row.get("label_fibre"), java.sql.Types.NUMERIC)
 				.param("label_salt", row.get("label_salt"), java.sql.Types.NUMERIC)
 				.param("label_source", row.get("label_source"), java.sql.Types.VARCHAR)
+				.param("edible_percent", row.get("edible_percent"), java.sql.Types.SMALLINT)
 				.update();
 			// The column collation ignores case and accents: finds the site's spelling too.
 			Long siteId = site.sql("select id from ingredient where name = :name").param("name", row.get("name"))

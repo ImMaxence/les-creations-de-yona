@@ -26,6 +26,8 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 	/** Those whose page shows their nutrition facts (a few, for Statistiques). */
 	List<Recipe> findByShowNutritionTrue();
 
+	List<Recipe> findByShowNutritionTrueAndStatus(RecipeStatus status);
+
 	Optional<Recipe> findBySlug(String slug);
 
 	boolean existsByCategoriesId(long categoryId);

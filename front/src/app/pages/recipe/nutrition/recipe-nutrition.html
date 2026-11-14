@@ -23,6 +23,9 @@
     <div class="tile">
       <dt>Protéines</dt>
       <dd>{{ rows[6]!.value(portion()) }}</dd>
+      @if (claim(); as claim) {
+        <dd class="tile__claim">{{ claim }} · {{ nutrition().proteinEnergyPercent }} % de l'énergie</dd>
+      }
     </div>
     <div class="tile">
       <dt>Glucides</dt>
@@ -61,8 +64,8 @@
       <p>Non comptés : {{ missing() }}</p>
     }
     <p>
-      Estimation à partir des ingrédients crus, la cuisson n'est pas comptée. {{ source() }}. Le Nutri-Score est calculé par le
-      site comme pour un aliment : ce n'est pas le logo officiel
+      {{ estimate() }}. {{ source() }}. Le Nutri-Score est calculé par le site comme pour {{ gradedAs() }} : ce n'est pas le
+      logo officiel
     </p>
   </div>
 

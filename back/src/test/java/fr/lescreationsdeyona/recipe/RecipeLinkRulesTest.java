@@ -44,7 +44,8 @@ class RecipeLinkRulesTest {
 
 	private final RecipeService service = new RecipeService(recipeRepository, categoryRepository, ingredientService,
 			mock(ImageService.class), mock(TagService.class), mock(MenuService.class), mock(TrashBin.class), recipeMapper,
-			mock(ApplicationEventPublisher.class), mock(AuditLog.class), shopProducts, mock(NutritionService.class));
+			mock(ApplicationEventPublisher.class), mock(AuditLog.class), shopProducts, mock(NutritionService.class),
+			mock(RecipeCards.class), mock(PublishedNutrition.class));
 
 	private final Category desserts = new Category();
 
@@ -54,7 +55,7 @@ class RecipeLinkRulesTest {
 		desserts.setSlug("desserts");
 		when(recipeRepository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 		when(recipeMapper.toDetail(any())).thenReturn(new RecipeDetail(1L, "Tarte", "tarte", null, RecipeStatus.DRAFT, RecipeTheme.SWEET,
-				false, null, null, List.of(), List.of(), null, null, null, null, null, null, null, List.of(), List.of(), null, null, null,
+				false, null, null, null, null, List.of(), List.of(), null, null, null, null, null, null, null, List.of(), List.of(), null, null, null,
 				List.of(), Instant.EPOCH, Instant.EPOCH, null, null, null));
 		when(categoryRepository.findAllById(any())).thenReturn(List.of(desserts));
 		Ingredient flour = new Ingredient();
@@ -82,13 +83,13 @@ class RecipeLinkRulesTest {
 	}
 
 	private static RecipeForm formLinking(long linkedId, RecipeStatus status) {
-		return new RecipeForm("Tarte", null, status, RecipeTheme.SWEET, false, null, List.of(1L), null, null, null, null, null, null, null,
+		return new RecipeForm("Tarte", null, status, RecipeTheme.SWEET, false, null, null, null, List.of(1L), null, null, null, null, null, null, null,
 				null, null, null, null, null,
 				List.of(new RecipeForm.Part("Pâte", List.of(), List.of(), linkedId, new BigDecimal("0.5"))));
 	}
 
 	private static RecipeForm plainForm(RecipeStatus status) {
-		return new RecipeForm("Tarte", null, status, RecipeTheme.SWEET, false, null, List.of(1L), null, null, null, null, null, null, null,
+		return new RecipeForm("Tarte", null, status, RecipeTheme.SWEET, false, null, null, null, List.of(1L), null, null, null, null, null, null, null,
 				null, null, null, null, null, List.of(new RecipeForm.Part(null,
 						List.of(new RecipeForm.IngredientLine("Farine", null, null, null)),
 						List.of(new RecipeForm.Step("Mélanger", null, List.of())))));
@@ -112,7 +113,7 @@ class RecipeLinkRulesTest {
 		Recipe dough = recipe(2, RecipeStatus.PUBLISHED);
 		Recipe tart = recipe(3, RecipeStatus.DRAFT);
 
-		service.update(3, new RecipeForm("Tarte", null, RecipeStatus.DRAFT, RecipeTheme.SWEET, false, null, List.of(1L), null, null, null, null,
+		service.update(3, new RecipeForm("Tarte", null, RecipeStatus.DRAFT, RecipeTheme.SWEET, false, null, null, null, List.of(1L), null, null, null, null,
 				null, null, null, null, null, null, null, null, List.of(new RecipeForm.Part(" ", List.of(), List.of(), 2L, null))));
 
 		assertThat(tart.getParts().getFirst().getTitle()).isEqualTo(dough.getTitle());
@@ -123,7 +124,7 @@ class RecipeLinkRulesTest {
 	void refusesContentOnALinkedPart() {
 		recipe(2, RecipeStatus.PUBLISHED);
 		recipe(3, RecipeStatus.DRAFT);
-		RecipeForm form = new RecipeForm("Tarte", null, RecipeStatus.DRAFT, RecipeTheme.SWEET, false, null, List.of(1L), null, null, null, null,
+		RecipeForm form = new RecipeForm("Tarte", null, RecipeStatus.DRAFT, RecipeTheme.SWEET, false, null, null, null, List.of(1L), null, null, null, null,
 				null, null, null, null, null, null, null, null, List.of(new RecipeForm.Part("Pâte",
 						List.of(new RecipeForm.IngredientLine("Farine", null, null, null)), List.of(), 2L, null)));
 

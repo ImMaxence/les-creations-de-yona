@@ -3,6 +3,7 @@ package fr.lescreationsdeyona.recipe;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import fr.lescreationsdeyona.audit.AuditChanges;
+import fr.lescreationsdeyona.nutrition.NutriScoreKind;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -49,13 +50,25 @@ class RecipeChangesTest {
 	void saysWhenTheNutritionFactsAreShownOrNot() {
 		RecipeDetail hidden = recipe("Tarte", List.of());
 		RecipeDetail shown = new RecipeDetail(hidden.id(), hidden.title(), hidden.slug(), null, hidden.status(), hidden.theme(), false,
-				true, null, List.of(), List.of(), hidden.servings(), hidden.prepMinutes(), null, null, null, null, null, List.of(),
+				true, null, null, null, List.of(), List.of(), hidden.servings(), hidden.prepMinutes(), null, null, null, null, null, List.of(),
 				List.of(), null, null, null, hidden.parts(), Instant.EPOCH, Instant.EPOCH, null, null, null);
 
 		assertThat(RecipeChanges.between(hidden, shown)).usingRecursiveComparison()
 			.isEqualTo(new AuditChanges().add("Valeurs nutritionnelles", "Masquées", "Affichées"));
 		// A recipe kept from before 2.15 (absent): not shown
 		assertThat(hidden.showsNutrition()).isFalse();
+	}
+
+	@Test
+	void namesTheWeightOnceCookedAndTheGridOfTheNutriScore() {
+		RecipeDetail before = recipe("Citronnade", List.of());
+		RecipeDetail after = new RecipeDetail(before.id(), before.title(), before.slug(), null, before.status(), before.theme(), false,
+				null, 850, NutriScoreKind.BEVERAGE, null, List.of(), List.of(), before.servings(), before.prepMinutes(), null, null, null,
+				null, null, List.of(), List.of(), null, null, null, before.parts(), Instant.EPOCH, Instant.EPOCH, null, null, null);
+
+		// Absent before 2.17: the general grid
+		assertThat(RecipeChanges.between(before, after)).usingRecursiveComparison()
+			.isEqualTo(new AuditChanges().add("Poids après cuisson", null, "850 g").add("Grille du Nutri-Score", "Cas général", "Boisson"));
 	}
 
 	private static RecipeDetail recipe(String title, List<RecipeQuestion> questions) {
@@ -69,7 +82,7 @@ class RecipeChangesTest {
 
 	private static RecipeDetail recipe(String title, Integer prepMinutes, List<RecipeDetail.IngredientLine> ingredients,
 			List<RecipeDetail.Step> steps, List<RecipeQuestion> questions) {
-		return new RecipeDetail(1L, title, "tarte", null, RecipeStatus.PUBLISHED, RecipeTheme.SWEET, false, null, null, List.of(),
+		return new RecipeDetail(1L, title, "tarte", null, RecipeStatus.PUBLISHED, RecipeTheme.SWEET, false, null, null, null, null, List.of(),
 				List.of(), 6, prepMinutes, null, null, null, null, null, List.of(), questions, null, null, null,
 				List.of(new RecipeDetail.Part(null, ingredients, steps)), Instant.EPOCH, Instant.EPOCH, null, null, null);
 	}

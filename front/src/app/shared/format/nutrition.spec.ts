@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { RecipeNutrition } from '../../core/api/generated/models/recipe-nutrition';
-import { NUTRIENT_ROWS, formatGrams, formatKcal, missingNames, missingReason, nutritionSource, shownNutrition } from './nutrition';
+import {
+  NUTRIENT_ROWS,
+  NUTRI_SCORE_KINDS,
+  estimateNote,
+  formatGrams,
+  formatKcal,
+  missingNames,
+  missingReason,
+  nutriScoreAs,
+  nutritionMarkdown,
+  nutritionSource,
+  proteinClaimLabel,
+  shownNutrition,
+} from './nutrition';
 
 const facts = { kcal: 1318.7, proteins: 16.94, carbohydrates: 45, sugars: 12.25, fat: 16, saturatedFat: 9.5, fibre: 2, salt: 0.123 };
 
@@ -19,6 +32,9 @@ const nutrition: RecipeNutrition = {
   ciqualVersion: 'Ciqual 2025',
   fromLabels: false,
   complete: true,
+  nutriScoreKind: 'GENERAL',
+  proteinEnergyPercent: 5,
+  contributors: [],
 };
 
 describe('nutrition format', () => {
@@ -62,5 +78,36 @@ describe('nutrition format', () => {
     // An ingredient without values: hidden until completed
     expect(shownNutrition({ showNutrition: true, nutrition: { ...nutrition, complete: false } })).toBeNull();
     expect(shownNutrition({ showNutrition: true })).toBeNull();
+  });
+
+  it('says how the facts are estimated: raw, or per 100 g of the dish once cooked', () => {
+    expect(estimateNote(nutrition)).toBe(
+      "Estimation à partir des ingrédients crus, sans os ni épluchures : la perte d'eau à la cuisson n'est pas comptée",
+    );
+    expect(estimateNote({ ...nutrition, cookedGrams: 1250 })).toBe(
+      'Estimation à partir des ingrédients, sans os ni épluchures, pour 100 g du plat cuit (1 250 g en tout)',
+    );
+  });
+
+  it('names the grid of the Nutri-Score and the claim of the proteins', () => {
+    expect(NUTRI_SCORE_KINDS.map((kind) => kind.value)).toEqual(['GENERAL', 'BEVERAGE', 'FATS', 'RED_MEAT', 'CHEESE']);
+    expect(nutriScoreAs('BEVERAGE')).toBe('une boisson');
+    // A copy kept before 2.17: the general grid
+    expect(nutriScoreAs(undefined)).toBe('un aliment');
+    expect(proteinClaimLabel('RICH')).toBe('Riche en protéines');
+    expect(proteinClaimLabel('SOURCE')).toBe('Source de protéines');
+    expect(proteinClaimLabel(undefined)).toBeNull();
+  });
+
+  it('writes them in the Markdown page with their grid and claim', () => {
+    const markdown = nutritionMarkdown({
+      ...nutrition,
+      nutriScore: { grade: 'B', score: 1 },
+      nutriScoreKind: 'BEVERAGE',
+      proteinClaim: 'SOURCE',
+      proteinEnergyPercent: 14,
+    });
+    expect(markdown[2]).toContain('Nutri-Score estimé par le site comme pour une boisson : B.');
+    expect(markdown[2]).toContain("Source de protéines (14 % de l'énergie).");
   });
 });

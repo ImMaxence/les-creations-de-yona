@@ -201,6 +201,8 @@ export default class AdminIngredients {
   protected readonly pieceSingular = signal('');
   protected readonly piecePlural = signal('');
   protected readonly savingPiece = signal(false);
+  /** The form opened with the usual weight of such an ingredient, to check. */
+  protected readonly pieceOffered = signal(false);
 
   /** "1 œuf = 50 g". */
   protected pieceLabel(ingredient: IngredientResponse): string | null {
@@ -210,11 +212,13 @@ export default class AdminIngredients {
 
   protected startPiece(ingredient: IngredientResponse): void {
     this.pieceId.set(ingredient.id);
-    this.pieceGrams.set(ingredient.piece ? String(ingredient.piece.grams) : '');
-    // The name as a first idea: "Œuf" is close to "œuf"
+    // Its own weight, or else the usual one of such an ingredient ("1 rouleau = 230 g"), or else the name as a first idea
+    const piece = ingredient.piece ?? ingredient.usual?.piece;
+    this.pieceOffered.set(!ingredient.piece && !!piece);
+    this.pieceGrams.set(piece ? String(piece.grams) : '');
     const name = ingredient.name.toLocaleLowerCase('fr');
-    this.pieceSingular.set(ingredient.piece?.singular ?? name);
-    this.piecePlural.set(ingredient.piece?.plural ?? `${name}s`);
+    this.pieceSingular.set(piece?.singular ?? name);
+    this.piecePlural.set(piece?.plural ?? `${name}s`);
   }
 
   protected async savePiece(ingredient: IngredientResponse): Promise<void> {

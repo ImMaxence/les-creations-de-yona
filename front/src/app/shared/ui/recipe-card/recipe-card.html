@@ -10,6 +10,15 @@
   <div class="card__body">
     <span class="card__category">{{ categories() }}</span>
     <h3 class="card__title">{{ recipe().title }}</h3>
+    <!-- Per serving, when the page of the recipe shows its nutrition facts -->
+    @if (nutrition(); as nutrition) {
+      <p class="card__nutrition">
+        <span class="card__kcal"><svg yonaIcon="flame" [size]="14"></svg>{{ nutrition.kcal }} · {{ nutrition.proteins }} de protéines</span>
+        @if (nutrition.claim) {
+          <span class="card__claim">{{ nutrition.claim }}</span>
+        }
+      </p>
+    }
     <time class="card__date" [attr.datetime]="date()">{{ date() | parisDate }}</time>
   </div>
 </a>

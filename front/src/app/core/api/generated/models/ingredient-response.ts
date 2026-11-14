@@ -3,12 +3,18 @@
 
 import { IngredientNutrition } from '../models/ingredient-nutrition';
 import { IngredientPiece } from '../models/ingredient-piece';
+import { IngredientUsual } from '../models/ingredient-usual';
 export interface IngredientResponse {
 
   /**
    * Shop aisle, for the shopping list; absent until set
    */
   aisle?: 'FRUITS_VEGETABLES' | 'MEAT_FISH' | 'FRESH' | 'DAIRY_EGGS' | 'SAVORY_GROCERY' | 'SWEET_GROCERY' | 'FROZEN' | 'DRINKS';
+
+  /**
+   * Share of it the nutrition facts count, in percent: 100 unless bones, skin or peel are not eaten
+   */
+  ediblePercent: number;
   id: number;
   name: string;
 
@@ -26,4 +32,9 @@ export interface IngredientResponse {
    * Number of recipes using it, drafts included
    */
   recipeCount: number;
+
+  /**
+   * What such an ingredient usually weighs and how much of it is eaten, to offer; absent when unknown
+   */
+  usual?: IngredientUsual;
 }

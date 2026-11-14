@@ -29,6 +29,8 @@ describe('the estimate of the editor', () => {
 
     expect(form).toEqual({
       servings: 4,
+      cookedGrams: undefined,
+      nutriScoreKind: 'GENERAL',
       parts: [
         {
           linkedRecipeId: undefined,
@@ -46,7 +48,21 @@ describe('the estimate of the editor', () => {
   it('sends a recipe used as a part by its id, and no servings it would refuse', () => {
     const form = estimateForm([{ ...linkedPart({ id: 12, title: 'Pâte sablée' }), linkedRatio: 0.5 }], 0);
 
-    expect(form).toEqual({ servings: undefined, parts: [{ linkedRecipeId: 12, linkedRatio: 0.5, ingredients: [] }] });
+    expect(form).toEqual({
+      servings: undefined,
+      cookedGrams: undefined,
+      nutriScoreKind: 'GENERAL',
+      parts: [{ linkedRecipeId: 12, linkedRatio: 0.5, ingredients: [] }],
+    });
+  });
+
+  it('sends the weight once cooked when it is one, and the grid of the Nutri-Score', () => {
+    const lines = [part([{ name: 'Citron', quantity: 3 }])];
+
+    expect(estimateForm(lines, 4, 850, 'BEVERAGE')).toMatchObject({ cookedGrams: 850, nutriScoreKind: 'BEVERAGE' });
+    expect(estimateForm(lines, 4, 0)?.cookedGrams).toBeUndefined();
+    expect(estimateForm(lines, 4, 12.5)?.cookedGrams).toBeUndefined();
+    expect(estimateForm(lines, 4, 200_000)?.cookedGrams).toBeUndefined();
   });
 
   it('asks nothing while no ingredient is typed', () => {

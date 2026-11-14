@@ -98,7 +98,7 @@ public final class CiqualSearch {
 	}
 
 	/** "Jaunes d'œufs" → "jaune oeuf": folded, small words left out, each word in the singular. */
-	static String key(String name) {
+	public static String key(String name) {
 		return words(name).stream().map(CiqualSearch::singular).collect(Collectors.joining(" "));
 	}
 

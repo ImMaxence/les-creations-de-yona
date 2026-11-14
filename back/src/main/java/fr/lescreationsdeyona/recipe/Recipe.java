@@ -2,6 +2,7 @@ package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.category.Category;
 import fr.lescreationsdeyona.image.Image;
+import fr.lescreationsdeyona.nutrition.NutriScoreKind;
 import fr.lescreationsdeyona.tag.Tag;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -107,6 +108,13 @@ public class Recipe {
 
 	/** Its nutrition facts (calories, Nutri-Score) shown on its page, computed from its ingredients. */
 	private boolean showNutrition;
+
+	/** Weight of the whole recipe once cooked, for its facts per 100 g and its Nutri-Score; null: the raw weight. */
+	private Integer cookedGrams;
+
+	/** The grid of the Nutri-Score it is graded with. */
+	@Enumerated(EnumType.STRING)
+	private NutriScoreKind nutriScoreKind = NutriScoreKind.GENERAL;
 
 	/** First publication, kept if the recipe goes back to draft; null for a recipe never published. */
 	private Instant publishedAt;

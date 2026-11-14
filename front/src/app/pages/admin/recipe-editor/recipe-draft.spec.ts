@@ -50,6 +50,17 @@ describe('fromAiDraft', () => {
     expect(toDraft({ categories: [], tags: [], equipment: [], questions: [], parts: [] } as unknown as RecipeDetail).showNutrition).toBe(false);
   });
 
+  it('keeps the weight once cooked and the grid of the Nutri-Score', () => {
+    const current = { ...toDraft(null), cookedGrams: 850, nutriScoreKind: 'BEVERAGE' as const };
+
+    expect(fromAiDraft(current, AI)).toMatchObject({ cookedGrams: 850, nutriScoreKind: 'BEVERAGE' });
+    expect(toRecipeForm(current)).toMatchObject({ cookedGrams: 850, nutriScoreKind: 'BEVERAGE' });
+    expect(toRecipeForm(toDraft(null))).toMatchObject({ cookedGrams: undefined, nutriScoreKind: 'GENERAL' });
+    // A recipe saved before 2.17 has neither: raw weight, general grid
+    const old = toDraft({ categories: [], tags: [], equipment: [], questions: [], parts: [] } as unknown as RecipeDetail);
+    expect(old).toMatchObject({ cookedGrams: null, nutriScoreKind: 'GENERAL' });
+  });
+
   it('sees an untouched new recipe as empty, and a typed title as content', () => {
     expect(hasContent(toDraft(null))).toBe(false);
     expect(hasContent({ ...toDraft(null), title: 'Tarte' })).toBe(true);

@@ -1,5 +1,5 @@
 import { convertToParamMap } from '@angular/router';
-import { readFilters } from './recipes.resolver';
+import { readFilters, recipesApiQuery } from './recipes.resolver';
 
 describe('readFilters', () => {
   it('reads every filter from the URL', () => {
@@ -12,6 +12,7 @@ describe('readFilters', () => {
         temps: '30',
         difficulte: 'facile',
         theme: 'sale',
+        nutrition: 'proteines',
         page: '2',
       }),
     );
@@ -23,8 +24,12 @@ describe('readFilters', () => {
       maxMinutes: 30,
       difficulty: 'facile',
       theme: 'SAVORY',
+      nutrition: 'proteines',
       page: 2,
     });
+    // An unknown one is left out
+    expect(readFilters(convertToParamMap({ nutrition: 'sans-sucre' })).nutrition).toBeNull();
+    expect(recipesApiQuery({ ...filters, nutrition: 'leger' }).nutrition).toBe('LIGHT');
   });
 
   it('drops blank and repeated ingredients, case ignored, and keeps 5 at most', () => {

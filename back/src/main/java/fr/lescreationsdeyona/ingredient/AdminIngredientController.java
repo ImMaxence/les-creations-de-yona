@@ -76,6 +76,13 @@ class AdminIngredientController {
 		return ingredientService.setNutrition(id, form);
 	}
 
+	@Operation(summary = "The share of an ingredient, as bought, that is eaten (bones, skin, peel left): 100 % by default",
+			description = "Every quantity of it in the recipes counts that share in their nutrition facts.")
+	@PutMapping("/{id}/edible-part")
+	IngredientResponse setIngredientEdiblePart(@PathVariable long id, @Valid @RequestBody IngredientEdiblePartForm form) {
+		return ingredientService.setEdiblePart(id, form.percent());
+	}
+
 	@Operation(summary = "Link ingredients to Ciqual foods, all at once (\"Tout lier\"); all or none")
 	@PutMapping("/ciqual")
 	@ResponseStatus(HttpStatus.NO_CONTENT)

@@ -24,6 +24,8 @@ export const RECIPES_QUERY = {
   time: 'temps',
   difficulty: 'difficulte',
   theme: 'theme',
+  /** Léger or riche en protéines, among the recipes showing their nutrition facts. */
+  nutrition: 'nutrition',
   /** Not a filter: the number of people the recipes opened from the list show their quantities for. */
   servings: 'portions',
   page: 'page',
@@ -43,6 +45,13 @@ export const DIFFICULTY_FILTERS = {
 } as const;
 export type DifficultyFilter = keyof typeof DIFFICULTY_FILTERS;
 
+/** Nutrition filter: the URL's French word, the API's filter. */
+export const NUTRITION_FILTERS = {
+  leger: 'LIGHT',
+  proteines: 'HIGH_PROTEIN',
+} as const;
+export type NutritionFilter = keyof typeof NUTRITION_FILTERS;
+
 export interface RecipeFilters {
   search: string;
   category: string | null;
@@ -55,6 +64,8 @@ export interface RecipeFilters {
   difficulty: DifficultyFilter | null;
   /** Sucré or salé (?theme=sucre). */
   theme: Theme | null;
+  /** 500 kcal a serving at most, or rich in proteins: recipes showing their nutrition facts only. */
+  nutrition: NutritionFilter | null;
   /** Where the list starts, from 1: ?page=2 is for search engines, the visitor scrolls. */
   page: number;
 }
@@ -73,6 +84,7 @@ export function readFilters(params: ParamMap): RecipeFilters {
   const page = Number(params.get(RECIPES_QUERY.page));
   const time = Number(params.get(RECIPES_QUERY.time));
   const difficulty = params.get(RECIPES_QUERY.difficulty);
+  const nutrition = params.get(RECIPES_QUERY.nutrition);
   return {
     search: (params.get(RECIPES_QUERY.search) ?? '').trim().slice(0, 100),
     category: params.get(RECIPES_QUERY.category) || null,
@@ -81,6 +93,7 @@ export function readFilters(params: ParamMap): RecipeFilters {
     maxMinutes: (TIME_FILTERS as readonly number[]).includes(time) ? time : null,
     difficulty: difficulty && difficulty in DIFFICULTY_FILTERS ? (difficulty as DifficultyFilter) : null,
     theme: themeOfSlug(params.get(RECIPES_QUERY.theme)),
+    nutrition: nutrition && nutrition in NUTRITION_FILTERS ? (nutrition as NutritionFilter) : null,
     page: Number.isInteger(page) && page >= 1 ? page : 1,
   };
 }
@@ -111,6 +124,7 @@ export function recipesApiQuery(filters: RecipeFilters) {
     maxMinutes: filters.maxMinutes ?? undefined,
     difficulty: filters.difficulty ? DIFFICULTY_FILTERS[filters.difficulty] : undefined,
     theme: filters.theme ?? undefined,
+    nutrition: filters.nutrition ? NUTRITION_FILTERS[filters.nutrition] : undefined,
     size: RECIPES_PER_PAGE,
   };
 }
@@ -178,6 +192,7 @@ export function recipesSeo(route: ActivatedRouteSnapshot): PageSeo {
       filters.maxMinutes !== null ||
       filters.difficulty !== null ||
       filters.theme !== null ||
+      filters.nutrition !== null ||
       result.content.length === 0,
   };
 }

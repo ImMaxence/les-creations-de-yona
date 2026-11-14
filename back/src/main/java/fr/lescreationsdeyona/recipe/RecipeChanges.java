@@ -2,6 +2,7 @@ package fr.lescreationsdeyona.recipe;
 
 import fr.lescreationsdeyona.audit.AuditChanges;
 import fr.lescreationsdeyona.category.CategoryResponse;
+import fr.lescreationsdeyona.nutrition.NutriScoreKind;
 import fr.lescreationsdeyona.tag.TagResponse;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -25,6 +26,8 @@ final class RecipeChanges {
 			.add("À la une", before.featured(), after.featured())
 			.add("Valeurs nutritionnelles", before.showsNutrition() ? "Affichées" : "Masquées",
 					after.showsNutrition() ? "Affichées" : "Masquées")
+			.add("Poids après cuisson", grams(before.cookedGrams()), grams(after.cookedGrams()))
+			.add("Grille du Nutri-Score", nutriScoreKind(before.nutriScoreKind()), nutriScoreKind(after.nutriScoreKind()))
 			.add("Thème", theme(before.theme()), theme(after.theme()))
 			.add("Catégories", before.categories().stream().map(CategoryResponse::name).toList(),
 					after.categories().stream().map(CategoryResponse::name).toList())
@@ -66,6 +69,23 @@ final class RecipeChanges {
 
 	private static @Nullable String theme(@Nullable RecipeTheme theme) {
 		return theme == null ? null : theme == RecipeTheme.SWEET ? "Sucré" : "Salé";
+	}
+
+	/** "850 g"; null for none. */
+	private static @Nullable String grams(@Nullable Integer grams) {
+		return grams == null ? null : grams + " g";
+	}
+
+	/** As the editor names them; absent before 2.17, the general one. */
+	private static String nutriScoreKind(@Nullable NutriScoreKind kind) {
+		return switch (kind) {
+			case null -> "Cas général";
+			case GENERAL -> "Cas général";
+			case RED_MEAT -> "Viande rouge";
+			case CHEESE -> "Fromage";
+			case FATS -> "Matière grasse, oléagineux";
+			case BEVERAGE -> "Boisson";
+		};
 	}
 
 	/** "45 min", "1 h 30". */

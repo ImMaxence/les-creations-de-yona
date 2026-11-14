@@ -95,6 +95,16 @@ public class IngredientService {
 		return toResponse(ingredient);
 	}
 
+	/** The share of it eaten, in percent: every recipe using it counts that much of each quantity. */
+	@Transactional
+	public IngredientResponse setEdiblePart(long id, int percent) {
+		Ingredient ingredient = find(id);
+		AuditChanges changes = new AuditChanges().add("Part mangée", ingredient.getEdiblePercent() + " %", percent + " %");
+		ingredient.setEdiblePercent(percent);
+		auditLog.record(AuditAction.UPDATED, AuditKind.INGREDIENT, ingredient.getName(), id, changes);
+		return toResponse(ingredient);
+	}
+
 	/** "Tout lier": each ingredient to its Ciqual food, all or none. */
 	@Transactional
 	public void linkToCiqual(List<IngredientCiqualLinksForm.Link> links) {
@@ -219,6 +229,15 @@ public class IngredientService {
 				.findFirst()
 				.ifPresent(nutrition -> setNutrition(target, nutrition));
 		}
+		// And for the share eaten
+		if (target.getEdiblePercent() == 100) {
+			ingredientRepository.findAllById(sourceIds)
+				.stream()
+				.map(Ingredient::getEdiblePercent)
+				.filter(percent -> percent != 100)
+				.findFirst()
+				.ifPresent(target::setEdiblePercent);
+		}
 		List<String> merged = ingredientRepository.findAllById(sourceIds).stream().map(Ingredient::getName).toList();
 		ingredientRepository.moveLines(target.getId(), sourceIds);
 		ingredientRepository.movePurchases(target.getId(), sourceIds);
@@ -272,13 +291,17 @@ public class IngredientService {
 		if (nutrition != null && (nutrition.ciqualCode() == null || ciqualFoods.find(nutrition.ciqualCode()).isPresent())) {
 			setNutrition(ingredient, nutrition);
 		}
+		if (kept.ediblePercent() != null) {
+			ingredient.setEdiblePercent(kept.ediblePercent());
+		}
 		return toResponse(ingredientRepository.save(ingredient));
 	}
 
 	private void trash(List<Ingredient> ingredients) {
 		for (Ingredient ingredient : ingredients) {
 			trashBin.put(TrashBin.Entry.of(TrashKind.INGREDIENT, ingredient.getName(), null, null,
-					new TrashedIngredient(ingredient.getName(), ingredient.getAisle(), piece(ingredient), nutritionForm(ingredient))));
+					new TrashedIngredient(ingredient.getName(), ingredient.getAisle(), piece(ingredient), nutritionForm(ingredient),
+							ingredient.getEdiblePercent())));
 		}
 		ingredientRepository.deleteAll(ingredients);
 	}
@@ -384,7 +407,7 @@ public class IngredientService {
 	/** {@code foods}: the Ciqual foods of the ingredients, by code. */
 	private static IngredientResponse toResponse(Ingredient ingredient, long recipeCount, Map<Integer, CiqualFood> foods) {
 		return new IngredientResponse(ingredient.getId(), ingredient.getName(), ingredient.getAisle(), recipeCount,
-				piece(ingredient), nutrition(ingredient, foods));
+				piece(ingredient), nutrition(ingredient, foods), ingredient.getEdiblePercent(), UsualWeights.of(ingredient.getName()));
 	}
 
 	private static Set<Integer> codes(List<Ingredient> ingredients) {

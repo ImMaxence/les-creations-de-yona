@@ -145,6 +145,14 @@
   color: var(--color-accent-strong, var(--color-accent));
 }
 
+// "Riche en protéines · 28 % de l'énergie", under their grams
+.tile dd.tile__claim {
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
 .table-wrap {
   overflow-x: auto;
 }

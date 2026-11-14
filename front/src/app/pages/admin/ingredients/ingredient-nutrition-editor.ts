@@ -3,6 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
 import { attempt } from '../../../core/api/attempt';
 import { Api } from '../../../core/api/generated/api';
+import { setIngredientEdiblePart } from '../../../core/api/generated/fn/admin-ingredients/set-ingredient-edible-part';
 import { setIngredientNutrition } from '../../../core/api/generated/fn/admin-ingredients/set-ingredient-nutrition';
 import { suggestIngredientNutrition } from '../../../core/api/generated/fn/admin-ingredients/suggest-ingredient-nutrition';
 import { searchCiqualFoods } from '../../../core/api/generated/fn/admin-nutrition/search-ciqual-foods';
@@ -63,7 +64,7 @@ export function productSource(product: OpenFoodFactsProduct): string {
 /**
  * The nutrition facts of an ingredient, in a dialog of "Ingrédients": the Ciqual food it is (searched, or
  * offered), a product of the shops found on Open Food Facts, or the values of its label typed by hand. Saved, the
- * dialog closes ("saved").
+ * dialog closes ("saved"). Above them, the share of it eaten (bones, peel…), saved apart ("edited").
  */
 @Component({
   selector: 'yona-ingredient-nutrition-editor',
@@ -84,6 +85,32 @@ export function productSource(product: OpenFoodFactsProduct): string {
           </p>
         }
       </div>
+
+      <form class="edible" (submit)="$event.preventDefault(); saveEdible()">
+        <label class="field edible__field">
+          <span class="field__label">Part mangée (%)</span>
+          <input
+            class="input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="100"
+            step="1"
+            [value]="ediblePercent() ?? ''"
+            (input)="readEdible($event)"
+          />
+        </label>
+        <button yonaButton variant="secondary" type="submit" [disabled]="saving() || ediblePercent() === ingredient().ediblePercent">
+          Enregistrer la part
+        </button>
+        @if (usualEdible(); as usual) {
+          <button type="button" class="link-button" (click)="ediblePercent.set(usual)">Habituellement {{ usual }} %</button>
+        }
+        <p class="field__hint edible__hint">
+          Ce qui se mange de l'ingrédient tel qu'acheté, sans os, peau, noyau ni épluchures : chacune de ses quantités dans les recettes
+          compte cette part. 100 % quand tout se mange
+        </p>
+      </form>
 
       <div class="segmented" yonaSegmented role="tablist" aria-label="Valeurs nutritionnelles depuis">
         <button type="button" class="segmented__option" role="tab" [attr.aria-selected]="tab() === 'CIQUAL'" (click)="tab.set('CIQUAL')">
@@ -258,6 +285,24 @@ export function productSource(product: OpenFoodFactsProduct): string {
       min-width: 0;
     }
 
+    /* "Part mangée", its button and the usual share on one row, the explanation under them */
+    .edible {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: var(--space-2) var(--space-3);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--color-line);
+    }
+
+    .edible__field {
+      width: 9rem;
+    }
+
+    .edible__hint {
+      flex: 1 1 100%;
+    }
+
     .label-fields {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
@@ -278,6 +323,8 @@ export class IngredientNutritionEditor {
   readonly ingredient = input.required<IngredientResponse>();
   /** Saved: the ingredient as it is now. */
   readonly saved = output<IngredientResponse>();
+  /** Its share eaten saved: the dialog stays open. */
+  readonly edited = output<IngredientResponse>();
 
   private readonly api = inject(Api);
   private readonly toaster = inject(Toaster);
@@ -319,6 +366,34 @@ export class IngredientNutritionEditor {
     ...(this.ingredient().nutrition?.label ?? {}),
   }));
   protected readonly labelSource = linkedSignal(() => this.ingredient().nutrition?.labelSource ?? '');
+
+  // The share eaten: the one saved, or the usual one chosen
+  protected readonly ediblePercent = linkedSignal<number | null>(() => this.ingredient().ediblePercent);
+  /** The share of such an ingredient usually eaten, when it is not what is typed. */
+  protected readonly usualEdible = computed(() => {
+    const usual = this.ingredient().usual?.ediblePercent;
+    return usual && usual !== this.ediblePercent() ? usual : null;
+  });
+
+  protected readEdible(event: Event): void {
+    const value = (event.target as HTMLInputElement).valueAsNumber;
+    this.ediblePercent.set(Number.isFinite(value) ? value : null);
+  }
+
+  protected async saveEdible(): Promise<void> {
+    const percent = this.ediblePercent();
+    if (percent == null || !Number.isInteger(percent) || percent < 1 || percent > 100) {
+      this.toaster.error('Indiquez la part mangée, de 1 à 100 %');
+      return;
+    }
+    this.saving.set(true);
+    const saved = await attempt(this.api.invoke(setIngredientEdiblePart, { id: this.ingredient().id, body: { percent } }));
+    this.saving.set(false);
+    if (saved.ok) {
+      this.toaster.success(`Part mangée : ${percent} %, dans toutes les recettes de « ${this.ingredient().name} »`);
+      this.edited.emit(saved.value);
+    }
+  }
 
   /** "753 kcal · protéines 0,6 g · glucides 0,7 g · lipides 83 g". */
   protected summary(facts: { kcal: number; proteins: number; carbohydrates: number; fat: number }): string {

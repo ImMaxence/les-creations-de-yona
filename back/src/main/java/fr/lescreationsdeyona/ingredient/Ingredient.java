@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /** Name uniqueness ignores case and accents (database collation {@code case_accent_insensitive}). */
 @Entity
@@ -56,5 +58,9 @@ public class Ingredient {
 
 	/** "Open Food Facts · Kinder Bueno · Ferrero · 3017626998106"; null when typed by the admin. */
 	private String labelSource;
+
+	/** Share of it eaten, in percent, as Ciqual gives its values for the edible part: 68 for a whole chicken. */
+	@JdbcTypeCode(SqlTypes.SMALLINT)
+	private int ediblePercent = 100;
 
 }

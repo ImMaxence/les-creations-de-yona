@@ -197,6 +197,8 @@ export type { SetIngredientPiece$Params as SetIngredientPiece$Params } from './f
 export { setIngredientPiece as setIngredientPiece } from './fn/admin-ingredients/set-ingredient-piece';
 export type { SetIngredientNutrition$Params as SetIngredientNutrition$Params } from './fn/admin-ingredients/set-ingredient-nutrition';
 export { setIngredientNutrition as setIngredientNutrition } from './fn/admin-ingredients/set-ingredient-nutrition';
+export type { SetIngredientEdiblePart$Params as SetIngredientEdiblePart$Params } from './fn/admin-ingredients/set-ingredient-edible-part';
+export { setIngredientEdiblePart as setIngredientEdiblePart } from './fn/admin-ingredients/set-ingredient-edible-part';
 export type { LinkIngredientsToCiqual$Params as LinkIngredientsToCiqual$Params } from './fn/admin-ingredients/link-ingredients-to-ciqual';
 export { linkIngredientsToCiqual as linkIngredientsToCiqual } from './fn/admin-ingredients/link-ingredients-to-ciqual';
 export type { SetIngredientAisle$Params as SetIngredientAisle$Params } from './fn/admin-ingredients/set-ingredient-aisle';

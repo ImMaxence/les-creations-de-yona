@@ -43,9 +43,9 @@ class RecipeControllerTest {
 
 	@Test
 	void searchesWithEveryIngredientGiven() {
-		when(recipeService.searchPublished(any(), any())).thenReturn(Page.empty(firstPage));
+		when(recipeService.searchPublished(any(), any(), any())).thenReturn(Page.empty(firstPage));
 
-		controller.listPublishedRecipes(null, "desserts", null, List.of("Œufs", "Chocolat"), 30, DifficultyLevel.EASY, null,
+		controller.listPublishedRecipes(null, "desserts", null, List.of("Œufs", "Chocolat"), 30, DifficultyLevel.EASY, null, null,
 				firstPage);
 
 		RecipeFilter filter = searchedFilter();
@@ -57,18 +57,18 @@ class RecipeControllerTest {
 
 	@Test
 	void searchesWithoutIngredientWhenNoneIsGiven() {
-		when(recipeService.searchPublished(any(), any())).thenReturn(Page.empty(firstPage));
+		when(recipeService.searchPublished(any(), any(), any())).thenReturn(Page.empty(firstPage));
 
-		controller.listPublishedRecipes(null, null, null, null, null, null, null, firstPage);
+		controller.listPublishedRecipes(null, null, null, null, null, null, null, null, firstPage);
 
 		assertThat(searchedFilter().ingredientNames()).isEmpty();
 	}
 
 	@Test
 	void notesATitleSearchThatFindsNothing() {
-		when(recipeService.searchPublished(any(), any())).thenReturn(Page.empty(firstPage));
+		when(recipeService.searchPublished(any(), any(), any())).thenReturn(Page.empty(firstPage));
 
-		controller.listPublishedRecipes("tarte tatin", null, null, null, null, null, null, firstPage);
+		controller.listPublishedRecipes("tarte tatin", null, null, null, null, null, null, null, firstPage);
 
 		verify(searchMissService).record("tarte tatin");
 	}
@@ -76,9 +76,9 @@ class RecipeControllerTest {
 	@Test
 	void doesNotNoteAnEmptyPagePastTheFirst() {
 		Pageable secondPage = PageRequest.of(1, 12);
-		when(recipeService.searchPublished(any(), any())).thenReturn(Page.empty(secondPage));
+		when(recipeService.searchPublished(any(), any(), any())).thenReturn(Page.empty(secondPage));
 
-		controller.listPublishedRecipes("tarte tatin", null, null, null, null, null, null, secondPage);
+		controller.listPublishedRecipes("tarte tatin", null, null, null, null, null, null, null, secondPage);
 
 		verify(searchMissService, never()).record(anyString());
 	}
@@ -105,7 +105,7 @@ class RecipeControllerTest {
 
 	private RecipeFilter searchedFilter() {
 		ArgumentCaptor<RecipeFilter> filter = ArgumentCaptor.forClass(RecipeFilter.class);
-		verify(recipeService).searchPublished(filter.capture(), any());
+		verify(recipeService).searchPublished(filter.capture(), any(), any());
 		return filter.getValue();
 	}
 
@@ -113,8 +113,8 @@ class RecipeControllerTest {
 	private Set<ConstraintViolation<RecipeController>> violations(List<String> ingredients)
 			throws NoSuchMethodException {
 		Method list = RecipeController.class.getDeclaredMethod("listPublishedRecipes", String.class, String.class,
-				String.class, List.class, Integer.class, DifficultyLevel.class, RecipeTheme.class, Pageable.class);
-		Object[] arguments = { null, null, null, ingredients, null, null, null, firstPage };
+				String.class, List.class, Integer.class, DifficultyLevel.class, RecipeTheme.class, NutritionFilter.class, Pageable.class);
+		Object[] arguments = { null, null, null, ingredients, null, null, null, null, firstPage };
 		return VALIDATION.getValidator().forExecutables().validateParameters(controller, list, arguments);
 	}
 

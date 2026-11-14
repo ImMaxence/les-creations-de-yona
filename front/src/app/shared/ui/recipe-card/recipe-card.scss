@@ -73,6 +73,32 @@
   @include m.line-clamp(2);
 }
 
+// "526 kcal · 7,3 g de protéines" a serving, then "Riche en protéines"
+.card__nutrition {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.card__kcal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-variant-numeric: tabular-nums;
+}
+
+.card__claim {
+  padding: 0.1rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
 .card__date {
   margin-top: auto;
   padding-top: var(--space-1);

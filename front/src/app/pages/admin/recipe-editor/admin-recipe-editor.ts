@@ -59,6 +59,7 @@ import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { FieldError } from '../../../shared/ui/field-error/field-error';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select, SelectOption } from '../../../shared/ui/select/select';
+import { NUTRI_SCORE_KINDS, NutriScoreKind } from '../../../shared/format/nutrition';
 import { SuggestInput, Suggestion } from '../../../shared/ui/suggest-input/suggest-input';
 import { hasParts } from '../../recipe/recipe-parts';
 import RecipePreview from '../recipe-preview/recipe-preview';
@@ -212,6 +213,14 @@ export default class AdminRecipeEditor implements UnsavedChanges {
   protected readonly publishing = signal(false);
   protected readonly difficultyOptions = DIFFICULTY_OPTIONS;
   protected readonly moldOptions = MOLD_OPTIONS;
+  protected readonly nutriScoreKindOptions: SelectOption<NutriScoreKind>[] = NUTRI_SCORE_KINDS.map(({ value, label }) => ({
+    value,
+    label,
+  }));
+  /** What the grid chosen is for. */
+  protected readonly nutriScoreKindHint = computed(
+    () => NUTRI_SCORE_KINDS.find((kind) => kind.value === this.draft().nutriScoreKind)?.hint ?? '',
+  );
   /** Under the scheduling field: "samedi 31 octobre à 10:00". */
   protected readonly scheduledLabel = computed(() => {
     const recipe = this.recipe();

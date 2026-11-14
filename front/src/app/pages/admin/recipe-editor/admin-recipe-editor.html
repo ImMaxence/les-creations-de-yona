@@ -415,7 +415,26 @@
         sportives ou légères. Affichées seulement quand chaque ingrédient a ses valeurs
       </span>
     </div>
-    <yona-recipe-nutrition-panel [parts]="draft().parts" [servings]="draft().servings" [shown]="draft().showNutrition" />
+    <div class="editor__grid">
+      <div class="field">
+        <label class="field__label" for="cooked-grams">Poids après cuisson (g, facultatif)</label>
+        <input id="cooked-grams" type="number" inputmode="numeric" class="input" [formField]="recipeForm.cookedGrams" />
+        <yona-field-error [field]="recipeForm.cookedGrams" />
+        <span class="field__hint">Le plat entier, pesé cuit : les valeurs pour 100 g et le Nutri-Score sont alors celles du plat (un gâteau perd de l'eau au four)</span>
+      </div>
+      <div class="field">
+        <span class="field__label">Grille du Nutri-Score</span>
+        <yona-select label="Grille du Nutri-Score" [options]="nutriScoreKindOptions" [formField]="recipeForm.nutriScoreKind" />
+        <span class="field__hint">{{ nutriScoreKindHint() }}</span>
+      </div>
+    </div>
+    <yona-recipe-nutrition-panel
+      [parts]="draft().parts"
+      [servings]="draft().servings"
+      [cookedGrams]="draft().cookedGrams"
+      [nutriScoreKind]="draft().nutriScoreKind"
+      [shown]="draft().showNutrition"
+    />
   </section>
 
   <section class="admin-panel" aria-labelledby="equipment-title">

@@ -2,15 +2,17 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, computed, input, 
 import { RouterLink } from '@angular/router';
 import { RecipeCard as RecipeCardModel } from '../../../core/api/generated/models/recipe-card';
 import { categoryNames } from '../../format/categories';
+import { formatGrams, formatKcal, proteinClaimLabel } from '../../format/nutrition';
 import { ParisDatePipe } from '../../format/paris-date.pipe';
 import { RECIPE_IMAGE_TRANSITION, isSameTabClick } from '../../motion/view-transitions';
 import { recipeLink } from '../../routing/links';
 import { SERVINGS_PARAM } from '../../search/search-target';
 import { CoverImage } from '../cover-image/cover-image';
+import { Icon } from '../icon/icon';
 
 @Component({
   selector: 'yona-recipe-card',
-  imports: [RouterLink, CoverImage, ParisDatePipe],
+  imports: [RouterLink, CoverImage, Icon, ParisDatePipe],
   templateUrl: './recipe-card.html',
   styleUrl: './recipe-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,6 +33,13 @@ export class RecipeCard {
   /** Its publication; favorites kept before it existed have their creation only. */
   protected readonly date = computed(() => this.recipe().publishedAt ?? this.recipe().createdAt);
   protected readonly imageTransitionName = signal<string | null>(null);
+  /** "526 kcal · 7,3 g de protéines" a serving, and "Riche en protéines" when it can say so. */
+  protected readonly nutrition = computed(() => {
+    const facts = this.recipe().nutrition;
+    return facts
+      ? { kcal: formatKcal(facts.kcal), proteins: formatGrams(facts.proteins), claim: proteinClaimLabel(facts.proteinClaim) }
+      : null;
+  });
 
   protected onClick(event: MouseEvent): void {
     if (isSameTabClick(event)) {

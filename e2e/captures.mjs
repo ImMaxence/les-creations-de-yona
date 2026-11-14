@@ -45,7 +45,7 @@ if (wanted('pc-accueil', 'pc-recettes', 'pc-recette')) {
 // Le back-office sans connexion Google : la page « Nouveautés », la seule sans données de l'API admin
 if (wanted('pc-administration')) {
   const admin = await newPage(browser, DESKTOP);
-  await fakeAdmin(admin, '2.16.1');
+  await fakeAdmin(admin, '2.17.0');
   await admin.goto(BASE + '/admin/nouveautes', { waitUntil: 'load' });
   await admin.locator('details.changelog__version').first().waitFor();
   await shoot(admin, 'pc-administration');
@@ -56,7 +56,7 @@ if (wanted('pc-administration')) {
 if (wanted('pc-ia-recette', 'pc-ia-image')) {
   const admin = await newPage(browser, DESKTOP);
   await admin.route('**/api/admin/**', (route) => route.fulfill({ json: [] }));
-  await fakeAdmin(admin, '2.16.1');
+  await fakeAdmin(admin, '2.17.0');
   await admin.route('**/api/admin/recipe-ai', (route) => route.fulfill({ json: { available: true } }));
   const open = async () => {
     await admin.goto(BASE + '/admin/recettes/nouvelle', { waitUntil: 'load' });
@@ -262,7 +262,7 @@ if (wanted('pc-comptabilite', 'pc-facture')) {
     lines: [{ label: 'Tarte au citron meringuée', detail: 'la tarte, 8 parts', quantity: 1, unitPrice: 24, total: 24 }],
   };
   const admin = await newPage(browser, DESKTOP);
-  await fakeAdmin(admin, '2.16.1');
+  await fakeAdmin(admin, '2.17.0');
   await admin.route('**/api/admin/accounting?**', (route) => route.fulfill({ json: overview }));
   await admin.route('**/api/admin/accounting/costs', (route) => route.fulfill({ json: costs }));
   await admin.route('**/api/admin/invoices?**', (route) => route.fulfill({ json: [{ id: 3, number: '2026-0003', orderId: 21, issuedOn: '2026-11-09', customerName: 'Léa Martin', amount: 22 }] }));
@@ -294,6 +294,10 @@ if (wanted('telephone-nutrition', 'telephone-besoins', 'pc-ingredients-nutrition
     ciqualVersion: 'Ciqual 2025',
     fromLabels: false,
     complete: true,
+    cookedGrams: 820,
+    nutriScoreKind: 'GENERAL',
+    proteinEnergyPercent: 5,
+    contributors: [],
   };
   if (wanted('telephone-nutrition', 'telephone-besoins')) {
     const phone = await newPage(browser, PHONE);
@@ -316,7 +320,7 @@ if (wanted('telephone-nutrition', 'telephone-besoins', 'pc-ingredients-nutrition
   if (wanted('pc-ingredients-nutrition')) {
     const admin = await newPage(browser, DESKTOP);
     await admin.route('**/api/admin/**', (route) => route.fulfill({ json: [] }));
-    await fakeAdmin(admin, '2.16.1');
+    await fakeAdmin(admin, '2.17.0');
     const facts = (kcal, proteins, carbohydrates, fat) => ({ kcal, proteins, carbohydrates, sugars: 0, fat, saturatedFat: 0, fibre: 0, salt: 0 });
     const food = (code, name, subgroupName, per100g) => ({ code, name, subgroupCode: '0000', subgroupName, per100g });
     const butter = food(16400, 'Beurre à 80% MG minimum, doux', 'beurres', facts(753, 0.6, 0.7, 83));

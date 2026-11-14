@@ -55,7 +55,8 @@ class RecipePublicationTest {
 
 	private final RecipeService service = new RecipeService(recipeRepository, categoryRepository, ingredientService,
 			mock(ImageService.class), mock(TagService.class), mock(MenuService.class), mock(TrashBin.class), recipeMapper,
-			events, auditLog, mock(ShopProductRepository.class), mock(NutritionService.class));
+			events, auditLog, mock(ShopProductRepository.class), mock(NutritionService.class),
+			mock(RecipeCards.class), mock(PublishedNutrition.class));
 
 	private final Category desserts = new Category();
 
@@ -85,7 +86,7 @@ class RecipePublicationTest {
 	}
 
 	private static RecipeForm form(RecipeStatus status, boolean featured, Instant scheduledAt) {
-		return new RecipeForm("Tarte", null, status, RecipeTheme.SAVORY, featured, null, List.of(1L), null, null, null, null, null,
+		return new RecipeForm("Tarte", null, status, RecipeTheme.SAVORY, featured, null, null, null, List.of(1L), null, null, null, null, null,
 				null, null, null, null, null, null, scheduledAt,
 				List.of(new RecipeForm.Part(null, List.of(new RecipeForm.IngredientLine("Farine", null, null, null)),
 						List.of(new RecipeForm.Step("Mélanger", null, List.of())))));

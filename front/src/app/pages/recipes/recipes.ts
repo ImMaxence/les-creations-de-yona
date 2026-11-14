@@ -18,6 +18,7 @@ import { Select, SelectOption } from '../../shared/ui/select/select';
 import {
   DifficultyFilter,
   MAX_INGREDIENTS,
+  NutritionFilter,
   RECIPES_QUERY,
   RecipesPageData,
   TIME_FILTERS,
@@ -64,7 +65,8 @@ export default class Recipes {
   private readonly router = inject(Router);
   /** A change of the number of people keeps the visitor where they are. */
   private readonly keepScroll = keepScrollThroughNextNavigation();
-  protected readonly categories = inject(SiteData).categories;
+  private readonly siteData = inject(SiteData);
+  protected readonly categories = this.siteData.categories;
   protected readonly recipesPath = RECIPES_PATH;
 
   protected readonly filters = computed(() => this.data().filters);
@@ -103,12 +105,23 @@ export default class Recipes {
     () => this.categories().find((category) => category.slug === this.filters().category) ?? null,
   );
   protected readonly activeTag = computed(() => this.data().tags.find((tag) => tag.slug === this.filters().tag) ?? null);
-  /** Tag, time and difficulty: shown on phones once asked for, or when one is in use. */
+  /** Tag, time, difficulty and nutrition: shown on phones once asked for, or when one is in use. */
   protected readonly moreFiltersCount = computed(
     () =>
       Number(this.filters().tag !== null) +
       Number(this.filters().maxMinutes !== null) +
-      Number(this.filters().difficulty !== null),
+      Number(this.filters().difficulty !== null) +
+      Number(this.filters().nutrition !== null),
+  );
+  /** Once a published recipe shows its nutrition facts per serving; kept while in use, to be taken off. */
+  protected readonly showNutritionFilter = computed(() => this.siteData.nutritionFilters() || this.filters().nutrition !== null);
+  protected readonly nutritionOptions: SelectOption<NutritionFilter | null>[] = [
+    { value: null, label: 'Toutes les recettes' },
+    { value: 'leger', label: 'Léger : 500 kcal max la portion' },
+    { value: 'proteines', label: 'Riche en protéines' },
+  ];
+  protected readonly nutritionLabel = computed(() =>
+    this.filters().nutrition === 'leger' ? 'léger' : this.filters().nutrition === 'proteines' ? 'riche en protéines' : null,
   );
   /** Phones: every filter is folded behind one button, which says how many are in use. */
   protected readonly filtersOpen = signal(false);
@@ -222,6 +235,10 @@ export default class Recipes {
 
   protected changeDifficulty(difficulty: DifficultyFilter | null | undefined): void {
     this.updateQuery({ [RECIPES_QUERY.difficulty]: difficulty ?? null, [RECIPES_QUERY.page]: null });
+  }
+
+  protected changeNutrition(nutrition: NutritionFilter | null | undefined): void {
+    this.updateQuery({ [RECIPES_QUERY.nutrition]: nutrition ?? null, [RECIPES_QUERY.page]: null });
   }
 
   protected addIngredient(name: string): void {

@@ -154,4 +154,18 @@ class IngredientNutritionTest {
 				new IngredientCiqualLinksForm.Link(2L, 16400)))).extracting("code").isEqualTo(ErrorCode.CIQUAL_FOOD_NOT_FOUND);
 	}
 
+	@Test
+	void keepsTheShareEatenAndOffersTheUsualOne() {
+		Ingredient chicken = ingredient(1, "Poulet fermier");
+		when(repository.findById(1L)).thenReturn(Optional.of(chicken));
+		assertThat(chicken.getEdiblePercent()).isEqualTo(100);
+
+		IngredientResponse saved = service.setEdiblePart(1, 70);
+
+		assertThat(chicken.getEdiblePercent()).isEqualTo(70);
+		assertThat(saved.ediblePercent()).isEqualTo(70);
+		// The usual weight of a chicken, and the share of it usually eaten, offered whatever was typed
+		assertThat(saved.usual()).isEqualTo(new IngredientUsual(new IngredientPiece(new BigDecimal("1500"), "poulet", "poulets"), 68));
+	}
+
 }
