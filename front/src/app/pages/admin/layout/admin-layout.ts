@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationCancel, NavigationEnd, NavigationError, NavigationSkipped, Router, RouterOutlet } from '@angular/router';
+import { NavigationCancel, NavigationEnd, NavigationError, NavigationSkipped, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AdminSession } from '../../../core/auth/admin-session';
 import { ConfirmDialog } from '../../../core/dialog/confirm-dialog';
@@ -51,7 +51,7 @@ const WIDE_SCREEN = '(width >= 64rem)';
  */
 @Component({
   selector: 'yona-admin-layout',
-  imports: [AdminAvatar, AdminNav, ConfirmDialog, Icon, MessageToastStack, RouterOutlet],
+  imports: [AdminAvatar, AdminNav, ConfirmDialog, Icon, MessageToastStack, RouterLink, RouterOutlet],
   templateUrl: './admin-layout.html',
   styleUrls: ['./admin-frame.scss', './admin-layout.scss', './admin-publication.scss'],
   encapsulation: ViewEncapsulation.None,

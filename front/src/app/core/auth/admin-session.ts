@@ -37,6 +37,8 @@ export class AdminSession {
 
   readonly admin = this.adminState.asReadonly();
   readonly isAdmin = computed(() => this.adminState() !== null);
+  /** Signed in without any passkey yet: the back-office reminds them to add one, in "Mon compte". */
+  readonly needsPasskey = computed(() => this.adminState()?.passkeys === 0);
 
   /**
    * Browser only, on public pages. Only the back-office creates the XSRF-TOKEN cookie, so public

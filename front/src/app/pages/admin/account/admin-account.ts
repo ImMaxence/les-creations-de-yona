@@ -148,6 +148,8 @@ export default class AdminAccount implements OnInit {
       this.account.set(result.value);
       this.arrival.set(null);
       this.toaster.success('Passkey ajoutée : elle vous connecte désormais sur cet appareil');
+      // The reminder of the menu goes
+      void this.session.load();
     } else if (result.message) {
       this.toaster.error(result.message);
     }

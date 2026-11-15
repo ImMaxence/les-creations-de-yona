@@ -14,6 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin")
 class AuthController {
 
+	private final PasskeyStore.Credentials passkeys;
+
+	AuthController(PasskeyStore.Credentials passkeys) {
+		this.passkeys = passkeys;
+	}
+
 	@Operation(summary = "Signed-in admin; 401 when the session is missing or expired",
 			description = "Logout: POST /api/auth/logout (204), with the X-XSRF-TOKEN header.")
 	@GetMapping("/me")
@@ -22,7 +28,7 @@ class AuthController {
 		// The CSRF token is lazy: reading it makes Spring Security write the XSRF-TOKEN cookie for the
 		// back-office only, so public visitors never get it.
 		csrfToken.getToken();
-		return new AdminResponse(admin.id(), admin.email(), admin.name(), admin.picture());
+		return new AdminResponse(admin.id(), admin.email(), admin.name(), admin.picture(), passkeys.count(admin.id()));
 	}
 
 }

@@ -2,6 +2,24 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.20.0 - 2026-11-16
+
+Front et backend 2.20.0. Pas de migration de la base
+
+### Ajouté
+
+- **Rappel de passkey** : tant qu'un admin n'a pas de passkey, une carte au-dessus de son compte, dans le menu, l'invite à en ajouter une (« Plus tard » la cache une semaine)
+
+### Modifié
+
+- **Mon compte** : un lien dans le menu (rubrique Site), marqué « À faire » sans passkey ; sur téléphone, la photo de la barre du haut y mène directement, au lieu d'ouvrir le menu
+
+### Technique
+
+- **API** : `GET /api/admin/me` dit combien de passkeys a l'admin
+- **Microsoft** : la marche à suivre corrigée, Microsoft exige un annuaire depuis juin 2024 (compte Azure gratuit, carte bancaire demandée pour vérifier l'identité) ; chaque admin relie son compte Microsoft dans « Mon compte » avant de s'en servir pour se connecter
+- **Passkeys** : la première se crée dans « Mon compte » après une connexion Google ; conseils pour l'iPhone (trousseau iCloud, QR code depuis un PC) et Windows Hello
+
 ## 2.19.0 - 2026-11-15
 
 Front et backend 2.19.0. Migration de la base : V34

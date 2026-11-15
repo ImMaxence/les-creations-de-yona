@@ -164,6 +164,10 @@ final class PasskeyStore {
 				.list();
 		}
 
+		int count(long accountId) {
+			return jdbc.sql("select count(*) from admin_passkey where account_id = :id").param("id", accountId).query(Integer.class).single();
+		}
+
 		Map<Long, Integer> countByAccount() {
 			Map<Long, Integer> counts = new HashMap<>();
 			jdbc.sql("select account_id, count(*) as n from admin_passkey group by account_id")

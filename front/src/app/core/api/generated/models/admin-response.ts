@@ -5,5 +5,6 @@ export interface AdminResponse {
   email: string;
   id: number;
   name: string;
+  passkeys: number;
   picture?: string;
 }

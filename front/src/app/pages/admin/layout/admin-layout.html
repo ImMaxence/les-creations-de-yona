@@ -13,9 +13,12 @@
         }
       </button>
       @if (session.admin(); as admin) {
-        <button type="button" class="admin__me" aria-label="Mon compte" aria-haspopup="dialog" (click)="openDrawer()">
+        <a class="admin__me" routerLink="mon-compte" [attr.aria-label]="session.needsPasskey() ? 'Mon compte : ajoutez une passkey' : 'Mon compte'">
           <yona-admin-avatar [name]="admin.name || admin.email" [picture]="admin.picture" />
-        </button>
+          @if (session.needsPasskey()) {
+            <span class="admin__me-dot" aria-hidden="true"></span>
+          }
+        </a>
       }
     </header>
 

@@ -80,11 +80,17 @@
 }
 
 <div class="account" [class.account--rail]="rail()">
+  @if (!rail()) {
+    <yona-passkey-reminder />
+  }
   @if (session.admin(); as admin) {
     <div class="account__who">
       <!-- Their name and photo lead to "Mon compte": the ways in, the photo -->
-      <a class="account__me" routerLink="mon-compte" routerLinkActive="is-active" [attr.aria-label]="rail() ? 'Mon compte' : null">
+      <a class="account__me" routerLink="mon-compte" routerLinkActive="is-active" [attr.aria-label]="rail() ? railAccountLabel() : null">
         <yona-admin-avatar [name]="admin.name || admin.email" [picture]="admin.picture" />
+        @if (rail() && session.needsPasskey()) {
+          <span class="rail__dot" aria-hidden="true"></span>
+        }
         @if (!rail()) {
           <span class="account__text">
             <span class="account__name">{{ admin.name }}</span>

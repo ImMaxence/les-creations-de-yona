@@ -30,6 +30,7 @@ import { UnreadFeedback } from '../../feedback/unread-feedback';
 import { NewOrders } from '../../shop/new-orders';
 import { AdminAvatar } from '../admin-avatar/admin-avatar';
 import { AdminWatch } from '../admin-watch';
+import { PasskeyReminder } from '../passkey-reminder/passkey-reminder';
 
 
 interface AdminLink {
@@ -70,7 +71,7 @@ function readClosedGroups(): string[] {
  */
 @Component({
   selector: 'yona-admin-nav',
-  imports: [AdminAvatar, BrandLogo, ColorSchemeSwitch, Icon, RouterLink, RouterLinkActive],
+  imports: [AdminAvatar, BrandLogo, ColorSchemeSwitch, Icon, PasskeyReminder, RouterLink, RouterLinkActive],
   templateUrl: './admin-nav.html',
   // The folded column of icons apart: each sheet within the budget of a component's styles
   styleUrls: ['./admin-nav.scss', './admin-nav-rail.scss'],
@@ -135,6 +136,12 @@ export class AdminNav {
         { path: 'retours', label: 'Retours', icon: 'message-square', count: inject(UnreadFeedback).count, countLabel: 'messages non lus' },
         { path: 'reseaux-sociaux', label: 'Réseaux sociaux', icon: 'share-2' },
         { path: 'apparence', label: 'Apparence', icon: 'palette' },
+        {
+          path: 'mon-compte',
+          label: 'Mon compte',
+          icon: 'user-round',
+          badge: computed(() => (this.session.needsPasskey() ? 'À faire' : null)),
+        },
         { path: 'preferences', label: 'Préférences', icon: 'sliders-horizontal' },
         { path: 'utilisateurs', label: 'Utilisateurs', icon: 'users' },
         { path: 'sauvegarde', label: 'Sauvegarde', icon: 'database-backup' },
@@ -219,6 +226,11 @@ export class AdminNav {
     const count = link.count?.() ?? 0;
     const badge = link.badge?.();
     return count ? `${link.label} (${count} ${link.countLabel ?? 'en attente'})` : badge ? `${link.label} (${badge.toLowerCase()})` : link.label;
+  }
+
+  /** Folded, the avatar says where it leads, and the passkey left to add. */
+  protected railAccountLabel(): string {
+    return this.session.needsPasskey() ? 'Mon compte : ajoutez une passkey' : 'Mon compte';
   }
 
   /** What waits in all the sections of an entry, shown while it is closed. */

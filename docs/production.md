@@ -83,20 +83,24 @@ Depuis la 2.19, chaque admin a son compte en base, et s'y connecte avec une pass
 - **Mise en production de la 2.19** : au premier démarrage, la base n'a aucun compte ; `APP_ADMIN_EMAILS` crée celui de chaque adresse. Chaque admin se connecte une fois avec le Google de son adresse, comme avant, puis ajoute une passkey (et Microsoft s'il veut) dans « Mon compte ». Garder la variable dans Coolify : elle ne sert plus tant qu'un compte existe, mais recrée les comptes sur un serveur reparti de rien.
 - **Nouvel admin** : « Utilisateurs » → « Inviter un admin », puis lui envoyer le lien. Rien à faire dans Coolify. Chez Google, rien non plus quand l'application est « En production » ([google.md](google.md#audience) : toute adresse atteint l'écran de Google, le site ne laisse entrer que les comptes qu'il connaît) ; restée en mode « Test », ajouter son adresse Google aux « Utilisateurs test » s'il choisit Google.
 - **Un admin ne peut plus entrer** (téléphone perdu, compte Google bloqué) : un autre admin lui fait un lien de récupération dans « Utilisateurs ».
-- **Passkeys** : l'appareil vérifie qui s'en sert (visage, empreinte, code). Les téléphones et ordinateurs le font toujours ; une clé de sécurité (YubiKey…) doit avoir un code PIN.
+- **Passkeys** : l'appareil vérifie qui s'en sert (visage, empreinte, code). Les téléphones et ordinateurs le font toujours ; une clé de sécurité (YubiKey…) doit avoir un code PIN. « Se connecter avec une passkey » ne marche qu'avec une passkey déjà créée dans « Mon compte » : sans elle, l'ordinateur propose un QR code et le téléphone répond « Vous n'avez aucune clé d'accès enregistrée pour ce site web ». La première fois : se connecter avec Google, puis « Ajouter une passkey sur cet appareil ».
+  - **iPhone** : depuis Safari sur l'iPhone, gardée dans l'app Mots de passe (trousseau iCloud, à activer dans Réglages → nom → iCloud → Mots de passe) ; elle suit sur le Mac et l'iPad. Sur un PC, « Se connecter avec une passkey », QR code, l'iPhone le scanne et Face ID suffit.
+  - **PC Windows** : Windows Hello (visage, empreinte ou code PIN) la garde sur ce PC seulement ; une par appareil, ou celle de l'iPhone par QR code.
 - **Plus personne ne peut entrer** : dans Coolify, ajouter `APP_ADMIN_RECOVERY_EMAIL` (l'adresse d'un compte, créé s'il n'existe pas, réactivé s'il est désactivé), redéployer, et lire dans les journaux du backend la ligne « Recovery link for … » : un lien valable une heure, une seule fois. Créer une passkey avec, puis retirer la variable et redéployer (sinon un nouveau lien est écrit à chaque démarrage). Seul qui a accès au serveur lit ces journaux ; le lien n'est pas dans « Journaux » du back-office, qui affiche seulement un avertissement tant que la variable reste.
 - **Sauvegardes** : les comptes, passkeys et liens n'y sont pas (enregistrés vides), et une restauration les laisse tels quels. Restaurée sur un serveur neuf, la base n'a plus de compte : `APP_ADMIN_EMAILS` (ou `APP_ADMIN_RECOVERY_EMAIL`) les recrée, les passkeys sont à refaire.
 
 ### Microsoft (facultatif)
 
-Pour « Continuer avec Microsoft » (comptes personnels : Outlook, Hotmail, Live, Xbox). Gratuit, avec n'importe quel compte Microsoft.
+Pour « Continuer avec Microsoft » (comptes personnels : Outlook, Hotmail, Live, Xbox). L'application de connexion est gratuite, mais depuis juin 2024 Microsoft ne l'accepte que dans un annuaire (tenant) : un simple compte Outlook n'en a pas (message « The ability to create applications outside of a directory has been deprecated »). Facultatif : les passkeys suffisent à ne plus dépendre de Google seul.
 
-1. https://portal.azure.com → **Microsoft Entra ID** → **Inscriptions d'applications** → **Nouvelle inscription**.
-2. Nom : « Les créations de Yona ». Types de comptes : **Comptes Microsoft personnels uniquement**.
-3. URI de redirection, plateforme **Web** : `https://les-creations-de-yona.fr/api/login/oauth2/code/microsoft` ; puis, dans **Authentification**, ajouter celles du local : `http://localhost:8000/api/login/oauth2/code/microsoft` (et `:4200`, `:8080` au besoin).
-4. **Certificats et secrets** → **Nouveau secret client** : copier sa **Valeur** (affichée une fois). Il expire (24 mois au plus) : noter la date, et en refaire un avant.
-5. **Vue d'ensemble** : copier l'**ID d'application (client)**.
-6. Coolify : `MICROSOFT_CLIENT_ID` (l'ID) et `MICROSOFT_CLIENT_SECRET` (la valeur du secret), redéployer. Le bouton apparaît sur la page de connexion, et « Relier » dans « Mon compte ».
+1. **Annuaire**, une fois : https://azure.microsoft.com/fr-fr/free → **Essayer Azure gratuitement**, avec le compte Microsoft qui gérera l'application. Microsoft demande un téléphone et une carte bancaire pour vérifier l'identité ; rien n'est débité sans passer soi-même au paiement à l'utilisation, et les inscriptions d'applications restent gratuites. Le compte Azure reçoit un annuaire « Répertoire par défaut ».
+2. https://entra.microsoft.com (ou https://portal.azure.com → **Microsoft Entra ID**) → **Applications** → **Inscriptions d'applications** → **Nouvelle inscription**.
+3. Nom : « Les créations de Yona ». Types de comptes : **Comptes Microsoft personnels uniquement**.
+4. URI de redirection, plateforme **Web** : `https://les-creations-de-yona.fr/api/login/oauth2/code/microsoft` ; puis, dans **Authentification**, ajouter celles du local au besoin : `http://localhost:8000/api/login/oauth2/code/microsoft` (et `:4200`, `:8080`).
+5. **Certificats et secrets** → **Nouveau secret client**, 24 mois : copier sa **Valeur** (affichée une fois ; pas l'« ID du secret »). Noter la date d'expiration, et en refaire un avant.
+6. **Vue d'ensemble** : copier l'**ID d'application (client)**.
+7. Coolify : `MICROSOFT_CLIENT_ID` (l'ID) et `MICROSOFT_CLIENT_SECRET` (la valeur du secret), redéployer. Le bouton apparaît sur la page de connexion, et « Relier » dans « Mon compte ».
+8. Chaque admin relie d'abord son compte Microsoft dans « Mon compte » (connecté avec Google ou une passkey). « Continuer avec Microsoft » sur la page de connexion ne marche qu'ensuite : un compte Microsoft jamais relié y est refusé (« compte inconnu »).
 
 Portées demandées : `openid`, `email`, `profile` (identifiant, adresse, nom), rien d'autre du compte. Les adresses de Microsoft sont écrites dans le code (pas lues au démarrage) : le site démarre même si Microsoft est en panne, seul son bouton échoue alors. Un secret expiré donne « La connexion n'a pas abouti » : les autres moyens marchent toujours.
 

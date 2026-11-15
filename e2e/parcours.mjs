@@ -1245,7 +1245,7 @@ await part('Connexion et cadre du back-office', async () => {
   await side.waitFor();
   await answerCookies(desktop);
   check('Ordinateur : ni barre ni pied du site', (await desktop.locator('yona-header, yona-footer').count()) === 0);
-  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 23 && (await side.boundingBox()).x === 0);
+  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 24 && (await side.boundingBox()).x === 0);
   check('Ordinateur : section courante marquée', (await side.locator('a.link.is-active').innerText()).includes('Nouveautés'));
   await side.locator('.account__email').hover();
   await desktop.locator('.tooltip.is-open').waitFor();

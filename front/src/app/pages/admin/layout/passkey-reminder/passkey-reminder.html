@@ -1,0 +1,13 @@
+@if (shown()) {
+  <aside class="reminder" aria-labelledby="passkey-reminder-title">
+    <svg class="reminder__icon" yonaIcon="key-round" [size]="18"></svg>
+    <div class="reminder__text">
+      <p class="reminder__title" id="passkey-reminder-title">Ajoutez une passkey</p>
+      <p class="reminder__body">Pour entrer même sans Google, avec le visage ou l'empreinte</p>
+      <div class="reminder__actions">
+        <a class="reminder__add" [routerLink]="accountPath">Ajouter</a>
+        <button type="button" class="reminder__later" (click)="postpone()">Plus tard</button>
+      </div>
+    </div>
+  </aside>
+}

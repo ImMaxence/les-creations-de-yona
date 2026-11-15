@@ -119,6 +119,7 @@
 }
 
 .account__me {
+  position: relative;
   display: flex;
   flex: 1;
   align-items: center;
@@ -145,6 +146,12 @@
 
   .account--rail & {
     flex: none;
+  }
+
+  // A passkey to add
+  .rail__dot {
+    top: 0;
+    right: 0;
   }
 }
 
