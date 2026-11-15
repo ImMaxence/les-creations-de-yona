@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.18.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.18.1 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -106,7 +106,7 @@ Les modèles locaux se téléchargent une seule fois, directement depuis Hugging
 - Historique de 6 mois (qui a fait quoi, et quand, chaque champ modifié avec son ancienne et sa nouvelle valeur ; ce que les autres ont fait depuis la dernière visite marqué « Nouveau », avec un badge dans le menu), retours des visiteurs, titres de l'accueil modifiables.
 - Mon CAP : « Écrire avec l'IA » à partir de notes tapées, dictées ou photographiées (récit, pas à pas ou carnet), les photos déjà placées gardées.
 - Messages entre admins, en groupes (nom, photo et membres que chaque membre peut changer ; le groupe de tous les admins) : texte, photos, aperçu des liens comme sur un téléphone, « @ » pour citer une recette, un article, une commande… (un lien vers sa page), « est en train d'écrire… », un petit son à chaque message (à couper), badge des non lus, en temps réel, chaque nouvelle version du site annoncée dans le groupe de tous les admins ; gardés 90 jours et dans les sauvegardes.
-- Temps réel : les badges du menu (messages, retours, commandes, historique, corbeille, journaux) changent dès qu'un autre admin, un visiteur ou le site agit.
+- Temps réel par un WebSocket : les messages, « est en train d'écrire… », « Vu », les admins présents et les badges du menu (messages, retours, commandes, historique, corbeille, journaux) arrivent dès qu'un autre admin, un visiteur ou le site agit ; si le WebSocket ne passe pas (un proxy qui le refuse), la page redemande au serveur, toutes les 4 secondes pour les messages.
 - Journaux : les erreurs et avertissements du serveur et des navigateurs des visiteurs, regroupés, comptés, avec un badge dans le menu pour les nouvelles erreurs, à archiver une fois traités (ils reviennent s'ils se reproduisent).
 - Éditeur de photos avant chaque envoi et sur les photos en ligne (recadrage, rotation, miroir, filtres, luminosité), galerie de photos, catégories, tags, menus (avec leur photo), ingrédients (doublons, rayons, valeurs nutritionnelles), glossaire.
 - Valeurs nutritionnelles : chaque ingrédient lié à son aliment de la table Ciqual (proposé, ou tous d'un coup), à un produit d'Open Food Facts trouvé par son nom ou son code-barres, ou aux valeurs de son étiquette ; part mangée et poids habituel d'une pièce proposés ; dans l'éditeur, l'estimation de la recette en cours d'écriture, le poids après cuisson, la grille du Nutri-Score, les ingrédients les plus énergétiques et les ingrédients non comptés, à lier en un clic ; import d'une nouvelle version de Ciqual.

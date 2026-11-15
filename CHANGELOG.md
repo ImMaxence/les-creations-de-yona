@@ -2,6 +2,14 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.18.1 - 2026-11-15
+
+Front et backend 2.18.1. Pas de migration de la base
+
+### Technique
+
+- **ReadMe** : le temps réel du back-office nommé, un WebSocket (messages, « est en train d'écrire… », « Vu », présence, badges), et ce que fait la page quand il ne passe pas
+
 ## 2.18.0 - 2026-11-14
 
 Front et backend 2.18.0. Pas de migration de la base
