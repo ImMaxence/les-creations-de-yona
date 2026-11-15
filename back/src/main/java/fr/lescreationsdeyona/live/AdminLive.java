@@ -1,5 +1,8 @@
 package fr.lescreationsdeyona.live;
 
+import fr.lescreationsdeyona.security.AccountClosed;
+import fr.lescreationsdeyona.security.AdminAuthentication;
+import fr.lescreationsdeyona.security.AdminPrincipal;
 import fr.lescreationsdeyona.shop.OrderReceived;
 import java.io.IOException;
 import java.security.Principal;
@@ -16,8 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.socket.CloseStatus;
@@ -67,18 +68,18 @@ public class AdminLive extends TextWebSocketHandler {
 
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) {
-		@Nullable OidcUser user = userOf(session.getPrincipal());
-		if (user == null || user.getEmail() == null) {
+		@Nullable AdminPrincipal user = userOf(session.getPrincipal());
+		if (user == null) {
 			// Told nothing of the groups, nor who writes: seen in "Journaux" if it ever happens
-			log.warn("Live connection {} opened without a Google account: no group news nor typing for it", session.getId());
+			log.warn("Live connection {} opened without an admin account: no group news nor typing for it", session.getId());
 		}
 		// In the logs of the server: opened here while the browser says it never connects, a proxy breaks it on the way
 		log.info("Live connection opened ({} open)", open.size() + 1);
-		@Nullable String email = user == null || user.getEmail() == null ? null : user.getEmail().toLowerCase(Locale.ROOT);
+		@Nullable String email = user == null ? null : user.email().toLowerCase(Locale.ROOT);
 		boolean arrives = email != null && !online().contains(email);
 		// Several threads may send at once: one at a time per connection, a stuck one dropped
 		open.put(session.getId(), new Open(new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, BUFFER_SIZE_LIMIT),
-				email, user == null ? null : user.getFullName(), new long[1]));
+				email, user == null ? null : user.name(), new long[1]));
 		if (arrives) {
 			tellPresence();
 		}
@@ -159,6 +160,28 @@ public class AdminLive extends TextWebSocketHandler {
 		send("{\"topic\":\"" + change.topic().name() + "\"}", change.audience(), null);
 	}
 
+	/** An admin disabled or deleted: their pages open lose the live news at once (their next request is refused anyway). */
+	@TransactionalEventListener(fallbackExecution = true)
+	void onAccountClosed(AccountClosed closed) {
+		String email = closed.email().toLowerCase(Locale.ROOT);
+		boolean left = false;
+		for (var entry : Map.copyOf(open).entrySet()) {
+			if (email.equals(entry.getValue().email())) {
+				open.remove(entry.getKey());
+				left = true;
+				try {
+					entry.getValue().session().close(CloseStatus.POLICY_VIOLATION);
+				}
+				catch (IOException | RuntimeException ex) {
+					log.debug("Live connection of a closed account already gone", ex);
+				}
+			}
+		}
+		if (left) {
+			tellPresence();
+		}
+	}
+
 	@TransactionalEventListener(fallbackExecution = true)
 	void onOrderReceived(OrderReceived order) {
 		onChange(new LiveChange(LiveTopic.ORDERS));
@@ -200,8 +223,8 @@ public class AdminLive extends TextWebSocketHandler {
 		}
 	}
 
-	private static @Nullable OidcUser userOf(@Nullable Principal principal) {
-		return principal instanceof Authentication authentication && authentication.getPrincipal() instanceof OidcUser user ? user : null;
+	private static @Nullable AdminPrincipal userOf(@Nullable Principal principal) {
+		return AdminAuthentication.principalOf(principal).orElse(null);
 	}
 
 	/** A JSON string: quotes, backslashes and control characters escaped. */

@@ -22,7 +22,7 @@ import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientRepository;
-import fr.lescreationsdeyona.security.AdminProperties;
+import fr.lescreationsdeyona.security.AdminDirectory;
 import fr.lescreationsdeyona.shop.OrderStatus;
 import fr.lescreationsdeyona.shop.ShopOrder;
 import fr.lescreationsdeyona.shop.ShopOrderLine;
@@ -49,7 +49,7 @@ class AccountingServiceTest {
 	private final CostPriceService costs = mock(CostPriceService.class);
 
 	private final AccountingService service = new AccountingService(repository,
-			new AdminProperties(Set.of("yona@example.fr", "max@example.fr")), mock(AuditLog.class), orders, ingredients, costs,
+			(AdminDirectory) () -> Set.of("yona@example.fr", "max@example.fr"), mock(AuditLog.class), orders, ingredients, costs,
 			mock(ImageService.class));
 
 	@BeforeEach

@@ -12,7 +12,7 @@ public final class Admins {
 	public static boolean isAdmin(@Nullable Authentication authentication) {
 		return authentication != null && authentication.getAuthorities()
 			.stream()
-			.anyMatch(authority -> ("ROLE_" + AdminOidcUserService.ADMIN_ROLE).equals(authority.getAuthority()));
+			.anyMatch(authority -> ("ROLE_" + AdminAuthentication.ADMIN_ROLE).equals(authority.getAuthority()));
 	}
 
 }

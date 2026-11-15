@@ -23,7 +23,7 @@ import fr.lescreationsdeyona.image.ImageStorage;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientRepository;
-import fr.lescreationsdeyona.security.AdminProperties;
+import fr.lescreationsdeyona.security.AdminDirectory;
 import fr.lescreationsdeyona.shop.OrderStatus;
 import fr.lescreationsdeyona.shop.ShopOrder;
 import fr.lescreationsdeyona.shop.ShopOrderLine;
@@ -74,7 +74,7 @@ public class AccountingService {
 
 	private final AccountEntryRepository repository;
 
-	private final AdminProperties adminProperties;
+	private final AdminDirectory adminDirectory;
 
 	private final AuditLog auditLog;
 
@@ -102,7 +102,7 @@ public class AccountingService {
 		years.addAll(repository.findYears());
 		years.add(year);
 		years.add(LocalDate.now(PARIS).getYear());
-		TreeSet<String> admins = new TreeSet<>(adminProperties.emails());
+		TreeSet<String> admins = new TreeSet<>(adminDirectory.emails());
 		entries.forEach(entry -> admins.add(entry.getAdminEmail()));
 		Map<Integer, List<AccountEntry>> byMonth = ofYear.stream()
 			.collect(Collectors.groupingBy(entry -> entry.getOccurredOn().getMonthValue()));
@@ -415,7 +415,7 @@ public class AccountingService {
 
 	/** One of the admins; or the one already on the line, who may have left. */
 	private void checkAdmin(String email, @Nullable String current) {
-		if (!email.strip().equals(current) && !adminProperties.isAdmin(email)) {
+		if (!email.strip().equals(current) && !adminDirectory.isAdmin(email)) {
 			throw new ApiException(ErrorCode.SHOP_ADMIN_UNKNOWN);
 		}
 	}

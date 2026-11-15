@@ -7,6 +7,9 @@ const MAX_REPORTS_PER_VISIT = 10;
 
 const ENDPOINT = '/api/browser-errors';
 
+/** The page of a link to come in (invitation, recovery): its token lets someone in, it stays out of the report. */
+const ACCESS_LINK = /^\/admin\/acces\/[^/]+/;
+
 /** What is sent: the message, the stack, the page without its query. Nothing of the visitor. */
 export function browserError(error: unknown, path: string): { message: string; detail?: string; page: string } | null {
   if (error instanceof HttpErrorResponse) {
@@ -15,7 +18,8 @@ export function browserError(error: unknown, path: string): { message: string; d
   }
   const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   const detail = error instanceof Error && error.stack ? error.stack.slice(0, 20_000) : undefined;
-  return { message: message.slice(0, 2000) || 'Erreur sans message', detail, page: path.slice(0, 500) };
+  const page = path.replace(ACCESS_LINK, '/admin/acces/…');
+  return { message: message.slice(0, 2000) || 'Erreur sans message', detail, page: page.slice(0, 500) };
 }
 
 /**

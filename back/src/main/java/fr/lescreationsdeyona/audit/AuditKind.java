@@ -5,5 +5,7 @@ public enum AuditKind {
 	RECIPE, CATEGORY, TAG, MENU, INGREDIENT, GLOSSARY_TERM, IMAGE, TRASH, APPEARANCE, SITE_CONTENT, SOCIAL_LINKS, BACKUP,
 	GOOGLE_DRIVE, FEEDBACK, CAP_ENTRY,
 	/** "Mes observations", gone in 2.4: kept for the history written before. */
-	OBSERVATION, SHOP_SETTINGS, SHOP_PRODUCT, SHOP_ORDER, ACCOUNT_ENTRY, INVOICE
+	OBSERVATION, SHOP_SETTINGS, SHOP_PRODUCT, SHOP_ORDER, ACCOUNT_ENTRY, INVOICE,
+	/** An admin invited, disabled, enabled, deleted, or given a link to come in (2.19). */
+	ADMIN_ACCOUNT
 }

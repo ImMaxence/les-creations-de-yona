@@ -13,7 +13,7 @@
 	<groupId>fr.lescreationsdeyona</groupId>
 	<artifactId>back</artifactId>
 	<!-- Semantic version, shown in the back-office: bump it with front/package.json at each release. -->
-	<version>2.18.1</version>
+	<version>2.19.0</version>
 	<name>back</name>
 	<description>API of the Les créations de Yona cooking blog</description>
 	<licenses>
@@ -68,6 +68,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security-oauth2-client</artifactId>
+		</dependency>
+		<!-- Passkeys (WebAuthn): the ceremonies of Spring Security, checked by WebAuthn4J -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-webauthn</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

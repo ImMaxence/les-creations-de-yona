@@ -16,7 +16,7 @@ import fr.lescreationsdeyona.message.MessageResponses.MessagePhoto;
 import fr.lescreationsdeyona.message.MessageResponses.PhotoForm;
 import fr.lescreationsdeyona.message.MessageResponses.Typist;
 import fr.lescreationsdeyona.monitoring.AdminSeen;
-import fr.lescreationsdeyona.security.AdminProperties;
+import fr.lescreationsdeyona.security.AdminDirectory;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -85,7 +85,7 @@ public class AdminMessages {
 
 	private final AdminSeen adminSeen;
 
-	private final AdminProperties admins;
+	private final AdminDirectory admins;
 
 	private final AdminGroups groups;
 
@@ -101,7 +101,7 @@ public class AdminMessages {
 
 	private final AdminLive live;
 
-	AdminMessages(JdbcClient jdbc, AdminSeen adminSeen, AdminProperties admins, AdminGroups groups, ImageService imageService,
+	AdminMessages(JdbcClient jdbc, AdminSeen adminSeen, AdminDirectory admins, AdminGroups groups, ImageService imageService,
 			LinkPreviews linkPreviews, TransactionTemplate transactions, ApplicationEventPublisher events, MessageTyping typing,
 			AdminLive live) {
 		this.jdbc = jdbc;

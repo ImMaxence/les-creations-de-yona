@@ -2,6 +2,36 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.19.0 - 2026-11-15
+
+Front et backend 2.19.0. Migration de la base : V34
+
+### Ajouté
+
+- **Comptes du back-office** : chaque admin a son compte, avec son nom, sa photo et sa dernière connexion, à la place de la liste d'adresses Google
+- **Passkeys** : se connecter sans mot de passe, avec le visage, l'empreinte ou le code de l'appareil, sans passer par Google ni Microsoft
+- **Microsoft** : « Continuer avec Microsoft » (comptes Outlook, Hotmail, Live), une fois ses clés renseignées
+- **Mon compte** : nom, photo, passkeys de chaque appareil, comptes Google et Microsoft reliés au même compte ; le dernier moyen de connexion ne se retire pas
+- **Utilisateurs** : la liste des admins (photo, dernière connexion et comment, moyens de connexion), inviter un admin, désactiver, réactiver, supprimer
+- **Invitation** : un lien à envoyer (SMS, WhatsApp…), valable 7 jours et une seule fois ; le nouvel admin y choisit sa passkey, Google ou Microsoft
+- **Lien de récupération** : un admin qui n'arrive plus à entrer en reçoit un d'un autre admin, valable un jour, pour ajouter un moyen de connexion
+- **Dernier recours** : `APP_ADMIN_RECOVERY_EMAIL` écrit dans les journaux du serveur un lien valable une heure
+- **Historique** : les invitations, liens, désactivations et suppressions de comptes
+
+### Modifié
+
+- **Connexion** : passkey, Google ou Microsoft ; « Accès refusé » dit pourquoi (compte inconnu, désactivé, déjà relié à un autre admin, lien expiré)
+- **Désactiver un admin** : il est déconnecté tout de suite, sur tous ses appareils
+- **Menu du back-office** : son nom et sa photo mènent à « Mon compte »
+- **`APP_ADMIN_EMAILS`** : ne sert plus qu'à créer les premiers comptes, quand il n'y en a aucun
+
+### Technique
+
+- **Sécurité** : passkeys par Spring Security et WebAuthn4J, comptes Google et Microsoft reconnus à leur identifiant (jamais à leur adresse seule), liens gardés en empreinte SHA-256
+- **Revue de sécurité du 15 novembre** ([SECURITY-REVIEW.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/SECURITY-REVIEW.md)) : passkey acceptée seulement avec le visage, l'empreinte ou le code de l'appareil (un simple toucher d'une clé de sécurité ne suffit plus) ; session ouverte avant la connexion gardée 10 minutes au lieu de 7 jours ; Microsoft sans ses clés répond 401 au lieu d'une erreur ; le jeton d'un lien d'accès n'apparaît plus dans « Journaux » ; avertissement dans « Journaux » tant que `APP_ADMIN_RECOVERY_EMAIL` reste renseigné
+- **Sauvegarde** : les comptes, passkeys et liens restent propres au serveur, enregistrés vides et laissés tels quels par une restauration
+- **Tests** : connexion par Google, Microsoft, passkey et lien, garde-fous des comptes, session coupée d'un compte désactivé
+
 ## 2.18.1 - 2026-11-15
 
 Front et backend 2.18.1. Pas de migration de la base

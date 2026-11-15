@@ -42,6 +42,7 @@ const KINDS: Record<Kind, { label: string; link?: string }> = {
   SHOP_ORDER: { label: 'Commande', link: '/admin/boutique/commandes' },
   ACCOUNT_ENTRY: { label: 'Comptabilité', link: '/admin/boutique/comptabilite' },
   INVOICE: { label: 'Facture', link: '/admin/boutique/comptabilite' },
+  ADMIN_ACCOUNT: { label: 'Utilisateur', link: '/admin/utilisateurs' },
 };
 
 const ACTIONS: Record<Action, string> = {

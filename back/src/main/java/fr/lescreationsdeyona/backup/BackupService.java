@@ -52,11 +52,13 @@ public class BackupService {
 	/**
 	 * Notification subscriptions, the site's notification keys, the Google Drive link, the history of
 	 * the back-office and the visitors' messages (their emails do not leave the server), what the admins
-	 * have seen, the error log and the curves of the server: what belongs to this server rather than
-	 * to the site's content. Orders are saved: losing them would lose work.
+	 * have seen, the error log, the curves of the server, and the accounts of the admins with their passkeys and
+	 * links (2.19): what belongs to this server rather than to the site's content. Orders are saved: losing them
+	 * would lose work.
 	 */
 	public static final List<String> SITE_ONLY_TABLES = List.of("push_subscription", "web_push_key",
-			"google_drive_link", "audit_event", "feedback", "admin_seen", "app_log", "server_sample", "admin_group_seen", "announced_version");
+			"google_drive_link", "audit_event", "feedback", "admin_seen", "app_log", "server_sample", "admin_group_seen", "announced_version",
+			"admin_account", "admin_identity", "admin_passkey", "admin_access_link");
 
 	private static final DateTimeFormatter FILE_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
 

@@ -70,6 +70,10 @@ public class ImageProcessor {
 
 	private static final int MESSAGE_MIN_SIDE = 50;
 
+	private static final int AVATAR_MIN_SIDE = 96;
+
+	private static final int AVATAR_SIDE = 256;
+
 	/** The image of a link's preview: a card, not a photo to open big. */
 	private static final int PREVIEW_WIDTH = 800;
 
@@ -115,6 +119,24 @@ public class ImageProcessor {
 	}
 
 	/**
+	 * The photo of an admin's account: the square in its middle, 256 × 256 WebP (shown at 40 px, twice as
+	 * sharp on a phone). At least 96 px on its short side.
+	 */
+	public byte[] processAvatar(MultipartFile file) {
+		if (file.isEmpty()) {
+			throw new ApiException(ErrorCode.IMAGE_REQUIRED);
+		}
+		byte[] content = readBytes(file);
+		String format = detectFormat(content);
+		ExifOrientation orientation = ExifOrientation.of(content);
+		BufferedImage upright = orientation.applyTo(toRgb(decode(content, format, orientation, Shape.AVATAR)));
+		int side = Math.min(upright.getWidth(), upright.getHeight());
+		BufferedImage square = upright.getSubimage((upright.getWidth() - side) / 2, (upright.getHeight() - side) / 2, side, side);
+		BufferedImage copy = draw(square, side, side, upright.getType());
+		return encodeWebp(shrinkToWidth(copy, AVATAR_SIDE));
+	}
+
+	/**
 	 * The image of a page a message links to (its og:image): JPEG, PNG, WebP or GIF (its first frame),
 	 * 800 px wide at most, the same file for both widths. Empty when it cannot be read or is a mere icon.
 	 */
@@ -134,7 +156,7 @@ public class ImageProcessor {
 	}
 
 	private enum Shape {
-		LANDSCAPE, PORTRAIT, ANY, MESSAGE
+		LANDSCAPE, PORTRAIT, ANY, MESSAGE, AVATAR
 	}
 
 	private ProcessedImage process(MultipartFile file, Shape shape) {
@@ -212,6 +234,11 @@ public class ImageProcessor {
 				case MESSAGE -> {
 					if (width < MESSAGE_MIN_SIDE || height < MESSAGE_MIN_SIDE) {
 						throw new ApiException(ErrorCode.MESSAGE_IMAGE_TOO_SMALL);
+					}
+				}
+				case AVATAR -> {
+					if (width < AVATAR_MIN_SIDE || height < AVATAR_MIN_SIDE) {
+						throw new ApiException(ErrorCode.ACCOUNT_PHOTO_TOO_SMALL);
 					}
 				}
 			}

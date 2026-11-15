@@ -203,3 +203,47 @@ Résultat : aucune faille critique, haute ni moyenne. Un point faible (transpare
 - Tous les admins voient toutes les factures, commandes et tickets : une seule équipe, comme pour le reste du back-office.
 - Une facture ne se supprime pas, même générée par erreur : c'est la règle comptable (numérotation sans trou). Une erreur se corrige par une facture d'avoir, à faire à la main pour l'instant.
 - Les coordonnées gardées dans le navigateur après l'envoi d'une demande : un confort pour la demande suivante, dit dans la politique de confidentialité.
+
+## Audit du 15 novembre 2026 (version 2.19.0)
+
+Portée : les comptes du back-office (package `security`, migration V34) : connexion par passkey, Google et Microsoft, liens d'invitation et de récupération, lien de dernier recours, « Mon compte », « Utilisateurs », et le front de ces pages. Lecture du code et de la configuration, lecture du code compilé de Spring Security WebAuthn 7.1.1 (valeurs par défaut des passkeys), appels sans session sur la pile locale, `npm audit`, recherche de secrets dans les changements en cours.
+
+Résultat : aucune faille critique, haute ni moyenne. Deux points faibles et trois points d'information, tous corrigés pendant l'audit.
+
+| # | Gravité | Fichier | Problème | Statut |
+|---|---------|---------|----------|--------|
+| 13 | Faible | `security/Passkeys.java` | Vérification de l'utilisateur « préférée » (valeur par défaut de Spring Security) : une clé de sécurité sans code PIN ouvrait le back-office sur un simple toucher. Une passkey étant le seul facteur, la clé volée suffisait | Corrigé |
+| 14 | Faible | `security/SessionLifetime.java` | Une session ouverte avant la connexion (défi d'une passkey, départ vers Google) restait 7 jours en mémoire : n'importe qui pouvait en ouvrir en boucle (`POST /api/auth/passkey/options`) et remplir la mémoire du serveur. Le départ vers Google faisait déjà de même avant la 2.19 | Corrigé |
+| 15 | Info | `security/OAuthSignIn.java` | `/api/oauth2/authorization/microsoft` sans les clés de Microsoft, ou un nom inventé, répondait 500 et écrivait une trace dans « Journaux » à chaque appel | Corrigé |
+| 16 | Info | `front/src/app/core/errors/reporting-error-handler.ts` | Une erreur du navigateur sur la page d'un lien d'accès envoyait l'adresse de la page, avec son jeton, dans « Journaux » | Corrigé |
+| 17 | Info | `security/AccountsAtStartup.java` | `APP_ADMIN_RECOVERY_EMAIL` oublié dans Coolify : chaque démarrage (chaque déploiement) écrit un nouveau lien valable dans les journaux du serveur, sans que les admins le sachent | Renforcé |
+
+### Corrections
+
+- 13 : `userVerification: required` à la création comme à la connexion ; WebAuthn4J refuse alors une réponse sans le drapeau de vérification. Les passkeys des téléphones et des ordinateurs (iCloud, Google, Windows Hello) vérifient toujours ; une clé de sécurité demande son code PIN.
+- 14 : une session créée sans admin vit 10 minutes sans activité (`HttpSessionListener`), puis les 7 jours habituels à la connexion (`AccountSignIn.start`, après le changement d'identifiant de session). Le pire d'une boucle tient donc dans dix minutes de requêtes, derrière Cloudflare.
+- 15 : un fournisseur inconnu n'est plus une erreur : la requête suit son cours et répond 401 comme toute adresse inconnue. Le paramètre `access` n'est gardé dans la session que s'il a la forme d'un jeton (base64url, 100 caractères au plus) : rien d'autre ne revient dans l'adresse de retour.
+- 16 : `/admin/acces/<jeton>` devient `/admin/acces/…` dans le rapport d'erreur.
+- 17 : à chaque démarrage avec la variable, un avertissement sans le lien dans « Journaux » rappelle de la retirer ; le lien reste en INFO, dans les seuls journaux du serveur.
+
+### Points vérifiés sans faille exploitable
+
+- Comptes reconnus à l'identifiant (`sub`) de Google ou de Microsoft, unique en base, jamais à l'adresse seule. Seule exception : un compte actif sans aucun moyen de connexion (créé par `APP_ADMIN_EMAILS` ou `APP_ADMIN_RECOVERY_EMAIL`) est relié au compte Google de cette adresse, vérifiée par Google : la règle d'avant la 2.19. Un compte invité, ou réactivé sans s'être jamais connecté, reste invité et ne peut entrer que par son lien. L'adresse d'un compte Microsoft n'est jamais vérifiée ni utilisée pour entrer.
+- Microsoft : comptes personnels seulement (tenant `consumers`), émetteur du jeton d'identité vérifié (`9188040d-…`), clés de signature de Microsoft. Google et Microsoft : `state`, `nonce` et PKCE de Spring Security ; une réponse rejouée dans un autre navigateur est refusée (`state` absent de sa session).
+- Passkeys : défi aléatoire gardé dans la session, servi une fois, lié au compte pour une création (un défi d'un autre compte est refusé) ; origine et domaine (`rpId`) vérifiés par WebAuthn4J ; compteur de signatures mis à jour ; une passkey déjà enregistrée n'est pas reprise par un autre compte (clé primaire, compte jamais changé). Le compte est celui de la passkey en base, jamais celui que dit le navigateur. Seule la partie publique est gardée.
+- Étapes de connexion sans jeton CSRF (`SIGN_IN_STEPS`) : en `application/json` (une page d'un autre site ne peut pas les envoyer sans permission CORS, que le site ne donne pas), et la réponse doit être signée par la passkey sur un défi de la session. Le reste de `/api/admin/account*` exige la session et le jeton CSRF : sur la pile locale, 401 sans session, 403 sans jeton.
+- Liens d'accès : 256 bits aléatoires (`SecureRandom`), seule l'empreinte SHA-256 en base, un seul par compte, effacé à l'usage, 7 jours (invitation), 1 jour (récupération), 1 heure (journaux du serveur) ; un lien d'un compte désactivé ne sert plus, la désactivation l'efface. `GET /api/auth/access-links/{jeton}` ne dit le nom et l'adresse qu'à qui a le jeton. Le jeton est dans le chemin, pas dans la requête : pas dans Google Analytics (aucune page `/admin` envoyée), `Referrer-Policy: strict-origin-when-cross-origin` (seule l'origine part vers Google).
+- Session : nouvel identifiant à chaque connexion (pas de fixation de session), cookie `HttpOnly`, `Secure`, `SameSite=Lax` ; le compte est relu à chaque requête (`AdminAccountFilter`) : désactivé ou supprimé, la session finit aussitôt, le WebSocket aussi ; une session d'avant la 2.19 ou une connexion Google inachevée est abandonnée.
+- Garde-fous : le dernier moyen de connexion d'un compte ne se retire pas, un admin ne se désactive ni ne se supprime lui-même (il en reste toujours un) ; passkeys renommées ou supprimées par le compte qui les a seulement (`account_id` dans la requête).
+- Redirections : pages d'arrivée fixes ; l'adresse de retour d'un lien (`/admin/acces/{jeton}?erreur=`) est construite et encodée par `UriComponentsBuilder`, et le jeton y a désormais la forme d'un jeton (testé avec `x/../../..//ailleurs.com` : écarté).
+- Photo de profil : même chaîne que les autres photos (format lu sur le contenu, pixels plafonnés, réencodée en WebP 256 × 256, métadonnées perdues), servie aux admins seulement, `Cache-Control: private`. Photo Google : une adresse de 2 000 caractères au plus, affichée par une liaison Angular.
+- Sauvegardes : les quatre tables des comptes sont propres au serveur (`SITE_ONLY_TABLES`), enregistrées vides et laissées telles quelles par une restauration (`BackupCoverageTest`).
+- Dépendances : `npm audit` sans vulnérabilité pour `front/` et `e2e/`.
+- Secrets : aucune clé Google, AWS, GitHub ou privée dans les changements en cours ; `devops/.env.example` ne contient que des commentaires et des noms de variables.
+
+### Risques acceptés
+
+- Un admin peut faire un lien de récupération pour un autre admin et s'en servir lui-même : il entre alors sous son nom (messages, groupes). C'est le prix d'une récupération sans e-mail ni support. Traces : « Lien de récupération pour … » dans l'Historique, avec son auteur, et la nouvelle passkey dans « Mon compte » du compte visé. Une seule équipe, comme pour le reste du back-office.
+- Ajouter une passkey ou relier un compte Google ou Microsoft ne redemande pas de se connecter : une session volée suffirait pour garder un accès. Le cookie de session n'est lisible par aucun script (`HttpOnly`), et ce qui a été ajouté se voit dans « Mon compte ».
+- Un lien utilisé deux fois au même instant (deux requêtes simultanées) pourrait servir deux fois : il faut déjà avoir le jeton.
+- Le jeton d'un lien reste dans l'historique du navigateur et dans les journaux de Cloudflare ou de la passerelle : il ne sert qu'une fois et expire vite.

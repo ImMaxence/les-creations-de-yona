@@ -12,6 +12,12 @@ describe('browserError', () => {
     expect(report?.page).toBe('/recettes/tartes/tarte-au-citron');
   });
 
+  it('keeps the token of a link to come in out of the report', () => {
+    const report = browserError(new Error('broken'), '/admin/acces/Qx3k_9aZ-token');
+
+    expect(report?.page).toBe('/admin/acces/…');
+  });
+
   it('leaves the failed requests to the backend', () => {
     expect(browserError(new HttpErrorResponse({ status: 500 }), '/')).toBeNull();
   });

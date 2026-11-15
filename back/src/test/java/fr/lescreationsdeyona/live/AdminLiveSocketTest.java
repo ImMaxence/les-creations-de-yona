@@ -3,6 +3,8 @@ package fr.lescreationsdeyona.live;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import fr.lescreationsdeyona.security.AdminAuthentication;
+import fr.lescreationsdeyona.security.AdminPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,13 +34,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.oidc.OidcIdToken;
-import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -92,17 +89,8 @@ class AdminLiveSocketTest {
 				throws ServletException, IOException {
 			String email = request.getHeader(SIGNED_IN);
 			if (email != null) {
-				OidcIdToken token = OidcIdToken.withTokenValue("token")
-					.subject(email)
-					.claim(StandardClaimNames.EMAIL, email)
-					.claim(StandardClaimNames.NAME, email.substring(0, email.indexOf('@')))
-					.issuedAt(Instant.now())
-					.expiresAt(Instant.now().plusSeconds(60))
-					.build();
-				var authorities = AuthorityUtils.createAuthorityList("ROLE_ADMIN");
 				SecurityContext context = SecurityContextHolder.createEmptyContext();
-				context.setAuthentication(new OAuth2AuthenticationToken(new DefaultOidcUser(authorities, token, StandardClaimNames.EMAIL),
-						authorities, "google"));
+				context.setAuthentication(new AdminAuthentication(new AdminPrincipal(1, email, email.substring(0, email.indexOf('@')), null)));
 				SecurityContextHolder.setContext(context);
 			}
 			chain.doFilter(request, response);

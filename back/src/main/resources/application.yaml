@@ -30,16 +30,6 @@ spring:
     async:
       # The backup ZIP is streamed asynchronously: the server default (30 s) would cut it off.
       request-timeout: 30m
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope: openid, email, profile
-            # Kept under /api so the reverse proxy routes it to the backend.
-            redirect-uri: "{baseUrl}/api/login/oauth2/code/{registrationId}"
   web:
     # Validation messages in French, whatever the browser language.
     locale: fr_FR
@@ -62,7 +52,22 @@ app:
   # Public address of the site, for what the backend sends without a request to read it from (IndexNow).
   site-url: ${SITE_URL:https://les-creations-de-yona.fr}
   admin:
-    emails: ${APP_ADMIN_EMAILS}
+    # The accounts created when there is none (first start of 2.19, empty server); ignored after.
+    emails: ${APP_ADMIN_EMAILS:}
+    # When nobody can sign in any more: a link valid one hour for this admin, in the logs at each start.
+    recovery-email: ${APP_ADMIN_RECOVERY_EMAIL:}
+  auth:
+    # Sign-in with Google (and the backups to Google Drive): registered in security/ClientRegistrations,
+    # return address /api/login/oauth2/code/google.
+    google:
+      client-id: ${GOOGLE_CLIENT_ID}
+      client-secret: ${GOOGLE_CLIENT_SECRET}
+    # Optional: personal Microsoft accounts (return address /api/login/oauth2/code/microsoft). Without them, no Microsoft button.
+    microsoft:
+      client-id: ${MICROSOFT_CLIENT_ID:}
+      client-secret: ${MICROSOFT_CLIENT_SECRET:}
+    # Where passkeys are made (comma-separated): the domain of the first one is theirs.
+    passkey-origins: ${PASSKEY_ORIGINS:${app.site-url}}
   indexnow:
     # Search engines told of each published or changed recipe. On in production only (compose.prod.yaml).
     enabled: ${INDEXNOW_ENABLED:false}

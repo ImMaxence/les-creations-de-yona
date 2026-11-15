@@ -19,7 +19,7 @@ import fr.lescreationsdeyona.image.ImageService;
 import fr.lescreationsdeyona.image.ProcessedImage;
 import fr.lescreationsdeyona.ingredient.Ingredient;
 import fr.lescreationsdeyona.ingredient.IngredientRepository;
-import fr.lescreationsdeyona.security.AdminProperties;
+import fr.lescreationsdeyona.security.AdminDirectory;
 import fr.lescreationsdeyona.shop.ShopOrderRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -40,7 +40,7 @@ class AccountingReceiptsTest {
 
 	private final ImageService images = mock(ImageService.class);
 
-	private final AccountingService service = new AccountingService(repository, new AdminProperties(Set.of("yona@example.fr")),
+	private final AccountingService service = new AccountingService(repository, (AdminDirectory) () -> Set.of("yona@example.fr"),
 			mock(AuditLog.class), mock(ShopOrderRepository.class), ingredients, mock(CostPriceService.class), images);
 
 	private final ProcessedImage photo = new ProcessedImage(List.of());

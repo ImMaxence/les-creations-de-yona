@@ -3,10 +3,8 @@ package fr.lescreationsdeyona.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.csrf.CsrfToken;
 
 class AuthControllerTest {
@@ -15,29 +13,22 @@ class AuthControllerTest {
 
 	private final CsrfToken csrfToken = mock(CsrfToken.class);
 
-	private OidcUser admin(String picture) {
-		OidcUser admin = mock(OidcUser.class);
-		when(admin.getEmail()).thenReturn("yona@example.fr");
-		when(admin.getFullName()).thenReturn("Yona");
-		when(admin.getPicture()).thenReturn(picture);
-		return admin;
-	}
-
 	@Test
-	void givesThePhotoOfTheGoogleAccount() {
-		String picture = "https://lh3.googleusercontent.com/a/photo";
+	void givesTheAdminAsTheirAccountSaysIt() {
+		AdminPrincipal yona = new AdminPrincipal(3, "yona@example.fr", "Yona", "/api/admin/accounts/3/photo?v=2");
 
-		assertThat(controller.getCurrentAdmin(admin(picture), csrfToken)).isEqualTo(new AdminResponse("yona@example.fr", "Yona", picture));
+		assertThat(controller.getCurrentAdmin(yona, csrfToken))
+			.isEqualTo(new AdminResponse(3, "yona@example.fr", "Yona", "/api/admin/accounts/3/photo?v=2"));
 	}
 
 	@Test
 	void hasNoPhotoForAnAccountWithoutOne() {
-		assertThat(controller.getCurrentAdmin(admin(null), csrfToken).picture()).isNull();
+		assertThat(controller.getCurrentAdmin(new AdminPrincipal(3, "yona@example.fr", "Yona", null), csrfToken).picture()).isNull();
 	}
 
 	@Test
 	void writesTheCsrfCookieForTheBackOffice() {
-		controller.getCurrentAdmin(admin(null), csrfToken);
+		controller.getCurrentAdmin(new AdminPrincipal(3, "yona@example.fr", "Yona", null), csrfToken);
 
 		verify(csrfToken).getToken();
 	}

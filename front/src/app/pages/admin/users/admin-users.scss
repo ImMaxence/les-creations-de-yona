@@ -1,0 +1,61 @@
+.user {
+  align-items: flex-start;
+
+  &.is-disabled {
+    yona-admin-avatar {
+      filter: grayscale(1);
+      opacity: 0.6;
+    }
+  }
+}
+
+.user__email {
+  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.user__ways {
+  gap: var(--space-3);
+}
+
+.user__way {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.user__link {
+  gap: var(--space-1);
+
+  &.is-expired {
+    color: var(--color-danger);
+  }
+}
+
+.user__cancel {
+  margin-inline-start: var(--space-2);
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.invite {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.shown {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.shown__url .input {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-sm);
+}

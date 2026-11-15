@@ -12,7 +12,7 @@ import fr.lescreationsdeyona.message.MessageResponses.LastMessage;
 import fr.lescreationsdeyona.message.MessageResponses.MessageGroup;
 import fr.lescreationsdeyona.monitoring.AdminSeen;
 import fr.lescreationsdeyona.monitoring.Unseen;
-import fr.lescreationsdeyona.security.AdminProperties;
+import fr.lescreationsdeyona.security.AdminDirectory;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -51,7 +51,7 @@ public class AdminGroups {
 
 	private final JdbcClient jdbc;
 
-	private final AdminProperties admins;
+	private final AdminDirectory admins;
 
 	private final AdminSeen adminSeen;
 
@@ -59,7 +59,7 @@ public class AdminGroups {
 
 	private final ApplicationEventPublisher events;
 
-	AdminGroups(JdbcClient jdbc, AdminProperties admins, AdminSeen adminSeen, ImageService imageService, ApplicationEventPublisher events) {
+	AdminGroups(JdbcClient jdbc, AdminDirectory admins, AdminSeen adminSeen, ImageService imageService, ApplicationEventPublisher events) {
 		this.jdbc = jdbc;
 		this.admins = admins;
 		this.adminSeen = adminSeen;

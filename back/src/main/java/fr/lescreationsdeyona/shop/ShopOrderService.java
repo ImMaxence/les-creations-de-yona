@@ -9,7 +9,7 @@ import fr.lescreationsdeyona.common.PageResponse;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.recipe.Recipe;
-import fr.lescreationsdeyona.security.AdminProperties;
+import fr.lescreationsdeyona.security.AdminDirectory;
 import fr.lescreationsdeyona.shop.ShopForms.AdminOrderForm;
 import fr.lescreationsdeyona.shop.ShopForms.OrderForm;
 import fr.lescreationsdeyona.shop.ShopForms.OrderLineForm;
@@ -71,7 +71,7 @@ public class ShopOrderService {
 
 	private final AccountingService accountingService;
 
-	private final AdminProperties adminProperties;
+	private final AdminDirectory adminDirectory;
 
 	private final AuditorAware<String> auditor;
 
@@ -231,7 +231,7 @@ public class ShopOrderService {
 		if (email == null) {
 			return auditor.getCurrentAuditor().orElseThrow();
 		}
-		if (!email.equals(order.getHandledBy()) && !adminProperties.isAdmin(email)) {
+		if (!email.equals(order.getHandledBy()) && !adminDirectory.isAdmin(email)) {
 			throw new ApiException(ErrorCode.SHOP_ADMIN_UNKNOWN);
 		}
 		return email;
@@ -264,7 +264,7 @@ public class ShopOrderService {
 	private AdminOrder toAdmin(ShopOrder order) {
 		return new AdminOrder(order.getId(), order.getTrackingToken(), order.getStatus(), order.getCustomerName(),
 				order.getCustomerEmail(), order.getCustomerPhone(), order.getWantedOn(), order.getMessage(), order.getAdminNote(),
-				order.getAmount(), order.getHandledBy(), adminProperties.emails().stream().sorted().toList(),
+				order.getAmount(), order.getHandledBy(), adminDirectory.emails().stream().sorted().toList(),
 				order.getLines().stream()
 					.map(line -> new AdminOrderLine(line.productId(), line.recipeId(), line.title(), line.portionLabel(), line.unitPrice(),
 							line.quantity()))

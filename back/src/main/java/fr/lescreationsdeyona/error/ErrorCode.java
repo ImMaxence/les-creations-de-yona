@@ -97,6 +97,22 @@ public enum ErrorCode {
 	ADMIN_MESSAGE_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Trop de messages en une heure : réessayez un peu plus tard"),
 	ADMIN_MESSAGE_REPEATED(HttpStatus.TOO_MANY_REQUESTS, "Ce message vient déjà d'être envoyé"),
 	ADMIN_MESSAGE_PHOTOS_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup de photos envoyées d'un coup : patientez quelques minutes"),
+
+	// Accounts of the back-office
+	ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce compte n'existe plus"),
+	ACCOUNT_EMAIL_TAKEN(HttpStatus.CONFLICT, "Un compte a déjà cette adresse"),
+	ACCOUNT_SELF(HttpStatus.BAD_REQUEST, "Vous ne pouvez pas désactiver ni supprimer votre propre compte : demandez à un autre admin"),
+	ACCOUNT_STATUS_INVALID(HttpStatus.BAD_REQUEST, "Un compte s'active ou se désactive : l'invitation se termine avec le lien"),
+	ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "Ce compte est désactivé : un autre admin peut le réactiver"),
+	ACCOUNT_LAST_METHOD(HttpStatus.BAD_REQUEST, "C'est votre dernier moyen de connexion : ajoutez-en un autre avant de le retirer"),
+	ACCOUNT_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "Indiquez un nom"),
+	ACCOUNT_IDENTITY_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce compte n'est pas lié au vôtre"),
+	ACCOUNT_PHOTO_TOO_SMALL(HttpStatus.BAD_REQUEST, "Cette photo est trop petite : 96 × 96 pixels au moins"),
+	ACCESS_LINK_INVALID(HttpStatus.NOT_FOUND, "Ce lien n'est plus valable : il a déjà servi, a expiré ou a été remplacé. Demandez-en un nouveau à un admin"),
+	PASSKEY_EXPIRED(HttpStatus.BAD_REQUEST, "La demande a expiré : recommencez"),
+	PASSKEY_REFUSED(HttpStatus.UNAUTHORIZED, "Cette passkey n'est pas reconnue : elle a peut-être été supprimée du site, ou son compte désactivé"),
+	PASSKEY_NOT_FOUND(HttpStatus.NOT_FOUND, "Cette passkey n'existe plus"),
+	PASSKEY_NOT_CREATED(HttpStatus.BAD_REQUEST, "La passkey n'a pas pu être enregistrée : recommencez"),
 	FEEDBACK_CAPTCHA(HttpStatus.BAD_REQUEST, "La vérification a expiré : cochez à nouveau « Je ne suis pas un robot » puis renvoyez votre message"),
 
 	// "Mon CAP"

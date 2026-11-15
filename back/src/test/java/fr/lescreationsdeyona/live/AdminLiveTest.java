@@ -10,14 +10,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import fr.lescreationsdeyona.security.AdminAuthentication;
+import fr.lescreationsdeyona.security.AdminPrincipal;
 import fr.lescreationsdeyona.shop.OrderReceived;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -55,12 +55,7 @@ class AdminLiveTest {
 	/** A page open for an admin signed in with Google. */
 	private static WebSocketSession openFor(String id, String email, String name) {
 		WebSocketSession session = open(id);
-		OidcUser user = mock(OidcUser.class);
-		when(user.getEmail()).thenReturn(email);
-		when(user.getFullName()).thenReturn(name);
-		Authentication authentication = mock(Authentication.class);
-		when(authentication.getPrincipal()).thenReturn(user);
-		when(session.getPrincipal()).thenReturn(authentication);
+		when(session.getPrincipal()).thenReturn(new AdminAuthentication(new AdminPrincipal(1, email, name, null)));
 		return session;
 	}
 

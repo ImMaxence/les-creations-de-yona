@@ -83,7 +83,15 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required}
-      APP_ADMIN_EMAILS: ${APP_ADMIN_EMAILS:?APP_ADMIN_EMAILS is required}
+      # The first accounts of the back-office, created when there is none (then ignored)
+      APP_ADMIN_EMAILS: ${APP_ADMIN_EMAILS:-}
+      APP_ADMIN_RECOVERY_EMAIL: ${APP_ADMIN_RECOVERY_EMAIL:-}
+      # Optional: "Se connecter avec Microsoft"
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID:-}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-}
+      # This computer: the links of the back-office (recovery in the logs) and the passkeys are for it
+      SITE_URL: ${SITE_URL:-http://localhost:${APP_PORT:-8000}}
+      PASSKEY_ORIGINS: ${PASSKEY_ORIGINS:-http://localhost:${APP_PORT:-8000}}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-5-5}

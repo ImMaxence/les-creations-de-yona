@@ -1210,8 +1210,10 @@ await part('Connexion et cadre du back-office', async () => {
   await answerCookies(visitor);
   check('Sans session : la page de connexion', new URL(visitor.url()).pathname === '/admin/connexion', visitor.url());
   check('Connexion : ni barre ni pied du site', (await visitor.locator('yona-header, yona-footer').count()) === 0);
-  const google = visitor.getByRole('button', { name: 'Se connecter avec Google' });
+  const google = visitor.getByRole('button', { name: 'Continuer avec Google' });
   check('Connexion : bouton Google assez haut', (await google.isVisible()) && (await google.boundingBox()).height >= 44);
+  const passkey = visitor.getByRole('button', { name: 'Se connecter avec une passkey' });
+  check('Connexion : la passkey en premier (2.19)', (await passkey.boundingBox()).y < (await google.boundingBox()).y);
   await visitor.context().close();
 
   const phone = await newPage(browser, PHONE, errors);
@@ -1243,7 +1245,7 @@ await part('Connexion et cadre du back-office', async () => {
   await side.waitFor();
   await answerCookies(desktop);
   check('Ordinateur : ni barre ni pied du site', (await desktop.locator('yona-header, yona-footer').count()) === 0);
-  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 22 && (await side.boundingBox()).x === 0);
+  check('Ordinateur : toutes les sections à gauche', (await side.locator('a.link').count()) === 23 && (await side.boundingBox()).x === 0);
   check('Ordinateur : section courante marquée', (await side.locator('a.link.is-active').innerText()).includes('Nouveautés'));
   await side.locator('.account__email').hover();
   await desktop.locator('.tooltip.is-open').waitFor();
@@ -1451,6 +1453,59 @@ await part('Mon CAP : brouillon gardé dans le navigateur', async () => {
     document.dispatchEvent(new Event('visibilitychange'));
   });
   check('Onglet caché : gardé sans attendre', (await page.evaluate(() => localStorage.getItem('yona-article-draft-nouveau') ?? '')).includes('verrouiller'));
+  await page.context().close();
+});
+
+await part('Passkeys : créée avec un lien puis utilisée (authentificateur virtuel de Chrome)', async () => {
+  // API simulée : seul le navigateur fait une vraie passkey, pour localhost. « Qui est connecté ? » répond 401 : pas une erreur
+  const page = await newPage(browser, DESKTOP, []);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  await cdp.send('WebAuthn.addVirtualAuthenticator', {
+    options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
+  });
+  const sent = {};
+  const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+  const challenge = Buffer.from('un défi de la session').toString('base64url');
+  await page.route('**/api/auth/methods', (route) => json(route, { google: true, microsoft: true }));
+  await page.route('**/api/auth/access-links/lien-e2e', (route) =>
+    json(route, { email: 'lea@example.fr', name: 'Léa', purpose: 'INVITATION', expiresAt: '2030-01-01T10:00:00Z', methods: { google: true, microsoft: true } }),
+  );
+  await page.route('**/api/auth/access-links/lien-e2e/passkey/options', (route) =>
+    json(route, {
+      challenge,
+      rp: { id: 'localhost', name: 'Les créations de Yona' },
+      user: { id: Buffer.from('compte-3').toString('base64url'), name: 'lea@example.fr', displayName: 'Léa' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+      authenticatorSelection: { residentKey: 'required', userVerification: 'preferred' },
+      attestation: 'none',
+      excludeCredentials: [],
+    }),
+  );
+  await page.route('**/api/auth/access-links/lien-e2e/passkey', (route) => {
+    sent.created = route.request().postDataJSON();
+    return json(route, { redirectUrl: '/admin/connexion' });
+  });
+  await page.route('**/api/auth/passkey/options', (route) => json(route, { challenge, rpId: 'localhost', allowCredentials: [], userVerification: 'preferred' }));
+  await page.route('**/api/auth/passkey', (route) => {
+    sent.signed = route.request().postDataJSON();
+    return json(route, { redirectUrl: '/admin/connexion?fin' });
+  });
+
+  // Le back-office est rendu dans le navigateur : ses appels à l'API passent par les routes simulées
+  await page.goto(BASE + '/admin/acces/lien-e2e');
+  await answerCookies(page);
+  await page.getByRole('heading', { name: 'Bienvenue Léa' }).waitFor();
+  check('Lien : Google et Microsoft proposés', await page.getByRole('button', { name: 'Continuer avec Microsoft' }).isVisible());
+  await page.getByRole('button', { name: 'Créer une passkey sur cet appareil' }).click();
+  await page.waitForURL(/\/admin\/connexion$/);
+  check('Passkey créée : envoyée avec son nom', !!sent.created?.credential?.response?.attestationObject && !!sent.created.label, sent.created?.label);
+  await page.getByRole('button', { name: 'Se connecter avec une passkey' }).click();
+  await page.waitForURL(/fin=?$/);
+  check(
+    'Passkey utilisée : signature et compte envoyés',
+    !!sent.signed?.response?.signature && sent.signed.response.userHandle === Buffer.from('compte-3').toString('base64url'),
+  );
   await page.context().close();
 });
 

@@ -136,6 +136,7 @@ export class AdminNav {
         { path: 'reseaux-sociaux', label: 'Réseaux sociaux', icon: 'share-2' },
         { path: 'apparence', label: 'Apparence', icon: 'palette' },
         { path: 'preferences', label: 'Préférences', icon: 'sliders-horizontal' },
+        { path: 'utilisateurs', label: 'Utilisateurs', icon: 'users' },
         { path: 'sauvegarde', label: 'Sauvegarde', icon: 'database-backup' },
         { path: 'corbeille', label: 'Corbeille', icon: 'trash', count: this.watch.trashCount, countLabel: 'nouveaux, mis par les autres' },
         { path: 'historique', label: 'Historique', icon: 'history', count: this.watch.historyCount, countLabel: 'changements des autres à voir' },

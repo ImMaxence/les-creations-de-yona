@@ -7,7 +7,7 @@ Mise en ligne sur Coolify, services Google, restauration à la main d'une sauveg
 Fichier : `devops/compose.prod.yaml`. Mêmes services qu'en local, sans port publié ni profil. Seule la passerelle reçoit le domaine. Chaîne d'une requête : Cloudflare → Traefik (proxy de Coolify, HTTPS) → passerelle Caddy → front ou backend.
 
 - URL publique : Traefik transmet `X-Forwarded-Proto: https` et le domaine. Caddy les conserve (`trusted_proxies`), le backend les lit (`forward-headers-strategy: framework`) pour construire l'URL de retour Google, et le serveur SSR (`NG_TRUST_PROXY_HEADERS`). Vérifié en simulant Traefik devant la stack de production : URL de retour `https://les-creations-de-yona.fr/api/login/oauth2/code/google`, domaine inconnu refusé (400).
-- Secrets : identifiants PostgreSQL et S3 générés par Coolify au premier déploiement (`SERVICE_USER_*`, `SERVICE_PASSWORD_64_*`), conservés ensuite. À saisir : `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_ADMIN_EMAILS`, `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY` ([google.md](google.md#5-recaptcha)) ; facultatif, `GEMINI_API_KEY` (« Remplir avec l'IA », [ia.md](ia.md)). Ne jamais définir `API_DOCS_ENABLED`. Facultatif : `PUSH_SUBJECT` (contact donné aux services de notification, `https://les-creations-de-yona.fr` par défaut). Les clés des notifications (VAPID) sont créées par le backend au premier démarrage, en base (`web_push_key`) : rien à saisir.
+- Secrets : identifiants PostgreSQL et S3 générés par Coolify au premier déploiement (`SERVICE_USER_*`, `SERVICE_PASSWORD_64_*`), conservés ensuite. À saisir : `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_ADMIN_EMAILS` (les premiers comptes, voir [Comptes du back-office](#comptes-du-back-office)), `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY` ([google.md](google.md#5-recaptcha)) ; facultatif, `GEMINI_API_KEY` (« Remplir avec l'IA », [ia.md](ia.md)), `MICROSOFT_CLIENT_ID` et `MICROSOFT_CLIENT_SECRET` (« Continuer avec Microsoft »), `APP_ADMIN_RECOVERY_EMAIL` (dernier recours). Ne jamais définir `API_DOCS_ENABLED`. Facultatif : `PUSH_SUBJECT` (contact donné aux services de notification, `https://les-creations-de-yona.fr` par défaut). Les clés des notifications (VAPID) sont créées par le backend au premier démarrage, en base (`web_push_key`) : rien à saisir.
 - Données : volumes `postgres-data` et `seaweedfs-data`, conservés d'un déploiement à l'autre. Supprimer la ressource Coolify les supprime : faire une sauvegarde avant.
 - Versions : `back/pom.xml` et `front/package.json`, en version sémantique (1.0.0), notées dans [CHANGELOG.md](../CHANGELOG.md), à monter ensemble à chaque mise en production : `npm version x.y.z --no-git-tag-version` dans `front/`, la balise `<version>` du `pom.xml` à la main (quel numéro choisir et quoi mettre à jour : [développement](developpement.md#monter-la-version)). Affichées en haut du back-office (« Site v… · API v… ») : la version du front est lue dans `package.json` au build, celle du backend dans `build-info.properties` (plugin Maven de Spring Boot), par `GET /api/admin/version`.
 - Le CHANGELOG est lu par les admins dans le back-office (« Nouveautés ») : y décrire les changements en mots de tous les jours, la partie technique dans une section « Technique ». Image Docker du front : le fichier, à la racine du dépôt, hors du contexte `front/`, arrive par un second contexte de build (`additional_contexts: repo: ..` dans les deux fichiers Compose, `COPY --from=repo` dans `front/Dockerfile`) ; Docker Compose 2.17 au moins, et en dehors de Compose `docker build --build-context repo=.. front`.
@@ -75,6 +75,30 @@ Depuis la 1.16, le site est fait pour être cité par les assistants IA (ChatGPT
    Cela montre qu'aucune règle sur le nom du robot ne le bloque, pas plus : Cloudflare reconnaît les vrais robots à leurs adresses IP. Leurs vraies visites se voient dans **AI Crawl Control** (ou **Security → Events**, filtre « Bot »).
 2. **Bing Webmaster Tools** (https://www.bing.com/webmasters) : ChatGPT Search et Copilot cherchent dans l'index de Bing. Ajouter le site (« Importer depuis Google Search Console » le fait en un geste), déclarer `https://les-creations-de-yona.fr/sitemap.xml`. Les recettes publiées y arrivent ensuite par IndexNow, sans attendre le passage du robot : **IndexNow** dans le menu liste les adresses reçues. La clé (`f5d890788ccc4557ecd282dea7299d26`) est dans `application.yaml` et dans `front/public/` : les deux doivent rester identiques.
 3. **Google Analytics** : les visites venant des assistants sont comptées dans les statistiques du back-office. Pour les voir aussi dans Analytics : **Administration → Paramètres des données → Groupes de canaux**, copier le groupe par défaut, ajouter un canal « Assistants IA » (source correspondant à l'expression régulière `chatgpt|openai|perplexity|gemini|copilot|claude|mistral|deepseek|grok`) placé au-dessus de « Referral ».
+
+## Comptes du back-office
+
+Depuis la 2.19, chaque admin a son compte en base, et s'y connecte avec une passkey, Google ou Microsoft (détail : [fonctionnalités](fonctionnalites.md#back-office-admin), [architecture](architecture.md#auth-et-sécurité)).
+
+- **Mise en production de la 2.19** : au premier démarrage, la base n'a aucun compte ; `APP_ADMIN_EMAILS` crée celui de chaque adresse. Chaque admin se connecte une fois avec le Google de son adresse, comme avant, puis ajoute une passkey (et Microsoft s'il veut) dans « Mon compte ». Garder la variable dans Coolify : elle ne sert plus tant qu'un compte existe, mais recrée les comptes sur un serveur reparti de rien.
+- **Nouvel admin** : « Utilisateurs » → « Inviter un admin », puis lui envoyer le lien. Rien à faire dans Coolify. Chez Google, rien non plus quand l'application est « En production » ([google.md](google.md#audience) : toute adresse atteint l'écran de Google, le site ne laisse entrer que les comptes qu'il connaît) ; restée en mode « Test », ajouter son adresse Google aux « Utilisateurs test » s'il choisit Google.
+- **Un admin ne peut plus entrer** (téléphone perdu, compte Google bloqué) : un autre admin lui fait un lien de récupération dans « Utilisateurs ».
+- **Passkeys** : l'appareil vérifie qui s'en sert (visage, empreinte, code). Les téléphones et ordinateurs le font toujours ; une clé de sécurité (YubiKey…) doit avoir un code PIN.
+- **Plus personne ne peut entrer** : dans Coolify, ajouter `APP_ADMIN_RECOVERY_EMAIL` (l'adresse d'un compte, créé s'il n'existe pas, réactivé s'il est désactivé), redéployer, et lire dans les journaux du backend la ligne « Recovery link for … » : un lien valable une heure, une seule fois. Créer une passkey avec, puis retirer la variable et redéployer (sinon un nouveau lien est écrit à chaque démarrage). Seul qui a accès au serveur lit ces journaux ; le lien n'est pas dans « Journaux » du back-office, qui affiche seulement un avertissement tant que la variable reste.
+- **Sauvegardes** : les comptes, passkeys et liens n'y sont pas (enregistrés vides), et une restauration les laisse tels quels. Restaurée sur un serveur neuf, la base n'a plus de compte : `APP_ADMIN_EMAILS` (ou `APP_ADMIN_RECOVERY_EMAIL`) les recrée, les passkeys sont à refaire.
+
+### Microsoft (facultatif)
+
+Pour « Continuer avec Microsoft » (comptes personnels : Outlook, Hotmail, Live, Xbox). Gratuit, avec n'importe quel compte Microsoft.
+
+1. https://portal.azure.com → **Microsoft Entra ID** → **Inscriptions d'applications** → **Nouvelle inscription**.
+2. Nom : « Les créations de Yona ». Types de comptes : **Comptes Microsoft personnels uniquement**.
+3. URI de redirection, plateforme **Web** : `https://les-creations-de-yona.fr/api/login/oauth2/code/microsoft` ; puis, dans **Authentification**, ajouter celles du local : `http://localhost:8000/api/login/oauth2/code/microsoft` (et `:4200`, `:8080` au besoin).
+4. **Certificats et secrets** → **Nouveau secret client** : copier sa **Valeur** (affichée une fois). Il expire (24 mois au plus) : noter la date, et en refaire un avant.
+5. **Vue d'ensemble** : copier l'**ID d'application (client)**.
+6. Coolify : `MICROSOFT_CLIENT_ID` (l'ID) et `MICROSOFT_CLIENT_SECRET` (la valeur du secret), redéployer. Le bouton apparaît sur la page de connexion, et « Relier » dans « Mon compte ».
+
+Portées demandées : `openid`, `email`, `profile` (identifiant, adresse, nom), rien d'autre du compte. Les adresses de Microsoft sont écrites dans le code (pas lues au démarrage) : le site démarre même si Microsoft est en panne, seul son bouton échoue alors. Un secret expiré donne « La connexion n'a pas abouti » : les autres moyens marchent toujours.
 
 ## Services Google
 
@@ -214,6 +238,7 @@ Le navigateur range tout par domaine. Sur le nouveau domaine, c'est un autre sit
 - **Application installée** : celle de l'ancien domaine affiche la redirection, il faut réinstaller depuis le nouveau.
 - **Notifications des nouvelles recettes** : les abonnements sont liés à l'ancien domaine. Il faut se réabonner sur le nouveau. Les anciens abonnés restent en base et continuent de recevoir les notifications tant que l'ancien service worker existe chez eux ; un appui ouvre la recette via l'ancien domaine, qui redirige.
 - **Choix clair ou sombre, accord cookies** : redemandés.
+- **Passkeys des admins** (2.19) : une passkey appartient à son domaine, elle ne sert pas sur le nouveau. Chaque admin s'y connecte avec Google ou Microsoft (ou un lien de récupération), y crée une nouvelle passkey dans « Mon compte », puis supprime les anciennes. Le faire avant de retirer Google de ses moyens de connexion.
 
 Prévoir un mot aux visiteurs (réseaux sociaux, encart sur le site) avant la bascule.
 
@@ -258,6 +283,8 @@ Voir [google.md](google.md). **Google Auth Platform** :
    - **Origines JavaScript autorisées** : ajouter `https://nouveau-domaine.fr` ;
    - **URI de redirection autorisés** : ajouter `https://nouveau-domaine.fr/api/login/oauth2/code/google` et `https://nouveau-domaine.fr/api/admin/drive/callback`.
 3. Garder les adresses de l'ancien domaine jusqu'à la fin de la bascule.
+
+Microsoft, s'il est configuré : dans l'inscription d'application du portail Azure, **Authentification**, ajouter `https://nouveau-domaine.fr/api/login/oauth2/code/microsoft`.
 
 La sauvegarde Google Drive déjà connectée continue sans rien faire : son jeton ne dépend pas du domaine. L'adresse de retour ne sert que pour connecter un compte.
 

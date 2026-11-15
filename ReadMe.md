@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.18.1 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.19.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -99,7 +99,9 @@ Les modèles locaux se téléchargent une seule fois, directement depuis Hugging
 - Valeurs nutritionnelles des recettes choisies par Yona (calories par portion, tableau par portion et pour 100 g, Nutri-Score estimé, « Riche en protéines »), kcal sur les cartes et filtre « Léger » ou « Riche en protéines », et « Mes besoins du jour » : besoins par jour, part conseillée pour un repas, équilibre des nutriments, gardés dans le navigateur.
 - Boutique pour les proches : des produits (boîte de 6, à l'unité) aux prix TTC, recherche et catégories, « Ma demande » toujours à portée de main et gardée en quittant la page, un lien de suivi, sans compte ni paiement sur le site.
 
-**Pour Yona (back-office, connexion Google)**
+**Pour Yona (back-office : passkey, Google ou Microsoft)**
+
+- Comptes des admins : chacun entre avec une passkey (visage, empreinte ou code du téléphone, sans mot de passe ni Google), Google ou Microsoft, tous sur le même compte ; « Mon compte » (nom, photo, moyens de connexion) et « Utilisateurs » (inviter par un lien à envoyer, lien de récupération pour qui n'arrive plus à entrer, désactiver d'un coup sur tous ses appareils).
 
 - Éditeur de recettes (parties, étapes minutées, matériel, conseil, thème, publication programmée avec statut « Échec » et « Publier maintenant » si elle n'a pas pu se faire, mise à la une d'avance, brouillon gardé, Ctrl+Z et Ctrl+Y sur tout le formulaire, boutons Gras, Italique et Liste qui retirent aussi la mise en forme), « Remplir avec l'IA » (Gemini ou Claude lisent un texte collé ou dicté, ou la photo d'une recette ; un modèle qui tourne dans le navigateur lit le texte), « Générer avec l'IA » (images dessinées dans le navigateur), aperçu, liste triable (modification, création, titre, vues), statuts en couleur jusque dans les filtres.
 - Corbeille de 30 jours pour les recettes, catégories, menus, photos, tags, ingrédients, mots du glossaire et articles de Mon CAP, qui reviennent à leur place une fois restaurés.
@@ -112,7 +114,7 @@ Les modèles locaux se téléchargent une seule fois, directement depuis Hugging
 - Valeurs nutritionnelles : chaque ingrédient lié à son aliment de la table Ciqual (proposé, ou tous d'un coup), à un produit d'Open Food Facts trouvé par son nom ou son code-barres, ou aux valeurs de son étiquette ; part mangée et poids habituel d'une pièce proposés ; dans l'éditeur, l'estimation de la recette en cours d'écriture, le poids après cuisson, la grille du Nutri-Score, les ingrédients les plus énergétiques et les ingrédients non comptés, à lier en un clic ; import d'une nouvelle version de Ciqual.
 - Apparence (20 thèmes ou des couleurs personnalisées, 37 polices montrées dans leur style, arrondi ; chaque partie repliable), statistiques en accordéons (versions et santé du serveur, mémoire et processeur en direct et sur 7, 30 ou 90 jours, nombre de vues, recettes les plus vues), sauvegardes (téléchargement, Google Drive chaque nuit, restauration), « Nouveautés » avec un badge tant que la version n'est pas lue.
 - Boutique : fermée, réservée aux proches ou ouverte à tous ; commandes et statuts, notification sur le téléphone à chaque nouvelle commande, produits (formats, prix TTC, avec ou sans recette) ; comptabilité par mois, trimestre ou année (chiffres clés, graphique, où part l'argent, meilleures ventes, achats détaillés, coût de revient et marges, tickets de caisse, export CSV) ; factures des commandes récupérées, numérotées à la suite et à enregistrer en PDF.
-- Tableau de bord sans la barre du site : toutes les sections dans un panneau à gauche (Blog, Boutique, Site), repliable en colonne d'icônes sur ordinateur, ouvert d'un bouton sur téléphone ; page de connexion Google, photo du compte ; skeletons pendant les chargements.
+- Tableau de bord sans la barre du site : toutes les sections dans un panneau à gauche (Blog, Boutique, Site), repliable en colonne d'icônes sur ordinateur, ouvert d'un bouton sur téléphone ; page de connexion (passkey, Google, Microsoft), photo du compte ; skeletons pendant les chargements.
 - Mon CAP : articles écrits en blocs à partir d'un modèle (Récit, Pas à pas, Carnet, Vide), styles Classique ou Carnet, statuts en couleur et publication programmée, « Dupliquer », liens vers des recettes et d'autres articles, aperçu ordinateur et téléphone, brouillon gardé dans le navigateur jusqu'à l'enregistrement.
 - Glossaire sans quitter la recette : un mot sélectionné dans une étape s'ajoute d'un bouton, ou se garde pour plus tard ; les mots déjà connus soulignés.
 

@@ -8,10 +8,22 @@ import { AdminResponse } from '../api/generated/models/admin-response';
 import { ADMIN_SIGN_IN_PATH } from '../../shared/routing/links';
 
 const XSRF_COOKIE = 'XSRF-TOKEN=';
-/** Spring Security endpoint starting the Google sign-in; it comes back to /admin. */
-const GOOGLE_SIGN_IN_URL = '/api/oauth2/authorization/google';
+/** Spring Security endpoint starting the sign-in with Google or Microsoft; it comes back to the back-office. */
+const PROVIDER_SIGN_IN_URL = '/api/oauth2/authorization/';
 /** Answers 204; needs the CSRF header, added by HttpClient. */
 const SIGN_OUT_URL = '/api/auth/logout';
+
+export type SignInProvider = 'google' | 'microsoft';
+
+/**
+ * Why the browser leaves for Google or Microsoft: {@code link} from "Mon compte", {@code access} with
+ * a link to come in once, {@code choose} to pick another account than the one the browser is in.
+ */
+export interface ProviderSignIn {
+  link?: boolean;
+  access?: string;
+  choose?: boolean;
+}
 
 /** The signed-in admin, if any. The session itself is an HttpOnly cookie held by the API. */
 @Injectable({ providedIn: 'root' })
@@ -52,9 +64,14 @@ export class AdminSession {
     void this.router.navigateByUrl(ADMIN_SIGN_IN_PATH);
   }
 
-  /** Full page navigation: the Google sign-in happens outside the application. */
-  signIn(): void {
-    this.document.location.assign(GOOGLE_SIGN_IN_URL);
+  /** Full page navigation: the sign-in with Google or Microsoft happens outside the application. */
+  signIn(provider: SignInProvider = 'google', reason: ProviderSignIn = {}): void {
+    const params = new URLSearchParams();
+    if (reason.link) params.set('link', '1');
+    if (reason.access) params.set('access', reason.access);
+    if (reason.choose) params.set('choose', '1');
+    const query = params.toString();
+    this.document.location.assign(PROVIDER_SIGN_IN_URL + provider + (query ? `?${query}` : ''));
   }
 
   async signOut(): Promise<void> {

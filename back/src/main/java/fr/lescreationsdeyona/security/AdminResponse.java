@@ -2,6 +2,6 @@ package fr.lescreationsdeyona.security;
 
 import org.jspecify.annotations.Nullable;
 
-/** The logged-in admin; {@code picture} is the photo of the Google account, when it has one. */
-public record AdminResponse(String email, String name, @Nullable String picture) {
+/** The signed-in admin; {@code picture}: their own photo, or the one of their Google account, when they have one. */
+public record AdminResponse(long id, String email, String name, @Nullable String picture) {
 }

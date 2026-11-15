@@ -73,7 +73,7 @@ Le **secret** n'est affiché qu'à sa création. Pour en changer : **Clients** �
 
 - Type d'utilisateur : **Externe**.
 - État de publication : **En production**. En mode « Test », seuls les « utilisateurs test » listés peuvent se connecter, et Google fait expirer l'accès au Drive au bout de 7 jours : les sauvegardes de nuit s'arrêteraient.
-- Publier ne donne accès à rien : n'importe qui peut atteindre la page de connexion de Google, mais le site refuse toute adresse absente de `APP_ADMIN_EMAILS` (page « Accès refusé »).
+- Publier ne donne accès à rien : n'importe qui peut atteindre la page de connexion de Google, mais le site ne laisse entrer que les comptes Google reliés à un admin (page « Accès refusé » sinon).
 - Avec les seules portées `openid`, `email`, `profile` et `drive.file` (dites « non sensibles »), Google ne demande aucune validation de l'application.
 
 ### Accès aux données
@@ -87,7 +87,7 @@ Portées déclarées :
 
 ### Ajouter ou retirer un admin
 
-Rien à faire chez Google : c'est la variable `APP_ADMIN_EMAILS` (adresses séparées par des virgules) dans Coolify, puis redéploiement. En local : `devops/.env`.
+Rien à faire chez Google ni dans Coolify (2.19) : « Utilisateurs » dans le back-office, « Inviter un admin », puis lui envoyer le lien ; pour retirer quelqu'un, « Désactiver » ou supprimer son compte. `APP_ADMIN_EMAILS` ne sert plus qu'à créer les premiers comptes, quand la base n'en a aucun ([production](production.md#comptes-du-back-office)). Google n'est plus le seul moyen d'entrer : passkeys et Microsoft aussi.
 
 ## 2. Sauvegarde de nuit sur Google Drive
 

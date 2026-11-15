@@ -1,0 +1,107 @@
+@use 'mixins' as m;
+
+.account-panel__title {
+  font-size: var(--text-lg);
+}
+
+.account-welcome {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+  color: var(--color-text);
+
+  > svg {
+    flex: none;
+    margin-top: 0.15rem;
+    color: var(--color-accent);
+  }
+
+  p {
+    flex: 1;
+  }
+
+  .icon-button {
+    margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
+  }
+}
+
+.profile {
+  display: grid;
+  gap: var(--space-5);
+
+  @include m.from(md) {
+    grid-template-columns: minmax(12rem, 16rem) 1fr;
+    align-items: start;
+  }
+}
+
+.profile__photo {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+.profile__avatar {
+  width: 5rem;
+  height: 5rem;
+  font-size: var(--text-3xl);
+}
+
+.profile__photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.profile__fields {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.profile__name {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+
+  .input {
+    flex: 1 1 14rem;
+  }
+}
+
+.profile__email {
+  overflow-wrap: anywhere;
+}
+
+.ways {
+  display: grid;
+  gap: var(--space-3);
+
+  > .button {
+    justify-self: start;
+  }
+
+  & + & {
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-line);
+  }
+}
+
+.ways__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+}
+
+.ways__rename {
+  display: flex;
+  gap: var(--space-2);
+
+  .input {
+    flex: 1;
+    min-width: 0;
+  }
+}

@@ -1,0 +1,162 @@
+<section class="admin-section" aria-labelledby="users-title">
+  <div class="admin-section__head">
+    <h2 id="users-title">Utilisateurs</h2>
+    <div class="admin-section__actions">
+      <button yonaButton type="button" (click)="openInvite()"><svg yonaIcon="user-plus"></svg>Inviter un admin</button>
+    </div>
+  </div>
+  <p class="field__hint">
+    Chaque admin a son compte, et s'y connecte avec une passkey, Google ou Microsoft. Pour un nouvel admin : invitez-le, envoyez-lui le
+    lien (SMS, WhatsApp…), il choisit comment se connecter. Un admin qui n'arrive plus à entrer reçoit de la même façon un lien de
+    récupération
+  </p>
+
+  @if (users().length) {
+    <ul role="list" class="admin-list">
+      @for (user of users(); track user.id) {
+        <li class="admin-row user" [class.is-disabled]="user.status === 'DISABLED'">
+          <yona-admin-avatar [name]="nameOf(user)" [picture]="user.picture" />
+          <div class="admin-row__main">
+            <span class="admin-row__title">
+              @if (user.me) {
+                <span class="badge badge--featured">Vous</span>
+              }
+              @if (user.status === 'INVITED') {
+                <span class="badge badge--scheduled">Invité·e</span>
+              } @else if (user.status === 'DISABLED') {
+                <span class="badge badge--draft">Désactivé·e</span>
+              }
+              {{ nameOf(user) }}
+            </span>
+            @if (user.name) {
+              <span class="user__email">{{ user.email }}</span>
+            }
+            <span class="admin-row__meta">
+              <span>{{ lastSignIn(user) }}</span>
+            </span>
+            <span class="admin-row__meta user__ways">
+              @for (provider of user.providers; track provider) {
+                <span class="user__way"><svg [yonaProviderLogo]="provider" [size]="14"></svg>{{ provider === 'GOOGLE' ? 'Google' : 'Microsoft' }}</span>
+              }
+              @if (user.passkeys) {
+                <span class="user__way">
+                  <svg yonaIcon="key-round" [size]="14"></svg>{{ user.passkeys }} passkey{{ user.passkeys > 1 ? 's' : '' }}
+                </span>
+              }
+              @if (!user.providers.length && !user.passkeys) {
+                <span>{{ firstWayIn(user) }}</span>
+              }
+            </span>
+            @if (linkLine(user); as line) {
+              <span class="admin-row__meta user__link" [class.is-expired]="user.link?.expired">
+                <svg yonaIcon="link" [size]="14"></svg>{{ line }}
+                <button type="button" class="user__cancel" [disabled]="busy() === user.id" (click)="cancelLink(user)">Annuler le lien</button>
+              </span>
+            }
+          </div>
+          @if (!user.me) {
+            <div class="admin-row__actions">
+              @if (user.status !== 'DISABLED') {
+                <button
+                  type="button"
+                  class="icon-button"
+                  [attr.aria-label]="linkAction(user) + ' pour ' + nameOf(user)"
+                  [attr.data-tooltip]="linkAction(user)"
+                  [disabled]="busy() === user.id"
+                  (click)="issueLink(user)"
+                >
+                  <svg yonaIcon="link" [size]="16"></svg>
+                </button>
+              }
+              <button
+                type="button"
+                class="icon-button"
+                [attr.aria-label]="(user.status === 'DISABLED' ? 'Réactiver ' : 'Désactiver ') + nameOf(user)"
+                [attr.data-tooltip]="user.status === 'DISABLED' ? 'Réactiver' : 'Désactiver'"
+                [disabled]="busy() === user.id"
+                (click)="toggle(user)"
+              >
+                <svg [yonaIcon]="user.status === 'DISABLED' ? 'rotate-ccw' : 'ban'" [size]="16"></svg>
+              </button>
+              <button
+                type="button"
+                class="icon-button icon-button--danger"
+                [attr.aria-label]="'Supprimer le compte de ' + nameOf(user)"
+                data-tooltip="Supprimer"
+                [disabled]="busy() === user.id"
+                (click)="remove(user)"
+              >
+                <svg yonaIcon="trash" [size]="16"></svg>
+              </button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  } @else if (loaded.isLoading()) {
+    <p class="admin-empty">Chargement…</p>
+  }
+</section>
+
+<yona-dialog title="Inviter un admin" [(open)]="inviting">
+  <form id="invite-form" class="invite" novalidate (submit)="$event.preventDefault(); invite()">
+    <div class="field">
+      <label class="field__label" for="invite-email">Adresse e-mail</label>
+      <input
+        id="invite-email"
+        class="input"
+        type="email"
+        inputmode="email"
+        autocomplete="off"
+        maxlength="320"
+        [value]="inviteEmail()"
+        (input)="inviteEmail.set($any($event.target).value)"
+      />
+      <span class="field__hint">L'adresse de son compte sur le site. Elle peut être différente de celle de son compte Google ou Microsoft</span>
+    </div>
+    <div class="field">
+      <label class="field__label" for="invite-name">Nom (facultatif)</label>
+      <input id="invite-name" class="input" maxlength="60" autocomplete="off" [value]="inviteName()" (input)="inviteName.set($any($event.target).value)" />
+      <span class="field__hint">Pris de son compte Google ou Microsoft sinon, et modifiable ensuite</span>
+    </div>
+  </form>
+  <ng-container dialogActions>
+    <button yonaButton variant="secondary" type="button" (click)="inviting.set(false)">Annuler</button>
+    <button yonaButton type="submit" form="invite-form" [disabled]="!inviteValid() || busy() === 'invite'">
+      {{ busy() === 'invite' ? 'Invitation…' : 'Inviter' }}
+    </button>
+  </ng-container>
+</yona-dialog>
+
+<yona-dialog
+  [title]="shownTitle()"
+  [(open)]="shownOpen"
+  [closeOnBackdrop]="false"
+>
+  @if (shown(); as shown) {
+    <div class="shown">
+      <p>
+        Envoyez ce lien à <strong>{{ nameOf(shown.user) }}</strong> (SMS, WhatsApp…). Il sert une seule fois, jusqu'au
+        {{ dateTime(shown.link.expiresAt) }}.
+        @if (shown.link.purpose === 'INVITATION') {
+          Avec lui, il choisit comment se connecter : une passkey, Google ou Microsoft
+        } @else {
+          Avec lui, il ajoute un moyen de se connecter à son compte
+        }
+      </p>
+      <div class="shown__url">
+        <input class="input" readonly aria-label="Lien à envoyer" [value]="shown.link.url" (focus)="$any($event.target).select()" />
+      </div>
+      <p class="field__hint">Il ne sera plus affiché : copiez-le maintenant. Un nouveau lien remplace celui-ci</p>
+    </div>
+  }
+  <ng-container dialogActions>
+    @if (canShare) {
+      <button yonaButton variant="secondary" type="button" (click)="share()"><svg yonaIcon="share"></svg>Partager</button>
+    }
+    <button yonaButton type="button" (click)="copy()">
+      <svg [yonaIcon]="copied() ? 'check' : 'copy'"></svg>{{ copied() ? 'Copié' : 'Copier le lien' }}
+    </button>
+    <button yonaButton variant="ghost" type="button" (click)="shownOpen.set(false)">Fermer</button>
+  </ng-container>
+</yona-dialog>

@@ -14,7 +14,7 @@ import fr.lescreationsdeyona.audit.AuditLog;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.recipe.Recipe;
 import fr.lescreationsdeyona.recipe.RecipeStatus;
-import fr.lescreationsdeyona.security.AdminProperties;
+import fr.lescreationsdeyona.security.AdminDirectory;
 import fr.lescreationsdeyona.shop.ShopForms.AdminOrderForm;
 import fr.lescreationsdeyona.shop.ShopForms.OrderForm;
 import fr.lescreationsdeyona.shop.ShopForms.OrderLineForm;
@@ -47,7 +47,7 @@ class ShopOrderServiceTest {
 	private final AuditorAware<String> auditor = mock(AuditorAware.class);
 
 	private final ShopOrderService service = new ShopOrderService(orders, products, settingsRepository, accounting,
-			new AdminProperties(Set.of("yona@example.fr", "max@example.fr")), auditor, events, mock(AuditLog.class), invoices);
+			(AdminDirectory) () -> Set.of("yona@example.fr", "max@example.fr"), auditor, events, mock(AuditLog.class), invoices);
 
 	private final ShopSettings settings = new ShopSettings();
 

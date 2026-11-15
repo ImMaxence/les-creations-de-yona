@@ -62,8 +62,8 @@ class GoogleDrive {
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build();
 
-	GoogleDrive(@Value("${spring.security.oauth2.client.registration.google.client-id}") String clientId,
-			@Value("${spring.security.oauth2.client.registration.google.client-secret}") String clientSecret,
+	GoogleDrive(@Value("${app.auth.google.client-id}") String clientId,
+			@Value("${app.auth.google.client-secret}") String clientSecret,
 			JsonMapper jsonMapper) {
 		this.clientId = clientId;
 		this.clientSecret = clientSecret;

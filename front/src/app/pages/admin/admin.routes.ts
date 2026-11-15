@@ -21,6 +21,13 @@ export const adminRoutes: Routes = [
     title: 'Accès refusé',
     data: { [SEO_DATA_KEY]: NO_INDEX, denied: true },
   },
+  // A link to come in once: an invitation, or a recovery link given by another admin
+  {
+    path: 'acces/:token',
+    loadComponent: () => import('./login/admin-login'),
+    title: 'Accès · Back-office',
+    data: { [SEO_DATA_KEY]: NO_INDEX },
+  },
   // A recipe as visitors see it, drafts included: outside the back-office layout, within the site's
   {
     path: 'apercu/:id',
@@ -151,6 +158,16 @@ export const adminRoutes: Routes = [
         path: 'preferences',
         loadComponent: () => import('./preferences/admin-preferences'),
         title: 'Préférences · Back-office',
+      },
+      {
+        path: 'mon-compte',
+        loadComponent: () => import('./account/admin-account'),
+        title: 'Mon compte · Back-office',
+      },
+      {
+        path: 'utilisateurs',
+        loadComponent: () => import('./users/admin-users'),
+        title: 'Utilisateurs · Back-office',
       },
       {
         path: 'apparence',

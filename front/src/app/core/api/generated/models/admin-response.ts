@@ -3,6 +3,7 @@
 
 export interface AdminResponse {
   email: string;
+  id: number;
   name: string;
   picture?: string;
 }

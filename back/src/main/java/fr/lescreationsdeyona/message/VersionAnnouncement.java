@@ -2,7 +2,7 @@ package fr.lescreationsdeyona.message;
 
 import fr.lescreationsdeyona.live.LiveChange;
 import fr.lescreationsdeyona.live.LiveTopic;
-import fr.lescreationsdeyona.security.AdminProperties;
+import fr.lescreationsdeyona.security.AdminDirectory;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -46,10 +46,10 @@ class VersionAnnouncement {
 
 	private final ApplicationEventPublisher events;
 
-	private final AdminProperties admins;
+	private final AdminDirectory admins;
 
 	VersionAnnouncement(JdbcClient jdbc, ObjectProvider<BuildProperties> buildProperties, TransactionTemplate transactions,
-			ApplicationEventPublisher events, AdminProperties admins) {
+			ApplicationEventPublisher events, AdminDirectory admins) {
 		this.jdbc = jdbc;
 		this.buildProperties = buildProperties;
 		this.transactions = transactions;

@@ -1,0 +1,184 @@
+<section class="admin-section" aria-labelledby="account-title">
+  <div class="admin-section__head">
+    <h2 id="account-title">Mon compte</h2>
+  </div>
+
+  @if (arrival(); as kind) {
+    <div class="account-welcome" role="status">
+      <svg yonaIcon="sparkles" [size]="20"></svg>
+      <p>
+        @if (kind === 'welcome') {
+          <strong>Bienvenue dans le back-office !</strong>
+        } @else {
+          <strong>Accès retrouvé.</strong>
+        }
+        Ajoutez un deuxième moyen de vous connecter : si l'un ne marche plus, l'autre vous laisse entrer
+      </p>
+      <button type="button" class="icon-button" aria-label="Fermer" (click)="arrival.set(null)">
+        <svg yonaIcon="x" [size]="18"></svg>
+      </button>
+    </div>
+  }
+
+  @if (account(); as account) {
+    <section class="admin-panel" aria-labelledby="profile-title">
+      <h3 id="profile-title" class="account-panel__title">Profil</h3>
+      <div class="profile">
+        <div class="profile__photo">
+          <yona-admin-avatar class="profile__avatar" [name]="account.name || account.email" [picture]="account.picture" />
+          <input #photoInput type="file" accept="image/jpeg,image/png" hidden (change)="uploadPhoto($event)" />
+          <div class="profile__photo-actions">
+            <button yonaButton variant="secondary" type="button" [disabled]="photoProgress() !== null" (click)="choosePhoto()">
+              <svg yonaIcon="camera"></svg>
+              @if (photoProgress() !== null) {
+                Envoi… {{ photoPercent() }} %
+              } @else {
+                Changer la photo
+              }
+            </button>
+            @if (account.ownPhoto) {
+              <button yonaButton variant="ghost" type="button" [disabled]="busy()" (click)="removePhoto()">Retirer ma photo</button>
+            }
+          </div>
+          <span class="field__hint">
+            JPEG ou PNG, recadrée en carré au centre.
+            @if (account.ownPhoto) {
+              Sans elle, la photo de votre compte Google, ou votre initiale
+            } @else {
+              Sans photo à vous, celle de votre compte Google, ou votre initiale
+            }
+          </span>
+        </div>
+
+        <form class="profile__fields" novalidate (submit)="$event.preventDefault(); saveName()">
+          <div class="field">
+            <label class="field__label" for="account-name">Nom</label>
+            <div class="profile__name">
+              <input id="account-name" class="input" maxlength="60" autocomplete="name" [value]="name()" (input)="name.set($any($event.target).value)" />
+              <button yonaButton type="submit" [disabled]="busy() || !nameChanged()">Enregistrer</button>
+            </div>
+            <span class="field__hint">Celui que voient les autres admins, dans les messages et l'historique</span>
+          </div>
+          <div class="field">
+            <span class="field__label">Adresse du compte</span>
+            <span class="profile__email">{{ account.email }}</span>
+            <span class="field__hint">Elle ne change pas : c'est sous elle que le site range ce que vous écrivez</span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="ways-title">
+      <div>
+        <h3 id="ways-title" class="account-panel__title">Moyens de connexion</h3>
+        <p class="field__hint">
+          Autant que vous voulez, tous sur ce même compte. Gardez-en au moins deux : si l'un ne marche plus, l'autre vous laisse entrer
+        </p>
+      </div>
+
+      <div class="ways">
+        <h4 class="ways__title"><svg yonaIcon="key-round" [size]="18"></svg>Passkeys</h4>
+        <p class="field__hint">
+          Sans mot de passe : l'appareil vous reconnaît (visage, empreinte, code) et vous connecte, sans passer par Google ni Microsoft.
+          Une passkey synchronisée (iCloud, gestionnaire de mots de passe Google) vous suit sur vos autres appareils
+        </p>
+        @if (account.passkeys.length) {
+          <ul role="list" class="admin-list">
+            @for (passkey of account.passkeys; track passkey.id) {
+              <li class="admin-row">
+                <div class="admin-row__main">
+                  @if (editing() === passkey.id) {
+                    <form class="ways__rename" novalidate (submit)="$event.preventDefault(); saveLabel(passkey)">
+                      <input
+                        class="input"
+                        maxlength="60"
+                        aria-label="Nom de la passkey"
+                        [value]="label()"
+                        (input)="label.set($any($event.target).value)"
+                        (keydown.escape)="editing.set(null)"
+                      />
+                      <button yonaButton type="submit" [disabled]="busy()">OK</button>
+                    </form>
+                  } @else {
+                    <span class="admin-row__title">{{ passkey.label }}</span>
+                  }
+                  <span class="admin-row__meta">
+                    <span>Créée le {{ day(passkey.createdAt) }}</span>
+                    <span>· {{ passkey.lastUsedAt ? 'utilisée le ' + day(passkey.lastUsedAt) : 'pas encore utilisée' }}</span>
+                    @if (passkey.synced) {
+                      <span class="badge">Synchronisée</span>
+                    }
+                  </span>
+                </div>
+                <div class="admin-row__actions">
+                  <button type="button" class="icon-button" aria-label="Renommer cette passkey" [disabled]="busy()" (click)="startRename(passkey)">
+                    <svg yonaIcon="pencil" [size]="16"></svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-button icon-button--danger"
+                    aria-label="Supprimer cette passkey"
+                    [disabled]="busy() || methodCount() <= 1"
+                    [attr.data-tooltip]="methodCount() <= 1 ? 'Votre dernier moyen de connexion' : null"
+                    (click)="deletePasskey(passkey)"
+                  >
+                    <svg yonaIcon="trash" [size]="16"></svg>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+        @if (passkeysSupported) {
+          <button yonaButton [variant]="account.passkeys.length ? 'secondary' : 'primary'" type="button" [disabled]="busy()" (click)="addPasskey()">
+            <svg yonaIcon="plus"></svg>Ajouter une passkey sur cet appareil
+          </button>
+        } @else {
+          <p class="admin-empty">Ce navigateur ne sait pas créer de passkey. Ouvrez cette page sur votre téléphone ou un navigateur récent</p>
+        }
+      </div>
+
+      <div class="ways">
+        <h4 class="ways__title"><svg yonaIcon="link" [size]="18"></svg>Comptes Google et Microsoft</h4>
+        <ul role="list" class="admin-list">
+          @for (provider of providers(); track provider) {
+            @let linked = identity(provider);
+            <li class="admin-row">
+              <svg [yonaProviderLogo]="provider" [size]="24"></svg>
+              <div class="admin-row__main">
+                <span class="admin-row__title">{{ providerNames[provider] }}</span>
+                <span class="admin-row__meta">
+                  @if (linked) {
+                    <span>Relié{{ linked.email ? ' : ' + linked.email : '' }}</span>
+                    <span>· {{ linked.lastUsedAt ? 'utilisé le ' + day(linked.lastUsedAt) : 'relié le ' + day(linked.linkedAt) }}</span>
+                  } @else {
+                    <span>Pas relié</span>
+                  }
+                </span>
+              </div>
+              <div class="admin-row__actions">
+                @if (linked) {
+                  <button yonaButton variant="ghost" type="button" [disabled]="busy()" (click)="link(provider)">Changer</button>
+                  <button
+                    yonaButton
+                    variant="secondary"
+                    type="button"
+                    [disabled]="busy() || methodCount() <= 1"
+                    [attr.data-tooltip]="methodCount() <= 1 ? 'Votre dernier moyen de connexion' : null"
+                    (click)="unlink(provider)"
+                  >
+                    Délier
+                  </button>
+                } @else {
+                  <button yonaButton variant="secondary" type="button" [disabled]="busy()" (click)="link(provider)">Relier</button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+  } @else if (loaded.isLoading()) {
+    <p class="admin-empty">Chargement…</p>
+  }
+</section>

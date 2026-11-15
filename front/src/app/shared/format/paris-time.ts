@@ -66,3 +66,10 @@ function offsetMs(instant: number): number {
   const [hour, minute] = time.split(':').map(Number) as [number, number];
   return Date.UTC(year, month - 1, day, hour, minute) - Math.floor(instant / 60_000) * 60_000;
 }
+
+const PARIS_DAY = new Intl.DateTimeFormat('fr-FR', { timeZone: TIME_ZONE, day: 'numeric', month: 'long', year: 'numeric' });
+
+/** "1er novembre 2026": a day, Paris time (when a passkey was made, an admin last came in). */
+export function parisDay(isoDate: string): string {
+  return firstOfMonth(PARIS_DAY.format(new Date(isoDate)));
+}
