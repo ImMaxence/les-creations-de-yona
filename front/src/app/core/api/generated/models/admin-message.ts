@@ -3,6 +3,7 @@
 
 import { LinkPreview } from '../models/link-preview';
 import { MessagePhoto } from '../models/message-photo';
+import { RepliedMessage } from '../models/replied-message';
 export interface AdminMessage {
   authorEmail: string;
   authorName?: string;
@@ -34,5 +35,10 @@ export interface AdminMessage {
    * Its photos, in order: /api/admin/messages/images/{id}/800.webp
    */
   photos: Array<MessagePhoto>;
+
+  /**
+   * The message it answers (2.22), quoted above it; absent once that one is deleted
+   */
+  replyTo?: RepliedMessage;
   sentAt: string;
 }

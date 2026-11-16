@@ -41,6 +41,23 @@
   </div>
 }
 
+@if (replying(); as reply) {
+  <!-- As on Instagram: the message answered, above the field, until it is sent or given up -->
+  <div class="reply-draft" animate.enter="reply-draft--enter">
+    <svg class="reply-draft__icon" yonaIcon="reply" [size]="18"></svg>
+    <span class="reply-draft__text">
+      <strong>{{ reply.name ? 'Répondre à ' + reply.name : 'Répondre à votre message' }}</strong>
+      <span class="reply-draft__quote">{{ quoteText(reply.quote) }}</span>
+    </span>
+    @if (reply.quote.photo; as photo) {
+      <img class="reply-draft__photo" [src]="messagePhoto(photo)" alt="" />
+    }
+    <button type="button" class="reply-draft__close" aria-label="Ne plus répondre à ce message" (click)="cancelReply()">
+      <svg yonaIcon="x" [size]="14" [strokeWidth]="3"></svg>
+    </button>
+  </div>
+}
+
 <div class="composer">
   <input #files type="file" accept="image/*" multiple hidden (change)="onFiles($event)" />
   <button type="button" class="icon-button composer__attach" aria-label="Ajouter des photos" [disabled]="attachments().length >= 10" (click)="files.click()">

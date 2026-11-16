@@ -89,6 +89,7 @@ public enum ErrorCode {
 	ADMIN_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce message n'existe plus"),
 	ADMIN_MESSAGE_NOT_YOURS(HttpStatus.FORBIDDEN, "Seule la personne qui l'a écrit peut supprimer ce message"),
 	ADMIN_MESSAGE_PHOTO_GONE(HttpStatus.BAD_REQUEST, "Une des photos n'est plus disponible : ajoutez-la à nouveau"),
+	ADMIN_MESSAGE_REPLY_GONE(HttpStatus.BAD_REQUEST, "Le message auquel vous répondez a été supprimé"),
 	ADMIN_GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "Ce groupe n'existe plus, ou vous n'en faites plus partie"),
 	ADMIN_GROUP_TOO_SMALL(HttpStatus.BAD_REQUEST, "Choisissez au moins un autre admin pour ce groupe"),
 	ADMIN_GROUP_NOT_ADMIN(HttpStatus.BAD_REQUEST, "Seuls les admins du back-office peuvent faire partie d'un groupe"),

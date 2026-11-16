@@ -54,11 +54,6 @@
   }
 }
 
-.badge--unused {
-  background-color: color-mix(in srgb, var(--color-danger) 14%, transparent);
-  color: var(--color-danger);
-}
-
 // Tick box over the photo, top left (the delete button is top right)
 .tile__select {
   position: absolute;

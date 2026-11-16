@@ -234,6 +234,12 @@ textarea.input {
   color: var(--color-danger);
 }
 
+// A photo of the gallery used nowhere: on its tile, and in the filter of the gallery
+.badge--unused {
+  background-color: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  color: var(--color-danger);
+}
+
 .badge--failed-time {
   box-shadow: inset 0 0 0 1px var(--color-danger);
   background-color: transparent;

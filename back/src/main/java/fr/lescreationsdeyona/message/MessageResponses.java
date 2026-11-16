@@ -25,7 +25,14 @@ public final class MessageResponses {
 			@Schema(description = "The preview of its first link, once read on its page") @Nullable LinkPreview link,
 			@Schema(description = "A line of the group (2.13): what its author changed in it, the body then a sentence of it in French; "
 					+ "VERSION (2.14): a new version of the application, written by the site itself (author \"site\")") @Nullable GroupEvent event,
-			@Schema(description = "The name given (CREATED, RENAMED), the email of the member concerned (ADDED, REMOVED) or the version (VERSION)") @Nullable String eventValue) {
+			@Schema(description = "The name given (CREATED, RENAMED), the email of the member concerned (ADDED, REMOVED) or the version (VERSION)") @Nullable String eventValue,
+			@Schema(description = "The message it answers (2.22), quoted above it; absent once that one is deleted") @Nullable RepliedMessage replyTo) {
+	}
+
+	/** The message a reply answers, as quoted above it: its author, the start of its text, its first photo. */
+	public record RepliedMessage(long id, String authorEmail, @Nullable String authorName,
+			@Schema(description = "The start of its text, on one line, mentions as \"@Tarte au citron\"; empty for photos alone") String text,
+			int photos, @Schema(description = "Its first photo, as a thumbnail: /api/admin/messages/images/{photo}/800.webp") @Nullable UUID photo) {
 	}
 
 	/** A photo of a message, its size to lay it out before it loads. */
@@ -50,7 +57,8 @@ public final class MessageResponses {
 	public record MessageForm(@Schema(description = "The group it is written in") long groupId,
 			@Schema(description = "The text, mentions written in it: @[Tarte au citron](RECIPE:12); empty with photos") @Nullable @Size(max = AdminMessages.MAX_BODY) String body,
 			@Schema(description = "Photos sent before (POST /api/admin/messages/photos), in order") @Nullable @Size(max = AdminMessages.MAX_PHOTOS) List<@Valid @NotNull PhotoForm> photos,
-			@Schema(description = "The preview of its first link left out, taken off by the writer") boolean withoutPreview) {
+			@Schema(description = "The preview of its first link left out, taken off by the writer") boolean withoutPreview,
+			@Schema(description = "The id of the message of the group it answers (2.22)") @Nullable Long replyTo) {
 	}
 
 	/** A photo sent before, with the size it was given back with. */

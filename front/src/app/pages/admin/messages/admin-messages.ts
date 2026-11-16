@@ -48,6 +48,9 @@ import { readUpTo, seenBy, seenLabel, seenPlaces } from './message-seen';
 import { systemLine } from './message-system';
 import { fitToViewport } from './message-viewport';
 import { MessageSound } from './message-sound';
+import { SWIPE_TO_REPLY, quoteText, replyLabel, swipeShift } from './message-reply';
+import { ReplyQuote, ShownReply } from './reply-quote';
+import { SwipeHint } from './swipe-hint';
 import { MessageAlerts } from '../../../core/pwa/message-alerts';
 import { Toaster } from '../../../core/notifications/toaster';
 
@@ -88,7 +91,12 @@ interface ShownMessage {
   last: boolean;
   /** A line of the group (2.13), as the one reading says it: "Léa a ajouté Sam"; null for a message. */
   system: string | null;
+  /** The message it answers (2.22), quoted above it: "Vous avez répondu à Léa". */
+  reply: ShownReply | null;
 }
+
+/** The message answered not in the page: older pages read to find it, this many at most. */
+const QUOTE_PAGES_AT_MOST = 6;
 
 /** A few minutes between two messages of the same author: still one run. */
 const RUN_GAP_MS = 5 * 60_000;
@@ -129,7 +137,7 @@ interface Typist extends Typing {
  */
 @Component({
   selector: 'yona-admin-messages',
-  imports: [AdminAvatar, GroupDialog, Icon, LinkCard, MessageComposer, PhotoViewer, RouterLink, Skeleton],
+  imports: [AdminAvatar, GroupDialog, Icon, LinkCard, MessageComposer, PhotoViewer, ReplyQuote, RouterLink, Skeleton, SwipeHint],
   templateUrl: './admin-messages.html',
   styleUrl: './admin-messages.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -226,6 +234,7 @@ export default class AdminMessages {
         first: !day.messages.length || !sameRun(messages[i - 1], message, firstNew),
         last: !sameRun(message, nextSameDay, firstNew),
         system: this.systemOf(message),
+        reply: this.replyOf(message),
       });
     });
     return days;
@@ -234,8 +243,15 @@ export default class AdminMessages {
   protected readonly arrived = signal<ReadonlySet<number>>(new Set());
   /** The admins in the back-office now (emails in small letters). */
   private readonly online = signal<ReadonlySet<string>>(new Set());
-  /** One's own message tapped on a phone: its bin shown. */
+  /** A message tapped on a phone: its buttons shown ("Répondre", and the bin of one's own). */
   protected readonly picked = signal<number | null>(null);
+  /**
+   * A finger sliding a message toward the middle, as on Instagram (the others' to the right, one's own to
+   * the left: dir), past SWIPE_TO_REPLY: it is answered. dx: the distance slid toward the middle.
+   */
+  private swipe: { id: number; row: HTMLElement; dir: 1 | -1; x: number; y: number; dx: number; sideways: boolean | null } | null = null;
+  /** The tap that ends a swipe is no tap. */
+  private swiped = false;
   /** Up to when each other member read the group open. */
   private readonly seenUpTo = signal<GroupSeen[]>([]);
   /** As on Instagram: under which message each other member's face goes (the last they have seen). */
@@ -345,8 +361,7 @@ export default class AdminMessages {
         this.destroyRef.onDestroy(stop);
       }
     });
-    inject(DestroyRef).onDestroy(() => this.typists().forEach((typist) => clearTimeout(typist.timer)));
-  }
+    inject(DestroyRef).onDestroy(() => this.typists().forEach((typist) => clearTimeout(typist.timer)));  }
 
   protected isMine(email: string): boolean {
     return email.toLowerCase() === this.me();
@@ -426,16 +441,136 @@ export default class AdminMessages {
     return !group.everyone && others.length === 1 ? others[0]! : null;
   }
 
+  /** The quote above a reply: "Vous avez répondu à Léa", the start of Léa's message. */
+  private replyOf(message: AdminMessage): ShownMessage['reply'] {
+    const quote = message.replyTo;
+    if (!quote) {
+      return null;
+    }
+    const person = (email: string, name?: string | null) => ({ name: this.nameOf(email, name).split(' ')[0]!, me: this.isMine(email) });
+    return {
+      id: quote.id,
+      label: replyLabel(
+        person(message.authorEmail, message.authorName),
+        person(quote.authorEmail, quote.authorName),
+        quote.authorEmail.toLowerCase() === message.authorEmail.toLowerCase(),
+      ),
+      text: quoteText(quote),
+      photo: quote.photo ? messagePhoto(quote.photo) : null,
+    };
+  }
+
+  /** "Répondre": the message quoted above the field. */
+  protected replyTo(message: AdminMessage): void {
+    this.picked.set(null);
+    const photo = message.photos[0]?.id;
+    const text = parseMessage(message.body)
+      .map((part) => (part.mention ? `@${part.mention.label}` : (part.link ?? part.text ?? '')))
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim();
+    this.composer()?.reply({
+      quote: { id: message.id, authorEmail: message.authorEmail, authorName: message.authorName, text, photos: message.photos.length, photo },
+      name: this.isMine(message.authorEmail) ? null : this.firstName(message.authorEmail),
+    });
+  }
+
+  /** A tap on a quote: the message answered in sight, lit up a moment; read from the older pages if need be. */
+  protected async goTo(id: number): Promise<void> {
+    for (let page = 0; !this.messages().some((message) => message.id === id) && this.hasOlder() && page < QUOTE_PAGES_AT_MOST; page++) {
+      await this.loadOlder();
+    }
+    if (!this.messages().some((message) => message.id === id)) {
+      this.toaster.info('Ce message est trop ancien pour être affiché ici');
+      return;
+    }
+    afterNextRender(
+      () => {
+        const row = this.thread()?.nativeElement.querySelector<HTMLElement>(`li.message[data-id="${id}"]`);
+        row?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        // Lit up a moment: its bubble, or its photos
+        row?.querySelector('.message__body, .photos, yona-link-card')?.animate?.(
+          [{ boxShadow: '0 0 0 3px transparent' }, { boxShadow: '0 0 0 3px var(--color-accent)', offset: 0.3 }, { boxShadow: '0 0 0 3px transparent' }],
+          { duration: 1600, easing: 'ease-out' },
+        );
+      },
+      { injector: this.injector },
+    );
+  }
+
+  // Swiping a message to the right answers it, as on Instagram (a finger only: the mouse has the button)
+
+  protected onPointerDown(event: PointerEvent): void {
+    const row = (event.target as HTMLElement | null)?.closest<HTMLElement>('li.message');
+    if (event.pointerType !== 'touch' || !row) {
+      return;
+    }
+    const dir = row.classList.contains('is-mine') ? -1 : 1;
+    this.swipe = { id: Number(row.dataset['id']), row, dir, x: event.clientX, y: event.clientY, dx: 0, sideways: null };
+  }
+
+  protected onPointerMove(event: PointerEvent): void {
+    const swipe = this.swipe;
+    if (!swipe) {
+      return;
+    }
+    const dx = (event.clientX - swipe.x) * swipe.dir;
+    const dy = event.clientY - swipe.y;
+    if (swipe.sideways === null && Math.hypot(dx, dy) > 10) {
+      // Up or down: the conversation scrolls, the message stays
+      swipe.sideways = dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.5;
+    }
+    if (swipe.sideways) {
+      swipe.dx = dx;
+      this.slide(swipe.row, `${swipeShift(dx) * swipe.dir}px`, 'none');
+      swipe.row.classList.add('is-swiping');
+      swipe.row.classList.toggle('is-swiped', dx >= SWIPE_TO_REPLY);
+    }
+  }
+
+  /** The finger lifted: answered past the threshold; taken by the browser (cancelled): nothing. */
+  protected onPointerEnd(cancelled = false): void {
+    const swipe = this.swipe;
+    this.swipe = null;
+    if (!swipe?.sideways) {
+      return;
+    }
+    this.swiped = true;
+    setTimeout(() => (this.swiped = false), 400);
+    swipe.row.classList.remove('is-swiping', 'is-swiped');
+    this.slide(swipe.row, '', 'translate 200ms ease-out');
+    const message = this.messages().find((other) => other.id === swipe.id);
+    if (!cancelled && swipe.dx >= SWIPE_TO_REPLY && message) {
+      navigator.vibrate?.(10);
+      this.replyTo(message);
+    }
+  }
+
   /**
-   * A tap on one of one's own messages shows its bin (a phone has no hover), a tap elsewhere hides it;
-   * a link, a photo or a button of the message do their own thing.
+   * The bubble and the face of a message moved by the finger, back in place with '' (translate, not
+   * transform: the entrance of a message animates its transform).
+   */
+  private slide(row: HTMLElement, shift: string, transition: string): void {
+    row.querySelectorAll<HTMLElement>(':scope > .message__face, :scope > .message__content').forEach((part) => {
+      part.style.transition = transition;
+      part.style.translate = shift;
+    });
+  }
+
+  /**
+   * A tap on a message shows its buttons (a phone has no hover), a tap elsewhere hides them; a link, a
+   * photo or a button of the message do their own thing.
    */
   protected onThreadClick(event: MouseEvent): void {
     const target = event.target as HTMLElement | null;
+    if (this.swiped) {
+      this.swiped = false;
+      return;
+    }
     if (target?.closest('a, button')) {
       return;
     }
-    const message = target?.closest<HTMLElement>('li.message.is-mine');
+    const message = target?.closest<HTMLElement>('li.message');
     const id = message ? Number(message.dataset['id']) : null;
     this.picked.update((picked) => (id !== null && picked !== id ? id : null));
   }
@@ -677,6 +812,7 @@ export default class AdminMessages {
     });
     if (confirmed && (await attempt(this.api.invoke(deleteAdminMessage, { id: message.id }))).ok) {
       this.messages.update((shown) => shown.filter((other) => other.id !== message.id));
+      this.composer()?.forget(message.id);
     }
   }
 

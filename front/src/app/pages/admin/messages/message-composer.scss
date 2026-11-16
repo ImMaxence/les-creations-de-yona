@@ -77,6 +77,72 @@
   }
 }
 
+// The message answered, above the field, as on Instagram: who, the start of the text, its photo
+.reply-draft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background-color: color-mix(in srgb, var(--color-text) 6%, var(--color-surface));
+}
+
+.reply-draft--enter {
+  animation: link-draft-in var(--duration-base) var(--ease-out);
+}
+
+.reply-draft__icon {
+  flex: none;
+  color: var(--color-accent);
+}
+
+.reply-draft__text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  line-height: 1.3;
+
+  strong {
+    font-size: var(--text-xs);
+  }
+}
+
+.reply-draft__quote {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-draft__photo {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.reply-draft__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+
+  @include m.hover {
+    background-color: color-mix(in srgb, var(--color-text) 10%, transparent);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
 // The preview of the first link, before sending, as on a phone
 .link-draft {
   position: relative;

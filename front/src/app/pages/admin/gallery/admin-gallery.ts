@@ -73,8 +73,9 @@ export default class AdminGallery {
   ];
   protected readonly usageOptions: SelectOption<UsageFilter>[] = [
     { value: 'ALL', label: 'Toutes les images' },
-    { value: 'USED', label: 'Utilisées' },
-    { value: 'UNUSED', label: 'Non utilisées' },
+    // The badges of the tiles, in their colours
+    { value: 'USED', label: 'Utilisées', badge: 'published' },
+    { value: 'UNUSED', label: 'Non utilisées', badge: 'unused' },
   ];
   protected readonly accept = EDITABLE_PHOTO_ACCEPT;
   /** Share of the new photo sent (0 to 1) while it uploads. */

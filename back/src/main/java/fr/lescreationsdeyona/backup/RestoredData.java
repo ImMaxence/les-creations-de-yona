@@ -77,6 +77,8 @@ class RestoredData {
 
 	private static final String MESSAGE_KEY = "select lower(author_email) || '|' || sent_at::text || '|' || md5(body) from admin_message";
 
+	private static final String MESSAGE_ID_BY_KEY = "select id, lower(author_email) || '|' || sent_at::text || '|' || md5(body) as key from admin_message";
+
 	/** Messages are kept 90 days: older ones of a backup are not brought back. */
 	private static final String RECENT_MESSAGES = "sent_at >= now() - interval '90 days'";
 
@@ -506,23 +508,34 @@ class RestoredData {
 	private long mergeMessages(JdbcClient scratch, JdbcClient site) {
 		Map<Long, Long> groups = mergeGroups(scratch, site);
 		Set<UUID> images = new HashSet<>(site.sql("select id from image").query(UUID.class).list());
-		Set<String> existing = strings(site, MESSAGE_KEY);
+		Map<String, Long> existing = idsBy(site, MESSAGE_ID_BY_KEY);
+		// The site's id of each message of the backup, found or added: a reply answers the one it answered there (2.22)
+		Map<Long, Long> ids = new HashMap<>();
 		long added = 0;
 		for (Map<String, Object> row : scratch.sql("select *, lower(author_email) || '|' || sent_at::text || '|' || md5(body) as merge_key "
 				+ "from admin_message where " + RECENT_MESSAGES + " order by id").query().listOfRows()) {
 			Map<String, Object> values = new LinkedHashMap<>(row);
 			Long group = groups.get(((Number) values.get("group_id")).longValue());
-			if (existing.contains((String) values.remove("merge_key")) || group == null) {
+			long backupId = ((Number) values.remove("id")).longValue();
+			Long found = existing.get((String) values.remove("merge_key"));
+			if (found != null) {
+				ids.put(backupId, found);
+			}
+			if (found != null || group == null) {
 				continue;
 			}
-			long backupId = ((Number) values.remove("id")).longValue();
 			values.put("group_id", group);
+			// Older, the message answered is merged first; left out of the backup (or too old), the reply goes without it
+			if (values.get("reply_to_id") instanceof Number replyTo) {
+				values.put("reply_to_id", ids.get(replyTo.longValue()));
+			}
 			if (values.get("link_image_id") instanceof UUID linkImage && !images.contains(linkImage)) {
 				values.put("link_image_id", null);
 				values.put("link_image_width", null);
 				values.put("link_image_height", null);
 			}
 			long id = insertReturningId(site, "admin_message", values);
+			ids.put(backupId, id);
 			for (Map<String, Object> photo : scratch.sql("select * from admin_message_image where message_id = :id order by position")
 				.param("id", backupId)
 				.query()

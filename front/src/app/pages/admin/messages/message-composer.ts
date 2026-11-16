@@ -22,6 +22,7 @@ import { AdminMessage } from '../../../core/api/generated/models/admin-message';
 import { LinkPage } from '../../../core/api/generated/models/link-page';
 import { Mention } from '../../../core/api/generated/models/mention';
 import { MessagePhoto } from '../../../core/api/generated/models/message-photo';
+import { RepliedMessage } from '../../../core/api/generated/models/replied-message';
 import { ImageUploads } from '../../../core/api/image-uploads';
 import { Toaster } from '../../../core/notifications/toaster';
 import { Button } from '../../../shared/ui/button/button';
@@ -29,7 +30,8 @@ import { Floating } from '../../../shared/ui/floating/floating';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { AdminLive } from '../layout/admin-live';
 import { MENTION_KINDS, MessageMention, firstLink, linkHost, mentionLabel, mentionQuery, shownLink, withMentions } from './message-format';
-import { iconLike, imageFiles, linkDraftImage, sendablePhoto } from './message-photos';
+import { iconLike, imageFiles, linkDraftImage, messagePhoto, sendablePhoto } from './message-photos';
+import { quoteText } from './message-reply';
 
 /** Characters typed in a message (its mentions written in, the backend takes 3,000). */
 const MAX_TYPED = 2000;
@@ -56,6 +58,13 @@ interface Attachment {
   failed: boolean;
 }
 
+/** The message being answered, as on Instagram: quoted above the field, its author named. */
+export interface Reply {
+  quote: RepliedMessage;
+  /** "Léa", or null for one's own message. */
+  name: string | null;
+}
+
 let nextKey = 1;
 
 /**
@@ -63,6 +72,7 @@ let nextKey = 1;
  * pasted, or dropped on the conversation), and the preview of the first link written, as on a phone
  * (its "×" sends the message without it). Entrée sends. While typing, the other members are told
  * "est en train d'écrire…" (AdminLive). A text left in a group is found again when coming back to it.
+ * "Répondre" on a message (2.22) quotes it above the field, its "×" or Échap to give up.
  */
 @Component({
   selector: 'yona-message-composer',
@@ -87,8 +97,12 @@ export class MessageComposer {
   protected readonly linkHost = linkHost;
   protected readonly linkDraftImage = linkDraftImage;
   protected readonly iconLike = iconLike;
+  protected readonly messagePhoto = messagePhoto;
+  protected readonly quoteText = quoteText;
 
   protected readonly text = signal('');
+  /** The message answered, quoted above the field; null for a message of its own. */
+  protected readonly replying = signal<Reply | null>(null);
   protected readonly sending = signal(false);
   protected readonly attachments = signal<Attachment[]>([]);
   protected readonly uploading = computed(() => this.attachments().some((attachment) => attachment.progress !== null));
@@ -98,7 +112,7 @@ export class MessageComposer {
   /** The mentions chosen in the field, written in the text when it is sent (see withMentions). */
   private mentions: MessageMention[] = [];
   /** What was being written in each group, found again when coming back to it. */
-  private readonly drafts = new Map<number, { text: string; mentions: MessageMention[] }>();
+  private readonly drafts = new Map<number, { text: string; mentions: MessageMention[]; replying: Reply | null }>();
   private shownGroup: number | null = null;
 
   /** "@…" being typed: where it starts in the field, and what follows it. */
@@ -160,18 +174,43 @@ export class MessageComposer {
     this.field()?.nativeElement.focus();
   }
 
+  /** "Répondre" on a message: quoted above the field, the field ready to type. */
+  reply(reply: Reply): void {
+    this.replying.set(reply);
+    this.focus();
+  }
+
+  /** "×" on the quote, or Échap: a message of its own again. */
+  protected cancelReply(): void {
+    this.replying.set(null);
+    this.focus();
+  }
+
+  /** A message deleted: no longer answered. */
+  forget(id: number): void {
+    if (this.replying()?.quote.id === id) {
+      this.replying.set(null);
+    }
+    this.drafts.forEach((draft) => {
+      if (draft.replying?.quote.id === id) {
+        draft.replying = null;
+      }
+    });
+  }
+
   protected percent(share: number): number {
     return Math.round(share * 100);
   }
 
   private switchTo(group: number): void {
     if (this.shownGroup !== null) {
-      this.drafts.set(this.shownGroup, { text: this.text(), mentions: this.mentions });
+      this.drafts.set(this.shownGroup, { text: this.text(), mentions: this.mentions, replying: this.replying() });
     }
     this.shownGroup = group;
     const draft = this.drafts.get(group);
     this.text.set(draft?.text ?? '');
     this.mentions = draft?.mentions ?? [];
+    this.replying.set(draft?.replying ?? null);
     this.closeSuggestions();
     this.clearAttachments();
     this.dismissed.set(null);
@@ -187,13 +226,20 @@ export class MessageComposer {
     this.sending.set(true);
     const sent = await attempt(
       this.api.invoke(sendAdminMessage, {
-        body: { groupId: this.group(), body, photos, withoutPreview: !!link && link === this.dismissed() },
+        body: {
+          groupId: this.group(),
+          body,
+          photos,
+          withoutPreview: !!link && link === this.dismissed(),
+          replyTo: this.replying()?.quote.id,
+        },
       }),
     );
     this.sending.set(false);
     if (sent.ok) {
       this.text.set('');
       this.mentions = [];
+      this.replying.set(null);
       this.drafts.delete(this.group());
       this.clearAttachments();
       this.dismissed.set(null);
@@ -313,6 +359,11 @@ export class MessageComposer {
         this.closeSuggestions();
         return;
       }
+    }
+    if (event.key === 'Escape' && this.replying()) {
+      event.preventDefault();
+      this.cancelReply();
+      return;
     }
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
       event.preventDefault();

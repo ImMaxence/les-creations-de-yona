@@ -14,9 +14,12 @@ import fr.lescreationsdeyona.message.MessageResponses.MessageForm;
 import fr.lescreationsdeyona.message.MessageResponses.MessagePage;
 import fr.lescreationsdeyona.message.MessageResponses.MessagePhoto;
 import fr.lescreationsdeyona.message.MessageResponses.PhotoForm;
+import fr.lescreationsdeyona.message.MessageResponses.RepliedMessage;
 import fr.lescreationsdeyona.message.MessageResponses.Typist;
 import fr.lescreationsdeyona.monitoring.AdminSeen;
 import fr.lescreationsdeyona.security.AdminDirectory;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -61,6 +64,9 @@ public class AdminMessages {
 	static final int MAX_PHOTOS = 10;
 
 	static final int MAX_PAGE = 100;
+
+	/** The text of a message answered, quoted above the reply: its start only. */
+	static final int QUOTED = 140;
 
 	/** Against a storm of messages (a key held down, a script): 8 in 10 seconds, 200 in an hour, the same text not twice in 30 seconds. */
 	static final int BURST = 8;
@@ -138,8 +144,11 @@ public class AdminMessages {
 		groups.require(groupId, groups.me());
 		int limit = Math.clamp(size, 1, MAX_PAGE);
 		List<Row> found = jdbc.sql("""
-				select * from admin_message where group_id = :group and (cast(:before as bigint) is null or id < :before)
-				order by id desc limit :limit""")
+				select m.*, r.author_email as reply_author_email, r.author_name as reply_author_name, r.body as reply_body, """
+				+ QUOTE_PHOTOS + """
+				from admin_message m left join admin_message r on r.id = m.reply_to_id
+				where m.group_id = :group and (cast(:before as bigint) is null or m.id < :before)
+				order by m.id desc limit :limit""")
 			.param("group", groupId)
 			.param("before", before)
 			.param("limit", limit + 1)
@@ -152,7 +161,8 @@ public class AdminMessages {
 								linkImage == null ? null : row.getObject("link_image_height", Integer.class));
 				return new Row(row.getLong("id"), row.getLong("group_id"), row.getString("author_email"), row.getString("author_name"),
 						row.getString("author_picture"), row.getString("body"), row.getObject("sent_at", OffsetDateTime.class).toInstant(), link,
-						row.getString("event") == null ? null : GroupEvent.valueOf(row.getString("event")), row.getString("event_value"));
+						row.getString("event") == null ? null : GroupEvent.valueOf(row.getString("event")), row.getString("event_value"),
+						quote(row));
 			})
 			.list();
 		List<Row> shown = found.size() > limit ? found.subList(0, limit) : found;
@@ -161,12 +171,43 @@ public class AdminMessages {
 	}
 
 	private record Row(long id, long groupId, String authorEmail, @Nullable String authorName, @Nullable String authorPicture, String body,
-			Instant sentAt, @Nullable LinkPreview link, @Nullable GroupEvent event, @Nullable String eventValue) {
+			Instant sentAt, @Nullable LinkPreview link, @Nullable GroupEvent event, @Nullable String eventValue,
+			@Nullable RepliedMessage replyTo) {
 
 		AdminMessage message(List<MessagePhoto> photos) {
-			return new AdminMessage(id, groupId, authorEmail, authorName, authorPicture, body, sentAt, photos, link, event, eventValue);
+			return new AdminMessage(id, groupId, authorEmail, authorName, authorPicture, body, sentAt, photos, link, event, eventValue, replyTo);
 		}
 
+	}
+
+	/** The photos of the message answered (r), for its quote: how many, and the first one. */
+	private static final String QUOTE_PHOTOS = """
+			(select count(*) from admin_message_image i where i.message_id = r.id) as reply_photos,
+			(select i.image_id from admin_message_image i where i.message_id = r.id order by i.position limit 1) as reply_photo
+			""";
+
+	/** The quote of the message a row answers, read with it (r); null for none, or once it is deleted. */
+	private static @Nullable RepliedMessage quote(ResultSet row) throws SQLException {
+		String author = row.getString("reply_author_email");
+		if (author == null) {
+			return null;
+		}
+		return new RepliedMessage(row.getLong("reply_to_id"), author, row.getString("reply_author_name"),
+				MessageTexts.excerpt(row.getString("reply_body"), QUOTED), row.getInt("reply_photos"),
+				row.getObject("reply_photo", UUID.class));
+	}
+
+	/** The message of the group a reply answers, a message and not a line of the group; refused when it is gone. */
+	private RepliedMessage answered(long groupId, long id) {
+		return jdbc.sql("""
+				select r.id as reply_to_id, r.author_email as reply_author_email, r.author_name as reply_author_name, r.body as reply_body, """
+				+ QUOTE_PHOTOS + """
+				from admin_message r where r.id = :id and r.group_id = :group and r.event is null""")
+			.param("id", id)
+			.param("group", groupId)
+			.query((row, index) -> quote(row))
+			.optional()
+			.orElseThrow(() -> new ApiException(ErrorCode.ADMIN_MESSAGE_REPLY_GONE));
 	}
 
 	private Map<Long, List<MessagePhoto>> photosOf(List<Long> messageIds) {
@@ -210,16 +251,18 @@ public class AdminMessages {
 		String body = clean(form.body(), !photos.isEmpty());
 		checkPace(author.email(), group.id(), body, !photos.isEmpty());
 		checkUnsent(photos);
+		RepliedMessage replyTo = form.replyTo() == null ? null : answered(group.id(), form.replyTo());
 		Instant now = Instant.now();
 		long id = jdbc.sql("""
-				insert into admin_message (group_id, author_email, author_name, author_picture, body, sent_at)
-				values (:group, :email, :name, :picture, :body, :at) returning id""")
+				insert into admin_message (group_id, author_email, author_name, author_picture, body, sent_at, reply_to_id)
+				values (:group, :email, :name, :picture, :body, :at, :reply) returning id""")
 			.param("group", group.id())
 			.param("email", author.email())
 			.param("name", author.name())
 			.param("picture", author.picture())
 			.param("body", body)
 			.param("at", utc(now))
+			.param("reply", replyTo == null ? null : replyTo.id())
 			.query(Long.class)
 			.single();
 		for (int position = 0; position < photos.size(); position++) {
@@ -250,7 +293,7 @@ public class AdminMessages {
 			}
 		}
 		return new AdminMessage(id, group.id(), author.email(), author.name(), author.picture(), body, now,
-				photos.stream().map(photo -> new MessagePhoto(photo.id(), photo.width(), photo.height())).toList(), preview, null, null);
+				photos.stream().map(photo -> new MessagePhoto(photo.id(), photo.width(), photo.height())).toList(), preview, null, null, replyTo);
 	}
 
 	/** Not too many at once, nor in an hour, nor the same text again at once (sent twice by a key held down). */

@@ -108,8 +108,19 @@
           </button>
         </header>
 
-        <!-- A tap on one's own message shows its bin (a phone has no hover) -->
-        <div #thread class="thread" role="log" [attr.aria-label]="'Messages de ' + group.name" (scroll)="onThreadScroll()" (click)="onThreadClick($event)">
+        <!-- A tap on a message shows its buttons (a phone has no hover); a finger sliding it toward the middle answers it -->
+        <div
+          #thread
+          class="thread"
+          role="log"
+          [attr.aria-label]="'Messages de ' + group.name"
+          (scroll)="onThreadScroll()"
+          (click)="onThreadClick($event)"
+          (pointerdown)="onPointerDown($event)"
+          (pointermove)="onPointerMove($event)"
+          (pointerup)="onPointerEnd()"
+          (pointercancel)="onPointerEnd(true)"
+        >
           <!-- Watched: what grows at the bottom (a photo, a preview) keeps the conversation at its end -->
           <div #threadContent class="thread__content">
             @if (hasOlder()) {
@@ -145,6 +156,8 @@
                       [class.is-picked]="picked() === shown.message.id"
                       [attr.data-id]="shown.message.id"
                     >
+                      <!-- Shown as the finger slides the message to the right -->
+                      <yona-swipe-hint />
                       @if (!shown.mine) {
                         <span class="message__face">
                           @if (shown.last) {
@@ -161,6 +174,10 @@
                           <span class="message__author" [class.visually-hidden]="shown.mine">{{ shown.author }}</span>
                           <time class="message__time" [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
                         </p>
+                        @if (shown.reply; as reply) {
+                          <!-- As on Instagram: who answered whom, then the message answered, a tap to go back to it -->
+                          <yona-reply-quote [reply]="reply" [joined]="!!shown.parts.length && !shown.onlyLink" (go)="goTo($event)" />
+                        }
                         @if (shown.parts.length && !shown.onlyLink) {
                           <p class="message__body">
                             @for (part of shown.parts; track $index) {
@@ -195,11 +212,16 @@
                           <yona-link-card [link]="link" />
                         }
                       </div>
-                      @if (shown.mine) {
-                        <button type="button" class="icon-button message__delete" aria-label="Supprimer ce message" data-tooltip="Supprimer" (click)="remove(shown.message)">
-                          <svg yonaIcon="trash" [size]="16"></svg>
+                      <span class="message__actions">
+                        <button type="button" class="icon-button" aria-label="Répondre à ce message" data-tooltip="Répondre" (click)="replyTo(shown.message)">
+                          <svg yonaIcon="reply" [size]="16"></svg>
                         </button>
-                      }
+                        @if (shown.mine) {
+                          <button type="button" class="icon-button" aria-label="Supprimer ce message" data-tooltip="Supprimer" (click)="remove(shown.message)">
+                            <svg yonaIcon="trash" [size]="16"></svg>
+                          </button>
+                        }
+                      </span>
                     </li>
                   }
                   <!-- As on Instagram: "Vu" under one's own last message, elsewhere the faces of the ones who read up to there -->

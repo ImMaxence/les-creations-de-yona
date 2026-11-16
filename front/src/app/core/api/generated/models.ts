@@ -170,6 +170,7 @@ export type { RecipeNutrition } from './models/recipe-nutrition';
 export type { RecipeQuestion } from './models/recipe-question';
 export type { Recipes } from './models/recipes';
 export type { RecipeSuggestion } from './models/recipe-suggestion';
+export type { RepliedMessage } from './models/replied-message';
 export type { Report } from './models/report';
 export type { RestoreApply } from './models/restore-apply';
 export type { RestoreStart } from './models/restore-start';

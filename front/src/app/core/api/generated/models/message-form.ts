@@ -20,6 +20,11 @@ export interface MessageForm {
   photos?: Array<PhotoForm>;
 
   /**
+   * The id of the message of the group it answers (2.22)
+   */
+  replyTo?: number;
+
+  /**
    * The preview of its first link left out, taken off by the writer
    */
   withoutPreview: boolean;
