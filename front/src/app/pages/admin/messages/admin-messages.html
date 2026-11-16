@@ -108,14 +108,14 @@
           </button>
         </header>
 
-        <!-- A tap on a message shows its buttons (a phone has no hover); a finger sliding it toward the middle answers it -->
+        <!-- On a phone, as on Instagram: a finger sliding a message toward the middle answers it, a long press opens its menu -->
         <div
           #thread
           class="thread"
           role="log"
           [attr.aria-label]="'Messages de ' + group.name"
           (scroll)="onThreadScroll()"
-          (click)="onThreadClick($event)"
+          (contextmenu)="onContextMenu($event)"
           (pointerdown)="onPointerDown($event)"
           (pointermove)="onPointerMove($event)"
           (pointerup)="onPointerEnd()"
@@ -153,7 +153,6 @@
                       [class.is-first]="shown.first"
                       [class.is-last]="shown.last"
                       [class.is-arrived]="arrived().has(shown.message.id)"
-                      [class.is-picked]="picked() === shown.message.id"
                       [attr.data-id]="shown.message.id"
                     >
                       <!-- Shown as the finger slides the message to the right -->
@@ -264,3 +263,5 @@
 />
 
 <yona-photo-viewer [photos]="viewed()" [source]="bigPhoto" />
+
+<yona-message-menu />

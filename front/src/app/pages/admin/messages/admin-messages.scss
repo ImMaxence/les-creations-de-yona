@@ -332,6 +332,12 @@ yona-message-composer {
   padding: 5px;
   touch-action: pan-y;
 
+  // The long press opens the message's menu, not the phone's text selection
+  @media (hover: none) {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
   &:not(.is-arrived) {
     content-visibility: auto;
     contain-intrinsic-size: auto 3rem;
@@ -415,8 +421,8 @@ yona-message-composer {
   }
 }
 
-// "Répondre", and the bin of one's own message, out of sight until the message is hovered (or tapped, on a
-// phone) or reached with the keyboard
+// "Répondre", and the bin of one's own message, out of sight until the message is hovered or reached with
+// the keyboard; on a phone, in the menu of a long press (message-menu.ts)
 .message__actions {
   display: flex;
   flex: none;
@@ -426,8 +432,7 @@ yona-message-composer {
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-out);
 
-  .message:focus-within &,
-  .is-picked & {
+  .message:focus-within & {
     opacity: 1;
   }
 
@@ -439,10 +444,6 @@ yona-message-composer {
 
   @media (hover: none) {
     visibility: hidden;
-
-    .is-picked & {
-      visibility: visible;
-    }
   }
 }
 

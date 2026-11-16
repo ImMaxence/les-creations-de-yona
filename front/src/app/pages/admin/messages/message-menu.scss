@@ -1,0 +1,108 @@
+@use 'mixins' as m;
+
+// The whole screen, see-through: the conversation dimmed and blurred behind (::backdrop)
+.menu {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+  outline: none;
+
+  &::backdrop {
+    background-color: rgb(10 6 4 / 35%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: menu-fade var(--duration-base) var(--ease-out);
+  }
+}
+
+@keyframes menu-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+// The message where it was, its menu under it, on its side (the others' on the left, one's own on the right)
+.stage {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+
+  &.is-mine {
+    align-items: flex-end;
+  }
+}
+
+// The copy of the message, a little lifted
+.copy {
+  align-self: stretch;
+  overflow: hidden;
+  animation: menu-lift 260ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+@keyframes menu-lift {
+  from {
+    transform: scale(0.97);
+  }
+}
+
+// Under the bubble: past the face of the others (2rem, its gap and the row's padding)
+.actions {
+  min-width: 13rem;
+  margin-block: 0;
+  margin-inline: calc(2rem + var(--space-2) + 5px) 0;
+  padding: 8px 0;
+  list-style: none;
+  border-radius: var(--radius-md);
+  // The page's colour, lighter than the panel's bubbles: the menu stands out from the message
+  background-color: var(--color-bg);
+  box-shadow: 0 12px 32px rgb(10 6 4 / 25%);
+  transform-origin: top left;
+  animation: menu-in 220ms var(--ease-out) both;
+
+  .is-mine & {
+    margin-inline: 0 5px;
+    transform-origin: top right;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+// As on Instagram: the word on the left, its icon on the right
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  height: 48px;
+  padding-inline: var(--space-4);
+  font-weight: 600;
+  text-align: left;
+
+  &:active {
+    background-color: color-mix(in srgb, var(--color-text) 8%, transparent);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+
+  &.is-danger {
+    color: var(--color-danger);
+  }
+}

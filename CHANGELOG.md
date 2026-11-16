@@ -2,13 +2,21 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.22.1 - 2026-11-16
+
+Front et backend 2.22.1. Pas de migration de la base
+
+### Ajouté
+
+- **Appui long sur un message (téléphone)** : comme sur Instagram, le message ressort sur la conversation assombrie et floutée, avec « Répondre », « Copier » et, pour les siens, « Supprimer » ; il remplace l'appui qui montrait les boutons
+
 ## 2.22.0 - 2026-11-16
 
 Front et backend 2.22.0. Migration de la base : V36
 
 ### Ajouté
 
-- **Répondre à un message** : comme sur Instagram, la flèche « Répondre » au survol d'un message (ou après un appui sur téléphone), ou le message glissé du doigt vers le milieu (vers la droite pour ceux des autres, vers la gauche pour les siens) ; le message cité s'affiche au-dessus du champ, avec une croix ou Échap pour y renoncer
+- **Répondre à un message** : comme sur Instagram, la flèche « Répondre » au survol d'un message, ou sur téléphone le message glissé du doigt vers le milieu (vers la droite pour ceux des autres, vers la gauche pour les siens) ; le message cité s'affiche au-dessus du champ, avec une croix ou Échap pour y renoncer
 - **Message cité** : au-dessus d'une réponse, « Vous avez répondu à Léa » ou « Léa vous a répondu » et le début du message d'origine (ou sa photo) ; un appui dessus remonte jusqu'à lui et le fait briller
 
 ### Modifié

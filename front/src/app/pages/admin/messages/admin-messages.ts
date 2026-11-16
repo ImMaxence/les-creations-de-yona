@@ -42,7 +42,7 @@ import { AdminWatch } from '../layout/admin-watch';
 import { GroupDialog } from './group-dialog';
 import { LinkCard } from './link-card';
 import { MessageComposer } from './message-composer';
-import { MENTION_KINDS, MessagePart, parseMessage, shownLink } from './message-format';
+import { MENTION_KINDS, MessagePart, parseMessage, plainMessage, shownLink } from './message-format';
 import { imageFiles, messagePhoto } from './message-photos';
 import { readUpTo, seenBy, seenLabel, seenPlaces } from './message-seen';
 import { systemLine } from './message-system';
@@ -51,6 +51,7 @@ import { MessageSound } from './message-sound';
 import { SWIPE_TO_REPLY, quoteText, replyLabel, swipeShift } from './message-reply';
 import { ReplyQuote, ShownReply } from './reply-quote';
 import { SwipeHint } from './swipe-hint';
+import { MessageAction, MessageMenu } from './message-menu';
 import { MessageAlerts } from '../../../core/pwa/message-alerts';
 import { Toaster } from '../../../core/notifications/toaster';
 
@@ -98,6 +99,9 @@ interface ShownMessage {
 /** The message answered not in the page: older pages read to find it, this many at most. */
 const QUOTE_PAGES_AT_MOST = 6;
 
+/** A finger held this long on a message opens its menu, as on Instagram. */
+const LONG_PRESS_MS = 450;
+
 /** A few minutes between two messages of the same author: still one run. */
 const RUN_GAP_MS = 5 * 60_000;
 
@@ -137,7 +141,7 @@ interface Typist extends Typing {
  */
 @Component({
   selector: 'yona-admin-messages',
-  imports: [AdminAvatar, GroupDialog, Icon, LinkCard, MessageComposer, PhotoViewer, ReplyQuote, RouterLink, Skeleton, SwipeHint],
+  imports: [AdminAvatar, GroupDialog, Icon, LinkCard, MessageComposer, PhotoViewer, MessageMenu, ReplyQuote, RouterLink, Skeleton, SwipeHint],
   templateUrl: './admin-messages.html',
   styleUrl: './admin-messages.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -243,15 +247,16 @@ export default class AdminMessages {
   protected readonly arrived = signal<ReadonlySet<number>>(new Set());
   /** The admins in the back-office now (emails in small letters). */
   private readonly online = signal<ReadonlySet<string>>(new Set());
-  /** A message tapped on a phone: its buttons shown ("Répondre", and the bin of one's own). */
-  protected readonly picked = signal<number | null>(null);
   /**
    * A finger sliding a message toward the middle, as on Instagram (the others' to the right, one's own to
    * the left: dir), past SWIPE_TO_REPLY: it is answered. dx: the distance slid toward the middle.
    */
   private swipe: { id: number; row: HTMLElement; dir: 1 | -1; x: number; y: number; dx: number; sideways: boolean | null } | null = null;
-  /** The tap that ends a swipe is no tap. */
-  private swiped = false;
+  /** The tap that ends a swipe or a long press is no tap (a photo would open). */
+  private swallowClick = false;
+  /** A finger held on a message: its menu opens after LONG_PRESS_MS, unless it moves. */
+  private pressTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly menu = viewChild(MessageMenu);
   /** Up to when each other member read the group open. */
   private readonly seenUpTo = signal<GroupSeen[]>([]);
   /** As on Instagram: under which message each other member's face goes (the last they have seen). */
@@ -361,7 +366,17 @@ export default class AdminMessages {
         this.destroyRef.onDestroy(stop);
       }
     });
-    inject(DestroyRef).onDestroy(() => this.typists().forEach((typist) => clearTimeout(typist.timer)));  }
+    inject(DestroyRef).onDestroy(() => this.typists().forEach((typist) => clearTimeout(typist.timer)));
+    // The end of a swipe or a long press, taken before the photo or the link under the finger
+    effect((onCleanup) => {
+      const box = this.thread()?.nativeElement;
+      if (box) {
+        const swallow = (event: MouseEvent) => this.onThreadClickCapture(event);
+        box.addEventListener('click', swallow, true);
+        onCleanup(() => box.removeEventListener('click', swallow, true));
+      }
+    });
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.pressTimer));  }
 
   protected isMine(email: string): boolean {
     return email.toLowerCase() === this.me();
@@ -462,13 +477,8 @@ export default class AdminMessages {
 
   /** "Répondre": the message quoted above the field. */
   protected replyTo(message: AdminMessage): void {
-    this.picked.set(null);
     const photo = message.photos[0]?.id;
-    const text = parseMessage(message.body)
-      .map((part) => (part.mention ? `@${part.mention.label}` : (part.link ?? part.text ?? '')))
-      .join('')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const text = plainMessage(message.body).replace(/\s+/g, ' ').trim();
     this.composer()?.reply({
       quote: { id: message.id, authorEmail: message.authorEmail, authorName: message.authorName, text, photos: message.photos.length, photo },
       name: this.isMine(message.authorEmail) ? null : this.firstName(message.authorEmail),
@@ -506,7 +516,10 @@ export default class AdminMessages {
       return;
     }
     const dir = row.classList.contains('is-mine') ? -1 : 1;
-    this.swipe = { id: Number(row.dataset['id']), row, dir, x: event.clientX, y: event.clientY, dx: 0, sideways: null };
+    const id = Number(row.dataset['id']);
+    this.swipe = { id, row, dir, x: event.clientX, y: event.clientY, dx: 0, sideways: null };
+    clearTimeout(this.pressTimer);
+    this.pressTimer = setTimeout(() => this.openMenu(row, id), LONG_PRESS_MS);
   }
 
   protected onPointerMove(event: PointerEvent): void {
@@ -516,6 +529,10 @@ export default class AdminMessages {
     }
     const dx = (event.clientX - swipe.x) * swipe.dir;
     const dy = event.clientY - swipe.y;
+    // The finger moves: a scroll or a swipe, not a long press
+    if (Math.hypot(dx, dy) > 10) {
+      clearTimeout(this.pressTimer);
+    }
     if (swipe.sideways === null && Math.hypot(dx, dy) > 10) {
       // Up or down: the conversation scrolls, the message stays
       swipe.sideways = dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.5;
@@ -530,13 +547,13 @@ export default class AdminMessages {
 
   /** The finger lifted: answered past the threshold; taken by the browser (cancelled): nothing. */
   protected onPointerEnd(cancelled = false): void {
+    clearTimeout(this.pressTimer);
     const swipe = this.swipe;
     this.swipe = null;
     if (!swipe?.sideways) {
       return;
     }
-    this.swiped = true;
-    setTimeout(() => (this.swiped = false), 400);
+    this.swallowNextClick();
     swipe.row.classList.remove('is-swiping', 'is-swiped');
     this.slide(swipe.row, '', 'translate 200ms ease-out');
     const message = this.messages().find((other) => other.id === swipe.id);
@@ -557,22 +574,56 @@ export default class AdminMessages {
     });
   }
 
+  private swallowNextClick(): void {
+    this.swallowClick = true;
+    setTimeout(() => (this.swallowClick = false), 400);
+  }
+
+  /** Taken before the photo, link or button under the finger: the end of a swipe or a long press does nothing. */
+  private onThreadClickCapture(event: MouseEvent): void {
+    if (this.swallowClick) {
+      this.swallowClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
+  /** The menu of Android's long press (a link, a photo): the message's own menu instead. */
+  protected onContextMenu(event: MouseEvent): void {
+    if ((event as PointerEvent).pointerType === 'touch') {
+      event.preventDefault();
+    }
+  }
+
   /**
-   * A tap on a message shows its buttons (a phone has no hover), a tap elsewhere hides them; a link, a
-   * photo or a button of the message do their own thing.
+   * A long press on a message, as on Instagram: it is lifted over the conversation, dimmed, with
+   * "Répondre", "Copier" (its text) and, for one's own, "Supprimer".
    */
-  protected onThreadClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement | null;
-    if (this.swiped) {
-      this.swiped = false;
+  private openMenu(row: HTMLElement, id: number): void {
+    const message = this.messages().find((other) => other.id === id);
+    if (!message || this.swipe?.sideways) {
       return;
     }
-    if (target?.closest('a, button')) {
-      return;
+    this.swipe = null;
+    this.swallowNextClick();
+    navigator.vibrate?.(15);
+    const actions: MessageAction[] = [{ label: 'Répondre', icon: 'reply', run: () => this.replyTo(message) }];
+    if (message.body.trim()) {
+      actions.push({ label: 'Copier', icon: 'copy', run: () => void this.copyText(message) });
     }
-    const message = target?.closest<HTMLElement>('li.message');
-    const id = message ? Number(message.dataset['id']) : null;
-    this.picked.update((picked) => (id !== null && picked !== id ? id : null));
+    if (this.isMine(message.authorEmail)) {
+      actions.push({ label: 'Supprimer', icon: 'trash', danger: true, run: () => void this.remove(message) });
+    }
+    this.menu()?.open(row, actions);
+  }
+
+  private async copyText(message: AdminMessage): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(plainMessage(message.body));
+      this.toaster.success('Message copié');
+    } catch {
+      this.toaster.error('Le message n’a pas pu être copié');
+    }
   }
 
   /** Their Google name as known, or their email. */
