@@ -14,6 +14,28 @@ export interface ServerPoint {
    */
   backendMemoryBytes?: number;
   heapUsedBytes: number;
+
+  /**
+   * Average bytes per second received by the network card of the server
+   */
+  hostReceivedPerSecond?: number;
+  hostSentPerSecond?: number;
   machineCpu?: number;
   machineUsedBytes: number;
+
+  /**
+   * Average share of the processors of the whole server, 0 to 1 (2.21)
+   */
+  serverCpu?: number;
+
+  /**
+   * Average bytes per second the site (its gateway) received from the visitors
+   */
+  siteReceivedPerSecond?: number;
+  siteSentPerSecond?: number;
+
+  /**
+   * Average estimated draw of the server, in watts
+   */
+  watts?: number;
 }

@@ -101,6 +101,17 @@ app:
     api-key: ${ANTHROPIC_API_KEY:}
     model: ${CLAUDE_MODEL:claude-haiku-5-5}
     timeout: 90s
+  machine:
+    # Estimated draw at the wall of the server, a mini PC (BMAX, AMD Ryzen 7 5700U): idle, then every core
+    # busy, in a straight line between both. It has no electricity meter the backend could read.
+    idle-watts: 7
+    full-watts: 35
+    # Price of a kWh (France, regulated "Base" price), for the cost shown with the energy.
+    euros-per-kwh: 0.20
+    # The server's own network counters: /proc/1/net mounted read-only by Compose (absent: no server traffic).
+    host-network: /host/net
+    # Bytes the site sent and received, counted by the gateway (Caddy). Unreachable: none.
+    gateway-metrics: http://gateway:2020/metrics
 
 springdoc:
   # Without it, responses are documented as */* and the generated front client reads them as Blob.

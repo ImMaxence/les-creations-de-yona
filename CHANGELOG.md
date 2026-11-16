@@ -2,6 +2,23 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.21.0 - 2026-11-16
+
+Front et backend 2.21.0. Migration de la base : V35
+
+### Ajouté
+
+- **Matériel du serveur** : dans Statistiques, rubrique Serveur, la machine (marque et modèle), le processeur (cœurs et threads), la mémoire vive, les disques (modèle, NVMe, SSD ou disque dur, taille), la version de Linux et depuis quand le serveur est allumé
+- **Consommation du serveur** : en watts, en ce moment, en direct et sur 7, 30 ou 90 jours (énergie en kWh, coût, puissance moyenne, courbe) ; c'est une **estimation** à partir de la charge du processeur, signalée par un avertissement : le mini PC n'a pas de compteur électrique que le site pourrait lire
+- **Réseau** : ce que le serveur entier envoie et reçoit (sa carte réseau, tous les sites hébergés compris), et ce que le site lui-même envoie aux visiteurs et en reçoit, mesurés, en ce moment, en direct et sur 7, 30 ou 90 jours
+- **Dernière visite des admins** : dans « Utilisateurs », la dernière fois que chaque admin est passé dans le back-office, à 5 minutes près, à côté de sa dernière connexion (une session dure 7 jours : la connexion peut dater de plusieurs semaines)
+
+### Technique
+
+- **Compteurs du serveur** : temps du processeur (`/proc/stat`), octets de la carte réseau (`/proc/1/net` du serveur monté en lecture seule sur `/host/net` dans les deux fichiers Compose) et de la passerelle (métriques de Caddy sur le port interne 2020, jamais publié), enregistrés toutes les 10 minutes avec les autres mesures ; un compteur reparti de zéro (redémarrage) est pris en compte
+- **Estimation** : 7 W au repos, 35 W à pleine charge, 0,20 € le kWh, réglables dans `application.yaml` (`app.machine`)
+- **API** : `machine` dans `/api/admin/stats`, `sinceLast` dans `/api/admin/stats/server`, `/api/admin/stats/server/history` rend `{ points, totals }`, `lastSeenAt` dans `/api/admin/accounts`
+
 ## 2.20.1 - 2026-11-16
 
 Front et backend 2.20.1. Pas de migration de la base

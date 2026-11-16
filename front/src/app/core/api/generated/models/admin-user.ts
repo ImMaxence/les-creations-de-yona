@@ -7,6 +7,11 @@ export interface AdminUser {
   createdBy?: string;
   email: string;
   id: number;
+
+  /**
+   * Last request in the back-office, to 5 minutes (2.21); a sign-in counts
+   */
+  lastSeenAt?: string;
   lastSignInAt?: string;
   lastSignInMethod?: 'GOOGLE' | 'MICROSOFT' | 'PASSKEY';
   link?: PendingAccessLink;

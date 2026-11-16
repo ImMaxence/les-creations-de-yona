@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Optional;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,7 +20,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 /**
  * At each request of a signed-in admin, their account as it is now: disabled or deleted, the session
  * ends at once (on every device); a new name or photo, the session carries it. Any other session (one
- * of before 2.19, a sign-in through Google that never finished) is not an admin's: it is dropped.
+ * of before 2.19, a sign-in through Google that never finished) is not an admin's: it is dropped. And
+ * the admin was seen now ("Utilisateurs", 2.21), written every 5 minutes at most.
  */
 class AdminAccountFilter extends OncePerRequestFilter {
 
@@ -41,11 +43,17 @@ class AdminAccountFilter extends OncePerRequestFilter {
 			if (account.isEmpty()) {
 				end(request);
 			}
-			else if (!AdminPrincipal.of(account.get()).equals(admin.getPrincipal())) {
-				SecurityContext context = SecurityContextHolder.createEmptyContext();
-				context.setAuthentication(AdminAuthentication.of(account.get()));
-				SecurityContextHolder.setContext(context);
-				contextRepository.saveContext(context, request, response);
+			else {
+				if (!AdminPrincipal.of(account.get()).equals(admin.getPrincipal())) {
+					SecurityContext context = SecurityContextHolder.createEmptyContext();
+					context.setAuthentication(AdminAuthentication.of(account.get()));
+					SecurityContextHolder.setContext(context);
+					contextRepository.saveContext(context, request, response);
+				}
+				Instant seen = account.get().lastSeenAt();
+				if (seen == null || seen.isBefore(Instant.now().minus(AdminAccounts.SEEN_EVERY))) {
+					accounts.seen(account.get().id());
+				}
 			}
 		}
 		else if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {

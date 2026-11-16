@@ -62,7 +62,7 @@ public final class AccountTypes {
 	 */
 	public record Account(long id, String email, @Nullable String name, AccountStatus status, int photoVersion,
 			@Nullable String providerPicture, Instant createdAt, @Nullable String createdBy, @Nullable Instant lastSignInAt,
-			@Nullable SignInMethod lastSignInMethod) {
+			@Nullable SignInMethod lastSignInMethod, @Nullable Instant lastSeenAt) {
 
 		/** Their own photo, or the one of their Google account, or none (their initial is shown). */
 		public @Nullable String picture() {

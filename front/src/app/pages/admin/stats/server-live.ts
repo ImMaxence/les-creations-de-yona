@@ -6,6 +6,7 @@ import {
   PLATFORM_ID,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
@@ -13,6 +14,8 @@ import { Api } from '../../../core/api/generated/api';
 import { getServerUsage } from '../../../core/api/generated/fn/admin-stats/get-server-usage';
 import { Button } from '../../../shared/ui/button/button';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { ChartUnit, formatValue, niceMax } from './server-units';
+import { HistoryKind } from './server-history';
 
 /** Measures kept: the curves cover the last 60 of them. */
 const MAX_SAMPLES = 60;
@@ -22,6 +25,7 @@ const WIDTH = 600;
 const HEIGHT = 140;
 
 const MEGABYTE = 1024 * 1024;
+const KILOBYTE = 1024;
 
 interface Sample {
   at: number;
@@ -31,6 +35,12 @@ interface Sample {
   /** Mo. */
   backendMemory: number | null;
   javaMemory: number;
+  /** The whole server since the measure before (2.21): estimated watts, Ko/s of its card and of the site. */
+  watts: number | null;
+  hostSent: number | null;
+  hostReceived: number | null;
+  siteSent: number | null;
+  siteReceived: number | null;
 }
 
 interface Series {
@@ -46,7 +56,7 @@ interface Series {
 
 interface Chart {
   title: string;
-  unit: string;
+  unit: ChartUnit;
   max: number;
   series: Series[];
   summary: string;
@@ -56,7 +66,8 @@ interface Chart {
  * Live curves of the processor and the memory of the backend: a measure every 1, 2 or 5 seconds
  * (GET /api/admin/stats/server, light), the last 60 drawn, while "Suivre en direct" is on and the
  * page is shown. Two charts, one unit each: the backend in the theme's accent color, solid; the
- * machine, or the Java data, in gray, dashed. Hovering shows the values of a moment.
+ * machine, or the Java data, in gray, dashed. Hovering shows the values of a moment. "energy" (2.21):
+ * the estimated draw of the whole server, the traffic of its network card and of the site.
  */
 @Component({
   selector: 'yona-server-live',
@@ -140,6 +151,8 @@ export class ServerLive {
   private readonly document = inject(DOCUMENT);
   private readonly browser = isPlatformBrowser(inject(PLATFORM_ID));
 
+  readonly kind = input<HistoryKind>('machine');
+
   protected readonly width = WIDTH;
   protected readonly height = HEIGHT;
   protected readonly intervals = [1, 2, 5];
@@ -156,29 +169,40 @@ export class ServerLive {
 
   protected readonly charts = computed<Chart[]>(() => {
     const samples = this.samples();
-    const cpuMax = niceMax(Math.max(...samples.flatMap((sample) => [sample.backendCpu ?? 0, sample.machineCpu ?? 0])), [10, 25, 50, 100]);
-    const memoryMax = niceMax(
-      Math.max(...samples.map((sample) => Math.max(sample.backendMemory ?? 0, sample.javaMemory))),
-      [100, 200, 300, 400, 500, 600, 800, 1000, 1500, 2000],
-    );
-    const series = (label: string, tone: Series['tone'], values: (number | null)[], max: number, unit: string): Series => ({
-      label,
-      tone,
-      values,
-      path: path(values, max),
-      last: this.format(values.at(-1) ?? null, unit),
-    });
-    const cpu = [
-      series('Backend', 'mark', samples.map((sample) => sample.backendCpu), cpuMax, '%'),
-      series('Machine', 'rest', samples.map((sample) => sample.machineCpu), cpuMax, '%'),
-    ];
-    const memory = [
-      series('Backend', 'mark', samples.map((sample) => sample.backendMemory), memoryMax, 'Mo'),
-      series('dont données Java', 'rest', samples.map((sample) => sample.javaMemory), memoryMax, 'Mo'),
-    ];
+    const chart = (title: string, unit: ChartUnit, lines: [string, Series['tone'], (sample: Sample) => number | null][]): Chart => {
+      const values = lines.map(([, , value]) => samples.map(value));
+      const max = niceMax(values.flat(), unit);
+      const series = lines.map(([label, tone], index): Series => ({
+        label,
+        tone,
+        values: values[index]!,
+        path: path(values[index]!, max),
+        last: this.format(values[index]!.at(-1) ?? null, unit),
+      }));
+      return { title, unit, max, series, summary: summary(title, series) };
+    };
+    if (this.kind() === 'energy') {
+      return [
+        chart('Consommation estimée', 'W', [['Serveur', 'mark', (sample) => sample.watts]]),
+        chart('Réseau du serveur', 'Ko/s', [
+          ['Envoyé', 'mark', (sample) => sample.hostSent],
+          ['Reçu', 'rest', (sample) => sample.hostReceived],
+        ]),
+        chart('Trafic du site', 'Ko/s', [
+          ['Envoyé aux visiteurs', 'mark', (sample) => sample.siteSent],
+          ['Reçu', 'rest', (sample) => sample.siteReceived],
+        ]),
+      ];
+    }
     return [
-      { title: 'Processeur', unit: '%', max: cpuMax, series: cpu, summary: summary('Processeur', cpu) },
-      { title: 'Mémoire', unit: 'Mo', max: memoryMax, series: memory, summary: summary('Mémoire', memory) },
+      chart('Processeur', '%', [
+        ['Backend', 'mark', (sample) => sample.backendCpu],
+        ['Machine', 'rest', (sample) => sample.machineCpu],
+      ]),
+      chart('Mémoire', 'Mo', [
+        ['Backend', 'mark', (sample) => sample.backendMemory],
+        ['dont données Java', 'rest', (sample) => sample.javaMemory],
+      ]),
     ];
   });
 
@@ -232,11 +256,8 @@ export class ServerLive {
     return seconds === 0 ? 'maintenant' : `il y a ${seconds} s`;
   }
 
-  protected format(value: number | null, unit: string): string {
-    if (value === null) {
-      return '—';
-    }
-    return unit === '%' ? `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : `${Math.round(value)} Mo`;
+  protected format(value: number | null, unit: ChartUnit): string {
+    return formatValue(value, unit);
   }
 
   private stop(): void {
@@ -268,6 +289,11 @@ export class ServerLive {
         machineCpu: usage.machineCpuLoad == null ? null : usage.machineCpuLoad * 100,
         backendMemory: usage.backendMemoryBytes == null ? null : usage.backendMemoryBytes / MEGABYTE,
         javaMemory: usage.heapUsedBytes / MEGABYTE,
+        watts: usage.sinceLast.watts ?? null,
+        hostSent: kilobytes(usage.sinceLast.hostSent),
+        hostReceived: kilobytes(usage.sinceLast.hostReceived),
+        siteSent: kilobytes(usage.sinceLast.siteSent),
+        siteReceived: kilobytes(usage.sinceLast.siteReceived),
       };
       this.samples.update((samples) => [...samples, sample].slice(-MAX_SAMPLES));
     } catch {
@@ -279,9 +305,9 @@ export class ServerLive {
   }
 }
 
-/** The first step at or above the value, with some room above the curve. */
-function niceMax(value: number, steps: number[]): number {
-  return steps.find((step) => step >= value * 1.15) ?? steps[steps.length - 1];
+/** Bytes per second → Ko/s, or null. */
+function kilobytes(bytesPerSecond: number | undefined): number | null {
+  return bytesPerSecond == null ? null : bytesPerSecond / KILOBYTE;
 }
 
 /** An SVG path through the values, right-aligned; a gap where a value is unknown. */

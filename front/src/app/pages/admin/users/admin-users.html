@@ -32,7 +32,7 @@
               <span class="user__email">{{ user.email }}</span>
             }
             <span class="admin-row__meta">
-              <span>{{ lastSignIn(user) }}</span>
+              <span>{{ lastSeen(user) ? lastSeen(user) + ' · ' : '' }}{{ lastSignIn(user) }}</span>
             </span>
             <span class="admin-row__meta user__ways">
               @for (provider of user.providers; track provider) {

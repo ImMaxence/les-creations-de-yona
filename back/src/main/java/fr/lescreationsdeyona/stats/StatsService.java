@@ -50,10 +50,15 @@ public class StatsService {
 
 	private final RecipeService recipeService;
 
+	private final MachineCounters machineCounters;
+
+	private final MachineProperties machineProperties;
+
 	public SiteStats compute() {
 		return new SiteStats(recipes(), jdbc.sql("select count(*) from category").query(Long.class).single(),
 				ingredients(), images(), recipesPerCategory(), topIngredients(), mostViewedRecipes(), recipesPerMonth(), storage(),
-				ServerUsage.now(), incompleteRecipes(), datedRecipes("DRAFT", "30 days"), datedRecipes("PUBLISHED", "12 months"),
+				ServerUsage.now(machineCounters.measure().rates()), MachineInfo.now(machineProperties), incompleteRecipes(),
+				datedRecipes("DRAFT", "30 days"), datedRecipes("PUBLISHED", "12 months"),
 				searchMissService.top(SEARCH_MISSES), aiVisitService.summary(), count("push_subscription"), count("trash_item"),
 				count("glossary_term"), Instant.now());
 	}

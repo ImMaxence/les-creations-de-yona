@@ -101,6 +101,9 @@ services:
       API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
     ports:
       - 127.0.0.1:${BACK_PORT:-8080}:8080
+    volumes:
+      # The network counters of the machine itself, read-only, for the statistics (a container only sees its own)
+      - /proc/1/net:/host/net:ro
     depends_on:
       postgres:
         condition: service_healthy

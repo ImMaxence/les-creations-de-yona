@@ -19,11 +19,14 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { RememberedFolds } from '../remembered-folds';
 import { ServerHistoryChart } from './server-history';
 import { ServerLive } from './server-live';
+import { formatRate, formatWatts } from './server-units';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 
 const MONTH = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' });
 const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const PERCENT = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1 });
+
+const DISK_KINDS = { NVME: 'SSD NVMe', SSD: 'SSD', HDD: 'Disque dur' } as const;
 
 /** The property of the site in Google Analytics: visits, most viewed pages, where visitors come from. */
 const ANALYTICS_URL = 'https://analytics.google.com/';
@@ -118,10 +121,56 @@ export default class AdminStats {
     }
     return check.errorsLast24Hours ? this.plural(check.errorsLast24Hours, 'erreur en 24 h', 'erreurs en 24 h') : 'Tout va bien';
   });
-  /** In the title of "Serveur": the memory of the backend now. */
+  /** In the title of "Serveur": the memory of the backend now, and the estimated draw of the server. */
   protected readonly serverDigest = computed(() => {
     const usage = this.stats.value()?.server;
-    return usage ? `Backend ${formatBytes(usage.backendMemoryBytes ?? usage.heapUsedBytes)}` : '';
+    if (!usage) {
+      return '';
+    }
+    const watts = usage.sinceLast.watts;
+    return `Backend ${formatBytes(usage.backendMemoryBytes ?? usage.heapUsedBytes)}${watts == null ? '' : ` · ≈ ${formatWatts(watts)}`}`;
+  });
+
+  /** The server's hardware, written as it reads (2.21). */
+  protected readonly hardware = computed(() => {
+    const machine = this.stats.value()?.machine;
+    if (!machine) {
+      return null;
+    }
+    const system = [machine.kernel ? `Linux ${machine.kernel}` : null, machine.serverUptimeSeconds != null ? `allumé depuis ${duration(machine.serverUptimeSeconds)}` : null];
+    return {
+      name: [machine.maker, machine.model].filter(Boolean).join(' ') || 'Inconnue',
+      system: system.filter(Boolean).join(' · ') || 'Système inconnu',
+      processor: machine.processor ?? 'Inconnu',
+      threads: machine.cores != null ? `${this.plural(machine.cores, 'cœur', 'cœurs')}, ${machine.threads} threads` : `${machine.threads} threads`,
+      memory: machine.memoryBytes ? formatBytes(machine.memoryBytes) : 'Inconnue',
+      disks: machine.disks.map((disk) => ({
+        name: disk.name,
+        model: disk.model ?? DISK_KINDS[disk.kind],
+        detail: `${DISK_KINDS[disk.kind]} · ${formatBytes(disk.sizeBytes)}`,
+      })),
+    };
+  });
+
+  /** The whole server since the measure before: estimated draw, traffic of its card and of the site (2.21). */
+  protected readonly energy = computed(() => {
+    const stats = this.stats.value();
+    if (!stats) {
+      return null;
+    }
+    const rates = stats.server.sinceLast;
+    const power = stats.machine.power;
+    return {
+      power,
+      idleWatts: formatWatts(power.idleWatts),
+      fullWatts: formatWatts(power.fullWatts),
+      watts: rates.watts == null ? 'Pas encore' : `≈ ${formatWatts(rates.watts)}`,
+      load: rates.load == null ? 'Au prochain relevé, dans 10 minutes au plus' : `Processeur du serveur à ${PERCENT.format(rates.load)}`,
+      hostSent: rates.hostSent == null ? 'Non mesuré' : `${formatRate(rates.hostSent)} envoyés`,
+      hostReceived: rates.hostReceived == null ? 'Compteurs réseau du serveur non lisibles' : `${formatRate(rates.hostReceived)} reçus`,
+      siteSent: rates.siteSent == null ? 'Non mesuré' : `${formatRate(rates.siteSent)} envoyés`,
+      siteReceived: rates.siteReceived == null ? 'La passerelle ne répond pas' : `${formatRate(rates.siteReceived)} reçus des visiteurs`,
+    };
   });
   protected readonly formatBytes = formatBytes;
   protected readonly analyticsUrl = ANALYTICS_URL;

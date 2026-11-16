@@ -27,7 +27,7 @@ class PasskeysTest {
 
 	private final MockHttpSession session = new MockHttpSession();
 
-	private final Account yona = new Account(1, "yona@example.fr", "Yona", AccountStatus.ACTIVE, 0, null, Instant.EPOCH, null, null, null);
+	private final Account yona = new Account(1, "yona@example.fr", "Yona", AccountStatus.ACTIVE, 0, null, Instant.EPOCH, null, null, null, null);
 
 	private Passkeys passkeys(List<String> origins) {
 		return new Passkeys(users, credentials, new AuthProperties(new AuthProperties.Provider("id", "secret"), null, origins),
@@ -75,7 +75,7 @@ class PasskeysTest {
 	void refusesAChallengeMadeForAnotherAccount() {
 		Passkeys passkeys = passkeys(List.of());
 		passkeys.creationOptions(yona, session);
-		Account max = new Account(2, "max@example.fr", "Max", AccountStatus.ACTIVE, 0, null, Instant.EPOCH, null, null, null);
+		Account max = new Account(2, "max@example.fr", "Max", AccountStatus.ACTIVE, 0, null, Instant.EPOCH, null, null, null, null);
 
 		assertThatThrownBy(() -> passkeys.register(max, "{}", session)).extracting(ex -> ((ApiException) ex).getCode())
 			.isEqualTo(ErrorCode.PASSKEY_EXPIRED);

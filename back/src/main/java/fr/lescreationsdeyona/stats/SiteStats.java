@@ -18,6 +18,7 @@ public record SiteStats(Recipes recipes, long categories, Ingredients ingredient
 		List<MonthCount> recipesPerMonth,
 		Storage storage,
 		@Schema(description = "Memory and processor in use") ServerUsage server,
+		@Schema(description = "The server's hardware, and the figures of the estimate of its draw (2.21)") MachineInfo machine,
 		@Schema(description = "Recipes lacking what Google shows best: published ones first, the most incomplete first (100 at most)")
 		List<IncompleteRecipe> incompleteRecipes,
 		@Schema(description = "Drafts not changed for 30 days, the oldest first (50 at most)")

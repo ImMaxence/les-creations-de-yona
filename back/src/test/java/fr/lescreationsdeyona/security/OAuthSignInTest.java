@@ -91,7 +91,7 @@ class OAuthSignInTest {
 
 		SecurityContextHolder.getContext()
 			.setAuthentication(AdminAuthentication.of(new Account(4, "yona@example.fr", "Yona", AccountStatus.ACTIVE, 0, null, Instant.EPOCH,
-					null, null, null)));
+					null, null, null, null)));
 		departure.resolve(request);
 
 		assertThat(SignInIntent.take(request)).isEqualTo(new SignInIntent.Link(4));

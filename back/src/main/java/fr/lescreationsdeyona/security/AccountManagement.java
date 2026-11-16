@@ -233,7 +233,7 @@ class AccountManagement {
 	private static AdminUser user(Account account, List<Identity> identities, int passkeyCount, @Nullable AccessLink link, Instant now,
 			AdminPrincipal me) {
 		return new AdminUser(account.id(), account.email(), account.name(), account.picture(), account.status(), account.createdAt(),
-				account.createdBy(), account.lastSignInAt(), account.lastSignInMethod(), identities.stream().map(Identity::provider).toList(), passkeyCount,
+				account.createdBy(), account.lastSignInAt(), account.lastSignInMethod(), account.lastSeenAt(), identities.stream().map(Identity::provider).toList(), passkeyCount,
 				link == null ? null : new PendingAccessLink(link.purpose(), link.createdAt(), link.expiresAt(), !link.expiresAt().isAfter(now)),
 				account.id() == me.id());
 	}

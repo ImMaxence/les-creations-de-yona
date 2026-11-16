@@ -7,13 +7,13 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ServerPoint } from '../../models/server-point';
+import { ServerHistoryView } from '../../models/server-history-view';
 
 export interface GetServerHistory$Params {
   days?: number;
 }
 
-export function getServerHistory(http: HttpClient, rootUrl: string, params?: GetServerHistory$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ServerPoint>>> {
+export function getServerHistory(http: HttpClient, rootUrl: string, params?: GetServerHistory$Params, context?: HttpContext): Observable<StrictHttpResponse<ServerHistoryView>> {
   const rb = new RequestBuilder(rootUrl, getServerHistory.PATH, 'get');
   if (params) {
     rb.query('days', params.days, {});
@@ -24,7 +24,7 @@ export function getServerHistory(http: HttpClient, rootUrl: string, params?: Get
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<ServerPoint>>;
+      return r as StrictHttpResponse<ServerHistoryView>;
     })
   );
 }

@@ -40,7 +40,7 @@ class AdminAccountFilterTest {
 	}
 
 	private static Account yona(String name, AccountStatus status) {
-		return new Account(1, "yona@example.fr", name, status, 0, null, Instant.EPOCH, null, null, null);
+		return new Account(1, "yona@example.fr", name, status, 0, null, Instant.EPOCH, null, null, null, null);
 	}
 
 	private void signedInAs(Account account) {
@@ -92,6 +92,26 @@ class AdminAccountFilterTest {
 
 		assertThat(AdminAuthentication.current()).map(AdminPrincipal::name).contains("Yona B.");
 		verify(repository).saveContext(any(), any(), any());
+	}
+
+	@Test
+	void notesTheVisitEveryFiveMinutesAtMost() throws Exception {
+		signedInAs(yona("Yona", AccountStatus.ACTIVE));
+		when(accounts.find(1)).thenReturn(Optional.of(seen(Instant.now().minusSeconds(60))));
+
+		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+
+		verify(accounts, never()).seen(1);
+
+		when(accounts.find(1)).thenReturn(Optional.of(seen(Instant.now().minusSeconds(600))));
+
+		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+
+		verify(accounts).seen(1);
+	}
+
+	private static Account seen(Instant at) {
+		return new Account(1, "yona@example.fr", "Yona", AccountStatus.ACTIVE, 0, null, Instant.EPOCH, null, null, null, at);
 	}
 
 	@Test

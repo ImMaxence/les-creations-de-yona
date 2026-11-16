@@ -1,8 +1,15 @@
 {
-	servers {
+	# Bytes received and sent per request, read by the backend for the statistics (2.21): see :2020 below.
+	metrics
+	servers :80 {
+		# The name the backend looks for in the metrics (server="site").
+		name site
 		# In production, Coolify's proxy (Traefik) sits in front: keep the X-Forwarded-Proto/Host
 		# it sets (https, public domain) instead of replacing them with this hop's (http).
 		trusted_proxies static private_ranges
+	}
+	servers :2020 {
+		name metrics
 	}
 }
 
@@ -19,4 +26,12 @@
 	handle {
 		reverse_proxy front:4000
 	}
+}
+
+# The counters of the site, for the backend only: never published, and no domain points here (Coolify
+# routes the domain to port 80). Refused from outside the Compose network all the same.
+:2020 {
+	@outside not remote_ip private_ranges
+	respond @outside 403
+	metrics
 }

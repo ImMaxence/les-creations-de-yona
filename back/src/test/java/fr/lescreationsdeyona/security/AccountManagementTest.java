@@ -44,7 +44,7 @@ class AccountManagementTest {
 	private final AdminPrincipal yona = new AdminPrincipal(1, "yona@example.fr", "Yona", null);
 
 	private static Account account(long id, String email, AccountStatus status) {
-		return new Account(id, email, null, status, 0, null, Instant.EPOCH, null, null, null);
+		return new Account(id, email, null, status, 0, null, Instant.EPOCH, null, null, null, null);
 	}
 
 	private final UriComponentsBuilder site = UriComponentsBuilder.fromUriString("https://les-creations-de-yona.fr/api/admin/accounts");

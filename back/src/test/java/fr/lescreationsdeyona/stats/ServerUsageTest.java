@@ -49,7 +49,7 @@ class ServerUsageTest {
 
 	@Test
 	void measuresThisProcess() {
-		ServerUsage usage = ServerUsage.now();
+		ServerUsage usage = ServerUsage.now(MachineCounters.ServerRates.UNKNOWN);
 
 		assertThat(usage.processors()).isPositive();
 		assertThat(usage.heapUsedBytes()).isPositive().isLessThanOrEqualTo(usage.heapMaxBytes());

@@ -142,11 +142,55 @@
     <details class="admin-fold" [open]="folds.isOpen('server')" (toggle)="folds.onToggle('server', $event)">
       <summary class="admin-fold__summary">
         <svg yonaIcon="server" [size]="20" [strokeWidth]="1.75" class="admin-fold__icon"></svg>
-        <span class="admin-fold__title">Serveur : stockage, mémoire et processeur</span>
+        <span class="admin-fold__title">Serveur : matériel, stockage, mémoire, énergie et réseau</span>
         <span class="admin-fold__digest">{{ serverDigest() }}</span>
         <svg yonaIcon="chevron-down" [size]="18" class="admin-fold__chevron"></svg>
       </summary>
       <div class="admin-fold__body">
+        <!-- Hardware: what the server is made of -->
+        @if (hardware(); as machine) {
+          <section class="admin-panel storage" aria-labelledby="hardware-title">
+            <div class="storage__head">
+              <svg yonaIcon="monitor" [size]="22" [strokeWidth]="1.75"></svg>
+              <h3 id="hardware-title">Matériel</h3>
+            </div>
+            <div class="storage__figures">
+              <div>
+                <span class="tile__label">Machine</span>
+                <strong class="storage__value">{{ machine.name }}</strong>
+                <span class="tile__detail">{{ machine.system }}</span>
+              </div>
+              <div>
+                <span class="tile__label">Processeur</span>
+                <strong class="storage__value">{{ machine.processor }}</strong>
+                <span class="tile__detail">{{ machine.threads }}</span>
+              </div>
+              <div>
+                <span class="tile__label">Mémoire vive</span>
+                <strong class="storage__value">{{ machine.memory }}</strong>
+                <span class="tile__detail">Marque et vitesse non lisibles par le site</span>
+              </div>
+              @for (disk of machine.disks; track disk.name) {
+                <div>
+                  <span class="tile__label">{{ machine.disks.length > 1 ? 'Disque ' + ($index + 1) : 'Disque' }}</span>
+                  <strong class="storage__value">{{ disk.model }}</strong>
+                  <span class="tile__detail">{{ disk.detail }}</span>
+                </div>
+              } @empty {
+                <div>
+                  <span class="tile__label">Disque</span>
+                  <strong class="storage__value">Inconnu</strong>
+                  <span class="tile__detail">Le backend ne voit pas les disques du serveur</span>
+                </div>
+              }
+            </div>
+            <p class="field__hint">
+              Lu sur le serveur par le backend, sans droits d'administrateur : la marque et la vitesse de la mémoire ne sont
+              écrites que dans des tables réservées à l'administrateur du serveur
+            </p>
+          </section>
+        }
+
         <!-- Storage -->
         @if (storage(); as disk) {
           <section class="admin-panel storage" aria-labelledby="storage-title">
@@ -257,6 +301,50 @@
             <yona-server-live class="no-print" />
             <!-- The last days: a measure every 10 minutes, kept 90 days -->
             <yona-server-history class="no-print" />
+          </section>
+        }
+
+        <!-- Energy and network: the whole server, estimated draw and measured traffic -->
+        @if (energy(); as now) {
+          <section class="admin-panel storage" aria-labelledby="energy-title">
+            <div class="storage__head">
+              <svg yonaIcon="zap" [size]="22" [strokeWidth]="1.75"></svg>
+              <h3 id="energy-title">Consommation et réseau</h3>
+            </div>
+            <p class="estimate" role="note">
+              <svg yonaIcon="triangle-alert" [size]="18"></svg>
+              <span>
+                <strong>La consommation est une estimation, pas une mesure.</strong> Le mini PC n'a pas de compteur électrique que le
+                site pourrait lire : elle est calculée à partir de la charge du processeur, entre {{ now.idleWatts }} au repos et
+                {{ now.fullWatts }} à pleine charge (valeurs habituelles d'un mini PC Ryzen 7 5700U, à la prise). Seule une prise
+                connectée donnerait la vraie valeur. Le réseau, lui, est mesuré
+              </span>
+            </p>
+            <div class="storage__figures">
+              <div>
+                <span class="tile__label">Consommation estimée</span>
+                <strong class="storage__value">{{ now.watts }}</strong>
+                <span class="tile__detail">{{ now.load }}</span>
+              </div>
+              <div>
+                <span class="tile__label">Réseau du serveur</span>
+                <strong class="storage__value">{{ now.hostSent }}</strong>
+                <span class="tile__detail">{{ now.hostReceived }}</span>
+              </div>
+              <div>
+                <span class="tile__label">Trafic du site</span>
+                <strong class="storage__value">{{ now.siteSent }}</strong>
+                <span class="tile__detail">{{ now.siteReceived }}</span>
+              </div>
+            </div>
+            <p class="field__hint">
+              En ce moment : depuis la mesure précédente, il y a 10 minutes au plus. Le réseau du serveur compte tout ce qui passe
+              par sa carte réseau (les autres sites hébergés, les mises à jour, les sauvegardes). Le trafic du site compte ce que sa
+              passerelle a envoyé et reçu, compressé : les photos que Cloudflare garde en cache n'arrivent pas jusqu'au serveur et
+              n'y sont pas comptées
+            </p>
+            <yona-server-live class="no-print" kind="energy" />
+            <yona-server-history class="no-print" kind="energy" [power]="now.power" />
           </section>
         }
       </div>

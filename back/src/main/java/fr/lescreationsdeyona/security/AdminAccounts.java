@@ -7,6 +7,7 @@ import fr.lescreationsdeyona.security.AccountTypes.IdentityProvider;
 import fr.lescreationsdeyona.security.AccountTypes.SignInMethod;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -31,7 +32,10 @@ public class AdminAccounts implements AdminDirectory {
 
 	private static final String COLUMNS = """
 			id, email, name, status, case when photo is null then 0 else photo_version end as photo_version, provider_picture, created_at,
-			created_by, last_sign_in_at, last_sign_in_method""";
+			created_by, last_sign_in_at, last_sign_in_method, last_seen_at""";
+
+	/** How often the last visit of an admin is written, at most. */
+	static final Duration SEEN_EVERY = Duration.ofMinutes(5);
 
 	private final JdbcClient jdbc;
 
@@ -113,6 +117,16 @@ public class AdminAccounts implements AdminDirectory {
 		return jdbc.sql("select photo from admin_account where id = :id and photo is not null").param("id", id).query(byte[].class).optional();
 	}
 
+	/** Seen in the back-office now; written {@link #SEEN_EVERY} apart at most, whatever the number of requests. */
+	void seen(long id) {
+		OffsetDateTime now = now();
+		jdbc.sql("update admin_account set last_seen_at = :at where id = :id and (last_seen_at is null or last_seen_at < :before)")
+			.param("at", now)
+			.param("before", now.minus(SEEN_EVERY))
+			.param("id", id)
+			.update();
+	}
+
 	void delete(long id) {
 		jdbc.sql("delete from admin_account where id = :id").param("id", id).update();
 	}
@@ -123,7 +137,7 @@ public class AdminAccounts implements AdminDirectory {
 	 */
 	void signedIn(long id, SignInMethod method, @Nullable String name, @Nullable String providerPicture) {
 		jdbc.sql("""
-				update admin_account set last_sign_in_at = :at, last_sign_in_method = :method, name = coalesce(name, :name),
+				update admin_account set last_sign_in_at = :at, last_seen_at = :at, last_sign_in_method = :method, name = coalesce(name, :name),
 					provider_picture = coalesce(:picture, provider_picture)
 				where id = :id""")
 			.param("at", now())
@@ -195,7 +209,7 @@ public class AdminAccounts implements AdminDirectory {
 		return new Account(row.getLong("id"), row.getString("email"), row.getString("name"), AccountStatus.valueOf(row.getString("status")),
 				row.getInt("photo_version"), row.getString("provider_picture"), instant(row, "created_at"), row.getString("created_by"),
 				instant(row, "last_sign_in_at"),
-				method == null ? null : SignInMethod.valueOf(method));
+				method == null ? null : SignInMethod.valueOf(method), instant(row, "last_seen_at"));
 	}
 
 	private static Identity identity(ResultSet row, int index) throws SQLException {

@@ -28,7 +28,9 @@ public record ServerUsage(
 		@Schema(description = "Most the Java objects may take, in bytes") long heapMaxBytes,
 		@Schema(description = "Memory of the machine, or limit of the container, in bytes") long machineMemoryBytes,
 		@Schema(description = "Of which available, disk cache the system gives back included, in bytes") long machineFreeMemoryBytes,
-		@Schema(description = "Since the backend started, in seconds") long uptimeSeconds) {
+		@Schema(description = "Since the backend started, in seconds") long uptimeSeconds,
+		@Schema(description = "The whole server since the previous measure (2.21): its load, its estimated draw, its traffic and the site's")
+		MachineCounters.ServerRates sinceLast) {
 
 	private static final Pattern RESIDENT = Pattern.compile("^VmRSS:\\s+(\\d+)\\s+kB", Pattern.MULTILINE);
 
@@ -38,7 +40,7 @@ public record ServerUsage(
 
 	private static final Pattern INACTIVE_FILE = Pattern.compile("^inactive_file\\s+(\\d+)$", Pattern.MULTILINE);
 
-	static ServerUsage now() {
+	static ServerUsage now(MachineCounters.ServerRates sinceLast) {
 		MemoryUsage heap = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
 		Runtime runtime = Runtime.getRuntime();
 		long heapMax = heap.getMax() > 0 ? heap.getMax() : runtime.maxMemory();
@@ -54,7 +56,7 @@ public record ServerUsage(
 		}
 		return new ServerUsage(runtime.availableProcessors(), backendCpu, machineCpu, residentBytes(Path.of("/proc/self/status")),
 				heap.getUsed(), heapMax, machineMemory, machineFree,
-				ManagementFactory.getRuntimeMXBean().getUptime() / 1000);
+				ManagementFactory.getRuntimeMXBean().getUptime() / 1000, sinceLast);
 	}
 
 	/** Negative when the system cannot tell. */

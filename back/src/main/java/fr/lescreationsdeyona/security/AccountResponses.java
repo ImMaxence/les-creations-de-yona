@@ -53,6 +53,7 @@ public final class AccountResponses {
 	/** An admin, as "Utilisateurs" lists them. {@code me}: the one asking (who cannot disable nor delete themselves). */
 	public record AdminUser(long id, String email, @Nullable String name, @Nullable String picture, AccountStatus status, Instant createdAt,
 			@Nullable String createdBy, @Nullable Instant lastSignInAt, @Nullable SignInMethod lastSignInMethod,
+			@Schema(description = "Last request in the back-office, to 5 minutes (2.21); a sign-in counts") @Nullable Instant lastSeenAt,
 			List<IdentityProvider> providers, int passkeys, @Nullable PendingAccessLink link, boolean me) {
 	}
 

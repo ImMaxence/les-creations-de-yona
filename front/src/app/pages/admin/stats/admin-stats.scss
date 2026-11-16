@@ -531,3 +531,23 @@ a.admin-row__title {
   gap: var(--space-2);
   color: var(--color-danger);
 }
+
+// "Consommation et réseau": the draw is an estimate, said before any figure (2.21) ---------------
+
+.estimate {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid #d08a1e;
+  border-radius: var(--radius-md);
+  background-color: color-mix(in srgb, #d08a1e 12%, transparent);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+
+  svg {
+    flex: none;
+    margin-top: 0.1rem;
+    color: color-mix(in srgb, #d08a1e 75%, var(--color-text));
+  }
+}

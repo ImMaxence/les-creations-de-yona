@@ -6,6 +6,7 @@ import { DatedRecipe } from '../models/dated-recipe';
 import { Images } from '../models/images';
 import { IncompleteRecipe } from '../models/incomplete-recipe';
 import { Ingredients } from '../models/ingredients';
+import { MachineInfo } from '../models/machine-info';
 import { MonthCount } from '../models/month-count';
 import { NamedCount } from '../models/named-count';
 import { Recipes } from '../models/recipes';
@@ -33,6 +34,11 @@ export interface SiteStats {
    */
   incompleteRecipes: Array<IncompleteRecipe>;
   ingredients: Ingredients;
+
+  /**
+   * The server's hardware, and the figures of the estimate of its draw (2.21)
+   */
+  machine: MachineInfo;
 
   /**
    * The 10 published recipes the most viewed, among those viewed at least once

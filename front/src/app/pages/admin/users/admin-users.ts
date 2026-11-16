@@ -79,6 +79,11 @@ export default class AdminUsers {
     return user.name || user.email;
   }
 
+  /** Seen in the back-office (2.21, to 5 minutes): a session lasts 7 days, the last sign-in can be weeks old. */
+  protected lastSeen(user: AdminUser): string | null {
+    return user.lastSeenAt ? `Dernière visite le ${parisDateTime(user.lastSeenAt)}` : null;
+  }
+
   protected lastSignIn(user: AdminUser): string {
     if (!user.lastSignInAt) {
       return user.status === 'INVITED' ? 'Pas encore venu·e' : 'Jamais connecté·e';

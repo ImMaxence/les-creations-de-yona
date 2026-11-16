@@ -33,7 +33,7 @@ class AccountSignInTest {
 	private final AccountSignIn signIn = new AccountSignIn(accounts, links, mock(SecurityContextRepository.class));
 
 	private static Account account(long id, String email, AccountStatus status) {
-		return new Account(id, email, null, status, 0, null, Instant.EPOCH, null, null, null);
+		return new Account(id, email, null, status, 0, null, Instant.EPOCH, null, null, null, null);
 	}
 
 	private static ProviderAccount google(String subject, String email, boolean verified) {

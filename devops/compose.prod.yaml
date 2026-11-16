@@ -104,6 +104,10 @@ services:
       # Bing and the other IndexNow engines told of each published or changed recipe.
       INDEXNOW_ENABLED: "true"
       # API_DOCS_ENABLED stays unset: no API documentation in production.
+    volumes:
+      # The network counters of the server itself (its card, not this container's), read-only, for the
+      # statistics: bandwidth of the whole server. Only this folder of the server is shared.
+      - /proc/1/net:/host/net:ro
     depends_on:
       postgres:
         condition: service_healthy
