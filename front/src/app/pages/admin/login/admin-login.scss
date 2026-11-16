@@ -207,6 +207,26 @@
   color: var(--color-text-muted);
 }
 
+// The time left of a link, counting down: figures of one width, so that it does not move every second
+.card__timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  justify-self: center;
+  padding: 0.2rem var(--space-3);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-accent-strong);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  &.is-expired {
+    background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--color-danger);
+  }
+}
+
 .card__ways {
   display: grid;
   gap: var(--space-3);

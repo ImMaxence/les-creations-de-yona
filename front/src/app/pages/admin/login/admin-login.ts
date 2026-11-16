@@ -9,6 +9,7 @@ import { PasskeyClient } from '../../../core/auth/passkey-client';
 import { passkeysSupported } from '../../../core/auth/passkeys';
 import { ColorSchemeSwitch } from '../../../core/layout/color-scheme-switch/color-scheme-switch';
 import { parisDateTime } from '../../../shared/format/paris-time';
+import { remaining, tickingNow } from '../../../shared/format/remaining';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { IconName } from '../../../shared/ui/icon/icons';
 import { ProviderLogo } from './provider-logo';
@@ -114,6 +115,14 @@ export default class AdminLogin {
   protected readonly expires = computed(() => {
     const link = this.link.value();
     return link ? parisDateTime(link.expiresAt) : null;
+  });
+
+  private readonly now = tickingNow();
+
+  /** The time left of the link, counting down; null once it has expired (the API refuses it then). */
+  protected readonly timeLeft = computed(() => {
+    const link = this.link.value();
+    return link ? remaining(link.expiresAt, this.now()) : null;
   });
 
   /** A link: making a passkey; otherwise signing in with one the device holds. */

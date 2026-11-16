@@ -52,6 +52,11 @@
           <p class="card__error" role="alert">{{ message }}</p>
         }
         @if (token() && expires(); as until) {
+          @if (timeLeft(); as left) {
+            <p class="card__timer" role="timer"><svg yonaIcon="timer" [size]="14"></svg>Valable encore {{ left }}</p>
+          } @else {
+            <p class="card__timer is-expired">Ce lien vient d'expirer : demandez-en un nouveau à un admin</p>
+          }
           <p class="card__hint">Ce lien sert une seule fois, jusqu'au {{ until }}</p>
         } @else if (!token() && passkeysSupported) {
           <p class="card__hint">

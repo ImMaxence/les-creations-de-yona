@@ -12,6 +12,7 @@ import { IssuedAccessLink } from '../../../core/api/generated/models/issued-acce
 import { Confirm } from '../../../core/dialog/confirm';
 import { Toaster } from '../../../core/notifications/toaster';
 import { parisDateTime, parisDay } from '../../../shared/format/paris-time';
+import { remaining, tickingNow } from '../../../shared/format/remaining';
 import { Button } from '../../../shared/ui/button/button';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -49,6 +50,8 @@ export default class AdminUsers {
   private readonly confirm = inject(Confirm);
 
   protected readonly day = parisDay;
+  /** Every second: the time left of each link counts down. */
+  private readonly now = tickingNow();
   protected readonly dateTime = parisDateTime;
   protected readonly methods = METHODS;
   protected readonly canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -97,7 +100,17 @@ export default class AdminUsers {
       return null;
     }
     const kind = link.purpose === 'INVITATION' ? "Lien d'invitation" : 'Lien de récupération';
-    return link.expired ? `${kind} expiré` : `${kind} valable jusqu'au ${parisDateTime(link.expiresAt)}`;
+    return this.linkExpired(user) ? `${kind} expiré` : `${kind} valable jusqu'au ${parisDateTime(link.expiresAt)}`;
+  }
+
+  /** Expired for the API, or since the page opened, as the countdown reached 0. */
+  protected linkExpired(user: AdminUser): boolean {
+    return !!user.link && (user.link.expired || this.timeLeft(user.link.expiresAt) === null);
+  }
+
+  /** "6 j 23 h 05 min", then with the seconds on the last day; null once expired. */
+  protected timeLeft(expiresAt: string): string | null {
+    return remaining(expiresAt, this.now());
   }
 
   // Inviting
@@ -147,13 +160,23 @@ export default class AdminUsers {
     }
   }
 
-  protected async cancelLink(user: AdminUser): Promise<void> {
+  /** The link waiting stops working at once: whoever holds it can no longer come in. */
+  protected async revokeLink(user: AdminUser): Promise<boolean> {
     this.busy.set(user.id);
     const result = await attempt(this.api.invoke(cancelAccessLink, { id: user.id }));
     this.busy.set(null);
     if (result.ok) {
-      this.replace({ ...user, link: undefined });
-      this.toaster.success('Lien annulé : il ne laisse plus entrer personne');
+      const current = this.users().find((other) => other.id === user.id) ?? user;
+      this.replace({ ...current, link: undefined });
+      this.toaster.success(user.link?.expired ? 'Lien expiré retiré' : 'Lien révoqué : il ne laisse plus entrer personne');
+    }
+    return result.ok;
+  }
+
+  /** Right after making it: revoked, and the window closed. */
+  protected async revokeShown(user: AdminUser): Promise<void> {
+    if (await this.revokeLink({ ...user, link: undefined })) {
+      this.shownOpen.set(false);
     }
   }
 

@@ -2,6 +2,19 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.20.1 - 2026-11-16
+
+Front et backend 2.20.1. Pas de migration de la base
+
+### Ajouté
+
+- **Temps restant d'un lien** : un compte à rebours (« encore 6 j 23 h 05 min », les secondes le dernier jour) dans « Utilisateurs », dans la fenêtre du lien qui vient d'être fait, et sur la page qu'ouvre celui qui le reçoit ; à zéro, le lien passe à « expiré » sans recharger la page
+
+### Modifié
+
+- **Révoquer un lien** : un bouton bien visible sous l'admin qui a un lien d'invitation ou de récupération en attente (« Annuler le lien » était un petit lien souligné), et « Révoquer ce lien » dans la fenêtre qui vient de le montrer, s'il est parti par erreur ; le lien ne laisse plus entrer personne
+- **Historique** : « Lien révoqué pour … » au lieu de « Lien annulé pour … »
+
 ## 2.20.0 - 2026-11-16
 
 Front et backend 2.20.0. Pas de migration de la base

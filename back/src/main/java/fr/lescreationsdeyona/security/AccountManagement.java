@@ -174,7 +174,7 @@ class AccountManagement {
 	void cancelLink(long id) {
 		Account account = account(id);
 		links.delete(id);
-		auditLog.record(AuditAction.UPDATED, AuditKind.ADMIN_ACCOUNT, "Lien annulé pour " + account.displayName(), id);
+		auditLog.record(AuditAction.UPDATED, AuditKind.ADMIN_ACCOUNT, "Lien révoqué pour " + account.displayName(), id);
 	}
 
 	/**

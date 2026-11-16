@@ -48,9 +48,20 @@
               }
             </span>
             @if (linkLine(user); as line) {
-              <span class="admin-row__meta user__link" [class.is-expired]="user.link?.expired">
+              <span class="admin-row__meta user__link" [class.is-expired]="linkExpired(user)">
                 <svg yonaIcon="link" [size]="14"></svg>{{ line }}
-                <button type="button" class="user__cancel" [disabled]="busy() === user.id" (click)="cancelLink(user)">Annuler le lien</button>
+                @if (user.link && timeLeft(user.link.expiresAt); as left) {
+                  <span class="user__timer" role="timer" [attr.aria-label]="'Encore ' + left"><svg yonaIcon="timer" [size]="14"></svg>encore {{ left }}</span>
+                }
+                <button
+                  type="button"
+                  class="user__revoke"
+                  [attr.aria-label]="(linkExpired(user) ? 'Retirer le lien expiré de ' : 'Révoquer le lien de ') + nameOf(user)"
+                  [disabled]="busy() === user.id"
+                  (click)="revokeLink(user)"
+                >
+                  <svg yonaIcon="link-2-off" [size]="14"></svg>{{ linkExpired(user) ? 'Retirer' : 'Révoquer le lien' }}
+                </button>
               </span>
             }
           </div>
@@ -147,7 +158,18 @@
       <div class="shown__url">
         <input class="input" readonly aria-label="Lien à envoyer" [value]="shown.link.url" (focus)="$any($event.target).select()" />
       </div>
+      @if (timeLeft(shown.link.expiresAt); as left) {
+        <p class="user__timer shown__timer" role="timer"><svg yonaIcon="timer" [size]="14"></svg>Valable encore {{ left }}</p>
+      } @else {
+        <p class="user__timer shown__timer is-expired">Ce lien a expiré : faites-en un nouveau</p>
+      }
       <p class="field__hint">Il ne sera plus affiché : copiez-le maintenant. Un nouveau lien remplace celui-ci</p>
+      <p class="shown__revoke">
+        Envoyé par erreur, ou à la mauvaise personne ?
+        <button type="button" class="user__revoke" [disabled]="busy() === shown.user.id" (click)="revokeShown(shown.user)">
+          <svg yonaIcon="link-2-off" [size]="14"></svg>Révoquer ce lien
+        </button>
+      </p>
     </div>
   }
   <ng-container dialogActions>
