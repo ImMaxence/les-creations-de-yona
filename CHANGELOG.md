@@ -2,6 +2,14 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.21.1 - 2026-11-16
+
+Front et backend 2.21.1. Pas de migration de la base
+
+### Modifié
+
+- **Visites venant des assistants IA** : la description précise que l'Aperçu IA et le Mode IA de Google ne sont pas comptés ; leurs clics arrivent de google.com sans balise, comme une recherche Google classique
+
 ## 2.21.0 - 2026-11-16
 
 Front et backend 2.21.0. Migration de la base : V35
