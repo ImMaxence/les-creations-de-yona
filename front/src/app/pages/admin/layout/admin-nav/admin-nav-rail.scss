@@ -92,6 +92,11 @@
   border-radius: 50%;
   background-color: var(--color-accent);
   box-shadow: 0 0 0 2px var(--color-bg);
+
+  // Something to do (a passkey to add, 2.24)
+  &.is-alert {
+    background-color: var(--color-danger);
+  }
 }
 
 .account {
@@ -147,12 +152,24 @@
   .account--rail & {
     flex: none;
   }
+}
 
-  // A passkey to add
-  .rail__dot {
-    top: 0;
-    right: 0;
-  }
+// The photo, with its red dot while a passkey is to add (2.24), as on the bar of a phone
+.account__avatar {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+}
+
+.account__dot {
+  position: absolute;
+  top: -0.1rem;
+  right: -0.1rem;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background-color: var(--color-danger);
+  box-shadow: 0 0 0 2px var(--color-bg);
 }
 
 .account__text {

@@ -2,6 +2,36 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.24.0 - 2026-11-17
+
+Front et backend 2.24.0. Migration de la base : V37
+
+### Ajouté
+
+- **Notifications des articles de Mon CAP** : une notification à chaque article publié pour la première fois (aussi à l'heure programmée), comme pour les recettes ; un appui ouvre l'article
+- **« Me prévenir des nouveaux articles »** : en haut de la page Mon CAP
+- **Mes notifications** : « Gérer », à côté de « Notifications activées », ouvre une fenêtre pour choisir les nouvelles recettes, les nouveaux articles ou les deux, envoyer une notification de test ou tout désactiver
+- **Notification de test** : aussi dans le back-office, « Tester » à côté de l'alerte des commandes
+- **Pastille rouge de la passkey** : tant qu'un admin n'a pas de passkey, une pastille rouge sur sa photo (menu ouvert ou replié, barre du téléphone), sur la section « Site » repliée et sur « À faire » de « Mon compte »
+- **« Voir les nouveautés »** : sous la ligne « Nouvelle version de l'application disponible » des Messages ; sa notification ouvre aussi « Nouveautés »
+
+### Modifié
+
+- **Abonnés d'avant** : ils gardent les seules recettes, comme ils l'avaient demandé ; les articles s'ajoutent dans « Gérer »
+- **Pastille de l'icône** : compte aussi les nouveaux articles, remis à zéro à l'ouverture du site
+- **Politique de confidentialité** : les articles, le choix de ce que reçoit l'appareil et la notification de test ; date de mise à jour au 17 novembre
+
+### Corrigé
+
+- **Alertes d'un admin** : désactiver les notifications des recettes sur son téléphone ne coupe plus ses alertes des messages et des commandes
+- **Messages d'erreur** : le refus de l'API (trop d'abonnements, abonnements complets) s'affiche au lieu d'un message général
+
+### Technique
+
+- **API** : `GET` et `PUT /api/notifications/subscriptions` (ce que reçoit l'appareil), `POST /api/notifications/test`, `DELETE` qui répond `{ kept }`
+- **Base** : `push_subscription.new_articles`, `cap_entry.published_at` (les articles déjà publiés ne sont pas annoncés)
+- **Interrupteurs** : leurs styles partagés (`styles/_switch.scss`), entre Accessibilité et « Mes notifications »
+
 ## 2.23.0 - 2026-11-17
 
 Front et backend 2.23.0. Pas de migration de la base

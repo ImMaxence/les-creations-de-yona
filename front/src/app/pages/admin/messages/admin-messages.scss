@@ -486,6 +486,13 @@ yona-reply-quote + .message__body {
   }
 }
 
+// "Voir les nouveautés" under a new version: its own line, in the colour of the links
+.system__link {
+  flex-basis: 100%;
+  color: var(--color-accent-strong);
+  font-weight: 600;
+}
+
 // "Vu", as on Instagram: under one's own last message, or the faces of the ones who read up to a message,
 // on the right; they slide to the next message they read
 .seen {

@@ -3,10 +3,12 @@ package fr.lescreationsdeyona.push;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import fr.lescreationsdeyona.cap.CapPublished;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import tools.jackson.databind.json.JsonMapper;
@@ -25,6 +27,34 @@ class PushServiceTest {
 			.containsEntry("badge", Map.of("backOffice", 3L));
 		// Not counted: the notification alone, which Angular's service worker shows as before
 		assertThat(PushService.push(notification, null)).containsOnlyKeys("notification");
+	}
+
+	@Test
+	void tellsANewArticleAsARecipe() {
+		Map<String, Object> notification = PushService.notification(new CapPublished("Mon examen blanc", "/mon-cap/mon-examen-blanc", null, null));
+
+		assertThat(notification).containsEntry("title", "Nouvel article : Mon examen blanc")
+			.containsEntry("body", "À lire dans Mon CAP, sur Les créations de Yona")
+			.doesNotContainKey("image")
+			.containsEntry("data", Map.of("onActionClick",
+					Map.of("default", Map.of("operation", "navigateLastFocusedOrOpen", "url", "/mon-cap/mon-examen-blanc"))));
+	}
+
+	@Test
+	void shortensTheSubtitleOfAnArticle() {
+		UUID photo = UUID.randomUUID();
+		Map<String, Object> notification = PushService.notification(new CapPublished("Mon examen blanc", "/mon-cap/mon-examen-blanc",
+				" " + "Une longue journée ".repeat(10), photo));
+
+		assertThat((String) notification.get("body")).hasSize(140).endsWith("…").doesNotStartWith(" ");
+		assertThat(notification).containsEntry("image", "/api/images/" + photo + "/800.webp");
+	}
+
+	@Test
+	void writesTheTestNotificationWithoutAFinalFullStop() {
+		assertThat(PushService.testNotification()).containsEntry("title", "Notification de test")
+			.containsEntry("body", "Les notifications fonctionnent sur cet appareil")
+			.containsEntry("tag", "test");
 	}
 
 	@Test

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CapHighlight } from '../../core/api/generated/models/cap-highlight';
-import { NewRecipeNotifications } from '../../core/pwa/new-recipe-notifications';
+import { SiteNotifications } from '../../core/pwa/site-notifications';
 import { SiteData } from '../../core/site/site-data';
 import { ParisDatePipe } from '../../shared/format/paris-date.pipe';
 import { paragraphs } from '../../shared/format/paragraphs';
@@ -27,7 +27,7 @@ export class AboutZone {
   readonly article = input<CapHighlight | null>(null);
 
   private readonly siteData = inject(SiteData);
-  private readonly notifications = inject(NewRecipeNotifications);
+  private readonly notifications = inject(SiteNotifications);
   protected readonly content = this.siteData.content;
   /** A blank line in the text written in the back-office starts a new paragraph. */
   protected readonly aboutParagraphs = computed(() => paragraphs(this.content().aboutText));

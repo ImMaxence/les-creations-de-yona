@@ -9,8 +9,9 @@
  * Each push says what the number counts (PushService on the backend):
  * - {"badge": {"backOffice": 3}}: what awaits the admin of the device in the back-office (messages not read, orders
  *   to handle), in place of the last one;
- * - {"badge": {"newRecipe": true}}: one more new recipe, until the site is opened.
- * Both kept in the storage of the site ("yona-badge"), which its pages read and write too (core/pwa/app-badge.ts).
+ * - {"badge": {"newRecipe": true}}: one more new recipe, until the site is opened;
+ * - {"badge": {"newArticle": true}}: one more new article of "Mon CAP" (2.24), the same way.
+ * All kept in the storage of the site ("yona-badge"), which its pages read and write too (core/pwa/app-badge.ts).
  */
 importScripts('./ngsw-worker.js');
 
@@ -43,14 +44,17 @@ async function updateBadge(badge) {
   if (badge.newRecipe === true) {
     counts.newRecipes++;
   }
+  if (badge.newArticle === true) {
+    counts.newArticles++;
+  }
   await cache.put(BADGE_FILE, new Response(JSON.stringify(counts), { headers: { 'Content-Type': 'application/json' } }));
-  const total = counts.backOffice + counts.newRecipes;
+  const total = counts.backOffice + counts.newRecipes + counts.newArticles;
   await (total > 0 ? self.navigator.setAppBadge(total) : self.navigator.clearAppBadge());
 }
 
 /** Nothing kept yet, or unreadable: nothing counted. */
 async function readCounts(cache) {
-  const counts = { backOffice: 0, newRecipes: 0 };
+  const counts = { backOffice: 0, newRecipes: 0, newArticles: 0 };
   try {
     const kept = await (await cache.match(BADGE_FILE))?.json();
     for (const name of Object.keys(counts)) {

@@ -1,5 +1,6 @@
 package fr.lescreationsdeyona.push;
 
+import fr.lescreationsdeyona.cap.CapPublished;
 import fr.lescreationsdeyona.error.ApiException;
 import fr.lescreationsdeyona.error.ErrorCode;
 import fr.lescreationsdeyona.recipe.RecipePublished;
@@ -43,8 +44,9 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * "Me prévenir des nouvelles recettes": browsers subscribe without any account, and receive a
- * notification when a recipe is published for the first time. Nothing about the visitor is kept,
- * only what the browser's push service needs.
+ * notification when a recipe is published for the first time; in "Mes notifications" (2.24), the
+ * visitor chooses the recipes, the articles of "Mon CAP", or both, and may ask for a test. Nothing
+ * about the visitor is kept, only what the browser's push service needs.
  * <p>
  * The server only ever calls the push services of the browsers (Google, Mozilla, Apple, Microsoft):
  * any other address is refused, so that a subscription cannot make it call anything else.
@@ -81,6 +83,9 @@ public class PushService {
 
 	private static final int MAX_BODY_LENGTH = 140;
 
+	/** A test notification asked from the same device this often at most. */
+	static final Duration TEST_EVERY = Duration.ofSeconds(20);
+
 	private final JdbcClient jdbc;
 
 	private final WebPushKeys keys;
@@ -101,6 +106,9 @@ public class PushService {
 
 	/** Times of the last new subscriptions, all addresses together. */
 	private final Deque<Instant> subscribedBySite = new ArrayDeque<>();
+
+	/** Time of the last test notification, by device: forgotten after an hour. */
+	private final Map<String, Instant> testedAt = new ConcurrentHashMap<>();
 
 	PushService(JdbcClient jdbc, WebPushKeys keys, JsonMapper jsonMapper, AppBadge badge, @Value("${app.push.subject}") String subject) {
 		this.jdbc = jdbc;
@@ -125,19 +133,7 @@ public class PushService {
 	 */
 	public void subscribe(PushSubscriptionForm form, String sender) {
 		checkSubscription(form);
-		boolean known = jdbc.sql("select count(*) from push_subscription where endpoint = :endpoint")
-			.param("endpoint", form.endpoint())
-			.query(Long.class)
-			.single() > 0;
-		if (!known) {
-			if (jdbc.sql("select count(*) from push_subscription").query(Long.class).single() >= MAX_SUBSCRIPTIONS) {
-				throw new ApiException(ErrorCode.PUSH_SUBSCRIPTIONS_FULL);
-			}
-			ErrorCode refused = refusal(sender, Instant.now());
-			if (refused != null) {
-				throw new ApiException(refused);
-			}
-		}
+		checkNewDevice(form.endpoint(), sender);
 		jdbc.sql("""
 				insert into push_subscription (endpoint, p256dh, auth, created_at) values (:endpoint, :p256dh, :auth, :now)
 				on conflict (endpoint) do update
@@ -149,15 +145,71 @@ public class PushService {
 			.update();
 	}
 
+	/** A device the site does not know yet: within the limits of {@link #refusal}, and of the table. */
+	private void checkNewDevice(String endpoint, String sender) {
+		boolean known = jdbc.sql("select count(*) from push_subscription where endpoint = :endpoint")
+			.param("endpoint", endpoint)
+			.query(Long.class)
+			.single() > 0;
+		if (!known) {
+			if (jdbc.sql("select count(*) from push_subscription").query(Long.class).single() >= MAX_SUBSCRIPTIONS) {
+				throw new ApiException(ErrorCode.PUSH_SUBSCRIPTIONS_FULL);
+			}
+			ErrorCode refused = refusal(sender, Instant.now());
+			if (refused != null) {
+				throw new ApiException(refused);
+			}
+		}
+	}
+
+	/** What this device is told of; nothing for a device the site does not know. */
+	public NotificationTopics topics(String endpoint) {
+		return jdbc.sql("select new_recipes, new_articles from push_subscription where endpoint = :endpoint")
+			.param("endpoint", endpoint)
+			.query((row, index) -> new NotificationTopics(row.getBoolean("new_recipes"), row.getBoolean("new_articles")))
+			.optional()
+			.orElse(NotificationTopics.NONE);
+	}
+
+	/**
+	 * "Mes notifications" (2.24): the device is told of these, in place of what it was told of; of nothing, it is
+	 * unsubscribed as by {@link #unsubscribe}.
+	 */
+	public void choose(PushSubscriptionForm form, NotificationTopics topics, String sender) {
+		if (!topics.any()) {
+			unsubscribe(form.endpoint());
+			return;
+		}
+		checkSubscription(form);
+		checkNewDevice(form.endpoint(), sender);
+		jdbc.sql("""
+				insert into push_subscription (endpoint, p256dh, auth, created_at, new_recipes, new_articles)
+				values (:endpoint, :p256dh, :auth, :now, :recipes, :articles)
+				on conflict (endpoint) do update
+				set p256dh = excluded.p256dh, auth = excluded.auth, failures = 0, new_recipes = excluded.new_recipes,
+					new_articles = excluded.new_articles""")
+			.param("endpoint", form.endpoint())
+			.param("p256dh", form.keys().p256dh())
+			.param("auth", form.keys().auth())
+			.param("now", Timestamp.from(Instant.now()))
+			.param("recipes", topics.recipes())
+			.param("articles", topics.articles())
+			.update();
+	}
+
 	/**
 	 * Unknown addresses are ignored: the visitor may unsubscribe twice. A device an admin also gets
-	 * the orders on stays subscribed to those.
+	 * the orders or the messages on stays subscribed to those.
+	 *
+	 * @return whether the device is still told of something (an admin's alerts): its browser keeps its subscription then
 	 */
-	public void unsubscribe(String endpoint) {
+	public boolean unsubscribe(String endpoint) {
 		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not admin_orders and messages_for is null")
 			.param("endpoint", endpoint)
 			.update();
-		jdbc.sql("update push_subscription set new_recipes = false where endpoint = :endpoint").param("endpoint", endpoint).update();
+		return jdbc.sql("update push_subscription set new_recipes = false, new_articles = false where endpoint = :endpoint")
+			.param("endpoint", endpoint)
+			.update() > 0;
 	}
 
 	/** This device of an admin is told of each new order; new recipes only if it asked for them too. */
@@ -176,7 +228,7 @@ public class PushService {
 	}
 
 	public void unsubscribeFromOrders(String endpoint) {
-		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not new_recipes and messages_for is null")
+		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not new_recipes and not new_articles and messages_for is null")
 			.param("endpoint", endpoint)
 			.update();
 		jdbc.sql("update push_subscription set admin_orders = false where endpoint = :endpoint").param("endpoint", endpoint).update();
@@ -209,7 +261,7 @@ public class PushService {
 	}
 
 	public void unsubscribeFromMessages(String endpoint) {
-		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not new_recipes and not admin_orders")
+		jdbc.sql("delete from push_subscription where endpoint = :endpoint and not new_recipes and not new_articles and not admin_orders")
 			.param("endpoint", endpoint)
 			.update();
 		jdbc.sql("update push_subscription set messages_for = null where endpoint = :endpoint").param("endpoint", endpoint).update();
@@ -247,10 +299,71 @@ public class PushService {
 		sender.execute(() -> notifyRecipe(recipe));
 	}
 
+	/** Once the publication is committed, as a recipe (2.24). */
+	@TransactionalEventListener
+	void onCapPublished(CapPublished article) {
+		sender.execute(() -> notifyArticle(article));
+	}
+
 	/** Once the order is committed. */
 	@TransactionalEventListener
 	void onOrderReceived(OrderReceived order) {
 		sender.execute(() -> notifyOrder(order));
+	}
+
+	/**
+	 * "Envoyer une notification de test" (2.24): to this device only, at once, and what its push service answered
+	 * said; {@link #TEST_EVERY} apart at least. A device its push service no longer knows is removed.
+	 */
+	public void test(String endpoint, Instant now) {
+		Subscription subscription = jdbc.sql("select id, endpoint, p256dh, auth, failures, messages_for from push_subscription where endpoint = :endpoint")
+			.param("endpoint", endpoint)
+			.query(Subscription.class)
+			.optional()
+			.orElseThrow(() -> new ApiException(ErrorCode.PUSH_SUBSCRIPTION_UNKNOWN));
+		boolean[] tooSoon = { false };
+		testedAt.compute(endpoint, (key, last) -> {
+			tooSoon[0] = last != null && last.isAfter(now.minus(TEST_EVERY));
+			return tooSoon[0] ? last : now;
+		});
+		if (tooSoon[0]) {
+			throw new ApiException(ErrorCode.PUSH_TEST_TOO_SOON);
+		}
+		String host = URI.create(endpoint).getHost();
+		int status;
+		try {
+			status = send(subscription, jsonMapper.writeValueAsBytes(push(testNotification(), null)));
+		}
+		catch (InterruptedException ex) {
+			Thread.currentThread().interrupt();
+			throw new ApiException(ErrorCode.PUSH_TEST_FAILED, ex);
+		}
+		catch (IOException | GeneralSecurityException | IllegalArgumentException ex) {
+			log.warn("Test notification to {} failed", host, ex);
+			throw new ApiException(ErrorCode.PUSH_TEST_FAILED, ex);
+		}
+		if (status == 404 || status == 410) {
+			delete(subscription);
+			throw new ApiException(ErrorCode.PUSH_SUBSCRIPTION_GONE);
+		}
+		if (status / 100 != 2) {
+			log.warn("Push service {} answered {} to a test notification", host, status);
+			throw new ApiException(ErrorCode.PUSH_TEST_FAILED);
+		}
+		log.info("Test notification delivered to {}", host);
+	}
+
+	/** Shown by Angular's service worker; one at a time (the next takes its place); a tap opens the site. */
+	static Map<String, Object> testNotification() {
+		Map<String, Object> notification = new LinkedHashMap<>();
+		notification.put("title", "Notification de test");
+		notification.put("body", "Les notifications fonctionnent sur cet appareil");
+		notification.put("icon", "/icons/icon-192.png");
+		notification.put("tag", "test");
+		notification.put("renotify", true);
+		notification.put("lang", "fr");
+		notification.put("data", Map.of("onActionClick", Map.of("default", Map.of("operation", "navigateLastFocusedOrOpen", "url", "/"))));
+		return notification;
 	}
 
 	@PreDestroy
@@ -264,13 +377,20 @@ public class PushService {
 		deliver(subscription -> payload, "new_recipes", Map.of(), "New recipe \"" + recipe.title() + "\"");
 	}
 
+	private void notifyArticle(CapPublished article) {
+		// The same for every device: one more new article on the icon, until the site is opened
+		byte[] payload = jsonMapper.writeValueAsBytes(push(notification(article), Map.of("newArticle", true)));
+		deliver(subscription -> payload, "new_articles", Map.of(), "New article \"" + article.title() + "\"");
+	}
+
 	private void notifyOrder(OrderReceived order) {
 		deliver(forAdmins(notification(order)), "admin_orders", Map.of(), "Order " + order.number());
 	}
 
 	/**
 	 * What the service worker receives (app-worker.js): the notification Angular's shows, and what the number on the
-	 * icon of the app counts, {"backOffice": 3} for an admin's device, {"newRecipe": true} for one more new recipe.
+	 * icon of the app counts, {"backOffice": 3} for an admin's device, {"newRecipe": true} for one more new recipe,
+	 * {"newArticle": true} for one more new article (2.24).
 	 */
 	static Map<String, Object> push(Map<String, Object> notification, @Nullable Map<String, Object> badge) {
 		return badge == null ? Map.of("notification", notification) : Map.of("notification", notification, "badge", badge);
@@ -413,10 +533,11 @@ public class PushService {
 		}
 	}
 
-	/** Every hour, the addresses not heard from for an hour. */
+	/** Every hour, the addresses not heard from for an hour, and the devices not tested for an hour. */
 	@Scheduled(initialDelay = 3_600_000, fixedDelay = 3_600_000)
 	void forgetSenders() {
 		Instant hourAgo = Instant.now().minus(Duration.ofHours(1));
+		testedAt.values().removeIf(at -> at.isBefore(hourAgo));
 		subscribedBy.values().removeIf(times -> {
 			synchronized (times) {
 				return times.isEmpty() || times.peekLast().isBefore(hourAgo);
@@ -430,16 +551,36 @@ public class PushService {
 		}
 	}
 
+	/** The start of a text for the body of a notification; {@code fallback} without any. */
+	private static String body(@Nullable String text, String fallback) {
+		String stripped = text == null ? "" : text.strip();
+		return stripped.isEmpty() ? fallback
+				: stripped.length() <= MAX_BODY_LENGTH ? stripped : stripped.substring(0, MAX_BODY_LENGTH - 1).strip() + "…";
+	}
+
+	/** As a recipe's (2.24): a tap opens the article. */
+	static Map<String, Object> notification(CapPublished article) {
+		Map<String, Object> notification = new LinkedHashMap<>();
+		notification.put("title", "Nouvel article : " + article.title());
+		notification.put("body", body(article.subtitle(), "À lire dans Mon CAP, sur Les créations de Yona"));
+		notification.put("icon", "/icons/icon-192.png");
+		if (article.imageId() != null) {
+			notification.put("image", "/api/images/" + article.imageId() + "/800.webp");
+		}
+		notification.put("lang", "fr");
+		notification.put("data", Map.of("onActionClick",
+				Map.of("default", Map.of("operation", "navigateLastFocusedOrOpen", "url", article.path()))));
+		return notification;
+	}
+
 	/**
 	 * Shown by Angular's service worker; a tap opens the recipe, in the site's window if one is
 	 * open. Relative addresses are resolved against the site.
 	 */
 	private static Map<String, Object> notification(RecipePublished recipe) {
-		String intro = recipe.intro() == null ? "" : recipe.intro().strip();
 		Map<String, Object> notification = new LinkedHashMap<>();
 		notification.put("title", "Nouvelle recette : " + recipe.title());
-		notification.put("body", intro.isEmpty() ? "Elle vous attend sur Les créations de Yona"
-				: intro.length() <= MAX_BODY_LENGTH ? intro : intro.substring(0, MAX_BODY_LENGTH - 1).strip() + "…");
+		notification.put("body", body(recipe.intro(), "Elle vous attend sur Les créations de Yona"));
 		notification.put("icon", "/icons/icon-192.png");
 		if (recipe.imageId() != null) {
 			notification.put("image", "/api/images/" + recipe.imageId() + "/800.webp");

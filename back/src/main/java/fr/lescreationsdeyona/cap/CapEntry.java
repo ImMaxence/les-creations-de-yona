@@ -60,6 +60,9 @@ public class CapEntry {
 	/** Why its scheduled publication did not happen, shown in the back-office; set for a failed article only. */
 	private String publicationFailure;
 
+	/** First publication (2.24): the subscribers are told then, once (CapPublished); null for one never published. */
+	private Instant publishedAt;
+
 	/** "Mettre en avant": on the home page in place of the latest article, one at most. */
 	private boolean featured;
 

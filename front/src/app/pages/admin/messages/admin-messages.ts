@@ -33,6 +33,7 @@ import { MessageGroup } from '../../../core/api/generated/models/message-group';
 import { AdminSession } from '../../../core/auth/admin-session';
 import { Confirm } from '../../../core/dialog/confirm';
 import { firstOfMonth, parisClock } from '../../../shared/format/paris-time';
+import { ADMIN_PATH } from '../../../shared/routing/links';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { PhotoViewer, ViewedPhoto } from '../../../shared/ui/photo-viewer/photo-viewer';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
@@ -166,6 +167,8 @@ export default class AdminMessages {
   protected readonly alerts = inject(MessageAlerts);
   private readonly toaster = inject(Toaster);
   protected readonly bigPhoto = (imageId: string) => messagePhoto(imageId, 1600);
+  /** "Nouveautés": where the line of a new version leads (2.24). */
+  protected readonly changelogPath = `${ADMIN_PATH}/nouveautes`;
 
   protected readonly admins = resource({ loader: () => this.api.invoke(listMessageMembers) });
   private readonly adminsByEmail = computed(() => new Map((this.admins.value() ?? []).map((admin) => [admin.email, admin])));

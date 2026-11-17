@@ -6,6 +6,7 @@ import { Reveal } from '../../shared/motion/reveal';
 import { RECIPES_PATH, capArticleLink } from '../../shared/routing/links';
 import { CoverImage } from '../../shared/ui/cover-image/cover-image';
 import { Icon } from '../../shared/ui/icon/icon';
+import { NotifyButton } from '../../shared/ui/notify-button/notify-button';
 
 /**
  * "Mon CAP": the road to the diploma as a timeline of articles, the latest first. Each one in short
@@ -13,7 +14,7 @@ import { Icon } from '../../shared/ui/icon/icon';
  */
 @Component({
   selector: 'yona-cap',
-  imports: [CoverImage, Icon, ParisDatePipe, Reveal, RouterLink],
+  imports: [CoverImage, Icon, NotifyButton, ParisDatePipe, Reveal, RouterLink],
   template: `
     <section class="container cap">
       <header class="cap__head">
@@ -22,6 +23,8 @@ import { Icon } from '../../shared/ui/icon/icon';
         <p class="cap__lead enter" style="--delay: 120ms">
           Toutes les étapes de mon CAP Pâtisserie, article par article : ce que j'apprends, ce que je rate et ce que je réussis
         </p>
+        <!-- A notification at each new article (2.24) -->
+        <yona-notify-button class="enter" style="--delay: 180ms" topic="articles" [showInstallHint]="true" />
       </header>
 
       @if (entries().length) {

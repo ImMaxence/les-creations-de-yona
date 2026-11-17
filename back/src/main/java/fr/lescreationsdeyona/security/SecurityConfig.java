@@ -35,6 +35,9 @@ class SecurityConfig {
 
 	static final String NOTIFICATION_SUBSCRIPTIONS = "/api/notifications/subscriptions";
 
+	/** "Envoyer une notification de test" (2.24): to a device subscribed already, by its address. */
+	static final String NOTIFICATION_TEST = "/api/notifications/test";
+
 	static final String RECIPE_VIEWS = "/api/recipes/*/views";
 
 	/** Visits coming from an AI assistant (Statistiques). */
@@ -59,7 +62,7 @@ class SecurityConfig {
 	/** What anyone may read: the site's pages and their data. Checked against the controllers by EndpointAccessTest. */
 	static final String[] PUBLIC_READS = { "/api/recipes/**", "/api/featured-recipe", "/api/search-suggestions", "/api/menus",
 			"/api/menus/*", "/api/ingredients", "/api/ingredients/aisles", "/api/site-content", "/api/categories/**", "/api/tags",
-			"/api/social-links/**", "/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key",
+			"/api/social-links/**", "/api/images/**", "/api/theme", "/api/glossary", "/api/notifications/public-key", NOTIFICATION_SUBSCRIPTIONS,
 			"/api/feedback/captcha", "/api/cap/**", "/api/shop", "/api/shop/orders/*", "/api/site-sections", "/api/auth/methods",
 			"/api/auth/access-links/*" };
 
@@ -81,7 +84,8 @@ class SecurityConfig {
 			requests.requestMatchers("/api/admin/**").hasRole(AdminAuthentication.ADMIN_ROLE)
 				.requestMatchers(HttpMethod.GET, PUBLIC_READS)
 				.permitAll()
-				.requestMatchers(HttpMethod.POST, NOTIFICATION_SUBSCRIPTIONS).permitAll()
+				.requestMatchers(HttpMethod.POST, NOTIFICATION_SUBSCRIPTIONS, NOTIFICATION_TEST).permitAll()
+				.requestMatchers(HttpMethod.PUT, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.DELETE, NOTIFICATION_SUBSCRIPTIONS).permitAll()
 				.requestMatchers(HttpMethod.POST, RECIPE_VIEWS, AI_VISITS, BROWSER_ERRORS).permitAll()
 				.requestMatchers(HttpMethod.POST, FEEDBACK, SHOP_ORDERS).permitAll()
@@ -111,7 +115,8 @@ class SecurityConfig {
 			// remove one, count a view or a visit, report an error (limited), send what the captcha stops, or
 			// start a passkey sign-in that only the passkey can finish, which grants nothing.
 			.csrf(csrf -> csrf
-				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS, RECIPE_VIEWS, AI_VISITS, BROWSER_ERRORS, FEEDBACK, SHOP_ORDERS)
+				.ignoringRequestMatchers(NOTIFICATION_SUBSCRIPTIONS, NOTIFICATION_TEST, RECIPE_VIEWS, AI_VISITS, BROWSER_ERRORS, FEEDBACK,
+						SHOP_ORDERS)
 				.ignoringRequestMatchers(SIGN_IN_STEPS)
 				.csrfTokenRepository(csrfTokenRepository())
 				.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))

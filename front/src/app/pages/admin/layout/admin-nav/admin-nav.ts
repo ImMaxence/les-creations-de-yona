@@ -43,6 +43,8 @@ interface AdminLink {
   countLabel?: string;
   /** A word rather than a number: "Nouveau" on a changelog not read yet. */
   badge?: Signal<string | null>;
+  /** The badge in red (2.24): something to do rather than something new, a passkey to add. */
+  alert?: boolean;
 }
 
 interface AdminGroup {
@@ -141,6 +143,7 @@ export class AdminNav {
           label: 'Mon compte',
           icon: 'user-round',
           badge: computed(() => (this.session.needsPasskey() ? 'À faire' : null)),
+          alert: true,
         },
         { path: 'preferences', label: 'Préférences', icon: 'sliders-horizontal' },
         { path: 'utilisateurs', label: 'Utilisateurs', icon: 'users' },
@@ -219,6 +222,11 @@ export class AdminNav {
   /** Without a number, a dot: a section has something new ("Nouveautés"). */
   protected groupHasNews(group: AdminGroup): boolean {
     return group.links.some((link) => !!link.badge?.());
+  }
+
+  /** The dot in red: something to do there (a passkey to add). */
+  protected groupHasAlert(group: AdminGroup): boolean {
+    return group.links.some((link) => link.alert && !!link.badge?.());
   }
 
   /** Folded, the name of a section says what waits there too. */

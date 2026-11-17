@@ -28,6 +28,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import tools.jackson.databind.json.JsonMapper;
 
 class CapServiceTest {
@@ -42,7 +43,9 @@ class CapServiceTest {
 
 	private final JsonMapper json = JsonMapper.builder().build();
 
-	private final CapService service = new CapService(repository, images, trashBin, mock(AuditLog.class), json);
+	private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+
+	private final CapService service = new CapService(repository, images, trashBin, mock(AuditLog.class), json, events);
 
 	@BeforeEach
 	void setUp() {
@@ -314,6 +317,46 @@ class CapServiceTest {
 		service.publishScheduled(5, now);
 
 		assertThat(entry.getStatus()).isEqualTo(CapStatus.DRAFT);
+	}
+
+	@Test
+	void tellsTheSubscribersOfAnArticleAtItsFirstPublication() {
+		service.createEntry(form("Mon examen blanc", true, false, List.of()));
+
+		verify(events).publishEvent(new CapPublished("Mon examen blanc", "/mon-cap/mon-examen-blanc", "Un sous-titre", null));
+	}
+
+	@Test
+	void tellsNothingOfADraft() {
+		service.createEntry(form("Mon examen blanc", false, false, List.of()));
+
+		verify(events, never()).publishEvent(any(Object.class));
+	}
+
+	@Test
+	void tellsAnArticleOnce() {
+		CapEntry entry = existing("Mon examen", "mon-examen", false);
+
+		service.updateEntry(5, form("Mon examen", true, false, List.of()));
+		Instant published = entry.getPublishedAt();
+		// Unpublished, then published again: already told
+		service.updateEntry(5, form("Mon examen", false, false, List.of()));
+		service.updateEntry(5, form("Mon examen", true, false, List.of()));
+
+		verify(events).publishEvent(any(CapPublished.class));
+		assertThat(published).isNotNull();
+		assertThat(entry.getPublishedAt()).isEqualTo(published);
+	}
+
+	@Test
+	void tellsTheSubscribersOfAScheduledPublication() {
+		Instant now = Instant.now();
+		CapEntry entry = existing("Mon examen", "mon-examen", false);
+		entry.setScheduledAt(now.minus(Duration.ofMinutes(1)));
+
+		service.publishScheduled(5, now);
+
+		verify(events).publishEvent(new CapPublished("Mon examen", "/mon-cap/mon-examen", null, null));
 	}
 
 }

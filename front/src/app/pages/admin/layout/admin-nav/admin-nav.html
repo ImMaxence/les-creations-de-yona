@@ -26,7 +26,7 @@
               @if (link.count?.(); as count) {
                 <span class="rail__count" aria-hidden="true">{{ count > 99 ? '99+' : count }}</span>
               } @else if (link.badge?.()) {
-                <span class="rail__dot" aria-hidden="true"></span>
+                <span class="rail__dot" [class.is-alert]="link.alert" aria-hidden="true"></span>
               }
             </a>
           </li>
@@ -53,6 +53,8 @@
           @if (!isOpen(group.id)) {
             @if (groupCount(group); as count) {
               <span class="nav-count" [attr.aria-label]="count + ' en attente'">{{ count }}</span>
+            } @else if (groupHasAlert(group)) {
+              <span class="nav-dot is-alert" aria-label="À faire"></span>
             } @else if (groupHasNews(group)) {
               <span class="nav-dot" aria-label="Du nouveau"></span>
             }
@@ -68,7 +70,7 @@
                 @if (link.count?.(); as count) {
                   <span class="nav-count" [attr.aria-label]="count + ' ' + (link.countLabel ?? 'en attente')">{{ count > 99 ? '99+' : count }}</span>
                 } @else if (link.badge?.(); as badge) {
-                  <span class="nav-badge">{{ badge }}</span>
+                  <span class="nav-badge" [class.is-alert]="link.alert">{{ badge }}</span>
                 }
               </a>
             </li>
@@ -87,14 +89,20 @@
     <div class="account__who">
       <!-- Their name and photo lead to "Mon compte": the ways in, the photo -->
       <a class="account__me" routerLink="mon-compte" routerLinkActive="is-active" [attr.aria-label]="rail() ? railAccountLabel() : null">
-        <yona-admin-avatar [name]="admin.name || admin.email" [picture]="admin.picture" />
-        @if (rail() && session.needsPasskey()) {
-          <span class="rail__dot" aria-hidden="true"></span>
-        }
+        <!-- A passkey to add: a red dot on the photo, folded or not (2.24) -->
+        <span class="account__avatar">
+          <yona-admin-avatar [name]="admin.name || admin.email" [picture]="admin.picture" />
+          @if (session.needsPasskey()) {
+            <span class="account__dot" aria-hidden="true"></span>
+          }
+        </span>
         @if (!rail()) {
           <span class="account__text">
             <span class="account__name">{{ admin.name }}</span>
             <span class="account__email" [attr.data-tooltip]="admin.email">Mon compte · {{ admin.email }}</span>
+            @if (session.needsPasskey()) {
+              <span class="visually-hidden">, une passkey à ajouter</span>
+            }
           </span>
         }
       </a>

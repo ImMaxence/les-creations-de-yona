@@ -6,7 +6,7 @@ import { Api } from '../api/generated/api';
 import { getPushPublicKey } from '../api/generated/fn/notifications/get-push-public-key';
 import { PushSubscriptionForm } from '../api/generated/models/push-subscription-form';
 import { Toaster } from '../notifications/toaster';
-import { NotificationsState, askPermission, isAppleMobile, isStandalone, subscriptionForm } from './new-recipe-notifications';
+import { NotificationsState, askPermission, isAppleMobile, isStandalone, subscriptionForm } from './site-notifications';
 import { ServiceWorkerGate } from './service-worker-gate';
 
 /**
@@ -63,7 +63,7 @@ export abstract class DeviceAlerts {
   async enable(): Promise<void> {
     this.busy.set(true);
     try {
-      // Asked on the tap itself, before the service worker that can take a few seconds (see NewRecipeNotifications)
+      // Asked on the tap itself, before the service worker that can take a few seconds (see SiteNotifications)
       await askPermission();
       await this.serviceWorker.register();
       const { publicKey } = await this.api.invoke(getPushPublicKey);

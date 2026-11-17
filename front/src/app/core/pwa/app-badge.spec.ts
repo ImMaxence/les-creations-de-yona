@@ -50,23 +50,23 @@ describe('AppBadge', () => {
     vi.unstubAllGlobals();
   });
 
-  it('sees the new recipes once the site is open, and keeps what awaits in the back-office', async () => {
-    device({ backOffice: 2, newRecipes: 3 }).listen();
+  it('sees the new recipes and articles once the site is open, and keeps what awaits in the back-office', async () => {
+    device({ backOffice: 2, newRecipes: 3, newArticles: 1 }).listen();
     await settled();
-    expect(counts()).toEqual({ backOffice: 2, newRecipes: 0 });
+    expect(counts()).toEqual({ backOffice: 2, newRecipes: 0, newArticles: 0 });
     expect(setAppBadge).toHaveBeenLastCalledWith(2);
   });
 
   it('follows the menu of the back-office, and clears the icon at nothing', async () => {
-    const appBadge = device({ backOffice: 0, newRecipes: 1 });
+    const appBadge = device({ backOffice: 0, newRecipes: 1, newArticles: 2 });
     appBadge.backOffice(4);
     await settled();
-    expect(setAppBadge).toHaveBeenLastCalledWith(5);
+    expect(setAppBadge).toHaveBeenLastCalledWith(7);
 
     appBadge.listen();
     appBadge.backOffice(0);
     await settled();
-    expect(counts()).toEqual({ backOffice: 0, newRecipes: 0 });
+    expect(counts()).toEqual({ backOffice: 0, newRecipes: 0, newArticles: 0 });
     expect(clearAppBadge).toHaveBeenCalled();
   });
 
@@ -78,9 +78,10 @@ describe('AppBadge', () => {
   });
 
   it('counts for nothing what is not a whole number', () => {
-    expect(readCounts({ backOffice: 2.5, newRecipes: -1 })).toEqual({ backOffice: 0, newRecipes: 0 });
-    expect(readCounts('{}')).toEqual({ backOffice: 0, newRecipes: 0 });
-    expect(readCounts(null)).toEqual({ backOffice: 0, newRecipes: 0 });
-    expect(readCounts({ backOffice: 3, newRecipes: 1 })).toEqual({ backOffice: 3, newRecipes: 1 });
+    expect(readCounts({ backOffice: 2.5, newRecipes: -1, newArticles: '3' })).toEqual({ backOffice: 0, newRecipes: 0, newArticles: 0 });
+    expect(readCounts('{}')).toEqual({ backOffice: 0, newRecipes: 0, newArticles: 0 });
+    expect(readCounts(null)).toEqual({ backOffice: 0, newRecipes: 0, newArticles: 0 });
+    // Kept by 2.23, before the articles
+    expect(readCounts({ backOffice: 3, newRecipes: 1 })).toEqual({ backOffice: 3, newRecipes: 1, newArticles: 0 });
   });
 });

@@ -70,7 +70,10 @@ class MessagePushTest {
 
 		assertThat(MessagePush.concerned(version)).isNull();
 		assertThat(MessagePush.notification(version, "site", null, false)).containsEntry("title", "Tous les admins")
-			.containsEntry("body", "Nouvelle version de l'application disponible : version 2.18.0");
+			.containsEntry("body", "Nouvelle version de l'application disponible : version 2.18.0")
+			// A tap opens what it brings (2.24)
+			.containsEntry("data", Map.of("onActionClick",
+					Map.of("default", Map.of("operation", "navigateLastFocusedOrOpen", "url", "/admin/nouveautes"))));
 		// The site is no admin: every one of them is told
 		assertThat(MessagePush.unread(version.members(), version.actorEmail(), Set.of())).containsExactly("lea@site.fr", "yona@site.fr");
 	}

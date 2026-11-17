@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -73,6 +74,8 @@ public class CapService {
 	private final AuditLog auditLog;
 
 	private final JsonMapper jsonMapper;
+
+	private final ApplicationEventPublisher events;
 
 	// Public site: what is published only.
 
@@ -127,8 +130,10 @@ public class CapService {
 	public AdminCapEntry createEntry(CapEntryForm form) {
 		CapEntry entry = new CapEntry();
 		apply(form, entry);
+		boolean first = firstPublication(entry);
 		CapEntry saved = entryRepository.saveAndFlush(entry);
 		auditLog.record(AuditAction.CREATED, AuditKind.CAP_ENTRY, saved.getTitle(), saved.getId());
+		announce(saved, first);
 		return toAdmin(saved);
 	}
 
@@ -145,6 +150,7 @@ public class CapService {
 		boolean featuredBefore = entry.isFeatured();
 		String blocksSummaryBefore = CapBlocks.summary(blocks(entry));
 		apply(form, entry);
+		boolean first = firstPublication(entry);
 		CapEntry saved = entryRepository.saveAndFlush(entry);
 		AuditChanges changes = new AuditChanges().add("Titre", titleBefore, saved.getTitle())
 			.add("Sous-titre", subtitleBefore, saved.getSubtitle())
@@ -156,7 +162,24 @@ public class CapService {
 			.add("Publication programmée", scheduledBefore, saved.getScheduledAt())
 			.add("Mis en avant", featuredBefore, saved.isFeatured());
 		auditLog.record(AuditAction.UPDATED, AuditKind.CAP_ENTRY, saved.getTitle(), id, changes);
+		announce(saved, first);
 		return toAdmin(saved);
+	}
+
+	/** Published for the first time (2.24): its date kept. Unpublished then published again, it is not told twice. */
+	static boolean firstPublication(CapEntry entry) {
+		if (entry.isPublished() && entry.getPublishedAt() == null) {
+			entry.setPublishedAt(Instant.now());
+			return true;
+		}
+		return false;
+	}
+
+	/** The subscribers are told once the transaction is committed (CapPublished). */
+	private void announce(CapEntry saved, boolean first) {
+		if (first) {
+			events.publishEvent(CapPublished.of(saved));
+		}
 	}
 
 	/**
@@ -209,6 +232,8 @@ public class CapService {
 		entry.setStyle(kept.style() == null ? CapStyle.CLASSIC : kept.style());
 		entry.setBlocks(CapBlocks.write(jsonMapper, blocks));
 		entry.setStatus(kept.published() ? CapStatus.PUBLISHED : CapStatus.DRAFT);
+		// Told when it was first published: not again
+		entry.setPublishedAt(kept.published() ? Instant.now() : null);
 		entry.setImage(trashed.getImage());
 		return toAdmin(entryRepository.saveAndFlush(entry));
 	}
@@ -238,8 +263,10 @@ public class CapService {
 		entry.setStatus(CapStatus.PUBLISHED);
 		entry.setScheduledAt(null);
 		entry.setPublicationFailure(null);
+		boolean first = firstPublication(entry);
 		entryRepository.saveAndFlush(entry);
 		auditLog.record(AuditAction.PUBLISHED, AuditKind.CAP_ENTRY, entry.getTitle(), id);
+		announce(entry, first);
 	}
 
 	/** A scheduled publication that kept failing: the article stays unpublished, with the reason. */

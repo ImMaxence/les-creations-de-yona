@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Api } from '../../../core/api/generated/api';
 import { listShopOrders } from '../../../core/api/generated/fn/admin-shop/list-shop-orders';
 import { OrderAlerts } from '../../../core/pwa/order-alerts';
+import { SiteNotifications } from '../../../core/pwa/site-notifications';
 import { ORDER_STATUS_LABELS, OrderStatus, orderStatusBadge } from '../../../shared/format/order-status';
 import { ParisDatePipe } from '../../../shared/format/paris-date.pipe';
 import { formatEuros } from '../../../shared/format/units';
@@ -53,6 +54,10 @@ type StatusFilter = OrderStatus | 'ALL';
             </span>
           </div>
           @if (alerts.state() === 'on') {
+            <!-- That it really comes on this device (2.24): the same way as an order -->
+            <button yonaButton variant="ghost" type="button" [disabled]="notifications.testing()" (click)="notifications.test()">
+              <svg yonaIcon="send"></svg>Tester
+            </button>
             <button yonaButton variant="secondary" type="button" [disabled]="alerts.busy()" (click)="alerts.disable()">Désactiver l'alerte</button>
           } @else if (alerts.state() === 'off') {
             <button yonaButton type="button" [disabled]="alerts.busy()" (click)="alerts.enable()"><svg yonaIcon="bell"></svg>Activer l'alerte</button>
@@ -101,6 +106,7 @@ export default class AdminOrders {
 
   private readonly api = inject(Api);
   protected readonly alerts = inject(OrderAlerts);
+  protected readonly notifications = inject(SiteNotifications);
 
   protected readonly labels = ORDER_STATUS_LABELS;
   protected readonly badge = orderStatusBadge;

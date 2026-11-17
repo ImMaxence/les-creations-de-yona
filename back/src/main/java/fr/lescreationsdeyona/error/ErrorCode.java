@@ -76,6 +76,10 @@ public enum ErrorCode {
 	PUSH_SUBSCRIPTIONS_FULL(HttpStatus.SERVICE_UNAVAILABLE, "Les abonnements aux notifications sont complets pour le moment"),
 	PUSH_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Plusieurs abonnements sont partis de votre connexion : réessayez dans une heure"),
 	PUSH_BUSY(HttpStatus.TOO_MANY_REQUESTS, "Beaucoup d'abonnements arrivent en ce moment : réessayez dans une heure"),
+	PUSH_SUBSCRIPTION_UNKNOWN(HttpStatus.NOT_FOUND, "Cet appareil ne reçoit pas les notifications du site : activez-les d'abord"),
+	PUSH_SUBSCRIPTION_GONE(HttpStatus.GONE, "Cet appareil n'est plus abonné aux notifications : activez-les de nouveau"),
+	PUSH_TEST_TOO_SOON(HttpStatus.TOO_MANY_REQUESTS, "Une notification de test vient de partir : attendez quelques secondes avant d'en demander une autre"),
+	PUSH_TEST_FAILED(HttpStatus.BAD_GATEWAY, "Le service de notifications du navigateur n'a pas pris la notification de test : réessayez dans un moment"),
 
 	// Visitors' messages
 	FEEDBACK_TOO_MANY(HttpStatus.TOO_MANY_REQUESTS, "Vous avez envoyé plusieurs messages en peu de temps : réessayez dans une heure"),

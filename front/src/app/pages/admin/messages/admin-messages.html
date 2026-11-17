@@ -144,6 +144,10 @@
                     <!-- A line of the group, in the middle: "Léa a ajouté Sam" -->
                     <li class="system" [class.is-arrived]="arrived().has(shown.message.id)">
                       <span>{{ line }}</span><time [attr.datetime]="shown.message.sentAt">{{ clock(shown.message.sentAt) }}</time>
+                      @if (shown.message.event === 'VERSION') {
+                        <!-- A new version: what it brings, a tap away (2.24) -->
+                        <a class="system__link" [routerLink]="changelogPath">Voir les nouveautés</a>
+                      }
                     </li>
                   } @else {
                     <!-- As in a chat: the others on the left, their face beside the last message of a run; one's own on the right -->

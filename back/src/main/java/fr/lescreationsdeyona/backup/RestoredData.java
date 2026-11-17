@@ -11,6 +11,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -494,6 +496,10 @@ class RestoredData {
 			values.put("featured", featured);
 			// As for the recipes: a publication scheduled in the backup is never done by surprise
 			values.put("scheduled_at", null);
+			// Published in the backup (before 2.24 too, without the date): never told to the subscribers later
+			if ("PUBLISHED".equals(values.get("status")) && values.get("published_at") == null) {
+				values.put("published_at", Timestamp.from(Instant.now()));
+			}
 			insertReturningId(site, "cap_entry", values);
 			added++;
 		}

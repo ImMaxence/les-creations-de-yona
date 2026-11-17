@@ -146,8 +146,9 @@ class MessagePush {
 			case LEFT -> actor + " a quitté le groupe";
 			case VERSION -> "Nouvelle version de l'application disponible : version " + line.value();
 		};
-		// Out of the group, its conversation is no longer theirs: the messages page
-		String url = toConcerned && line.event() == GroupEvent.REMOVED ? "/admin/messages" : "/admin/messages?groupe=" + line.groupId();
+		// Out of the group, its conversation is no longer theirs: the messages page. A new version: what it brings (2.24)
+		String url = line.event() == GroupEvent.VERSION ? "/admin/nouveautes"
+				: toConcerned && line.event() == GroupEvent.REMOVED ? "/admin/messages" : "/admin/messages?groupe=" + line.groupId();
 		return payload(line.groupName(), body, line.groupId(), url);
 	}
 

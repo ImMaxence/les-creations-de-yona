@@ -8,6 +8,8 @@ export interface BadgeCounts {
   backOffice: number;
   /** Recipes told by a notification since the site was last opened. */
   newRecipes: number;
+  /** Articles of "Mon CAP" told by a notification since the site was last opened (2.24). */
+  newArticles: number;
 }
 
 /** Where the service worker keeps them too: the same names in app-worker.js. */
@@ -17,7 +19,7 @@ const BADGE_FILE = '/app-badge.json';
 /**
  * The number on the icon of the installed app (2.23), the red one of an iPhone: set by the service worker when a
  * notification comes, even with the app closed, then here once it is opened. iOS keeps it until the site changes it:
- * the new recipes are seen as soon as the site is open, what awaits in the back-office follows its menu. Android
+ * the new recipes and articles are seen as soon as the site is open, what awaits in the back-office follows its menu. Android
  * has no such number (its launcher puts a dot on the icon while a notification is there): nothing happens there.
  * Only where the app is installed or receives notifications (ServiceWorkerGate): nothing kept in a browser tab.
  */
@@ -33,15 +35,16 @@ export class AppBadge {
   /** One change at a time: each reads what the one before wrote. */
   private queue = Promise.resolve();
 
-  /** The site open, and each time it comes back on screen: its new recipes are seen. */
+  /** The site open, and each time it comes back on screen: its new recipes and articles are seen. */
   listen(): void {
     if (!this.supported) {
       return;
     }
-    this.change((counts) => ({ ...counts, newRecipes: 0 }));
+    const seen = (counts: BadgeCounts): BadgeCounts => ({ ...counts, newRecipes: 0, newArticles: 0 });
+    this.change(seen);
     this.document.addEventListener('visibilitychange', () => {
       if (this.document.visibilityState === 'visible') {
-        this.change((counts) => ({ ...counts, newRecipes: 0 }));
+        this.change(seen);
       }
     });
   }
@@ -65,7 +68,7 @@ export class AppBadge {
     const cache = await caches.open(BADGE_CACHE);
     const before = readCounts(await (await cache.match(BADGE_FILE))?.json().catch(() => null));
     const counts = update(before);
-    if (counts.backOffice !== before.backOffice || counts.newRecipes !== before.newRecipes) {
+    if (counts.backOffice !== before.backOffice || counts.newRecipes !== before.newRecipes || counts.newArticles !== before.newArticles) {
       await cache.put(BADGE_FILE, new Response(JSON.stringify(counts), { headers: { 'Content-Type': 'application/json' } }));
     }
     // Set again even unchanged: the icon may show what an older version of the site left there
@@ -80,9 +83,9 @@ export function readCounts(kept: unknown): BadgeCounts {
     const count = (kept as Partial<Record<keyof BadgeCounts, unknown>> | null)?.[name];
     return typeof count === 'number' && Number.isInteger(count) && count >= 0 ? count : 0;
   };
-  return { backOffice: value('backOffice'), newRecipes: value('newRecipes') };
+  return { backOffice: value('backOffice'), newRecipes: value('newRecipes'), newArticles: value('newArticles') };
 }
 
 export function badgeTotal(counts: BadgeCounts): number {
-  return counts.backOffice + counts.newRecipes;
+  return counts.backOffice + counts.newRecipes + counts.newArticles;
 }

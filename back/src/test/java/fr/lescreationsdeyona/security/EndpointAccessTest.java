@@ -33,8 +33,10 @@ class EndpointAccessTest {
 
 	/** What visitors may send, by method: the rest is denied. */
 	private static final Map<HttpMethod, List<String>> PUBLIC_WRITES = Map.of(HttpMethod.POST,
-			Stream.concat(Stream.of(SecurityConfig.NOTIFICATION_SUBSCRIPTIONS, SecurityConfig.RECIPE_VIEWS, SecurityConfig.AI_VISITS,
-					SecurityConfig.BROWSER_ERRORS, SecurityConfig.FEEDBACK, SecurityConfig.SHOP_ORDERS), Arrays.stream(SecurityConfig.SIGN_IN_STEPS)).toList(),
+			Stream.concat(Stream.of(SecurityConfig.NOTIFICATION_SUBSCRIPTIONS, SecurityConfig.NOTIFICATION_TEST, SecurityConfig.RECIPE_VIEWS,
+					SecurityConfig.AI_VISITS, SecurityConfig.BROWSER_ERRORS, SecurityConfig.FEEDBACK, SecurityConfig.SHOP_ORDERS),
+					Arrays.stream(SecurityConfig.SIGN_IN_STEPS)).toList(),
+			HttpMethod.PUT, List.of(SecurityConfig.NOTIFICATION_SUBSCRIPTIONS),
 			HttpMethod.DELETE, List.of(SecurityConfig.NOTIFICATION_SUBSCRIPTIONS));
 
 	private static final List<Endpoint> ENDPOINTS = endpoints();
