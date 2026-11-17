@@ -31,6 +31,7 @@ import { adminErrorsInterceptor } from './core/api/admin-errors.interceptor';
 import { provideApiConfiguration } from './core/api/generated/api-configuration';
 import { ReportingErrorHandler } from './core/errors/reporting-error-handler';
 import { apiCacheInterceptor } from './core/pwa/api-cache';
+import { AppBadge } from './core/pwa/app-badge';
 import { AppUpdates } from './core/pwa/app-updates';
 import { ConnectionStatus } from './core/pwa/connection-status';
 import { versionCheckInterceptor } from './core/pwa/version-check';
@@ -105,11 +106,13 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(InstallPrompt).listen()),
     provideAppInitializer(() => inject(AppUpdates).listen()),
     provideAppInitializer(() => inject(ConnectionStatus).listen()),
+    provideAppInitializer(() => inject(AppBadge).listen()),
     provideAppInitializer(() => inject(AiVisits).count()),
     // Offline reading of the installed app (PWA) and notifications. Off in development, where it would cache stale code.
+    // app-worker.js (2.23, public/): Angular's worker, and the number on the icon of the app (AppBadge).
     // "v": a browser reinstalls the worker only when its file or address changes, and an installed
     // worker keeps its Content-Security-Policy. To raise after a change of connect-src (security-headers.ts).
-    provideServiceWorker('ngsw-worker.js?v=3', {
+    provideServiceWorker('app-worker.js?v=1', {
       enabled: !isDevMode(),
       // Not in a browser tab (2.6): only for the installed app and the notifications (ServiceWorkerGate)
       registrationStrategy: () => inject(ServiceWorkerGate).registrationStrategy(),

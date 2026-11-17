@@ -22,7 +22,8 @@
           "/manifest.webmanifest",
           "/*.css",
           "/*.js",
-          "!/worker-*.js"
+          "!/worker-*.js",
+          "!/app-worker.js"
         ]
       }
     },

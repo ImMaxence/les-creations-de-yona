@@ -8,10 +8,13 @@ export class NewOrders {
   private readonly api = inject(Api);
 
   readonly count = signal(0);
+  /** Counted once at least: until then, 0 says nothing. */
+  readonly counted = signal(false);
 
   async refresh(): Promise<void> {
     try {
       this.count.set((await this.api.invoke(countNewShopOrders)).count);
+      this.counted.set(true);
     } catch {
       // The badge simply stays as it was
     }

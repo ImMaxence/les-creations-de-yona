@@ -17,7 +17,7 @@ describe('ServiceWorkerGate', () => {
       configurable: true,
       value: { controller: controlled ? {} : null, getRegistration: async () => registration, ready: Promise.resolve(registration) },
     });
-    cacheNames = ['ngsw:/:db:control', 'ngsw:/:abc:assets:app:cache', 'yona-api', 'yona-local-ai'];
+    cacheNames = ['ngsw:/:db:control', 'ngsw:/:abc:assets:app:cache', 'yona-api', 'yona-badge', 'yona-local-ai'];
     vi.stubGlobal('caches', {
       keys: async () => [...cacheNames],
       delete: async (name: string) => {
@@ -73,7 +73,7 @@ describe('ServiceWorkerGate', () => {
     const serviceWorkerGate = gate(true);
     expect(await registers(serviceWorkerGate)).toBe(true);
     expect(unregister).not.toHaveBeenCalled();
-    expect(cacheNames).toHaveLength(4);
+    expect(cacheNames).toHaveLength(5);
   });
 
   it('keeps the worker of a tab that receives notifications', async () => {

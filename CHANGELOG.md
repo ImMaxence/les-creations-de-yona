@@ -2,6 +2,23 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.23.0 - 2026-11-17
+
+Front et backend 2.23.0. Pas de migration de la base
+
+### Ajouté
+
+- **Pastille sur l'icône de l'application** : sur iPhone, iPad et ordinateur, l'application installée affiche le nombre de ce qui attend, même fermée, mis à jour à chaque notification
+- **Pour les admins** : les messages non lus et les commandes à traiter, comme les badges « Messages » et « Commandes » du menu ; la pastille suit le back-office une fois ouvert et disparaît à zéro
+- **Pour les visiteurs** : le nombre de nouvelles recettes annoncées depuis la dernière visite, remis à zéro dès que le site est ouvert
+- **Android** : pas de chiffre choisi par le site, le téléphone met de lui-même un point sur l'icône tant qu'une notification est là
+
+### Technique
+
+- **Service worker** : `app-worker.js` (dans `public/`) charge celui d'Angular et pose la pastille à chaque notification ; les applications déjà installées passent dessus d'elles-mêmes
+- **Notifications** : chacune porte ce que compte la pastille (`badge`), calculé par appareil pour les admins (`AppBadge`)
+- **Politique de confidentialité** : le nombre gardé sur l'appareil pour la pastille
+
 ## 2.22.1 - 2026-11-16
 
 Front et backend 2.22.1. Pas de migration de la base

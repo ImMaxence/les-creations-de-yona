@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import fr.lescreationsdeyona.error.ErrorCode;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import tools.jackson.databind.json.JsonMapper;
@@ -13,7 +14,18 @@ import tools.jackson.databind.json.JsonMapper;
 class PushServiceTest {
 
 	private final PushService service = new PushService(mock(JdbcClient.class), mock(WebPushKeys.class),
-			JsonMapper.builder().build(), "https://les-creations-de-yona.fr");
+			JsonMapper.builder().build(), mock(AppBadge.class), "https://les-creations-de-yona.fr");
+
+	@Test
+	void sendsTheNumberOnTheIconBesideTheNotification() {
+		Map<String, Object> notification = Map.of("title", "Boutique");
+
+		assertThat(PushService.push(notification, Map.of("backOffice", 3L)))
+			.containsEntry("notification", notification)
+			.containsEntry("badge", Map.of("backOffice", 3L));
+		// Not counted: the notification alone, which Angular's service worker shows as before
+		assertThat(PushService.push(notification, null)).containsOnlyKeys("notification");
+	}
 
 	@Test
 	void takesTenNewSubscriptionsAnHourFromAnAddress() {

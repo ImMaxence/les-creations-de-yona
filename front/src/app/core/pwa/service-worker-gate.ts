@@ -3,8 +3,11 @@ import { ApplicationRef, Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { InstallPrompt } from './install-prompt';
 
-/** The copies of the site kept by Angular's service worker ("ngsw:/…"), and of the API kept by the page (api-cache.ts). */
-const OFFLINE_COPIES = /^ngsw:|^yona-api$/;
+/**
+ * The copies of the site kept by Angular's service worker ("ngsw:/…"), and of the API kept by the page (api-cache.ts);
+ * the counts of the number on the icon of the app (app-badge.ts) with them.
+ */
+const OFFLINE_COPIES = /^ngsw:|^yona-api$|^yona-badge$/;
 
 /** As Angular's registerWhenStable:30000: once the page has settled, at the latest after 30 seconds. */
 const REGISTER_AT_THE_LATEST_MS = 30_000;

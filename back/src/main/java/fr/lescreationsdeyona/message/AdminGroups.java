@@ -346,8 +346,14 @@ public class AdminGroups {
 	 * latest of it (its toast). One query: the count of all, over the latest row.
 	 */
 	public UnseenMessages unseen() {
-		Instant fallback = firstVisit();
-		return adminSeen.admin().flatMap(admin -> jdbc.sql("""
+		return adminSeen.admin().map(this::unseen).orElseGet(() -> new UnseenMessages(0, firstVisit(), null));
+	}
+
+	/** The same for {@code admin}, outside a request too: the number on the icon of their app (2.23). */
+	public UnseenMessages unseen(String admin) {
+		String me = admin.toLowerCase(Locale.ROOT);
+		Instant fallback = firstVisit(me);
+		return jdbc.sql("""
 				select m.id, m.group_id, g.name as group_name, m.author_email, m.author_name, m.author_picture, m.body, m.sent_at,
 				(select count(*) from admin_message_image i where i.message_id = m.id) as photos, count(*) over () as total
 				from admin_message m join admin_group g on g.id = m.group_id
@@ -356,13 +362,13 @@ public class AdminGroups {
 				and lower(m.author_email) <> :me and m.event is null and m.sent_at > coalesce(s.seen_at, :fallback)
 				order by m.sent_at desc, m.id desc
 				limit 1""")
-			.param("me", admin.toLowerCase(Locale.ROOT))
+			.param("me", me)
 			.param("fallback", utc(fallback))
 			.query((row, index) -> new UnseenMessages(row.getLong("total"), fallback,
 					UnseenMessages.Latest.of(row.getLong("id"), row.getLong("group_id"), row.getString("group_name"),
 							row.getString("author_email"), row.getString("author_name"), row.getString("author_picture"),
 							row.getString("body"), row.getInt("photos"), row.getObject("sent_at", OffsetDateTime.class).toInstant())))
-			.optional())
+			.optional()
 			.orElseGet(() -> new UnseenMessages(0, fallback, null));
 	}
 
@@ -467,6 +473,10 @@ public class AdminGroups {
 	 */
 	private Instant firstVisit() {
 		return adminSeen.of(AdminSeen.Topic.MESSAGES).map(AdminSeen.Mark::at).orElseGet(() -> Instant.now().minus(Unseen.FIRST_TIME));
+	}
+
+	private Instant firstVisit(String admin) {
+		return adminSeen.of(admin, AdminSeen.Topic.MESSAGES).map(AdminSeen.Mark::at).orElseGet(() -> Instant.now().minus(Unseen.FIRST_TIME));
 	}
 
 	private static OffsetDateTime utc(Instant instant) {

@@ -19,14 +19,18 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,6 +87,8 @@ public class PushService {
 
 	private final JsonMapper jsonMapper;
 
+	private final AppBadge badge;
+
 	private final String subject;
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
@@ -96,14 +102,16 @@ public class PushService {
 	/** Times of the last new subscriptions, all addresses together. */
 	private final Deque<Instant> subscribedBySite = new ArrayDeque<>();
 
-	PushService(JdbcClient jdbc, WebPushKeys keys, JsonMapper jsonMapper, @Value("${app.push.subject}") String subject) {
+	PushService(JdbcClient jdbc, WebPushKeys keys, JsonMapper jsonMapper, AppBadge badge, @Value("${app.push.subject}") String subject) {
 		this.jdbc = jdbc;
 		this.keys = keys;
 		this.jsonMapper = jsonMapper;
+		this.badge = badge;
 		this.subject = subject;
 	}
 
-	record Subscription(long id, String endpoint, String p256dh, String auth, int failures) {
+	/** {@code messagesFor}: the admin whose messages the device receives, for the number on the icon of the app. */
+	record Subscription(long id, String endpoint, String p256dh, String auth, int failures, @Nullable String messagesFor) {
 	}
 
 	/** Given to the browser when it subscribes (applicationServerKey). */
@@ -225,8 +233,7 @@ public class PushService {
 			return;
 		}
 		List<String> emails = admins.stream().map(email -> email.toLowerCase(Locale.ROOT)).toList();
-		sender.execute(() -> deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification)), "messages_for in (:admins)",
-				Map.of("admins", emails), what));
+		sender.execute(() -> deliver(forAdmins(notification), "messages_for in (:admins)", Map.of("admins", emails), what));
 	}
 
 	/** Visitors subscribed to new recipes. */
@@ -252,18 +259,50 @@ public class PushService {
 	}
 
 	private void notifyRecipe(RecipePublished recipe) {
-		deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification(recipe))), "new_recipes", Map.of(),
-				"New recipe \"" + recipe.title() + "\"");
+		// The same for every device: one more new recipe on the icon, until the site is opened
+		byte[] payload = jsonMapper.writeValueAsBytes(push(notification(recipe), Map.of("newRecipe", true)));
+		deliver(subscription -> payload, "new_recipes", Map.of(), "New recipe \"" + recipe.title() + "\"");
 	}
 
 	private void notifyOrder(OrderReceived order) {
-		deliver(jsonMapper.writeValueAsBytes(Map.of("notification", notification(order))), "admin_orders", Map.of(),
-				"Order " + order.number());
+		deliver(forAdmins(notification(order)), "admin_orders", Map.of(), "Order " + order.number());
 	}
 
-	/** {@code audience}: the condition saying who receives it (a boolean column, the admins of a message), with its parameters. */
-	private void deliver(byte[] payload, String audience, Map<String, ?> parameters, String what) {
-		List<Subscription> subscriptions = jdbc.sql("select id, endpoint, p256dh, auth, failures from push_subscription where " + audience)
+	/**
+	 * What the service worker receives (app-worker.js): the notification Angular's shows, and what the number on the
+	 * icon of the app counts, {"backOffice": 3} for an admin's device, {"newRecipe": true} for one more new recipe.
+	 */
+	static Map<String, Object> push(Map<String, Object> notification, @Nullable Map<String, Object> badge) {
+		return badge == null ? Map.of("notification", notification) : Map.of("notification", notification, "badge", badge);
+	}
+
+	/**
+	 * For the devices of admins: the number on the icon counted for each (AppBadge), once per admin for all their
+	 * devices. Not counted (the database out of reach), the notification goes without it, the icon keeping its last one.
+	 */
+	private Function<Subscription, byte[]> forAdmins(Map<String, Object> notification) {
+		Map<String, Optional<Long>> counts = new HashMap<>();
+		return subscription -> {
+			Optional<Long> count = counts.computeIfAbsent(Objects.toString(subscription.messagesFor(), ""), key -> {
+				try {
+					return Optional.of(badge.of(subscription.messagesFor()));
+				}
+				catch (RuntimeException ex) {
+					log.warn("Number on the icon of the app not counted", ex);
+					return Optional.empty();
+				}
+			});
+			return jsonMapper.writeValueAsBytes(push(notification, count.<Map<String, Object>>map(n -> Map.of("backOffice", n)).orElse(null)));
+		};
+	}
+
+	/**
+	 * {@code payload}: what each device receives. {@code audience}: the condition saying who receives it (a boolean
+	 * column, the admins of a message), with its parameters.
+	 */
+	private void deliver(Function<Subscription, byte[]> payload, String audience, Map<String, ?> parameters, String what) {
+		List<Subscription> subscriptions = jdbc
+			.sql("select id, endpoint, p256dh, auth, failures, messages_for from push_subscription where " + audience)
 			.params(parameters)
 			.query(Subscription.class)
 			.list();
@@ -272,7 +311,7 @@ public class PushService {
 		List<Subscription> refused = new ArrayList<>();
 		for (Subscription subscription : subscriptions) {
 			try {
-				int status = send(subscription, payload);
+				int status = send(subscription, payload.apply(subscription));
 				if (status / 100 == 2) {
 					delivered++;
 					if (subscription.failures() > 0) {

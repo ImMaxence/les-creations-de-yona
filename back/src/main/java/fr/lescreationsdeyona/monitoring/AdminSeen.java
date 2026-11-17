@@ -41,11 +41,16 @@ public class AdminSeen {
 
 	/** Empty the first time. */
 	public Optional<Mark> of(Topic topic) {
-		return admin().flatMap(email -> jdbc.sql("select seen_at, seen_version from admin_seen where admin_email = :email and topic = :topic")
-			.param("email", email)
+		return admin().flatMap(email -> of(email, topic));
+	}
+
+	/** The same for {@code admin}, outside a request too (the number on the icon of the app, 2.23). */
+	public Optional<Mark> of(String admin, Topic topic) {
+		return jdbc.sql("select seen_at, seen_version from admin_seen where admin_email = :email and topic = :topic")
+			.param("email", admin)
 			.param("topic", topic.name())
 			.query((row, index) -> new Mark(row.getObject("seen_at", OffsetDateTime.class).toInstant(), row.getString("seen_version")))
-			.optional());
+			.optional();
 	}
 
 	/** Seen now; {@code version}: the version of the changelog read, null for the other pages. */

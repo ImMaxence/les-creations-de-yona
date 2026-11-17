@@ -17,7 +17,7 @@ const browserDistFolder = join(serverDistFolder, '../browser');
 /** Built files carry a content hash in their name (main-VZMLZXQS.js): a new version, a new name. */
 const HASHED_FILE = /-[\w-]{8}\.(?:js|css|woff2)$/;
 /** Service worker files: always checked again, so that installed apps get the new version. */
-const SERVICE_WORKER_FILE = /(?:ngsw\.json|ngsw-worker\.js|safety-worker\.js|manifest\.webmanifest)$/;
+const SERVICE_WORKER_FILE = /(?:ngsw\.json|ngsw-worker\.js|app-worker\.js|safety-worker\.js|manifest\.webmanifest)$/;
 /** Read by crawlers before anything else: a change reaches them within the hour, through Cloudflare too. */
 const ROBOTS_FILE = /[\\/]robots\.txt$/;
 

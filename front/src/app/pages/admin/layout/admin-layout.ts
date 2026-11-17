@@ -6,6 +6,7 @@ import {
   ElementRef,
   ViewEncapsulation,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -15,6 +16,7 @@ import { NavigationCancel, NavigationEnd, NavigationError, NavigationSkipped, Ro
 import { filter } from 'rxjs';
 import { AdminSession } from '../../../core/auth/admin-session';
 import { ConfirmDialog } from '../../../core/dialog/confirm-dialog';
+import { AppBadge } from '../../../core/pwa/app-badge';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { SKELETON_DELAY } from '../../../shared/ui/skeleton/skeleton';
 import { UnreadFeedback } from '../feedback/unread-feedback';
@@ -79,6 +81,13 @@ export default class AdminLayout {
       this.watch.trashCount() +
       this.watch.logsCount(),
   );
+  /**
+   * The number on the icon of the app (2.23): the messages not read and the orders to handle, as the notifications
+   * count it on the backend (AppBadge); null until both are counted.
+   */
+  private readonly appBadge = computed(() =>
+    this.watch.messages() && this.newOrders.counted() ? this.watch.messagesCount() + this.newOrders.count() : null,
+  );
   /** Computers: the panel folded into a column of icons, remembered in this browser. */
   protected readonly rail = signal(readRail());
   private readonly drawer = viewChild<ElementRef<HTMLDialogElement>>('drawer');
@@ -101,6 +110,13 @@ export default class AdminLayout {
     this.live.on('MESSAGES', () => void this.watch.refreshMessages());
     this.live.start();
     inject(DestroyRef).onDestroy(() => this.live.stop());
+    const appBadge = inject(AppBadge);
+    effect(() => {
+      const count = this.appBadge();
+      if (count !== null) {
+        appBadge.backOffice(count);
+      }
+    });
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
