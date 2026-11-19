@@ -1,7 +1,7 @@
 {
   "name": "les-creations-de-yona-e2e",
   "private": true,
-  "license": "MIT",
+  "license": "UNLICENSED",
   "description": "Parcours dans Chrome contre le site lancé en local (pile Docker), avant une mise en ligne",
   "type": "module",
   "scripts": {

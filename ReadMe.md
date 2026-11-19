@@ -2,7 +2,7 @@
 
 Le blog de cuisine et de pâtisserie de Yona : des recettes à suivre depuis son téléphone, une application installable, et un back-office pour les écrire. En ligne sur [les-creations-de-yona.fr](https://les-creations-de-yona.fr).
 
-Version 2.24.0 · [Nouveautés](CHANGELOG.md) · Licence [MIT](LICENSE)
+Version 2.24.1 · [Nouveautés](CHANGELOG.md) · [Licence propriétaire](LICENSE)
 
 ![Une recette sur ordinateur](docs/captures/pc-recette.png)
 
@@ -156,6 +156,8 @@ cd e2e && npm test     # parcours dans Chrome (dont accessibilité et Lighthouse
 
 ## Licence
 
-Le code est sous [licence MIT](LICENSE) : libre de le reprendre, de le modifier et de le redistribuer, en gardant la mention « Copyright (c) 2026 Maxence Bonnici » et le texte de la licence.
+Le code n'est pas sous licence libre : ce dépôt est visible pour être consulté, tous droits réservés ([licence](LICENSE)). Le copier, le modifier, le redistribuer, l'héberger ou s'en servir pour un autre service demande l'accord écrit de Maxence Bonnici ([mbonnici.fr](https://mbonnici.fr)).
 
-Les contenus du site ne sont pas concernés : recettes, textes, photos, logo et portrait appartiennent à leur autrice et ne peuvent pas être réutilisés sans son accord.
+Les contenus du site non plus : recettes, textes, photos, logo et portrait appartiennent à Yona, leur autrice, et ne peuvent pas être réutilisés sans son accord.
+
+Les composants de tiers (polices, icônes, bibliothèques, table Ciqual) gardent leurs propres licences : [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

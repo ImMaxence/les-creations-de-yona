@@ -27,7 +27,7 @@ front/     application Angular
 devops/    Docker Compose (local : compose.yaml, Coolify : compose.prod.yaml), passerelle Caddy, configuration d'environnement
 e2e/       parcours dans Chrome contre le site lancé en local, captures d'écran du ReadMe
 docs/      documentation : fonctionnalités, développement, production, architecture, roadmap, restauration, services Google, changement de domaine, remplissage par IA, valeurs nutritionnelles ; captures/ (images du ReadMe)
-ReadMe.md, CHANGELOG.md (aussi affiché dans le back-office, « Nouveautés »), LICENSE
+ReadMe.md, CHANGELOG.md (aussi affiché dans le back-office, « Nouveautés »), LICENSE (propriétaire), THIRD_PARTY_NOTICES.md (licences des composants de tiers)
 ```
 
 ## Écrire un texte du site

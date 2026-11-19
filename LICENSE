@@ -1,21 +1,35 @@
-MIT License
+Les créations de Yona — Licence propriétaire / Proprietary licence
 
-Copyright (c) 2026 Maxence Bonnici
+Copyright © 2026 Maxence Bonnici (code) et Yona (contenus). Tous droits réservés. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+FRANÇAIS
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Le code source, les textes de l'interface, le design et la documentation des Créations de Yona sont la propriété
+exclusive de Maxence Bonnici. Le nom, le logo, le portrait, les recettes, les textes et les photographies publiés
+sur le site appartiennent à Yona, leur autrice. Ce dépôt est visible pour être consulté, il n'est pas sous licence
+libre.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Sauf autorisation écrite et préalable de leurs auteurs, il est interdit, à titre gratuit comme payant, de copier,
+reproduire, modifier, adapter, traduire, fusionner, publier, distribuer, sous-licencier, vendre, louer, héberger,
+exploiter ou mettre à la disposition de tiers tout ou partie de ce logiciel ou de ses contenus, ainsi que d'en créer
+une œuvre dérivée ou un service concurrent.
+
+Le logiciel est fourni « en l'état », sans garantie d'aucune sorte. Pour toute demande d'autorisation :
+https://mbonnici.fr
+
+Les composants de tiers inclus gardent leurs propres licences, détaillées dans THIRD_PARTY_NOTICES.md.
+
+ENGLISH
+
+The source code, interface texts, design and documentation of Les créations de Yona are the exclusive property of
+Maxence Bonnici. The name, logo, portrait, recipes, texts and photographs published on the site belong to Yona,
+their author. This repository is visible for reading only; it is not open source.
+
+Without the prior written permission of their authors, you may not, free of charge or for a fee, copy, reproduce,
+modify, adapt, translate, merge, publish, distribute, sublicense, sell, rent, host, operate or make available to
+third parties all or part of this software or its contents, nor create a derivative work or a competing service
+from it.
+
+The software is provided "as is", without warranty of any kind. To ask for permission: https://mbonnici.fr
+
+The third-party components it includes keep their own licences, listed in THIRD_PARTY_NOTICES.md.

@@ -13,13 +13,13 @@
 	<groupId>fr.lescreationsdeyona</groupId>
 	<artifactId>back</artifactId>
 	<!-- Semantic version, shown in the back-office: bump it with front/package.json at each release. -->
-	<version>2.24.0</version>
+	<version>2.24.1</version>
 	<name>back</name>
 	<description>API of the Les créations de Yona cooking blog</description>
 	<licenses>
 		<license>
-			<name>MIT</name>
-			<url>https://opensource.org/license/mit</url>
+			<name>Proprietary, all rights reserved</name>
+			<url>https://github.com/ImMaxence/les-creations-de-yona/blob/main/LICENSE</url>
 		</license>
 	</licenses>
 

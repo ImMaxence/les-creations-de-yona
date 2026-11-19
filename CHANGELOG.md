@@ -2,6 +2,19 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.24.1 - 2026-11-19
+
+Front et backend 2.24.1. Pas de migration de la base
+
+### Modifié
+
+- **Licence du code** : propriétaire, tous droits réservés, au lieu de MIT ; le dépôt reste visible pour être consulté ([LICENSE](https://github.com/ImMaxence/les-creations-de-yona/blob/main/LICENSE))
+
+### Technique
+
+- **Composants de tiers** : leurs licences et mentions dans [THIRD_PARTY_NOTICES.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/THIRD_PARTY_NOTICES.md) (icônes, polices, bibliothèques, table Ciqual, modèles d'IA)
+- **Paquets** : `UNLICENSED` dans `package.json` (front, e2e), licence propriétaire dans `pom.xml`
+
 ## 2.24.0 - 2026-11-17
 
 Front et backend 2.24.0. Migration de la base : V37
