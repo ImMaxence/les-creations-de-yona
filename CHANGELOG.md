@@ -2,6 +2,15 @@
 
 Le front et le backend partagent un seul numéro de version (versionnage sémantique : la majeure casse l'existant, la mineure ajoute des fonctionnalités, le correctif corrige). Comment publier une version : [docs/developpement.md](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/developpement.md#monter-la-version). Les versions d'avant la 1.1.0 sont résumées dans la [roadmap](https://github.com/ImMaxence/les-creations-de-yona/blob/main/docs/roadmap.md)
 
+## 2.24.2 - 2026-11-19
+
+Front et backend 2.24.2. Pas de migration de la base
+
+### Modifié
+
+- **Mentions légales** : la propriété intellectuelle parle aussi du site lui-même, dont le code source et le design appartiennent à l'éditeur et ne sont pas sous licence libre ; le logo rejoint les contenus de Yona
+- **Pages légales** : date de mise à jour au 19 novembre
+
 ## 2.24.1 - 2026-11-19
 
 Front et backend 2.24.1. Pas de migration de la base

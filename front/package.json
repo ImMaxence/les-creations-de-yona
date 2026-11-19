@@ -1,6 +1,6 @@
 {
   "name": "les-creations-de-yona",
-  "version": "2.24.1",
+  "version": "2.24.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
